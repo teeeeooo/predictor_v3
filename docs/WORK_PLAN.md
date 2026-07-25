@@ -33,19 +33,23 @@ The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
 the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
-Phase 5E Promotion, Rollback, Export, and Predict Reload Boundary is the next
-active but unstarted slice. Phase 5D already completed promotion and rollback;
-Phase 5E must preserve those contracts while adding immutable deployment export
-and an explicit running-Predict reload-required/reload-failure boundary. CLI,
-Campaign, leaderboard, the Agent-assisted Experiment Loop, and retention remain
+Phase 5E Deployment Export and Predict Reload Boundary is implemented on its
+separate worker branch and remains unmerged pending independent L4 audit.
+Predict now keeps a process-loaded Candidate/revision, observes current Active
+without hot-swap, exposes explicit idle reload, and preserves the prior bundle
+on corruption, incompatibility, recovery, running-state, or Active-race failure.
+Train/Model can create a checksum-verified immutable export only from the
+guarded current Active without changing Candidate, Active, or history. Phase 5D
+promotion and rollback remain unchanged. CLI, Campaign, leaderboard, the
+Agent-assisted Experiment Loop, retention, and executable packaging remain
 later slices.
 
 ## Next Action
 
-Prepare the bounded Phase 5E owner/audit slice from merged `main`; do not start
-implementation without a separate Phase 5E task. Preserve Phase 5D lifecycle,
-promotion, rollback, Train, and Predict invariants. Keep CLI, Campaign,
-leaderboard, the Agent-assisted Experiment Loop, and retention deferred.
+Open and preserve the Phase 5E Draft PR at its exact worker head for independent
+L4 audit. Do not merge or declare audit PASS from the worker. Keep Phase 5F and
+later CLI, Campaign, leaderboard, Agent-assisted Experiment Loop, retention,
+and packaging work unstarted.
 
 ## Active Blockers
 

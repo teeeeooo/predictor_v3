@@ -29,6 +29,21 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5E deployment export and Predict reload boundary
+
+### Decision
+
+- Keep a running Predict process bound to its actually loaded Candidate and
+  Active revision; observing a newer Active only marks explicit reload required.
+- Permit model replacement only while idle after a complete detached load and
+  compatibility check, with a final serialized Active revision guard. Any
+  preparation or race failure preserves the prior loaded bundle and identity.
+- Publish checksum-verified deployment exports only from the current guarded
+  Active through verified staging and a non-overwriting immutable identity.
+  Export never mutates Candidate, Active, history, or source artifacts.
+- Hold the worker result in an open Draft PR for independent L4 audit. Do not
+  declare audit PASS, merge, or begin Phase 5F and later scope.
+
 ## 2026-07-26 — Train/Admin Phase 5D post-merge closeout
 
 ### Decision

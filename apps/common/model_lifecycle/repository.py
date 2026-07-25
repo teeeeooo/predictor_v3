@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 import json
 import os
-import shutil
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from .active_contracts import (
@@ -258,6 +260,27 @@ class ModelLifecycleRepository:
             raise ActiveReferenceCorruptionError(
                 f"Active reference is corrupt: {str(exc).splitlines()[0]}"
             ) from exc
+
+    @contextmanager
+    def guard_active(
+        self,
+        candidate_id: str,
+        revision: int,
+    ) -> Iterator[ActiveModelReference]:
+        """Serialize a bounded read/commit operation against Active mutation."""
+        _require_safe_identity(candidate_id)
+        if type(revision) is not int or revision < 1:
+            raise ValueError("guarded Active revision must be a positive integer")
+        with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
+            current = self.read_active()
+            if (
+                current.candidate_id != candidate_id
+                or current.revision != revision
+            ):
+                raise StaleActiveRevisionError(
+                    "Active reference changed after preparation"
+                )
+            yield current
 
     def replace_active(
         self,

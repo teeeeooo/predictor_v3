@@ -7,6 +7,7 @@ from collections.abc import Callable
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFileDialog,
     QFrame,
     QHBoxLayout,
     QHeaderView,
@@ -79,6 +80,9 @@ class ModelManagementPanel(QFrame):
         self.refresh_button = QPushButton("새로고침")
         self.refresh_button.clicked.connect(self.refresh)
         heading.addWidget(self.refresh_button)
+        self.export_button = QPushButton("현재 모델 Export")
+        self.export_button.clicked.connect(self._export_active)
+        heading.addWidget(self.export_button)
         layout.addLayout(heading)
 
         self.active_label = QLabel()
@@ -179,10 +183,16 @@ class ModelManagementPanel(QFrame):
             self._render_candidate(None)
         if self._on_snapshot_changed is not None:
             self._on_snapshot_changed(self._snapshot)
+        self.export_button.setEnabled(
+            self._snapshot.status == "active" and not self._training_running
+        )
 
     def set_training_running(self, running: bool) -> None:
         self._training_running = running
         self.refresh_button.setEnabled(not running)
+        self.export_button.setEnabled(
+            not running and self._snapshot.status == "active"
+        )
         self._update_promotion_action(self._selected())
 
     def _candidate_selection_changed(self) -> None:
@@ -300,6 +310,38 @@ class ModelManagementPanel(QFrame):
             else promotion_failure_message(outcome)
         )
         self._notify("모델 변경", message, success)
+
+    def _export_active(self) -> None:
+        if self._snapshot.status != "active" or self._training_running:
+            return
+        destination = QFileDialog.getExistingDirectory(
+            self,
+            "Deployment export 저장 위치",
+        )
+        if not destination:
+            return
+        export = getattr(self._controller, "export_active_model", None)
+        if export is None:
+            self._notify(
+                "Deployment export",
+                "Deployment export 구성이 연결되지 않았습니다.",
+                False,
+            )
+            return
+        outcome = export(
+            destination,
+            expected_revision=self._snapshot.active_revision,
+        )
+        message = outcome.message
+        if outcome.status == "exported":
+            message = f"{message}\n{outcome.path}"
+        elif outcome.diagnostic:
+            message = f"{message}\n원인: {outcome.diagnostic}"
+        self._notify(
+            "Deployment export",
+            message,
+            outcome.status == "exported",
+        )
 
     def _state_message(self) -> str:
         if self._snapshot.status == "corrupt":

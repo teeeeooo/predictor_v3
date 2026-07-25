@@ -1017,6 +1017,7 @@ instance is single-run and is disposed after a terminal callback.
 Files:
 
 - `apps/common/model_lifecycle/`
+- `apps/predict/application/model_lifecycle.py`
 - `apps/train/application/training_lifecycle.py`
 - `apps/train/application/candidate_publication.py`
 
@@ -1044,12 +1045,25 @@ Responsibility:
   controlled retraining-required state rather than a startup exception
 - resolve Predict startup to one immutable Active Candidate path or a controlled
   missing/invalid Active status
+- compare the process-loaded Candidate plus Active revision with the current
+  lifecycle Active through a Predict application owner, without UI filesystem
+  reads or automatic hot-swap
+- prepare a replacement service against one complete immutable runtime snapshot,
+  fully validate and deserialize it off to the side, then install it under a
+  final Active revision guard only while Predict is idle
+- preserve the prior loaded service and identity on every reload preparation,
+  compatibility, recovery, corruption, or Active-race failure
+- derive immutable deployment exports only from a guarded current Active
+  Candidate, publish them from verified staging without overwrite, and leave
+  Candidate, Active, history, and source artifacts unchanged
 
 Core ML writes one multi-target bundle to a caller-selected staging path and does
 not import lifecycle infrastructure. The QProcess adapter, child job, Train UI,
 and Predict UI do not write the Active reference. An already constructed
-`PredictionService` retains its loaded model/path; a later Active revision is
-resolved only by a newly composed Predict process in Phase 5B.
+`PredictionService` retains its loaded model/path when Active changes. Phase 5E
+status observation only marks reload required; an idle explicit reload installs
+one fully prepared replacement under the final Active guard, while failure
+keeps the prior service usable.
 
 The QProcess adapter owns one terminal arbiter. Accepted cancellation produces
 exactly one `cancelled` callback even when error and finished signals race;

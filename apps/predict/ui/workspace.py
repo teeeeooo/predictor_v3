@@ -35,6 +35,7 @@ from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
 from apps.predict.ui.runtime_generation import apply_runtime_composition
+from apps.predict.ui.model_lifecycle_ui import PredictModelLifecycleUi
 
 if TYPE_CHECKING:
     from apps.predict.mapping.mapping_repository import PredictMappingRepository
@@ -130,6 +131,7 @@ class PredictWorkspace(QWidget):
         self.summary_label.setFont(style.qfont("font.caption"))
         self.result_badge = StatusBadge("결과", "대기", "neutral")
         self.bottom_status = self._build_bottom_status()
+        self.model_lifecycle_ui = PredictModelLifecycleUi(self)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -157,6 +159,7 @@ class PredictWorkspace(QWidget):
         layout.addWidget(table_panel, 1)
         layout.addWidget(self.bottom_status)
         self._refresh()
+        self.model_lifecycle_ui.refresh()
 
     def apply_runtime_composition(
         self, composition: PredictWorkspaceComposition
@@ -323,6 +326,7 @@ class PredictWorkspace(QWidget):
         if self.prediction_controller.is_running:
             self.status_label.setText("예측이 이미 실행 중입니다.")
             return
+        self.model_lifecycle_ui.refresh()
         if self._generation_refresh is not None and not self._generation_refresh():
             self.show_generation_status()
             return
@@ -347,6 +351,7 @@ class PredictWorkspace(QWidget):
             self.show_generation_status()
         else:
             self.show_generation_status()
+        self.model_lifecycle_ui.refresh()
 
     def _cancel_prediction(self) -> None:
         self.prediction_controller.cancel()

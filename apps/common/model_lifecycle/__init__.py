@@ -25,6 +25,7 @@ from .promotion import (
 )
 from .repository import ModelLifecycleRepository
 from .resolver import ActiveModelResolver
+from .deployment_export import DeploymentExportResult, DeploymentExportService
 
 __all__ = [
     "ActiveModelReference",
@@ -36,6 +37,8 @@ __all__ = [
     "CandidateResult",
     "CandidateSnapshot",
     "DEFAULT_WORKSPACE_ID",
+    "DeploymentExportResult",
+    "DeploymentExportService",
     "ModelLifecycleRepository",
     "LegacyMigrationResult",
     "LegacyModelMigrationService",

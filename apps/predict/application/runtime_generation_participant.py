@@ -102,6 +102,7 @@ class PredictRuntimeParticipant:
             runner_factory=runner_factory,
             runtime_snapshot=runtime,
             model_file=self._model_file,
+            model_lifecycle=controller.model_lifecycle,
         )
         payload = _PredictPrepared(
             candidate.snapshot,
@@ -157,12 +158,18 @@ class PredictRuntimeParticipant:
         )
         self._composition = payload.composition
         self._active = payload.snapshot
+        lifecycle = self._composition.prediction_controller.model_lifecycle
+        if lifecycle is not None:
+            lifecycle.set_runtime_snapshot(payload.composition.runtime_snapshot)
         return prior
 
     def rollback(self, prior_state: object) -> None:
         active, composition, session_state = prior_state
         self._active = active
         self._composition = composition
+        lifecycle = composition.prediction_controller.model_lifecycle
+        if lifecycle is not None:
+            lifecycle.set_runtime_snapshot(composition.runtime_snapshot)
         composition.session.restore_runtime_projection(session_state)
 
     def abort(self, prepared: PreparedParticipant) -> None:

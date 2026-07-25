@@ -1,6 +1,7 @@
 """Model Management Qt projection and explicit action tests."""
 
 import os
+from types import SimpleNamespace
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -85,6 +86,7 @@ class FakeController:
     def __init__(self, snapshot):
         self.snapshot = snapshot
         self.calls = []
+        self.export_calls = []
 
     def inspect_models(self):
         return self.snapshot
@@ -114,6 +116,46 @@ class FakeController:
             "ok",
             self.snapshot,
         )
+
+    def export_active_model(self, destination, *, expected_revision):
+        self.export_calls.append((destination, expected_revision))
+        return SimpleNamespace(
+            status="exported",
+            message="exported",
+            path=f"{destination}/export-id",
+            diagnostic="",
+        )
+
+
+def test_active_export_action_forwards_destination_and_observed_revision(
+    monkeypatch,
+):
+    _app()
+    controller = FakeController(ModelManagementSnapshot(
+        "active",
+        "candidate-a",
+        7,
+        (_candidate("candidate-a", active=True),),
+        "active",
+    ))
+    notifications = []
+    panel = ModelManagementPanel(
+        controller,
+        notify=lambda title, message, success: notifications.append(
+            (title, message, success)
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.train.ui.model_management_panel.QFileDialog.getExistingDirectory",
+        lambda *_args: "/tmp/exports",
+    )
+
+    panel.export_button.click()
+
+    assert controller.export_calls == [("/tmp/exports", 7)]
+    assert notifications == [
+        ("Deployment export", "exported\n/tmp/exports/export-id", True)
+    ]
 
 
 def test_empty_corrupt_and_candidate_metric_states_are_explicit():

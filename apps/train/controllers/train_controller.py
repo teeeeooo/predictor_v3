@@ -92,3 +92,16 @@ class TrainController:
             candidate_id,
             expected_revision=expected_revision,
         )
+
+    def export_active_model(
+        self,
+        destination_parent: str,
+        *,
+        expected_revision: int,
+    ):  # noqa: ANN201
+        if self._model_management is None:
+            raise RuntimeError("Model lifecycle management is unavailable.")
+        return self._model_management.export_active(
+            destination_parent,
+            expected_revision=expected_revision,
+        )

@@ -2,6 +2,11 @@
 
 from collections.abc import Callable
 
+from apps.predict.application.model_lifecycle import (
+    ModelReloadOutcome,
+    PredictModelLifecycleService,
+    PredictModelLifecycleStatus,
+)
 from apps.predict.application.models import (
     PredictionModelStatus,
     PredictionServiceResult,
@@ -37,12 +42,14 @@ class PredictionController:
         service: PredictionServicePort,
         runner: PredictionExecutionPort | None = None,
         runner_factory: PredictionRunnerFactory | None = None,
+        model_lifecycle: PredictModelLifecycleService | None = None,
     ) -> None:
         self._session = session
         self._service = service
         self._usecase = usecase
         self._runner = runner
         self._runner_factory = runner_factory
+        self._model_lifecycle = model_lifecycle
         self._is_running = False
         self._active_case_ids: tuple[str, ...] = ()
         self._active_invalid = 0
@@ -55,6 +62,23 @@ class PredictionController:
     def model_status(self) -> PredictionModelStatus:
         """Return Qt-free model status through the service boundary."""
         return self._service.model_status()
+
+    @property
+    def model_lifecycle(self) -> PredictModelLifecycleService | None:
+        return self._model_lifecycle
+
+    def refresh_model_lifecycle(self) -> PredictModelLifecycleStatus | None:
+        if self._model_lifecycle is None:
+            return None
+        return self._model_lifecycle.refresh()
+
+    def reload_active_model(self) -> ModelReloadOutcome:
+        if self._model_lifecycle is None:
+            raise RuntimeError("Model lifecycle reload is unavailable.")
+        return self._model_lifecycle.reload(
+            prediction_running=self._is_running,
+            swap_service=self._replace_service,
+        )
 
     def runtime_dependencies(
         self,
@@ -168,6 +192,11 @@ class PredictionController:
     def _notify(self, callback: StatusCallback | None, message: str) -> None:
         if callback is not None:
             callback(message)
+
+    def _replace_service(self, service: PredictionServicePort) -> None:
+        if self._is_running:
+            raise RuntimeError("Prediction started during model reload.")
+        self._service = service
 
     def _start_worker(
         self,
