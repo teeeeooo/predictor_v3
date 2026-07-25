@@ -68,6 +68,7 @@ def emit_result(
     summary: str = "",
     log_path: str = "",
     message: str = "",
+    evidence_path: str = "",
 ) -> None:
     emit(
         {
@@ -80,6 +81,7 @@ def emit_result(
             "message": message,
             "generation_id": request.generation_id,
             "registry_fingerprint": request.registry_fingerprint,
+            "evidence_path": evidence_path,
         }
     )
 
@@ -132,10 +134,10 @@ def main() -> int:
         if args.dev_fast:
             summary = _run_dev_fast(request, temp_model_path, args)
         else:
-            from core.ml.training import train_all_models
+            from core.ml.training import train_all_models_with_analysis
             from core.data_definition.target_registry.runtime import ModelRegistrySnapshot
 
-            summary = train_all_models(
+            output = train_all_models_with_analysis(
                 data_path=request.data_path,
                 log_callback=_log,
                 model_output_path=str(temp_model_path),
@@ -143,6 +145,18 @@ def main() -> int:
                     ModelRegistrySnapshot.from_payload(json.loads(request.registry_payload_json))
                     if request.registry_payload_json else None
                 ),
+            )
+            summary = output.summary
+            evidence_path = final_model_path.parent / "core_training_evidence.json"
+            evidence_path.write_text(
+                json.dumps(
+                    output.evidence.to_payload(),
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
             )
         if _CANCELLED:
             cleanup_temp(temp_model_path)
@@ -153,12 +167,21 @@ def main() -> int:
         emit_progress(request.run_id, 1, 1, "Training finished.", indeterminate=False)
         emit_result(
             request,
-            "complete",
+            (
+                output.evidence.status
+                if not args.dev_fast
+                else "complete"
+            ),
             summary=summary,
             log_path=log_path,
             message="Training completed.",
+            evidence_path=(
+                str(evidence_path)
+                if not args.dev_fast
+                else ""
+            ),
         )
-        return 0
+        return 0 if args.dev_fast or output.evidence.status == "complete" else 2
     except Exception as exc:
         cleanup_temp(temp_model_path)
         emit_log(request.run_id, str(exc).splitlines()[0], "error")

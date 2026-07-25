@@ -15,6 +15,7 @@ from core.data_definition.target_registry.runtime import (
 )
 
 from .candidate_contracts import (
+    LEGACY_CANDIDATE_SCHEMA_VERSION,
     CandidateManifest,
     CandidateResult,
     TargetArtifactContract,
@@ -163,6 +164,7 @@ class LegacyModelMigrationService:
                 ) for target in targets),
                 promotion_eligible=not blockers,
                 blocking_reasons=blockers,
+                schema_version=LEGACY_CANDIDATE_SCHEMA_VERSION,
             )
             result = CandidateResult(
                 candidate_id, candidate_id, "complete", "imported",

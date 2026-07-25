@@ -25,6 +25,24 @@ def validate_candidate_files(
         required.extend(("manifest.json", "result.json"))
     for name in required:
         filesystem.require_regular_file(path / name)
+    for artifact in manifest.analysis_artifacts:
+        relative = Path(artifact.path)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("Candidate analysis artifact reference is unsafe")
+        artifact_path = path / artifact.path
+        if artifact_path.parent != path and path not in artifact_path.parents:
+            raise ValueError("Candidate analysis artifact escapes Candidate root")
+        filesystem.require_regular_file(artifact_path)
+        with filesystem.open_regular(artifact_path) as source:
+            if _sha256_stream(source) != artifact.sha256:
+                raise ValueError(
+                    f"Candidate analysis artifact hash mismatch: {artifact.path}"
+                )
+    if (
+        manifest.schema_version != "model_candidate_manifest.v1"
+        and not manifest.analysis_artifacts
+    ):
+        raise ValueError("Candidate required analysis artifacts are incomplete")
     _model_sha256, payload = load_candidate_model(
         filesystem,
         path / "model.pkl",

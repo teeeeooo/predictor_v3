@@ -13,7 +13,10 @@ from apps.common.model_lifecycle.repository import ModelLifecycleRepository
 from apps.common.model_lifecycle.durability_errors import (
     LifecycleRecoveryRequiredError,
 )
-from apps.train.application.candidate_publication import CandidatePublisher
+from apps.train.application.candidate_publication import (
+    CandidateArtifactGenerationError,
+    CandidatePublisher,
+)
 from apps.train.ports.training_execution_port import (
     TrainingExecutionCallbacks,
     TrainingExecutionFactory,
@@ -205,6 +208,18 @@ class TrainingLifecycleService:
                 assert self._publisher is not None and self._staging is not None
                 result = self._publisher.publish(request, result, self._staging)
                 self._staging = None
+            except CandidateArtifactGenerationError as exc:
+                terminal = "failed"
+                result = replace(
+                    result,
+                    status="error",
+                    message=(
+                        "Candidate artifact generation failed: "
+                        f"{str(exc).splitlines()[0]}"
+                    ),
+                    candidate_id=request.candidate_id,
+                    publication_outcome="artifact_generation_failed",
+                )
             except LifecycleRecoveryRequiredError as exc:
                 terminal = "failed"
                 result = replace(
@@ -223,6 +238,43 @@ class TrainingLifecycleService:
                     message=f"Candidate publication failed: {str(exc).splitlines()[0]}",
                     candidate_id=request.candidate_id,
                     publication_outcome="failed",
+                )
+        if (
+            terminal != "finished"
+            and request is not None
+            and self._repository is not None
+            and self._publisher is not None
+            and self._staging is not None
+        ):
+            outcome = (
+                "cancelled"
+                if terminal == "cancelled"
+                else (
+                    "partial"
+                    if result.status == "partial"
+                    else (
+                        "artifact_generation_failed"
+                        if result.publication_outcome
+                        == "artifact_generation_failed"
+                        else "failed"
+                    )
+                )
+            )
+            try:
+                result = self._publisher.preserve_terminal_evidence(
+                    request,
+                    result,
+                    self._staging,
+                    publication_outcome=outcome,
+                )
+                self._staging = None
+            except Exception as evidence_exc:
+                result = replace(
+                    result,
+                    message=(
+                        f"{result.message}; terminal evidence preservation failed: "
+                        f"{str(evidence_exc).splitlines()[0]}"
+                    ).strip("; "),
                 )
         if terminal != "finished":
             self._discard_staging()

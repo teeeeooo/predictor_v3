@@ -6,6 +6,7 @@ from .active_contracts import (
     ModelResolution,
 )
 from .candidate_contracts import (
+    CandidateArtifactReference,
     CandidateManifest,
     CandidateResult,
     TargetArtifactContract,
@@ -26,6 +27,7 @@ __all__ = [
     "ActivationRecord",
     "ActiveModelResolver",
     "CandidateManifest",
+    "CandidateArtifactReference",
     "CandidateResult",
     "CandidateSnapshot",
     "DEFAULT_WORKSPACE_ID",

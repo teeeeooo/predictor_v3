@@ -29,6 +29,26 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5C training result and analysis
+
+### Decision
+
+- Establish `training_result.v1` as the Qt-free source for target metrics,
+  fair-baseline comparison, RFECV, target-local XGBoost gain importance,
+  Optuna, preprocessing/data-quality, artifact references, and promotion
+  eligibility snapshots.
+- Require new manifest v2 Candidates to own hash-verified JSON, CSV, and XLSX
+  analysis before immutable publication. Continue read-only support for Phase
+  5B manifest v1 without silent artifact generation or migration.
+- Preserve partial, failed, cancelled, and artifact-generation-failed evidence
+  in an immutable non-Candidate lifecycle namespace. None of these states may
+  change Active or appear promotion-eligible.
+- Keep promotion authority and compatibility revalidation in the existing
+  lifecycle owner. Training completion remains Candidate publication, never
+  activation.
+- Hold Phase 5D Train/Model UI, CLI, Campaign, and the agent loop until an
+  independent L4 audit reviews the exact Phase 5C Draft PR head.
+
 ## 2026-07-25 — Train/Admin Phase 5B post-merge closeout
 
 ### Decision

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-CANDIDATE_SCHEMA_VERSION = "model_candidate_manifest.v1"
+CANDIDATE_SCHEMA_VERSION = "model_candidate_manifest.v2"
+LEGACY_CANDIDATE_SCHEMA_VERSION = "model_candidate_manifest.v1"
 RESULT_SCHEMA_VERSION = "model_candidate_result.v1"
 ARTIFACT_FORMAT_VERSION = "multi_target_joblib.v1"
 
@@ -21,6 +22,25 @@ class TargetArtifactContract:
             identity=str(payload["identity"]),
             ml_name=str(payload["ml_name"]),
             feature_names=tuple(str(item) for item in payload["feature_names"]),
+        )
+
+
+@dataclass(frozen=True)
+class CandidateArtifactReference:
+    path: str
+    sha256: str
+    category: str
+    required: bool = True
+
+    @classmethod
+    def from_payload(
+        cls, payload: dict[str, object]
+    ) -> "CandidateArtifactReference":
+        return cls(
+            path=str(payload["path"]),
+            sha256=str(payload["sha256"]),
+            category=str(payload["category"]),
+            required=bool(payload.get("required", True)),
         )
 
 
@@ -42,6 +62,8 @@ class CandidateManifest:
     blocking_reasons: tuple[str, ...] = ()
     contains_unpublished_features: bool = False
     original_model_sha256: str = ""
+    analysis_contract_version: str = ""
+    analysis_artifacts: tuple[CandidateArtifactReference, ...] = ()
     schema_version: str = CANDIDATE_SCHEMA_VERSION
     artifact_format_version: str = ARTIFACT_FORMAT_VERSION
 
@@ -50,13 +72,19 @@ class CandidateManifest:
 
     @classmethod
     def from_payload(cls, payload: dict[str, object]) -> "CandidateManifest":
-        if payload.get("schema_version") != CANDIDATE_SCHEMA_VERSION:
+        schema_version = payload.get("schema_version")
+        if schema_version not in {
+            LEGACY_CANDIDATE_SCHEMA_VERSION,
+            CANDIDATE_SCHEMA_VERSION,
+        }:
             raise ValueError("unsupported Candidate manifest schema version")
         return cls(
             **{
                 key: payload[key]
                 for key in cls.__dataclass_fields__
-                if key not in {"targets", "blocking_reasons"}
+                if key in payload and key not in {
+                    "targets", "blocking_reasons", "analysis_artifacts"
+                }
             },
             targets=tuple(
                 TargetArtifactContract.from_payload(item)
@@ -64,6 +92,10 @@ class CandidateManifest:
             ),
             blocking_reasons=tuple(
                 str(item) for item in payload.get("blocking_reasons", ())
+            ),
+            analysis_artifacts=tuple(
+                CandidateArtifactReference.from_payload(item)
+                for item in payload.get("analysis_artifacts", ())
             ),
         )
 
