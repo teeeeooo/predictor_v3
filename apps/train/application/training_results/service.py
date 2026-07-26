@@ -37,6 +37,7 @@ class TrainingResultService:
         baseline_identity: str = "",
         baseline_unavailable_reason: str = "",
         contains_unpublished_features: bool = False,
+        exploratory_feature_policy: bool = False,
         publication_outcome: str = "pending",
         failure_stage: str = "",
         failure_reason: str = "",
@@ -64,6 +65,11 @@ class TrainingResultService:
             blocking.append({
                 "code": "unpublished_experimental_features",
                 "reason": "Result uses unpublished experimental Features.",
+            })
+        if exploratory_feature_policy:
+            blocking.append({
+                "code": "experiment_feature_policy",
+                "reason": "Result uses an experiment-scoped Feature policy.",
             })
         if failure_reason:
             blocking.append({

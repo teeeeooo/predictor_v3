@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 import joblib
 
@@ -41,6 +42,7 @@ class DevFastTrainingBackend:
         request: TrainingRequest,
         log_callback: TrainingLogCallback | None = None,
         progress_callback: TrainingProgressCallback | None = None,
+        training_started_callback: Callable[[], None] | None = None,
     ) -> TrainingResult:
         """Run the deterministic DEV backend."""
         steps = (
@@ -54,6 +56,8 @@ class DevFastTrainingBackend:
                 return self._cancelled_result(request, message)
             self._emit_progress(progress_callback, request.run_id, completed - 1, len(steps), message)
             if message == "Build mock model artifact.":
+                if training_started_callback is not None:
+                    training_started_callback()
                 artifact = build_mock_prediction_artifact(
                     rows=max(self.rows, 5),
                     seed=self.seed,

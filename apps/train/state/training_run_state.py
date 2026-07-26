@@ -26,6 +26,16 @@ class TrainingRequest:
     one_hot_fingerprint: str = ""
     registry_payload_json: str = ""
     candidate_id: str = ""
+    optimization_config_json: str = ""
+    derived_evaluation_json: str = ""
+    resolved_experiment_json: str = ""
+    experiment_contract_fingerprint: str = ""
+    production_required_target_ids_json: str = ""
+    contains_unpublished_features: bool = False
+    exploratory_feature_policy: bool = False
+    target_scoped_exploratory: bool = False
+    execution_owner: str = "gui"
+    campaign_id: str = ""
 
 
 @dataclass(frozen=True)

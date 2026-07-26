@@ -1,0 +1,110 @@
+"""Parser, output envelope, and exit contract for the headless adapter."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from uuid import uuid4
+
+from apps.train.application.experiments.contracts import (
+    EXPERIMENT_OUTPUT_VERSION,
+    ExperimentContractError,
+)
+
+EXIT_SUCCESS = 0
+EXIT_VALIDATION = 2
+EXIT_LOCK_CONFLICT = 3
+EXIT_CANCELLED = 4
+EXIT_PARTIAL = 5
+EXIT_TRAINING_FAILURE = 6
+EXIT_INTERNAL = 70
+
+
+def parser() -> argparse.ArgumentParser:
+    root = argparse.ArgumentParser(
+        description="Versioned machine-readable headless Experiment interface."
+    )
+    subcommands = root.add_subparsers(dest="command", required=True)
+    for name in ("validate", "resolve"):
+        command = subcommands.add_parser(name)
+        command.add_argument("specification")
+    run = subcommands.add_parser("run")
+    run.add_argument("specification")
+    run.add_argument("--run-id")
+    for name in ("run-status", "run-result", "run-logs", "run-artifacts"):
+        command = subcommands.add_parser(name)
+        command.add_argument("run_id")
+    start = subcommands.add_parser("campaign-start")
+    start.add_argument("specification")
+    start.add_argument("--campaign-id", default=f"campaign-{uuid4().hex}")
+    for name in (
+        "campaign-status", "campaign-pause", "campaign-cancel", "campaign-resume"
+    ):
+        command = subcommands.add_parser(name)
+        command.add_argument("campaign_id")
+    subcommands.add_parser("lock-status")
+    subcommands.add_parser("models")
+    return root
+
+
+def emit(
+    command: str,
+    outcome: str,
+    message: str,
+    diagnostics=None,  # noqa: ANN001
+    data=None,  # noqa: ANN001
+) -> None:
+    print(json.dumps(
+        {
+            "schema_version": EXPERIMENT_OUTPUT_VERSION,
+            "command": command,
+            "outcome": outcome,
+            "message": message,
+            "diagnostics": diagnostics or {},
+            "data": data,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    ))
+
+
+def require_run_version(record: dict) -> None:
+    if record.get("schema_version") != "predictor_v3.experiment_run.v1":
+        raise ExperimentContractError(
+            "unsupported_run_version", "Unsupported experiment run record version."
+        )
+
+
+def require_campaign_version(record: dict) -> None:
+    if record.get("schema_version") != "predictor_v3.campaign.v1":
+        raise ExperimentContractError(
+            "unsupported_campaign_version",
+            "Unsupported campaign record version.",
+        )
+
+
+def json_diagnostics(value: str) -> dict:
+    try:
+        payload = json.loads(value)
+        return payload if isinstance(payload, dict) else {"raw": value}
+    except json.JSONDecodeError:
+        return {"raw": value}
+
+
+def run_exit(status: str) -> int:
+    return {
+        "success": EXIT_SUCCESS,
+        "cancelled": EXIT_CANCELLED,
+        "partial": EXIT_PARTIAL,
+        "training_failure": EXIT_TRAINING_FAILURE,
+    }.get(status, EXIT_INTERNAL)
+
+
+def campaign_exit(status: str) -> int:
+    if status == "lock_conflict":
+        return EXIT_LOCK_CONFLICT
+    if status == "cancelled_resumable":
+        return EXIT_CANCELLED
+    if status in {"failed_resumable", "blocked", "retry_exhausted"}:
+        return EXIT_TRAINING_FAILURE
+    return EXIT_SUCCESS

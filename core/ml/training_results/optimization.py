@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 import optuna
@@ -43,6 +44,7 @@ def optimize_and_train(
     log_callback=None,
     *,
     optimization_config: TrainingOptimizationConfig | None = None,
+    training_started_callback: Callable[[], None] | None = None,
 ):
     """Run target-local selection, tuning, evaluation, and final training."""
     config = optimization_config or TrainingOptimizationConfig()
@@ -57,6 +59,8 @@ def optimize_and_train(
     original_cols = list(X.columns)
     selected_cols = list(original_cols)
     rfecv_result = _not_used_rfecv(original_cols, config.cv_folds)
+    if training_started_callback is not None:
+        training_started_callback()
     if use_rfe:
         custom_log("       🔍 [RFE] 최적의 피처 개수와 조합 탐색 중...")
         rfecv = RFECV(

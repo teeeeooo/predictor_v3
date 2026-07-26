@@ -577,7 +577,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 4 Unified Feature Manager direction
-    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. Phase 4A–4I completes the Unified Feature Manager for repository-automated scope: Data Definition owns canonical Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Target/registry, immutable publication, and runtime generation application. Model-sensitive publications are permitted with explicit retraining evidence; compatible runtime application is distinct from Save. Data Mapping retains concrete mapping.json values and explicit dirty-draft reconciliation; Train owns explicit execution and frozen request snapshots; Predict consumes saved contracts and compatible models with standalone drift checks. Automatic retraining, model promotion, training from Data Definition, and Predict redesign remain excluded from Phase 4. Phase 5B–5D are complete and merged; Phase 5E export and Predict reload is implemented on a separate unmerged worker branch pending independent L4 audit.
+    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. Phase 4A–4I completes the Unified Feature Manager for repository-automated scope: Data Definition owns canonical Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Target/registry, immutable publication, and runtime generation application. Model-sensitive publications are permitted with explicit retraining evidence; compatible runtime application is distinct from Save. Data Mapping retains concrete mapping.json values and explicit dirty-draft reconciliation; Train owns explicit execution and frozen request snapshots; Predict consumes saved contracts and compatible models with standalone drift checks. Automatic retraining, model promotion, training from Data Definition, and Predict redesign remain excluded from Phase 4. Phase 5B–5E are complete and merged; Phase 5F headless experiment foundation is implemented on an unmerged worker branch pending independent exact-head audit.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -597,7 +597,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 5 lifecycle, result analysis, and model-management UI
-    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B through Phase 5E are independently audited, merged, and complete. Phase 5E was accepted at exact head `cf0b71d86a3e490799c98e8f32a0f2652d6d660b`, final independent L4 audit PASS, required validation run `30188757140` success, and PR #32 squash merge `f372f5d2d5f01c96eb9b547bb5758c9c561e0836`. Its first two independent audit FAIL results remain historical evidence at repaired heads `5364ff7a106f27975e649d44a3b0059509dc797e` and `f22d6e9526bc3c31d0775123a9614b860fadbf5b`. Phase 5E preserves loaded-model/no-hot-swap, explicit idle reload, reload-failure preservation, immutable current-Active-only export, checksum, and atomic publication. Phase 5F Headless Experiment Interface is the next active phase and remains unstarted; Campaign, the agent loop, retention, and executable packaging remain later.
+    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B through Phase 5E are independently audited, merged, and complete. Phase 5E was accepted at exact head `cf0b71d86a3e490799c98e8f32a0f2652d6d660b`, final independent L4 audit PASS, required validation run `30188757140` success, and PR #32 squash merge `f372f5d2d5f01c96eb9b547bb5758c9c561e0836`; its two earlier audit FAIL heads remain historical evidence. Phase 5F Headless Experiment Interface remains on unmerged Draft PR #33. Its independent audits returned FAIL at `b5ce141711c3660e2ce38b738f58f478a333d251` and `e5558e82d7ca736bb45ca71eb94ab83b71a19950`; validation runs `30193572243` and `30195511666` remain successful historical evidence. The first bounded repair established repository-owned identifiable clean/dirty revision, fail-closed uncertain identity, and read-only validate/resolve composition. The second bounded repair moves iteration evidence into the Core optimization owner after preflight, applies configured attempts as one total allowance across start and every resume, returns structured non-mutating retry exhaustion, and makes identified mismatch plus every uncertain identity block a detached read-only outcome. The shared specification, lifecycle/Candidate/analysis owners, writer lock, machine interface, and non-promotion boundary remain unchanged. Independent exact-head re-audit is next; Phase 5G agent selection/ranking/recommendation and Phase 5H snapshot/history/retention remain unstarted.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -623,12 +623,17 @@ entries:
       - refresh ordering
       - stale UI callback
       - structured failure
+      - training-start acknowledgement
+      - total retry allowance
+      - detached compatibility block
+      - repository-owned build identity
+      - read-only validation
       - diagnostics redaction
       - explicit promotion
       - rollback by re-promotion
       - agent-assisted experiment
     assertionStatus: verified
-    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-ui-state-projection-audit-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-training-running-guidance-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-post-merge-closeout.md; result_reports/records/2026-07/2026-07-26-phase5e-deployment-export-predict-reload.md; result_reports/records/2026-07/2026-07-26-phase5e-reload-ordering-structured-failure-repair.md; result_reports/records/2026-07/2026-07-26-phase5e-refresh-ordering-ui-failure-boundary-repair.md; result_reports/records/2026-07/2026-07-26-phase5e-post-merge-closeout.md; docs/WORK_PLAN.md
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-ui-state-projection-audit-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-training-running-guidance-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-post-merge-closeout.md; result_reports/records/2026-07/2026-07-26-phase5e-deployment-export-predict-reload.md; result_reports/records/2026-07/2026-07-26-phase5e-reload-ordering-structured-failure-repair.md; result_reports/records/2026-07/2026-07-26-phase5e-refresh-ordering-ui-failure-boundary-repair.md; result_reports/records/2026-07/2026-07-26-phase5e-post-merge-closeout.md; result_reports/records/2026-07/2026-07-26-phase5f-core-ack-retry-compatibility-audit-repair.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation

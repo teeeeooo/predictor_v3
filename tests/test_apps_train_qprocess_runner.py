@@ -38,6 +38,7 @@ def _run_to_terminal(
 ):  # noqa: ANN001
     terminal = []
     progress = []
+    started = []
     loop = QEventLoop()
     timeout = QTimer()
     timeout.setSingleShot(True)
@@ -47,6 +48,7 @@ def _run_to_terminal(
         loop.quit()
 
     callbacks = TrainingExecutionCallbacks(
+        started=started.append,
         log=lambda _event: None,
         progress=progress.append,
         finished=lambda result: record("finished", result),
@@ -81,7 +83,7 @@ def _run_to_terminal(
     assert len(terminal) == 1
     assert runner._process is None
     assert not runner.is_running
-    return terminal[0], progress
+    return terminal[0], progress, started
 
 
 def test_qprocess_runner_dev_fast_success_promotes_final_artifact(
@@ -90,12 +92,15 @@ def test_qprocess_runner_dev_fast_success_promotes_final_artifact(
     request = _request(tmp_path, "run-process-success")
     runner = QProcessTrainingRunner(extra_args=("--dev-fast", "--dev-rows", "8"))
 
-    (kind, result), progress = _run_to_terminal(qprocess_app, runner, request)
+    (kind, result), progress, started = _run_to_terminal(
+        qprocess_app, runner, request
+    )
 
     assert (kind, result.status) == ("finished", "complete")
     assert Path(request.model_output_path).exists()
     assert not list(tmp_path.glob("*.tmp"))
     assert progress[-1].completed == progress[-1].total
+    assert started == [request]
     assert isinstance(runner, TrainingExecutionPort)
     runner.dispose()
 
@@ -125,12 +130,13 @@ def test_qprocess_cancel_is_exactly_once_cancelled(
         else:
             process.started.connect(cancel_twice)
 
-    (kind, result), _progress = _run_to_terminal(
+    (kind, result), _progress, started = _run_to_terminal(
         qprocess_app, runner, request, after_start=schedule_cancel
     )
 
     assert (kind, result.status) == ("cancelled", "cancelled")
     assert result.message == "Training process cancelled."
+    assert started == []
     assert not Path(request.model_output_path).exists()
     assert not list(tmp_path.glob("*.tmp"))
     runner.dispose()
@@ -142,10 +148,13 @@ def test_qprocess_genuine_launch_failure_is_failed(tmp_path, qprocess_app):
         python_executable=str(tmp_path / "does-not-exist-python")
     )
 
-    (kind, result), _progress = _run_to_terminal(qprocess_app, runner, request)
+    (kind, result), _progress, started = _run_to_terminal(
+        qprocess_app, runner, request
+    )
 
     assert (kind, result.status) == ("failed", "error")
     assert result.message == "Training process failed to start."
+    assert started == []
     assert not Path(request.model_output_path).exists()
     assert not list(tmp_path.glob("*.tmp"))
     runner.dispose()

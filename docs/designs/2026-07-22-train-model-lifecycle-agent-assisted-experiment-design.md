@@ -1300,6 +1300,48 @@ Purpose:
 - GUI/CLI interoperability
 - shared execution lock
 
+Current implementation boundary (2026-07-26):
+
+- `predictor_v3.experiment.v1` JSON is the shared GUI/headless contract.
+- `apps/train/application/experiments/` owns strict resolution, persisted
+  run/campaign records, campaign policy, and the workspace execution lock.
+- `app_experiment.py` delegates real work to the same
+  `TrainingLifecycleService`, child training job, Candidate publisher, and
+  Phase 5C artifact owners used by Train GUI.
+- Run and campaign records live below the existing lifecycle workspace in
+  `experiments/`; callers cannot select or overwrite output paths.
+- Phase 5F runs only explicit campaign experiments. Reserved early-stopping and
+  recommendation-threshold fields are preserved but do not execute Phase 5G
+  proposal, ranking, recommendation, or autonomous iteration behavior.
+- Resume compares the saved current-version execution identity and fails closed
+  when Definition/runtime, training, preprocessing, metric, specification, or
+  build identity changes. Phase 5H historical adapters and immutable snapshot
+  policy remain deferred.
+- The first independent audit of head
+  `b5ce141711c3660e2ce38b738f58f478a333d251` returned `FAIL`: campaign
+  accounting used request acceptance instead of actual training start, build
+  identity depended on caller `cwd` and treated unavailable identities as
+  comparable, and read-only validation/resolution could publish Bootstrap.
+- The bounded repair uses a child Core-training-start acknowledgement before
+  consuming one iteration, derives structured build identity from the
+  application repository root and blocks uncertain resume without rewriting
+  saved evidence, and keeps service construction plus `validate`/`resolve`
+  read-only. Only a validated `run` or `campaign-start` mutation path may invoke
+  the existing explicit Bootstrap initializer.
+- The second independent audit of repaired head
+  `e5558e82d7ca736bb45ca71eb94ab83b71a19950` also returned `FAIL`: the child
+  still acknowledged immediately before entering Core, resume renewed the
+  configured attempt allowance, and identified build mismatch rewrote the
+  saved campaign record. Validation run `30195511666` remains successful
+  historical evidence.
+- The second bounded repair moves acknowledgement into the Core optimization
+  owner after configuration and data/pipeline preflight, immediately before
+  RFECV/Optuna/training work. `max_attempts` is now one total iteration allowance
+  across start and every resume, with a detached `campaign_retry_exhausted`
+  outcome when spent. Identified mismatch, missing, lookup-failed, and uncertain
+  build compatibility blocks are all detached read-only results and do not
+  rewrite persisted campaign or run evidence.
+
 ### Phase 5G — Agent-assisted campaign loop
 
 Purpose:

@@ -26,6 +26,7 @@ class QProcessTrainingRunner(QObject):
     """Run training in a child process and emit Qt-friendly payloads."""
 
     log_event = Signal(object)
+    training_started = Signal(object)
     progress = Signal(object)
     finished = Signal(object)
     failed = Signal(object)
@@ -126,6 +127,7 @@ class QProcessTrainingRunner(QObject):
     ) -> None:
         if callbacks is None:
             return
+        self.training_started.connect(callbacks.started)
         self.log_event.connect(callbacks.log)
         self.progress.connect(callbacks.progress)
         self.finished.connect(callbacks.finished)
@@ -167,7 +169,9 @@ class QProcessTrainingRunner(QObject):
         if self._request is None:
             return
         event_type, payload = parse_training_event(line, self._request)
-        if event_type == "progress":
+        if event_type == "training_started":
+            self.training_started.emit(payload)
+        elif event_type == "progress":
             self.progress.emit(payload)
         elif event_type == "result":
             self._pending_result = payload

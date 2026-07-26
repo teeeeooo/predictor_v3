@@ -30,6 +30,7 @@ from apps.train.controllers.train_controller import TrainController
 from apps.train.state.training_run_state import TrainingLogEvent, TrainingProgress, TrainingRequest, TrainingResult
 from apps.train.ui.models.static_table_model import StaticTableModel
 from apps.train.ui.model_management_panel import ModelManagementPanel
+from apps.train.ui.experiments.status_text import campaign_status_text
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
@@ -118,6 +119,9 @@ class TrainModelPanel(QWidget):
         layout.addStretch(1)
         self.active_model_label = QLabel("현재 사용 모델: 확인 중")
         layout.addWidget(self.active_model_label)
+        self.external_campaign_label = QLabel("")
+        layout.addWidget(self.external_campaign_label)
+        self._refresh_external_campaign_status()
         return panel
 
     def _build_training_config_panel(self) -> QFrame:
@@ -251,15 +255,22 @@ class TrainModelPanel(QWidget):
         self._append_log_text("Training run starting.")
         self._set_summary_state("진행 중")
         try:
-            self.training_controller.start(
-                request,
-                status_callback=self._set_status_text,
-                log_callback=self._handle_log_event,
-                progress_callback=self._handle_progress,
-                finished_callback=self._handle_finished,
-                failed_callback=self._handle_failed,
-                cancelled_callback=self._handle_cancelled,
-            )
+            callbacks = {
+                "status_callback": self._set_status_text,
+                "log_callback": self._handle_log_event,
+                "progress_callback": self._handle_progress,
+                "finished_callback": self._handle_finished,
+                "failed_callback": self._handle_failed,
+                "cancelled_callback": self._handle_cancelled,
+            }
+            if hasattr(self.training_controller, "start_gui_experiment"):
+                self.training_controller.start_gui_experiment(
+                    request.data_path,
+                    run_id=request.run_id,
+                    **callbacks,
+                )
+            else:
+                self.training_controller.start(request, **callbacks)
         except RuntimeError as exc:
             self._handle_failed(TrainingResult(
                 run_id=request.run_id,
@@ -272,6 +283,20 @@ class TrainModelPanel(QWidget):
     def _cancel_training(self) -> None:
         if self.training_controller.cancel():
             self._set_status_text("Cancellation requested.")
+
+    def _refresh_external_campaign_status(self) -> None:
+        inspect = getattr(
+            self.training_controller, "inspect_latest_campaign", None
+        )
+        campaign = inspect() if inspect is not None else None
+        self.external_campaign_label.setText(
+            (
+                "외부 Campaign 상태: "
+                f"{campaign_status_text(campaign['status'])}"
+                if campaign
+                else ""
+            )
+        )
 
     def _handle_log_event(self, event: TrainingLogEvent) -> None:
         self._append_log_text(event.message)
@@ -319,6 +344,7 @@ class TrainModelPanel(QWidget):
         self.run_button.setEnabled(False)
         self.cancel_button.setEnabled(running)
         self.select_button.setEnabled(not running)
+        self._refresh_external_campaign_status()
         self.model_management_panel.set_training_running(running)
         if not running:
             self._update_control_state()
