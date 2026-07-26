@@ -7,8 +7,10 @@ from typing import Any
 from .agent_contracts import GATE_VERSION
 from .gate_thresholds import guardrail_evidence, stability_evidence
 from .gate_metrics import (
+    finite_number,
     mean_feature_count,
     primary_metric_summary,
+    sanitize_non_finite,
     target_metric_changes,
 )
 
@@ -111,6 +113,7 @@ def evaluate_candidate(
             "primary_metric_unavailable",
             evidence_reference,
             "Configured primary metric evidence is unavailable.",
+            context=primary["unavailable_context"],
         ))
     guardrail = guardrail_evidence(
         completed, baseline_targets, policy["ranking"]["guardrail_thresholds"]
@@ -126,6 +129,7 @@ def evaluate_candidate(
             "guardrail_evidence_unresolved",
             evidence_reference,
             "Configured guardrail evidence is missing or cannot be compared.",
+            context=guardrail["unresolved_context"],
         ))
     stability = stability_evidence(
         completed, policy["ranking"]["instability_thresholds"]
@@ -141,6 +145,7 @@ def evaluate_candidate(
             "instability_evidence_unresolved",
             evidence_reference,
             "Configured instability evidence is missing or cannot be calculated.",
+            context=stability["unresolved_context"],
         ))
 
     blockers = _deduplicate(blockers)
@@ -166,7 +171,7 @@ def evaluate_candidate(
     feature_count = mean_feature_count(completed)
     baseline_feature_count = mean_feature_count(baseline_targets)
     duration = analysis_run.get("duration_seconds")
-    return {
+    projected = {
         "schema_version": GATE_VERSION,
         "run_id": run_id,
         "candidate_id": candidate_id,
@@ -176,7 +181,7 @@ def evaluate_candidate(
         "production_eligible": not blockers and bool(candidate_id),
         "exploratory_eligible": exploratory_eligible,
         "target_metrics": {
-            identity: dict(item.get("metrics", {}))
+            identity: sanitize_non_finite(dict(item.get("metrics", {})))
             for identity, item in sorted(completed.items())
         },
         "target_metric_changes": target_metric_changes(
@@ -189,7 +194,7 @@ def evaluate_candidate(
             "feature_count": feature_count,
             "baseline_feature_count": baseline_feature_count,
             "delta": (
-                feature_count - baseline_feature_count
+                finite_number(feature_count - baseline_feature_count)
                 if feature_count is not None and baseline_feature_count is not None
                 else None
             ),
@@ -204,7 +209,7 @@ def evaluate_candidate(
             "score": None,
         },
         "execution_cost_evidence": {
-            "duration_seconds": duration if isinstance(duration, (int, float)) else None,
+            "duration_seconds": finite_number(duration),
             "reproducible_contract": True,
         },
         "experimental": bool(
@@ -212,6 +217,7 @@ def evaluate_candidate(
             or _target_scoped(specification)
         ),
     }
+    return sanitize_non_finite(projected)
 
 
 def _target_map(analysis):  # noqa: ANN001, ANN202
@@ -232,8 +238,21 @@ def _target_scoped(specification: dict[str, Any]) -> bool:
     return bool(selected and required and selected != required)
 
 
-def _reason(code: str, reference: Any, message: str) -> dict[str, Any]:
-    return {"code": code, "evidence_reference": reference, "message": message}
+def _reason(
+    code: str,
+    reference: Any,
+    message: str,
+    *,
+    context: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    reason = {
+        "code": code,
+        "evidence_reference": reference,
+        "message": message,
+    }
+    if context:
+        reason["context"] = context
+    return reason
 
 
 def _deduplicate(values: list[dict[str, Any]]) -> list[dict[str, Any]]:

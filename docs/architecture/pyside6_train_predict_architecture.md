@@ -1150,6 +1150,10 @@ Responsibility:
 - fail closed when a configured guardrail or instability requirement lacks
   resolvable evidence, while keeping the Candidate as exploratory/history
   evidence
+- normalize every selection-critical metric through one finite-number
+  projection boundary; non-finite current/baseline evidence remains
+  diagnostically distinguishable but cannot enter aggregation, ranking,
+  recommendation, or machine-readable numeric output
 - preserve immutable approval-required recommendation history
 - expose budget increase only through a separate operator command with
   before/after approval evidence

@@ -1381,6 +1381,12 @@ Current implementation boundary (2026-07-26):
   `not_configured`, `passed`, `violated`, and `unresolved`; configured
   unresolved evidence fails the production gate and is retained losslessly in
   Candidate, leaderboard, and recommendation history.
+- Primary, guardrail, instability, complexity, cost, leaderboard, and
+  recommendation projections share a finite-number boundary. Non-finite
+  historical values become `null` plus safe missing/non-finite context, cannot
+  enter aggregation/comparison/ranking, and are never re-emitted as
+  non-standard JSON numbers. Non-finite policy limits are rejected before an
+  accepted campaign is persisted.
 - Comparable Active requires matching current data/evaluation evidence;
   unbenchmarked Active receives no improvement claim; Bootstrap selects a
   first valid incumbent without claiming production readiness.
@@ -1392,9 +1398,13 @@ Current implementation boundary (2026-07-26):
   promotion, or budget-extension action.
 - The first Phase 5G independent audit failed at
   `029fefdd783c21f380f6d43c6bd6efe403a52b28` on resumable retry-scope loss and
-  non-fail-closed configured gate evidence. The bounded repair is source
-  complete on the same Draft PR and remains pending independent exact-head
-  re-audit. Phase 5H remains unstarted.
+  non-fail-closed configured gate evidence. The next independent audit failed
+  at `a58f4584344fce921341bddc25091aef79403485` because non-finite metric
+  evidence could bypass primary/guardrail/instability selection gates. Both
+  successful CI runs `30199916760` and `30201667033` remain historical
+  validation rather than acceptance evidence. The bounded finite-safe repair
+  is source complete on the same Draft PR and remains pending independent
+  exact-head re-audit. Phase 5H remains unstarted.
 
 ### Phase 5H — Reproducibility, retention, compatibility, and closeout
 

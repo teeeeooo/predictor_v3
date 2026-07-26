@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5G non-finite metric evidence audit repair
+
+### Decision
+
+- Preserve both independent audit `FAIL` heads
+  `029fefdd783c21f380f6d43c6bd6efe403a52b28` and
+  `a58f4584344fce921341bddc25091aef79403485`, plus successful historical runs
+  `30199916760` and `30201667033`; success at those heads is not acceptance.
+- Treat only finite integer/float evidence as selection-valid. Project
+  non-finite current/baseline values as `null` with explicit `non_finite`
+  context, without rewriting raw historical analysis.
+- Require complete finite primary Target evidence; preserve a finite current
+  metric but remove delta/improvement claims when baseline evidence is
+  non-finite. Configured non-finite guardrail or instability evidence remains
+  unresolved and production-blocking.
+- Reject non-finite tolerance and threshold policy before persistence, and keep
+  gate, leaderboard, recommendation, and headless projections standard-JSON
+  safe. Keep production mutation and Phase 5H outside this repair.
+
 ## 2026-07-26 — Phase 5G resumable retry and gate-evidence audit repair
 
 ### Decision

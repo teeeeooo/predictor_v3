@@ -23,7 +23,12 @@ branch and remains in an open Draft PR. The first independent audit failed at
 pending proposal/retry scope, and configured unresolved guardrail or stability
 evidence passed the production gate. The same-branch bounded repair now
 preserves stable pending execution/attempt allowance across resume and fails
-closed on configured unresolved gate evidence. It
+closed on configured unresolved gate evidence. The next independent audit
+failed at `a58f4584344fce921341bddc25091aef79403485`: `NaN` or Infinity could be
+treated as valid primary, guardrail, or instability evidence and reach
+production selection. The bounded follow-up now uses one finite-number
+projection boundary, rejects non-finite policy limits, records safe
+missing/non-finite context, and emits standard-JSON selection artifacts. It
 adds externally submitted one-step proposals, default configurable total
 five-iteration budget, durable before/delta/after evidence, Core-start-only
 consumption, hard gates, deterministic leaderboard/incumbent, immutable
@@ -101,7 +106,9 @@ retention, and executable packaging remain later slices.
 
 Obtain an independent exact-head re-audit of the repaired Phase 5G Draft PR.
 Preserve the first audit `FAIL` and successful historical validation run
-`30199916760` as historical evidence only. The Worker
+`30199916760`, plus the second audit `FAIL` at
+`a58f4584344fce921341bddc25091aef79403485` and successful run `30201667033`,
+as historical evidence only. The Worker
 must not declare audit PASS or merge. Do not begin Phase 5H migration,
 retention, compatibility, or final-confirmation work.
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import math
 from typing import Any
 
 from .contracts import ExperimentContractError
@@ -102,6 +103,7 @@ def _validate_policy(policy: dict[str, Any]) -> None:
         or not ranking["primary_metric"]
         or ranking["direction"] not in METRIC_DIRECTIONS
         or type(ranking["tolerance"]) not in {int, float}
+        or not math.isfinite(float(ranking["tolerance"]))
         or ranking["tolerance"] < 0
     ):
         _fail("ranking_policy_invalid", "Primary ranking policy is invalid.")
@@ -123,6 +125,7 @@ def _thresholds(values: Any, *, guardrail: bool) -> None:
         if (
             any(type(item[name]) is not str or not item[name] for name in ("target", "metric"))
             or type(numeric) not in {int, float}
+            or not math.isfinite(float(numeric))
             or numeric < 0
             or (guardrail and item["direction"] not in METRIC_DIRECTIONS)
         ):

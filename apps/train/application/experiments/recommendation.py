@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Any
 
 from .agent_contracts import RECOMMENDATION_VERSION
+from .gate_metrics import finite_number, sanitize_non_finite
 
 
 def build_recommendation(
@@ -78,6 +79,7 @@ def build_recommendation(
         "production_ready": False,
         "conclusion": conclusion,
     }
+    artifact = sanitize_non_finite(artifact)
     artifact["human_summary"] = _human_summary(artifact)
     return artifact
 
@@ -90,13 +92,18 @@ def _selection(top, baseline, policy):  # noqa: ANN001, ANN202
         return None, "keep_current_active"
     if mode == "comparable_active":
         change = top["primary_target_change"]
-        delta = change.get("delta")
+        delta = finite_number(change.get("delta"))
         direction = policy["ranking"]["direction"]
         improvement = (
-            -float(delta) if direction == "lower" and delta is not None
-            else float(delta) if delta is not None else None
+            -delta if direction == "lower" and delta is not None
+            else delta
         )
-        if improvement is None or improvement <= float(policy["ranking"]["tolerance"]):
+        tolerance = finite_number(policy["ranking"]["tolerance"])
+        if (
+            improvement is None
+            or tolerance is None
+            or improvement <= tolerance
+        ):
             return None, "keep_current_active"
     return top, "candidate_recommended_for_phase5h_confirmation"
 
@@ -154,6 +161,21 @@ def _limitations(campaign, top):  # noqa: ANN001, ANN202
     ):
         values.append(
             "Physical plausibility or explainability evidence requires human review."
+        )
+    unresolved = {
+        reason["code"]
+        for item in campaign["leaderboard"]["entries"]
+        for reason in item["blocking_reasons"]
+        if reason["code"] in {
+            "primary_metric_unavailable",
+            "guardrail_evidence_unresolved",
+            "instability_evidence_unresolved",
+        }
+    }
+    if unresolved:
+        values.append(
+            "One or more Candidates have unavailable selection metric evidence "
+            "and are excluded from production ranking."
         )
     return values
 

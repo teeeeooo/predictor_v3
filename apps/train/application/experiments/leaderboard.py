@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Any
 
 from .agent_contracts import LEADERBOARD_VERSION
+from .gate_metrics import finite_number, sanitize_non_finite
 
 
 def rebuild_leaderboard(
@@ -25,7 +26,7 @@ def rebuild_leaderboard(
         )
     valid = [item for item in entries if item["gate_pass"]]
     incumbent = valid[0]["candidate_id"] if valid else None
-    return {
+    return sanitize_non_finite({
         "schema_version": LEADERBOARD_VERSION,
         "baseline": deepcopy(baseline),
         "entries": entries,
@@ -39,19 +40,19 @@ def rebuild_leaderboard(
             "training_cost_and_reproducibility",
             "candidate_identity_tie_break",
         ],
-    }
+    })
 
 
 def _entry(gate: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
     primary = gate["primary_target_evidence"]
     direction = policy["ranking"]["direction"]
-    value = primary["value"]
-    improvement = primary["delta"]
+    value = finite_number(primary["value"])
+    improvement = finite_number(primary["delta"])
     if improvement is not None and direction == "lower":
         improvement = -improvement
     absolute_preference = (
-        (-float(value) if direction == "lower" else float(value))
-        if isinstance(value, (int, float)) else None
+        (-value if direction == "lower" else value)
+        if value is not None else None
     )
     return {
         "candidate_id": gate["candidate_id"],
@@ -89,9 +90,9 @@ def _ranking_key(entry: dict[str, Any], policy: dict[str, Any]) -> tuple[Any, ..
     guardrail = entry["guardrail"]
     guardrail_degradation = max(
         (
-            float(item["degradation"])
+            finite_number(item["degradation"])
             for item in guardrail["entries"]
-            if isinstance(item.get("degradation"), (int, float))
+            if finite_number(item.get("degradation")) is not None
         ),
         default=0.0,
     )
@@ -133,11 +134,13 @@ def _ranking_reason(entry: dict[str, Any], policy: dict[str, Any]) -> dict[str, 
 
 
 def _descending(value: Any) -> tuple[int, float]:
-    return (0, -float(value)) if isinstance(value, (int, float)) else (1, 0.0)
+    numeric = finite_number(value)
+    return (0, -numeric) if numeric is not None else (1, 0.0)
 
 
 def _ascending(value: Any) -> tuple[int, float]:
-    return (0, float(value)) if isinstance(value, (int, float)) else (1, 0.0)
+    numeric = finite_number(value)
+    return (0, numeric) if numeric is not None else (1, 0.0)
 
 
 def _review_order(status: str) -> int:

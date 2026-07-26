@@ -111,6 +111,16 @@ evidence records a dedicated unresolved blocker and excludes the Candidate
 from production incumbent and recommendation while retaining exploratory and
 history evidence. Unconfigured gates do not invent missing-evidence blockers.
 
+Selection evidence accepts only finite integers/floats. `NaN`, positive
+Infinity, and negative Infinity from historical analysis are projected as
+`null` with `non_finite` context; they never participate in primary aggregation,
+delta/degradation, stability aggregation, ranking, or recommendation.
+Primary aggregation is available only when every configured primary Target has
+finite evidence. A non-finite baseline preserves the finite current value but
+removes comparison/delta and any improvement claim. New gate, leaderboard,
+recommendation, and headless projections contain only standard JSON numeric
+values. Raw historical analysis is not rewritten.
+
 The leaderboard is rebuilt deterministically from persisted gates. It ranks
 only gate-passing Candidates in this order: primary metric, guardrails,
 stability, Feature count/complexity, reviewable physical/explainability
