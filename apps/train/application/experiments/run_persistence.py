@@ -61,12 +61,13 @@ class ExperimentRunRecorder:
                 "Training started before its durable run record was accepted."
             )
         record = self._store.read_run(self._identity)
-        record.update({
-            "status": "running",
-            "training_started": True,
-            "training_started_at": utc_now(),
-        })
-        self._store.update_run(self._identity, record)
+        if not record.get("training_started"):
+            record.update({
+                "status": "running",
+                "training_started": True,
+                "training_started_at": utc_now(),
+            })
+            self._store.update_run(self._identity, record)
         _notify(self._external.get("started_callback"), started_request)
 
     def terminal(self, result: TrainingResult) -> None:

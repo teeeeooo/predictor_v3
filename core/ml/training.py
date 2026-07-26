@@ -6,6 +6,7 @@ import datetime
 from datetime import timezone
 from pathlib import Path
 from time import monotonic
+from typing import Callable
 
 from core.ml.artifacts import TRAIN_DATA_FILE
 from core.ml.catalog_fingerprint import attach_catalog_fingerprint
@@ -46,6 +47,7 @@ def train_all_models_with_analysis(
     *, registry_snapshot: ModelRegistrySnapshot | None = None,
     optimization_config: TrainingOptimizationConfig | None = None,
     derived_evaluation_snapshot=None,  # noqa: ANN001
+    training_started_callback: Callable[[], None] | None = None,
 ):
     if not model_output_path:
         raise ValueError("Training caller must provide a staging model_output_path.")
@@ -83,6 +85,15 @@ def train_all_models_with_analysis(
     target_results = []
     failed_targets = []
     target_usage: dict[str, set[str]] = {}
+    training_started = False
+
+    def acknowledge_training_started() -> None:
+        nonlocal training_started
+        if training_started:
+            return
+        if training_started_callback is not None:
+            training_started_callback()
+        training_started = True
 
     for group in snapshot.groups:
         config = {
@@ -131,6 +142,7 @@ def train_all_models_with_analysis(
                         use_rfe,
                         log_callback=log_callback,
                         optimization_config=optimization_config,
+                        training_started_callback=acknowledge_training_started,
                     )
                 )
             except Exception as exc:

@@ -105,6 +105,6 @@ def campaign_exit(status: str) -> int:
         return EXIT_LOCK_CONFLICT
     if status == "cancelled_resumable":
         return EXIT_CANCELLED
-    if status in {"failed_resumable", "blocked"}:
+    if status in {"failed_resumable", "blocked", "retry_exhausted"}:
         return EXIT_TRAINING_FAILURE
     return EXIT_SUCCESS

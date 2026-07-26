@@ -145,6 +145,7 @@ def test_machine_exit_contract_distinguishes_terminal_outcomes():
     assert campaign_exit("lock_conflict") == EXIT_LOCK_CONFLICT
     assert campaign_exit("cancelled_resumable") == EXIT_CANCELLED
     assert campaign_exit("blocked") == EXIT_TRAINING_FAILURE
+    assert campaign_exit("retry_exhausted") == EXIT_TRAINING_FAILURE
 
 
 def test_production_revision_is_repository_owned_outside_caller_cwd(

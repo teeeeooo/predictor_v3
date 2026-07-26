@@ -72,7 +72,9 @@ def _run_iteration(
     maximum = experiment.payload["retry"]["max_attempts"]
     terminal_status = ""
     run_id = ""
-    for attempt in range(previous_attempts + 1, previous_attempts + maximum + 1):
+    if previous_attempts >= maximum:
+        return terminal_status, False, run_id, record
+    for attempt in range(previous_attempts + 1, maximum + 1):
         run_id = f"{campaign_id}-iteration-{index + 1}-attempt-{attempt}"
         record["status"] = "running"
         record["current"] = {
@@ -90,6 +92,8 @@ def _run_iteration(
             current = latest.get("current") or {}
             if current.get("run_id") != run_id:
                 raise RuntimeError("Campaign training-start acknowledgement is stale.")
+            if current.get("training_started"):
+                return
             current["training_started"] = True
             current["training_started_at"] = utc_now()
             latest["budget"]["consumed_iterations"] = max(
@@ -135,7 +139,7 @@ def _run_iteration(
         if terminal_status in {"success", "partial", "cancelled"}:
             break
         if (
-            attempt >= previous_attempts + maximum
+            attempt >= maximum
             or terminal_status not in experiment.payload["retry"]["retryable_statuses"]
         ):
             break

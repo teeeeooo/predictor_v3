@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5F second independent-audit repair
+
+### Decision
+
+- Preserve the second independent audit verdict as `FAIL` at exact head
+  `e5558e82d7ca736bb45ca71eb94ab83b71a19950`; successful validation run
+  `30195511666` is historical evidence, not audit PASS.
+- Emit training-start acknowledgement only from the Core optimization owner
+  after preflight and immediately before RFECV/Optuna/training work. Keep the
+  durable run/campaign acknowledgement path idempotent.
+- Treat `max_attempts` as the iteration's total allowance across initial start,
+  process restart, and every resume. A spent allowance returns a structured
+  detached outcome without starting an attempt or mutating campaign evidence.
+- Return every build compatibility block, including identified revision or
+  clean/dirty mismatch, as a detached read-only outcome. Persisted campaign and
+  run bytes remain unchanged.
+- Keep PR #33 open, Draft, and unmerged for independent exact-head re-audit; do
+  not declare audit PASS or begin Phase 5G/5H.
+
 ## 2026-07-26 — Phase 5F first independent-audit repair
 
 ### Decision

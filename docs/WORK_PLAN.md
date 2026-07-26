@@ -18,17 +18,21 @@
 ## Current Slice
 
 Phase 5F Headless Experiment Interface remains on the same worker branch and
-Draft PR #33. The first independent audit returned `FAIL` at exact head
-`b5ce141711c3660e2ce38b738f58f478a333d251`; validation run `30193572243`
-remains successful historical evidence. Its three blocking findings are
-repaired and the branch is pending independent exact-head re-audit.
+Draft PR #33. Independent audits returned `FAIL` at exact heads
+`b5ce141711c3660e2ce38b738f58f478a333d251` and
+`e5558e82d7ca736bb45ca71eb94ab83b71a19950`; successful validation runs
+`30193572243` and `30195511666` remain historical evidence. The second audit's
+three blocking findings are repaired and the branch is pending another
+independent exact-head re-audit.
 The implementation establishes the shared strict Experiment Specification,
 GUI/headless request parity, versioned machine output, single-run and explicit
 campaign execution, pause/cancel/resume/retry records, current-version
 fail-closed resume identity, and a workspace-wide GUI/headless/campaign writer
-lock. Iterations now consume only after child Core-training-start
-acknowledgement, build identity is repository-owned and uncertain resume blocks
-without record mutation, and validate/resolve composition is read-only. It
+lock. Iterations now consume only after the Core optimization owner enters its
+actual RFECV/Optuna/training boundary, configured attempts remain a total
+per-iteration allowance across every resume, and all incompatible build
+outcomes are detached read-only projections. Build identity remains
+repository-owned, and validate/resolve composition remains read-only. It
 reuses Phase 5B Candidate/Active lifecycle, Phase 5C result artifacts,
 Phase 5D explicit promotion, and Phase 5E export/reload boundaries. No audit
 PASS is declared. Phase 5G agent selection/ranking/recommendation and Phase 5H
@@ -85,8 +89,10 @@ retention, and executable packaging remain later slices.
 
 Run an independent exact-head re-audit against the repaired open Phase 5F Draft
 PR. Keep the PR unmerged and do not begin Phase 5G or Phase 5H. Preserve the
-Phase 5F audit `FAIL` at `b5ce141711c3660e2ce38b738f58f478a333d251` and
-validation run `30193572243` as historical evidence.
+Phase 5F audit `FAIL` heads
+`b5ce141711c3660e2ce38b738f58f478a333d251` and
+`e5558e82d7ca736bb45ca71eb94ab83b71a19950`, plus validation runs
+`30193572243` and `30195511666`, as historical evidence.
 
 ## Active Blockers
 

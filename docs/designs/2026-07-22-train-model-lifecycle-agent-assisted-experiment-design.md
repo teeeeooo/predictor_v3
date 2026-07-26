@@ -1328,6 +1328,19 @@ Current implementation boundary (2026-07-26):
   saved evidence, and keeps service construction plus `validate`/`resolve`
   read-only. Only a validated `run` or `campaign-start` mutation path may invoke
   the existing explicit Bootstrap initializer.
+- The second independent audit of repaired head
+  `e5558e82d7ca736bb45ca71eb94ab83b71a19950` also returned `FAIL`: the child
+  still acknowledged immediately before entering Core, resume renewed the
+  configured attempt allowance, and identified build mismatch rewrote the
+  saved campaign record. Validation run `30195511666` remains successful
+  historical evidence.
+- The second bounded repair moves acknowledgement into the Core optimization
+  owner after configuration and data/pipeline preflight, immediately before
+  RFECV/Optuna/training work. `max_attempts` is now one total iteration allowance
+  across start and every resume, with a detached `campaign_retry_exhausted`
+  outcome when spent. Identified mismatch, missing, lookup-failed, and uncertain
+  build compatibility blocks are all detached read-only results and do not
+  rewrite persisted campaign or run evidence.
 
 ### Phase 5G — Agent-assisted campaign loop
 

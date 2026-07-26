@@ -74,10 +74,14 @@ A Phase 5F campaign runs only the ordered objects in `campaign.experiments`.
 - Pause finishes the current run and stops before the next.
 - Cancel terminates the current child process, publishes no incomplete
   Candidate, preserves safe terminal evidence, and remains resumable.
-- Retry records another attempt identity for the same iteration and is bounded.
-- Only the child job's structured Core-training-start acknowledgement consumes
-  an iteration. Success, partial, failure, or cancellation after that event
-  consumes it exactly once.
+- Retry records another attempt identity for the same iteration. The configured
+  `max_attempts` includes the initial attempt and is one total allowance across
+  campaign start plus every resume; a spent allowance returns the structured,
+  non-mutating `campaign_retry_exhausted` outcome.
+- Only the structured acknowledgement emitted inside the Core optimization
+  owner, after its preflight and immediately before RFECV/Optuna/training work,
+  consumes an iteration. Success, partial, failure, or cancellation after that
+  event consumes it exactly once; duplicate acknowledgement is idempotent.
 - Lock conflict consumes neither iteration nor attempt. Adapter/process-start
   failure preserves a non-started attempt and diagnostics, consumes no
   iteration, and remains explicitly resumable with the original budget.
@@ -85,4 +89,6 @@ A Phase 5F campaign runs only the ordered objects in `campaign.experiments`.
   Definition/runtime, training, preprocessing, metric, or build identity
   mismatch returns a structured blocked state. Missing or uncertain saved or
   current build identity also blocks, never succeeds because two fallback
-  strings compare equal, and does not rewrite existing campaign evidence.
+  strings compare equal. Every compatibility block, including an identified
+  clean/dirty or revision mismatch, is a detached read-only result and does not
+  rewrite existing campaign or run evidence.

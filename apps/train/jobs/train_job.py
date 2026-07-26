@@ -201,7 +201,6 @@ def run_production_training(
     """Run the production Core owner and persist its structured evidence."""
     from core.ml.training import train_all_models_with_analysis
 
-    emit_training_started(request.run_id)
     output = train_all_models_with_analysis(
         data_path=request.data_path,
         log_callback=log_callback,
@@ -209,6 +208,7 @@ def run_production_training(
         registry_snapshot=registry_snapshot,
         optimization_config=optimization_config,
         derived_evaluation_snapshot=derived_evaluation_snapshot,
+        training_started_callback=lambda: emit_training_started(request.run_id),
     )
     evidence_path = Path(request.model_output_path).parent / "core_training_evidence.json"
     evidence_path.write_text(
@@ -275,8 +275,12 @@ def _run_dev_fast(request: TrainingRequest, temp_model_path: Path, args: argpars
         predict_delay_ms=args.dev_predict_delay_ms,
     )
     temp_request = replace(request, model_output_path=str(temp_model_path))
-    emit_training_started(request.run_id)
-    result = backend(temp_request, log_callback=_emit_payload_log, progress_callback=_emit_payload_progress)
+    result = backend(
+        temp_request,
+        log_callback=_emit_payload_log,
+        progress_callback=_emit_payload_progress,
+        training_started_callback=lambda: emit_training_started(request.run_id),
+    )
     if result.status != "complete":
         raise RuntimeError(result.message or "DEV fast training failed.")
     return result.summary

@@ -159,16 +159,20 @@ class CampaignApplicationService:
             blocked["updated_at"] = utc_now()
             return blocked
         if current_identity != record["contract_identity"]:
-            record["status"] = "blocked"
-            record["failure"] = {
+            blocked = deepcopy(record)
+            blocked["status"] = "blocked"
+            blocked["failure"] = {
                 "code": "resume_contract_changed",
                 "message": "Current training meaning differs from the saved campaign.",
                 "saved": record["contract_identity"],
                 "current": current_identity,
+                "next_action": "Create a new campaign for the current training build.",
             }
-            record["updated_at"] = utc_now()
-            self._store.update_campaign(campaign_id, record)
-            return record
+            blocked["updated_at"] = utc_now()
+            return blocked
+        exhausted = _retry_exhausted_outcome(record)
+        if exhausted is not None:
+            return exhausted
         self._store.clear_control(campaign_id)
         record["pause_requested"] = False
         record["cancel_requested"] = False
@@ -205,3 +209,33 @@ def _build_identities_identified(identities: Any) -> bool:
             for identity in identities
         )
     )
+
+
+def _retry_exhausted_outcome(
+    record: dict[str, Any],
+) -> dict[str, Any] | None:
+    iteration = int(record["budget"]["consumed_iterations"]) + 1
+    configured = record["configured_experiments"]
+    if iteration > len(configured):
+        return None
+    maximum = int(configured[iteration - 1]["retry"]["max_attempts"])
+    attempts = sum(
+        item.get("iteration") == iteration for item in record["attempt_history"]
+    )
+    if attempts < maximum:
+        return None
+    exhausted = deepcopy(record)
+    exhausted["status"] = "retry_exhausted"
+    exhausted["failure"] = {
+        "code": "campaign_retry_exhausted",
+        "message": (
+            f"Iteration {iteration} exhausted its configured {maximum} attempts."
+        ),
+        "iteration": iteration,
+        "attempts_used": attempts,
+        "max_attempts": maximum,
+        "next_action": (
+            "Create a new campaign; resume cannot increase the saved retry allowance."
+        ),
+    }
+    return exhausted
