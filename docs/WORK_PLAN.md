@@ -33,8 +33,12 @@ The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
 the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
-Phase 5E Deployment Export and Predict Reload Boundary is implemented on its
-separate worker branch and remains unmerged. The first independent L4 audit
+Phase 5E Deployment Export and Predict Reload Boundary is complete and merged.
+PR #32 was squash-merged to `main` as
+`f372f5d2d5f01c96eb9b547bb5758c9c561e0836` from accepted exact head
+`cf0b71d86a3e490799c98e8f32a0f2652d6d660b`. The final independent L4 audit
+returned `PASS`, and required validation run `30188757140` succeeded. The
+first independent L4 audit
 returned `FAIL` at exact head
 `5364ff7a106f27975e649d44a3b0059509dc797e`: an older reload failure could
 overwrite a newer successful reload state, and reload/export failures were not
@@ -55,17 +59,17 @@ without hot-swap, exposes explicit idle reload, and preserves the prior bundle
 on corruption, incompatibility, recovery, running-state, or Active-race failure.
 Train/Model can create a checksum-verified immutable export only from the
 guarded current Active without changing Candidate, Active, or history. Phase 5D
-promotion and rollback remain unchanged. CLI, Campaign, leaderboard, the
-Agent-assisted Experiment Loop, retention, and executable packaging remain
-later slices.
+promotion and rollback remain unchanged. No-hot-swap, explicit idle reload,
+reload-failure preservation, and immutable current-Active-only export remain
+the Phase 5E contracts. CLI, Campaign, leaderboard, the Agent-assisted
+Experiment Loop, retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Preserve Phase 5E Draft PR #32 at the second repaired exact worker head for
-independent L4 re-audit. Keep both audit `FAIL` results and prior successful
-validations as historical evidence. Do not merge or declare audit PASS from the worker. Keep
-Phase 5F and later CLI, Campaign, leaderboard, Agent-assisted Experiment Loop,
-retention, and packaging work unstarted.
+Begin Phase 5F Headless Experiment Interface. It is the next active phase and
+has not started. Preserve both Phase 5E audit `FAIL` results, their repaired
+heads, and prior successful validations as historical evidence; do not rewrite
+or relabel those records.
 
 ## Active Blockers
 

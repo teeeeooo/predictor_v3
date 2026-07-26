@@ -29,6 +29,23 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5E post-merge closeout
+
+### Decision
+
+- Record final independent L4 audit `PASS` for accepted exact head
+  `cf0b71d86a3e490799c98e8f32a0f2652d6d660b`; required validation run
+  `30188757140` succeeded.
+- Record PR #32 squash merge to `main` as
+  `f372f5d2d5f01c96eb9b547bb5758c9c561e0836` and close Phase 5E.
+- Preserve the first two independent audit `FAIL` results and repaired heads
+  `5364ff7a106f27975e649d44a3b0059509dc797e` and
+  `f22d6e9526bc3c31d0775123a9614b860fadbf5b` as historical evidence.
+- Preserve no-hot-swap, explicit idle reload, reload-failure preservation, and
+  immutable current-Active-only deployment export. Phase 5F Headless Experiment
+  Interface is next and remains unstarted; Campaign, leaderboard, agent loop,
+  retention, and packaging remain out of scope.
+
 ## 2026-07-26 — Phase 5E second L4 audit repair
 
 ### Decision
