@@ -23,6 +23,8 @@ def parse_training_event(
         return "log", TrainingLogEvent(request.run_id, line)
 
     event_type = event.get("type")
+    if event_type == "training_started":
+        return "training_started", request
     if event_type == "progress":
         return "progress", TrainingProgress(
             run_id=event.get("run_id", request.run_id),

@@ -63,6 +63,10 @@ def emit_progress(
     )
 
 
+def emit_training_started(run_id: str) -> None:
+    emit({"type": "training_started", "run_id": run_id})
+
+
 def emit_result(
     request: TrainingRequest,
     status: str,
@@ -197,6 +201,7 @@ def run_production_training(
     """Run the production Core owner and persist its structured evidence."""
     from core.ml.training import train_all_models_with_analysis
 
+    emit_training_started(request.run_id)
     output = train_all_models_with_analysis(
         data_path=request.data_path,
         log_callback=log_callback,
@@ -270,6 +275,7 @@ def _run_dev_fast(request: TrainingRequest, temp_model_path: Path, args: argpars
         predict_delay_ms=args.dev_predict_delay_ms,
     )
     temp_request = replace(request, model_output_path=str(temp_model_path))
+    emit_training_started(request.run_id)
     result = backend(temp_request, log_callback=_emit_payload_log, progress_callback=_emit_payload_progress)
     if result.status != "complete":
         raise RuntimeError(result.message or "DEV fast training failed.")

@@ -1102,6 +1102,9 @@ Responsibility:
 - persist immutable run records and atomic current-version campaign records
   below the lifecycle workspace without caller-selected output paths
 - execute only explicitly configured bounded campaign experiments and attempts
+- treat the child job's structured Core-training-start acknowledgement as the
+  sole iteration-consumption event; accepted requests, adapter construction,
+  and process launch are preflight
 - preserve pause-after-current, cancel-current, resume, retry, and terminal
   evidence outside Core ML
 - serialize GUI, single-run, campaign, and resume writers through one
@@ -1109,8 +1112,15 @@ Responsibility:
   expose owner, process, timestamps/heartbeat, stage, run, and campaign
 - expose versioned JSON output and stable exit classes without treating natural
   language as the decision contract
+- derive identifiable clean/dirty build identity from the application
+  repository root rather than caller `cwd`; uncertain saved/current identity
+  blocks resume without mutating the stored campaign
+- construct headless services without Bootstrap publication; `validate` is pure
+  contract validation and `resolve` reads an existing generation only, while
+  validated training mutation explicitly initializes Bootstrap when required
 
-The headless adapter has no promotion, Definition publication, Active mutation,
+The headless adapter has no promotion, caller-triggered Definition publication,
+Active mutation,
 deployment replacement, cleanup, arbitrary-code, arbitrary-output, or budget
 extension command. GUI keeps its visible training flow; its data selection uses
 the shared resolver, and a concise label projects external Campaign status.

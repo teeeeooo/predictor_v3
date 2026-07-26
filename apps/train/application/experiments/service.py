@@ -14,13 +14,11 @@ from apps.train.application.experiments.contracts import (
 )
 from apps.train.application.experiments.store import ExperimentStore
 from apps.train.application.experiments.records import (
+    build_identity_payload,
     current_revision,
     file_sha256,
-    result_payload,
-    result_status,
-    run_record,
-    utc_now,
 )
+from apps.train.application.experiments.run_persistence import ExperimentRunRecorder
 from apps.train.application.experiments.request_factory import (
     build_training_request,
     gui_specification,
@@ -39,11 +37,15 @@ class ExperimentApplicationService:
         lifecycle_root: str | Path,
         revision_provider=None,  # noqa: ANN001
         derived_snapshot_provider=None,  # noqa: ANN001
+        runtime_initializer=None,  # noqa: ANN001
+        runtime_available=None,  # noqa: ANN001
     ) -> None:
         self._lifecycle = lifecycle
         self._store = ExperimentStore(lifecycle_root)
         self._revision_provider = revision_provider or current_revision
         self._derived_snapshot_provider = derived_snapshot_provider
+        self._runtime_initializer = runtime_initializer
+        self._runtime_available = runtime_available
 
     @property
     def store(self) -> ExperimentStore:
@@ -58,10 +60,36 @@ class ExperimentApplicationService:
         resolved = resolve_specification(
             specification, campaign=campaign_configuration
         )
-        self._request_from_resolved(
-            resolved, run_id="validation-only", candidate_id="validation-only"
-        )
         return resolved
+
+    def resolve_current(
+        self,
+        specification: dict[str, Any],
+        *,
+        campaign_configuration: dict[str, Any] | None = None,
+    ) -> ResolvedExperiment:
+        resolved = self.validate(
+            specification, campaign_configuration=campaign_configuration
+        )
+        if self._runtime_available is not None and not self._runtime_available():
+            raise ExperimentContractError(
+                "definition_generation_unavailable",
+                "No current Definition generation exists; resolve is read-only.",
+            )
+        self.preflight(resolved)
+        return resolved
+
+    def preflight(self, resolved: ResolvedExperiment) -> TrainingRequest:
+        return self._request_from_resolved(
+            resolved, run_id="preflight-only", candidate_id="preflight-only"
+        )
+
+    def ensure_runtime_initialized(self) -> None:
+        if self._runtime_initializer is not None:
+            self._runtime_initializer()
+
+    def has_current_runtime(self) -> bool:
+        return self._runtime_available is None or self._runtime_available()
 
     def gui_specification(self, data_path: str) -> dict[str, Any]:
         return gui_specification(self._lifecycle.registry_snapshot(), data_path)
@@ -103,6 +131,8 @@ class ExperimentApplicationService:
                 "run_identity_conflict",
                 f"Immutable experiment run identity already exists: {identity}.",
             )
+        self.preflight(resolved)
+        self.ensure_runtime_initialized()
         request = self._request_from_resolved(
             resolved,
             run_id=identity,
@@ -111,69 +141,26 @@ class ExperimentApplicationService:
             campaign_id=campaign_id,
         )
         external = callbacks or {}
-        accepted_run = False
-        log_reference = None
-
-        def accepted(_request: TrainingRequest) -> None:
-            nonlocal accepted_run, log_reference
-            self._store.write_run(
-                identity,
-                run_record(
-                    request,
-                    resolved,
-                    status="running",
-                    attempt=attempt,
-                    revision=self._revision_provider(),
-                ),
-            )
-            accepted_run = True
-            log_reference = self._store.append_run_event(identity, {
-                "at": utc_now(),
-                "level": "info",
-                "message": "Training run accepted.",
-            })
-            _notify(external.get("accepted_callback"), request)
-
-        def terminal(result: TrainingResult) -> None:
-            if not accepted_run:
-                _notify(external.get("failed_callback"), result)
-                return
-            record = self._store.read_run(identity)
-            record.update(
-                {
-                    "status": result_status(result),
-                    "finished_at": utc_now(),
-                    "result": result_payload(
-                        result, log_reference=log_reference
-                    ),
-                }
-            )
-            self._store.update_run(identity, record)
-            callback_name = {
-                "complete": "finished_callback",
-                "cancelled": "cancelled_callback",
-            }.get(result.status, "failed_callback")
-            _notify(external.get(callback_name), result)
-
-        def log_event(event) -> None:  # noqa: ANN001
-            nonlocal log_reference
-            if accepted_run:
-                log_reference = self._store.append_run_event(identity, {
-                    "at": utc_now(),
-                    "level": event.level,
-                    "message": event.message,
-                })
-            _notify(external.get("log_callback"), event)
+        recorder = ExperimentRunRecorder(
+            self._store,
+            identity=identity,
+            request=request,
+            resolved=resolved,
+            attempt=attempt,
+            build_identity=self._current_build_identity(),
+            external=external,
+        )
 
         return self._lifecycle.start(
             request,
-            accepted_callback=accepted,
+            accepted_callback=recorder.accepted,
+            started_callback=recorder.training_started,
             status_callback=external.get("status_callback"),
-            log_callback=log_event,
+            log_callback=recorder.log_event,
             progress_callback=external.get("progress_callback"),
-            finished_callback=terminal,
-            failed_callback=terminal,
-            cancelled_callback=terminal,
+            finished_callback=recorder.terminal,
+            failed_callback=recorder.terminal,
+            cancelled_callback=recorder.terminal,
         )
 
     def inspect_run(self, run_id: str) -> dict[str, Any]:
@@ -201,7 +188,7 @@ class ExperimentApplicationService:
             "preprocessing": request.preprocess_version,
             "metric_contract": resolved.payload["evaluation"]["metric_contract"],
             "data_sha256": file_sha256(request.data_path),
-            "build_revision": self._revision_provider(),
+            "build_revision": self._current_build_identity(),
         }
 
     def training_request(
@@ -240,7 +227,9 @@ class ExperimentApplicationService:
             derived_snapshot_provider=self._derived_snapshot_provider,
         )
 
-
-def _notify(callback, payload) -> None:  # noqa: ANN001
-    if callback is not None:
-        callback(payload)
+    def _current_build_identity(self) -> dict[str, Any]:
+        try:
+            value = self._revision_provider()
+        except Exception:
+            value = None
+        return build_identity_payload(value)

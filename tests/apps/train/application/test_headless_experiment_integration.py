@@ -46,6 +46,7 @@ def test_real_headless_subprocess_reuses_candidate_publication_and_cli_read(
     assert output["schema_version"] == "predictor_v3.experiment_output.v1"
     assert output["outcome"] == "success"
     assert output["message"] != output["diagnostics"]
+    assert output["data"]["training_started"] is True
     assert output["data"]["result"]["candidate_reference"] == (
         "candidate-real-headless-run"
     )
@@ -65,7 +66,7 @@ def test_real_headless_subprocess_reuses_candidate_publication_and_cli_read(
     ).is_file()
 
 
-def test_campaign_control_cancels_real_current_process_and_remains_resumable(
+def test_campaign_cancel_before_real_training_start_preserves_budget_and_evidence(
     tmp_path,
 ):
     campaign_id = "real-cancel-campaign"
@@ -109,8 +110,11 @@ def test_campaign_control_cancels_real_current_process_and_remains_resumable(
     worker.join(timeout=15)
 
     assert not worker.is_alive()
-    assert result["record"]["status"] == "cancelled_resumable"
-    assert result["record"]["budget"]["consumed_iterations"] == 1
+    assert result["record"]["status"] == "failed_resumable"
+    assert result["record"]["failure"]["code"] == "training_start_failed"
+    assert result["record"]["budget"]["consumed_iterations"] == 0
+    assert result["record"]["completed_runs"] == []
+    assert result["record"]["attempt_history"][0]["training_started"] is False
     assert not (lifecycle_root / "candidates").exists()
     evidence = (
         lifecycle_root

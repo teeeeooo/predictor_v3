@@ -79,7 +79,6 @@ class TrainingLifecycleService:
     @property
     def is_running(self) -> bool:
         return self._is_running
-
     @property
     def last_result(self) -> TrainingResult | None:
         return self._last_result
@@ -214,20 +213,19 @@ class TrainingLifecycleService:
                 snapshot.to_payload(), ensure_ascii=False, separators=(",", ":")
             ),
         )
-
     def _start_execution(self, request: TrainingRequest) -> TrainingResult | None:
-        if self._execution is None and self._execution_factory is not None:
-            self._execution = self._execution_factory()
-        if self._execution is None:
-            result = replace(
-                _error_result(request, "Training execution adapter is not configured."),
-                candidate_id=request.candidate_id,
-            )
-            self._finish("failed", result)
-            return result
         self._is_running = True
         try:
+            if self._execution is None and self._execution_factory is not None:
+                self._execution = self._execution_factory()
+            if self._execution is None:
+                result = replace(_error_result(
+                    request, "Training execution adapter is not configured."
+                ), candidate_id=request.candidate_id)
+                self._finish("failed", result)
+                return result
             self._execution.start(request, TrainingExecutionCallbacks(
+                started=self._handle_training_started,
                 log=lambda event: _notify(self._callbacks.get("log_callback"), event),
                 progress=self._handle_progress,
                 finished=lambda result: self._finish("finished", result),
@@ -239,7 +237,11 @@ class TrainingLifecycleService:
             self._finish("failed", result)
             return result
         return None
-
+    def _handle_training_started(self, request: TrainingRequest) -> None:
+        if self._active_request is None or request.run_id != self._active_request.run_id:
+            raise RuntimeError("Training-start acknowledgement mismatch.")
+        self._update_execution_stage("training")
+        _notify(self._callbacks.get("started_callback"), request)
     def _handle_progress(self, progress: TrainingProgress) -> None:
         self._update_execution_stage("training")
         _notify(self._callbacks.get("progress_callback"), progress)

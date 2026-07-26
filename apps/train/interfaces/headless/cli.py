@@ -10,7 +10,11 @@ from apps.common.model_lifecycle import (
     default_model_lifecycle_root,
 )
 from apps.train.application.experiments.campaign import CampaignApplicationService
-from apps.train.application.experiments.contracts import ExperimentContractError, load_specification
+from apps.train.application.experiments.contracts import (
+    ExperimentContractError,
+    load_specification,
+    resolve_specification,
+)
 from apps.train.application.experiments.execution_lock import (
     execution_lock_is_held,
     read_lock_metadata,
@@ -103,13 +107,32 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "models":
         return _models(args, lifecycle_root)
 
+    specification = None
+    resolved = None
+    if args.command in {"validate", "resolve", "run", "campaign-start"}:
+        specification = load_specification(args.specification)
+        resolved = resolve_specification(specification)
+    if args.command == "validate":
+        assert resolved is not None
+        emit(
+            args.command,
+            "success",
+            "Experiment specification is valid.",
+            data={
+                "fingerprint": resolved.fingerprint,
+                "resolved_specification": resolved.payload,
+            },
+        )
+        return EXIT_SUCCESS
+
     campaign_id = getattr(args, "campaign_id", "") or ""
     service = build_headless_experiment_service(
         lifecycle_root=lifecycle_root,
         campaign_id=campaign_id,
     )
-    if args.command in {"validate", "resolve"}:
-        resolved = service.validate(load_specification(args.specification))
+    if args.command == "resolve":
+        assert specification is not None
+        resolved = service.resolve_current(specification)
         emit(
             args.command,
             "success",
@@ -121,9 +144,10 @@ def _dispatch(args: argparse.Namespace) -> int:
         )
         return EXIT_SUCCESS
     if args.command == "run":
+        assert resolved is not None
         run_id = args.run_id or f"run-{uuid4().hex}"
         result = service.run(
-            load_specification(args.specification),
+            resolved,
             run_id=run_id,
             execution_owner="headless-single",
         )
@@ -148,8 +172,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         emit(args.command, record["status"], "Experiment run finished.", data=record)
         return run_exit(record["status"])
     if args.command == "campaign-start":
+        assert specification is not None
         record = CampaignApplicationService(service).start(
-            load_specification(args.specification),
+            specification,
             campaign_id=args.campaign_id,
         )
         emit(args.command, record["status"], "Campaign execution returned.", data=record)

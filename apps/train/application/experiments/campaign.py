@@ -12,7 +12,11 @@ from apps.train.application.experiments.contracts import (
     ResolvedExperiment,
     resolve_specification,
 )
-from apps.train.application.experiments.records import utc_now
+from apps.train.application.experiments.campaign_execution import execute_campaign
+from apps.train.application.experiments.records import (
+    build_identity_is_identified,
+    utc_now,
+)
 from apps.train.application.experiments.service import ExperimentApplicationService
 
 
@@ -35,6 +39,9 @@ class CampaignApplicationService:
             resolve_specification(item, campaign=_campaign_defaults(base.payload))
             for item in configured
         )
+        for resolved in resolved_runs:
+            self._experiments.preflight(resolved)
+        self._experiments.ensure_runtime_initialized()
         identity = campaign_id or f"campaign-{uuid4().hex}"
         record = {
             "schema_version": CAMPAIGN_RECORD_VERSION,
@@ -66,6 +73,24 @@ class CampaignApplicationService:
     def status(self, campaign_id: str) -> dict[str, Any]:
         record = self._store.read_campaign(campaign_id)
         self._require_supported(record)
+        current = record.get("current") or {}
+        run_id = current.get("run_id")
+        if run_id and not current.get("training_started"):
+            try:
+                run = self._experiments.inspect_run(run_id)
+            except FileNotFoundError:
+                pass
+            else:
+                if run.get("training_started"):
+                    record = deepcopy(record)
+                    record["current"]["training_started"] = True
+                    record["current"]["training_started_at"] = run.get(
+                        "training_started_at", ""
+                    )
+                    record["budget"]["consumed_iterations"] = max(
+                        record["budget"]["consumed_iterations"],
+                        int(record["current"]["iteration"]),
+                    )
         return record
 
     def pause(self, campaign_id: str) -> dict[str, Any]:
@@ -96,6 +121,19 @@ class CampaignApplicationService:
             raise ExperimentContractError(
                 "campaign_not_resumable", "Campaign is not in a resumable state."
             )
+        if not self._experiments.has_current_runtime():
+            blocked = deepcopy(record)
+            blocked["status"] = "blocked"
+            blocked["failure"] = {
+                "code": "resume_definition_generation_unavailable",
+                "message": (
+                    "The saved campaign cannot resume without its current "
+                    "Definition generation."
+                ),
+                "next_action": "Create a new campaign from an initialized workspace.",
+            }
+            blocked["updated_at"] = utc_now()
+            return blocked
         resolved = tuple(
             self._experiments.validate(item)
             for item in record["configured_experiments"]
@@ -103,6 +141,23 @@ class CampaignApplicationService:
         current_identity = [
             self._experiments.execution_identity(item) for item in resolved
         ]
+        if not _build_identities_identified(record["contract_identity"]) or not (
+            _build_identities_identified(current_identity)
+        ):
+            blocked = deepcopy(record)
+            blocked["status"] = "blocked"
+            blocked["failure"] = {
+                "code": "resume_build_identity_unavailable",
+                "message": (
+                    "The saved and current repository build identities must both "
+                    "be identifiable before this campaign can resume."
+                ),
+                "next_action": (
+                    "Create a new campaign in an identifiable repository build."
+                ),
+            }
+            blocked["updated_at"] = utc_now()
+            return blocked
         if current_identity != record["contract_identity"]:
             record["status"] = "blocked"
             record["failure"] = {
@@ -123,103 +178,7 @@ class CampaignApplicationService:
     def _execute(
         self, campaign_id: str, resolved_runs: tuple[ResolvedExperiment, ...]
     ) -> dict[str, Any]:
-        record = self.status(campaign_id)
-        budget = record["budget"]["configured_iterations"]
-        index = record["budget"]["consumed_iterations"]
-        while index < min(len(resolved_runs), budget):
-            if self._store.read_control(campaign_id) in {"pause", "cancel"}:
-                record["status"] = "paused"
-                record["pause_requested"] = True
-                break
-            experiment = resolved_runs[index]
-            max_attempts = experiment.payload["retry"]["max_attempts"]
-            terminal_status = ""
-            for attempt in range(1, max_attempts + 1):
-                run_id = f"{campaign_id}-iteration-{index + 1}-attempt-{attempt}"
-                record["status"] = "running"
-                record["current"] = {
-                    "iteration": index + 1, "attempt": attempt, "run_id": run_id
-                }
-                record["updated_at"] = utc_now()
-                self._store.update_campaign(campaign_id, record)
-                accepted = []
-                result = self._experiments.run(
-                    experiment,
-                    run_id=run_id,
-                    execution_owner="campaign",
-                    campaign_id=campaign_id,
-                    attempt=attempt,
-                    callbacks={"accepted_callback": accepted.append},
-                )
-                if result is not None and result.status == "lock_conflict":
-                    record["status"] = "lock_conflict"
-                    record["failure"] = {
-                        "code": "execution_lock_conflict",
-                        "message": result.message,
-                        "diagnostics": result.summary,
-                    }
-                    record["current"] = None
-                    self._store.update_campaign(campaign_id, record)
-                    return record
-                if result is not None and not accepted:
-                    record["status"] = "failed_resumable"
-                    record["failure"] = {
-                        "code": "training_preflight_failed",
-                        "message": result.message,
-                    }
-                    record["current"] = None
-                    self._store.update_campaign(campaign_id, record)
-                    return record
-                run = self._experiments.inspect_run(run_id)
-                terminal_status = run["status"]
-                record["attempt_history"].append({
-                    "iteration": index + 1,
-                    "attempt": attempt,
-                    "run_id": run_id,
-                    "status": terminal_status,
-                })
-                if accepted and not any(
-                    item["iteration"] == index + 1
-                    for item in record["completed_runs"]
-                ):
-                    record["budget"]["consumed_iterations"] = index + 1
-                if terminal_status in {"success", "partial", "cancelled"}:
-                    break
-                if (
-                    attempt >= max_attempts
-                    or terminal_status
-                    not in experiment.payload["retry"]["retryable_statuses"]
-                ):
-                    break
-            record["completed_runs"].append({
-                "iteration": index + 1,
-                "run_id": run_id,
-                "status": terminal_status,
-            })
-            record["current"] = None
-            record["updated_at"] = utc_now()
-            control = self._store.read_control(campaign_id)
-            if terminal_status == "cancelled" or control == "cancel":
-                record["status"] = "cancelled_resumable"
-                record["cancel_requested"] = True
-                break
-            if control == "pause":
-                record["status"] = "paused"
-                record["pause_requested"] = True
-                break
-            if terminal_status == "training_failure":
-                record["status"] = "failed_resumable"
-                break
-            index += 1
-        else:
-            record["status"] = (
-                "completed"
-                if index >= len(resolved_runs)
-                else "paused_budget_exhausted"
-            )
-        record["updated_at"] = utc_now()
-        self._store.update_campaign(campaign_id, record)
-        return record
+        return execute_campaign(self._experiments, campaign_id, resolved_runs)
 
     @staticmethod
     def _require_supported(record: dict[str, Any]) -> None:
@@ -234,3 +193,15 @@ def _campaign_defaults(payload: dict[str, Any]) -> dict[str, Any]:
     defaults = deepcopy(payload)
     defaults["campaign"]["experiments"] = []
     return defaults
+
+
+def _build_identities_identified(identities: Any) -> bool:
+    return (
+        isinstance(identities, list)
+        and bool(identities)
+        and all(
+            isinstance(identity, dict)
+            and build_identity_is_identified(identity.get("build_revision"))
+            for identity in identities
+        )
+    )

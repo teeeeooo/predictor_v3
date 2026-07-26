@@ -1317,6 +1317,17 @@ Current implementation boundary (2026-07-26):
   when Definition/runtime, training, preprocessing, metric, specification, or
   build identity changes. Phase 5H historical adapters and immutable snapshot
   policy remain deferred.
+- The first independent audit of head
+  `b5ce141711c3660e2ce38b738f58f478a333d251` returned `FAIL`: campaign
+  accounting used request acceptance instead of actual training start, build
+  identity depended on caller `cwd` and treated unavailable identities as
+  comparable, and read-only validation/resolution could publish Bootstrap.
+- The bounded repair uses a child Core-training-start acknowledgement before
+  consuming one iteration, derives structured build identity from the
+  application repository root and blocks uncertain resume without rewriting
+  saved evidence, and keeps service construction plus `validate`/`resolve`
+  read-only. Only a validated `run` or `campaign-start` mutation path may invoke
+  the existing explicit Bootstrap initializer.
 
 ### Phase 5G — Agent-assisted campaign loop
 

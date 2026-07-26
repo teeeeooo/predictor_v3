@@ -16,6 +16,8 @@ from apps.train.application.experiments.contracts import (
 )
 from apps.train.state.training_run_state import TrainingRequest, TrainingResult
 
+APPLICATION_REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+
 
 def run_record(
     request: TrainingRequest,
@@ -23,7 +25,7 @@ def run_record(
     *,
     status: str,
     attempt: int,
-    revision: str,
+    revision: Any,
 ) -> dict[str, Any]:
     return {
         "schema_version": RUN_RECORD_VERSION,
@@ -32,6 +34,8 @@ def run_record(
         "campaign_id": request.campaign_id,
         "attempt": attempt,
         "status": status,
+        "training_started": False,
+        "training_started_at": "",
         "started_at": utc_now(),
         "finished_at": "",
         "resolved_specification": resolved.payload,
@@ -48,7 +52,7 @@ def run_record(
             "data_request": resolved.payload["data"],
             "data_sha256": file_sha256(request.data_path),
             "evaluation_request": resolved.payload["evaluation"],
-            "build_revision": revision,
+            "build_revision": build_identity_payload(revision),
             "python": platform.python_version(),
         },
         "result": None,
@@ -85,44 +89,102 @@ def result_status(result: TrainingResult) -> str:
     return "training_failure"
 
 
-def current_revision() -> str:
+def current_revision(
+    repository_root: str | Path = APPLICATION_REPOSITORY_ROOT,
+) -> dict[str, Any]:
+    root = Path(repository_root).resolve()
     try:
         head = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+            ["git", "-C", str(root), "rev-parse", "--verify", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
             timeout=2,
         ).stdout.strip()
         status = subprocess.run(
-            ["git", "status", "--porcelain=v1", "-z"],
+            ["git", "-C", str(root), "status", "--porcelain=v1", "-z"],
             check=True,
             capture_output=True,
             timeout=2,
         ).stdout
         if not status:
-            return head
+            return {
+                "status": "identified",
+                "revision": head,
+                "dirty": False,
+            }
         digest = hashlib.sha256(status)
         digest.update(subprocess.run(
-            ["git", "diff", "--binary", "HEAD"],
+            ["git", "-C", str(root), "diff", "--binary", "HEAD"],
             check=True,
             capture_output=True,
             timeout=5,
         ).stdout)
         untracked = subprocess.run(
-            ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+            [
+                "git", "-C", str(root), "ls-files", "--others",
+                "--exclude-standard", "-z",
+            ],
             check=True,
             capture_output=True,
             timeout=2,
         ).stdout.split(b"\0")
         for raw_path in sorted(item for item in untracked if item):
             digest.update(raw_path)
-            path = Path(raw_path.decode("utf-8", errors="surrogateescape"))
+            path = root / raw_path.decode("utf-8", errors="surrogateescape")
             if path.is_file() and path.suffix in {".py", ".pyi", ".toml", ".cfg"}:
                 digest.update(path.read_bytes())
-        return f"{head}+dirty.{digest.hexdigest()}"
+        return {
+            "status": "identified",
+            "revision": f"{head}+dirty.{digest.hexdigest()}",
+            "dirty": True,
+        }
     except (OSError, subprocess.SubprocessError):
-        return "unavailable"
+        return {
+            "status": "unavailable",
+            "revision": None,
+            "dirty": None,
+            "reason": "repository_revision_unavailable",
+        }
+
+
+def build_identity_payload(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        status = value.get("status")
+        revision = value.get("revision")
+        if status == "identified" and isinstance(revision, str) and revision:
+            return {
+                "status": "identified",
+                "revision": revision,
+                "dirty": bool(value.get("dirty", False)),
+            }
+        return {
+            "status": "unavailable",
+            "revision": None,
+            "dirty": None,
+            "reason": str(value.get("reason", "repository_revision_unavailable")),
+        }
+    if isinstance(value, str) and value and value != "unavailable":
+        return {
+            "status": "identified",
+            "revision": value,
+            "dirty": "+dirty." in value,
+        }
+    return {
+        "status": "unavailable",
+        "revision": None,
+        "dirty": None,
+        "reason": "repository_revision_unavailable",
+    }
+
+
+def build_identity_is_identified(value: Any) -> bool:
+    normalized = build_identity_payload(value)
+    return (
+        normalized["status"] == "identified"
+        and isinstance(normalized["revision"], str)
+        and bool(normalized["revision"])
+    )
 
 
 def utc_now() -> str:

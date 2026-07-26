@@ -17,13 +17,19 @@
 
 ## Current Slice
 
-Phase 5F Headless Experiment Interface is implemented on the worker branch as
-one owner-aligned source slice and is pending independent exact-head audit.
+Phase 5F Headless Experiment Interface remains on the same worker branch and
+Draft PR #33. The first independent audit returned `FAIL` at exact head
+`b5ce141711c3660e2ce38b738f58f478a333d251`; validation run `30193572243`
+remains successful historical evidence. Its three blocking findings are
+repaired and the branch is pending independent exact-head re-audit.
 The implementation establishes the shared strict Experiment Specification,
 GUI/headless request parity, versioned machine output, single-run and explicit
 campaign execution, pause/cancel/resume/retry records, current-version
 fail-closed resume identity, and a workspace-wide GUI/headless/campaign writer
-lock. It reuses Phase 5B Candidate/Active lifecycle, Phase 5C result artifacts,
+lock. Iterations now consume only after child Core-training-start
+acknowledgement, build identity is repository-owned and uncertain resume blocks
+without record mutation, and validate/resolve composition is read-only. It
+reuses Phase 5B Candidate/Active lifecycle, Phase 5C result artifacts,
 Phase 5D explicit promotion, and Phase 5E export/reload boundaries. No audit
 PASS is declared. Phase 5G agent selection/ranking/recommendation and Phase 5H
 full snapshot/compatibility/retention work remain unstarted.
@@ -77,10 +83,10 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Run the independent exact-head audit against the open Phase 5F Draft PR. Keep
-the PR unmerged and do not begin Phase 5G or Phase 5H. Preserve both Phase 5E
-audit `FAIL` results, their repaired heads, and prior successful validations as
-historical evidence.
+Run an independent exact-head re-audit against the repaired open Phase 5F Draft
+PR. Keep the PR unmerged and do not begin Phase 5G or Phase 5H. Preserve the
+Phase 5F audit `FAIL` at `b5ce141711c3660e2ce38b738f58f478a333d251` and
+validation run `30193572243` as historical evidence.
 
 ## Active Blockers
 

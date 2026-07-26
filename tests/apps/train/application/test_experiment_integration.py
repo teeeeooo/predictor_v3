@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 import joblib
+import pytest
 
 from apps.common.model_lifecycle import ModelLifecycleRepository
 from apps.train.application.experiments.campaign import CampaignApplicationService
@@ -34,6 +35,7 @@ class _DynamicArtifactExecution:
         snapshot = ModelRegistrySnapshot.from_payload(
             json.loads(request.registry_payload_json)
         )
+        callbacks.started(request)
         if self.terminal == "finished":
             joblib.dump(artifact_for(snapshot), request.model_output_path)
         self.before_terminal()
@@ -47,6 +49,21 @@ class _DynamicArtifactExecution:
             callbacks,
             self.terminal if self.terminal in {"finished", "cancelled"} else "failed",
         )(result)
+
+    def cancel(self):
+        return False
+
+    def dispose(self):
+        return None
+
+
+class _StartFailureExecution:
+    @property
+    def is_running(self):
+        return False
+
+    def start(self, _request, _callbacks):  # noqa: ANN001
+        raise OSError("child process creation failed")
 
     def cancel(self):
         return False
@@ -111,7 +128,11 @@ def test_single_run_persists_resolved_contract_candidate_and_phase5c_artifacts(
     candidate = repository.read_candidate("candidate-headless-complete")
     assert record["status"] == "success"
     assert record["resolved_specification"]["optuna"]["trials"] == 1
-    assert record["contract_identity"]["build_revision"] == "test-head"
+    assert record["contract_identity"]["build_revision"] == {
+        "status": "identified",
+        "revision": "test-head",
+        "dirty": False,
+    }
     assert record["result"]["candidate_reference"] == candidate.manifest.candidate_id
     assert (candidate.path / "training_result.json").is_file()
     assert (candidate.path / "training_report.xlsx").is_file()
@@ -274,6 +295,7 @@ def test_campaign_bounded_retry_preserves_attempts_without_extra_budget(tmp_path
         "training_failure",
         "success",
     ]
+    assert all(item["training_started"] for item in record["attempt_history"])
     assert len(repository.list_candidates()) == 1
     assert (
         repository.run_evidence_path
@@ -303,6 +325,105 @@ def test_campaign_cancel_is_resumable_and_does_not_publish_candidate(tmp_path):
     assert record["budget"]["consumed_iterations"] == 1
     assert repository.list_candidates() == ()
     assert record["attempt_history"][0]["status"] == "cancelled"
+    assert record["attempt_history"][0]["training_started"]
+
+
+@pytest.mark.parametrize("failure_stage", ("adapter", "process"))
+def test_campaign_spawn_failure_preserves_budget_and_resume_uses_next_attempt(
+    tmp_path, failure_stage
+):
+    factories = {"count": 0}
+
+    def execution_factory():
+        factories["count"] += 1
+        if factories["count"] == 1:
+            if failure_stage == "adapter":
+                raise RuntimeError("execution adapter initialization failed")
+            return _StartFailureExecution()
+        return _DynamicArtifactExecution()
+
+    service, _snapshot, repository = _service(tmp_path, execution_factory)
+    data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
+    specification = _spec(
+        data,
+        campaign={
+            "max_iterations": 1,
+            "experiments": [{"experiment": {"name": "spawn-recovery"}}],
+        },
+    )
+    campaigns = CampaignApplicationService(service)
+
+    failed = campaigns.start(
+        specification, campaign_id=f"campaign-spawn-{failure_stage}"
+    )
+
+    assert failed["status"] == "failed_resumable"
+    assert failed["failure"]["code"] == "training_start_failed"
+    assert failed["budget"]["consumed_iterations"] == 0
+    assert failed["completed_runs"] == []
+    assert failed["attempt_history"] == [{
+        "iteration": 1,
+        "attempt": 1,
+        "run_id": f"campaign-spawn-{failure_stage}-iteration-1-attempt-1",
+        "status": "training_failure",
+        "training_started": False,
+        "consumed_iteration": False,
+    }]
+    assert service.inspect_run(
+        f"campaign-spawn-{failure_stage}-iteration-1-attempt-1"
+    )["training_started"] is False
+    assert repository.list_candidates() == ()
+    assert repository.read_active(optional=True) is None
+
+    resumed = campaigns.resume(f"campaign-spawn-{failure_stage}")
+
+    assert resumed["status"] == "completed"
+    assert resumed["budget"]["consumed_iterations"] == 1
+    assert [item["attempt"] for item in resumed["attempt_history"]] == [1, 2]
+    assert resumed["attempt_history"][1]["training_started"]
+    assert len(repository.list_candidates()) == 1
+
+
+def test_campaign_status_reconciles_durable_run_start_after_record_update_gap(
+    tmp_path,
+):
+    service, _snapshot, _repository = _service(
+        tmp_path, lambda: _DynamicArtifactExecution()
+    )
+    data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
+    specification = _spec(
+        data,
+        campaign={
+            "max_iterations": 1,
+            "experiments": [{"experiment": {"name": "start-reconciliation"}}],
+        },
+    )
+    campaigns = CampaignApplicationService(service)
+    completed = campaigns.start(
+        specification, campaign_id="campaign-start-reconciliation"
+    )
+    run_id = completed["completed_runs"][0]["run_id"]
+    simulated_gap = campaigns.status("campaign-start-reconciliation")
+    simulated_gap["status"] = "running"
+    simulated_gap["budget"]["consumed_iterations"] = 0
+    simulated_gap["current"] = {
+        "iteration": 1,
+        "attempt": 1,
+        "run_id": run_id,
+        "training_started": False,
+        "training_started_at": "",
+    }
+    service.store.update_campaign(
+        "campaign-start-reconciliation", simulated_gap
+    )
+
+    projected = campaigns.status("campaign-start-reconciliation")
+    persisted = service.store.read_campaign("campaign-start-reconciliation")
+
+    assert projected["current"]["training_started"] is True
+    assert projected["budget"]["consumed_iterations"] == 1
+    assert persisted["current"]["training_started"] is False
+    assert persisted["budget"]["consumed_iterations"] == 0
 
 
 def test_resume_fails_closed_when_current_build_identity_changes(tmp_path):
@@ -340,3 +461,60 @@ def test_resume_fails_closed_when_current_build_identity_changes(tmp_path):
 
     assert blocked["status"] == "blocked"
     assert blocked["failure"]["code"] == "resume_contract_changed"
+
+
+@pytest.mark.parametrize(
+    "saved_revision", ("unavailable", "head-a", "head-missing")
+)
+def test_resume_unavailable_build_identity_is_blocked_without_record_mutation(
+    tmp_path, saved_revision
+):
+    holder = {}
+    service, _snapshot, _repository = _service(
+        tmp_path,
+        lambda: _DynamicArtifactExecution(
+            before_terminal=lambda: holder["service"].store.request_control(
+                "campaign-unavailable-build", "pause"
+            )
+        ),
+        revision=saved_revision,
+    )
+    holder["service"] = service
+    data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
+    specification = _spec(
+        data,
+        campaign={
+            "max_iterations": 2,
+            "experiments": [
+                {"experiment": {"name": "one"}},
+                {"experiment": {"name": "two"}},
+            ],
+        },
+    )
+    campaigns = CampaignApplicationService(service)
+    assert campaigns.start(
+        specification, campaign_id="campaign-unavailable-build"
+    )["status"] == "paused"
+    record_path = (
+        service.store.campaigns
+        / "campaign-unavailable-build"
+        / "record.json"
+    )
+    if saved_revision == "head-missing":
+        record = campaigns.status("campaign-unavailable-build")
+        for identity in record["contract_identity"]:
+            identity.pop("build_revision")
+        service.store.update_campaign("campaign-unavailable-build", record)
+    elif saved_revision != "unavailable":
+        def unavailable_revision():
+            raise RuntimeError("revision lookup failed")
+
+        service._revision_provider = unavailable_revision
+    before = record_path.read_bytes()
+
+    blocked = campaigns.resume("campaign-unavailable-build")
+
+    assert blocked["status"] == "blocked"
+    assert blocked["failure"]["code"] == "resume_build_identity_unavailable"
+    assert "Create a new campaign" in blocked["failure"]["next_action"]
+    assert record_path.read_bytes() == before

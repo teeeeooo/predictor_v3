@@ -18,6 +18,7 @@ from apps.train.state.training_run_state import (
 class TrainingExecutionCallbacks:
     """Callbacks used by an outbound training execution adapter."""
 
+    started: Callable[[TrainingRequest], None]
     log: Callable[[TrainingLogEvent], None]
     progress: Callable[[TrainingProgress], None]
     finished: Callable[[TrainingResult], None]

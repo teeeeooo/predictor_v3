@@ -23,9 +23,14 @@ python3 -B app_experiment.py lock-status
 python3 -B app_experiment.py models
 ```
 
-`validate` and `resolve` do not create run/campaign/Candidate records or mutate
-Active state. Status, result, lock, and model reads remain available while a
-writer owns training.
+`validate` performs pure contract/default/safety validation. `resolve` reads an
+existing current Definition generation and returns a structured validation
+block when none exists. Service construction and both commands create no
+generation, active-generation pointer, projection, lifecycle record, Candidate,
+Active change, or writer-lock residue. A validated `run` or `campaign-start`
+enters the mutation boundary and may invoke the existing Bootstrap initializer.
+Status, result, lock, and model reads remain available while a writer owns
+training.
 
 ## Exit status
 
@@ -69,8 +74,15 @@ A Phase 5F campaign runs only the ordered objects in `campaign.experiments`.
 - Pause finishes the current run and stops before the next.
 - Cancel terminates the current child process, publishes no incomplete
   Candidate, preserves safe terminal evidence, and remains resumable.
-- Retry records another attempt for the same consumed iteration and is bounded.
-- Lock conflict and preflight failure consume no iteration or attempt.
+- Retry records another attempt identity for the same iteration and is bounded.
+- Only the child job's structured Core-training-start acknowledgement consumes
+  an iteration. Success, partial, failure, or cancellation after that event
+  consumes it exactly once.
+- Lock conflict consumes neither iteration nor attempt. Adapter/process-start
+  failure preserves a non-started attempt and diagnostics, consumes no
+  iteration, and remains explicitly resumable with the original budget.
 - Resume reuses saved resolved contracts. Any specification,
   Definition/runtime, training, preprocessing, metric, or build identity
-  mismatch returns a structured blocked state.
+  mismatch returns a structured blocked state. Missing or uncertain saved or
+  current build identity also blocks, never succeeds because two fallback
+  strings compare equal, and does not rewrite existing campaign evidence.

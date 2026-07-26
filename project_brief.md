@@ -19,8 +19,11 @@ Train/Model UI/UX is complete. The user accepted repaired head
 `main` as `78e9d097693c3e3b8c23d2ed18dd7e68dc1f44b0`. Both independent audit
 `FAIL` results remain historical evidence; no independent `PASS` is
 retroactively declared. Phase 5E is complete and merged. Phase 5F Headless
-Experiment Interface is implemented on an unmerged worker branch and awaits
-independent exact-head audit; Phase 5G and Phase 5H remain unstarted.
+Experiment Interface is implemented on an unmerged worker branch. Its first
+independent audit returned `FAIL` at
+`b5ce141711c3660e2ce38b738f58f478a333d251`; the three bounded findings are
+repaired on the same Draft PR and await independent exact-head re-audit.
+Phase 5G and Phase 5H remain unstarted.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -65,7 +68,10 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - Phase 5F uses one strict versioned Experiment Specification across Train GUI
   and headless execution. Explicit campaigns persist current-version contracts,
   bounded attempts, pause/cancel/resume state, and safe run/Candidate/evidence
-  references below that same lifecycle workspace.
+  references below that same lifecycle workspace. Iteration accounting begins
+  only on structured Core-training-start acknowledgement; revision identity is
+  repository-owned and uncertain resume fails closed; validate/resolve never
+  publish Bootstrap or lifecycle state.
 - GUI, headless single-run, campaign, and resume share one non-stealable
   workspace training-writer lock. Read-only run/campaign/model inspection
   remains available during training, and no headless promotion authority exists.

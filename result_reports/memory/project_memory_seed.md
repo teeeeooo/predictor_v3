@@ -597,7 +597,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 5 lifecycle, result analysis, and model-management UI
-    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B through Phase 5E are independently audited, merged, and complete. Phase 5E was accepted at exact head `cf0b71d86a3e490799c98e8f32a0f2652d6d660b`, final independent L4 audit PASS, required validation run `30188757140` success, and PR #32 squash merge `f372f5d2d5f01c96eb9b547bb5758c9c561e0836`; its two earlier audit FAIL heads remain historical evidence. Phase 5F Headless Experiment Interface is implemented on an unmerged worker branch pending independent exact-head audit. It establishes `predictor_v3.experiment.v1`, shared GUI/headless resolution through `TrainingLifecycleService`, versioned run/campaign/output records, explicit bounded campaign pause/cancel/resume/retry, current-version fail-closed resume identity, and one workspace GUI/headless/campaign writer lock. It adds no promotion or production authority. Phase 5G agent selection/ranking/recommendation and Phase 5H snapshot/history/retention remain unstarted.
+    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B through Phase 5E are independently audited, merged, and complete. Phase 5E was accepted at exact head `cf0b71d86a3e490799c98e8f32a0f2652d6d660b`, final independent L4 audit PASS, required validation run `30188757140` success, and PR #32 squash merge `f372f5d2d5f01c96eb9b547bb5758c9c561e0836`; its two earlier audit FAIL heads remain historical evidence. Phase 5F Headless Experiment Interface remains on unmerged Draft PR #33. Its first independent audit returned FAIL at `b5ce141711c3660e2ce38b738f58f478a333d251`; validation run `30193572243` remains successful historical evidence. The bounded repair consumes campaign iteration only after structured child Core-training-start acknowledgement, preserves pre-start failure attempts without budget/completed-run consumption, derives identifiable clean/dirty revision from the application repository root, blocks missing or uncertain resume identity without rewriting evidence, and separates pure validate/existing-generation read-only resolve from explicit validated Bootstrap initialization. The shared specification, lifecycle/Candidate/analysis owners, writer lock, machine interface, and non-promotion boundary remain unchanged. Independent exact-head re-audit is next; Phase 5G agent selection/ranking/recommendation and Phase 5H snapshot/history/retention remain unstarted.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -623,6 +623,9 @@ entries:
       - refresh ordering
       - stale UI callback
       - structured failure
+      - training-start acknowledgement
+      - repository-owned build identity
+      - read-only validation
       - diagnostics redaction
       - explicit promotion
       - rollback by re-promotion

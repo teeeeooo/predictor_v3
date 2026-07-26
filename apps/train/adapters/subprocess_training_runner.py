@@ -79,7 +79,9 @@ class SubprocessTrainingRunner:
             if line is None:
                 continue
             event_type, event = parse_training_event(line, request)
-            if event_type == "progress":
+            if event_type == "training_started":
+                callbacks.started(request)
+            elif event_type == "progress":
                 callbacks.progress(event)
             elif event_type == "result":
                 pending = event
@@ -142,6 +144,7 @@ def _read_lines(
 
 def _empty_callbacks() -> TrainingExecutionCallbacks:
     return TrainingExecutionCallbacks(
+        started=lambda _request: None,
         log=lambda _event: None,
         progress=lambda _event: None,
         finished=lambda _result: None,
