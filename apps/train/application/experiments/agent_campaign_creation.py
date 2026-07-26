@@ -64,6 +64,7 @@ def create_agent_campaign(
         },
         "current": None,
         "current_proposal_id": None,
+        "pending_execution": None,
         "proposals": [],
         "iterations": [],
         "attempt_history": [],

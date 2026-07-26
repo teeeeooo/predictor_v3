@@ -66,6 +66,8 @@ def build_recommendation(
                 "run_id": item["run_id"],
                 "gate_pass": item["gate_pass"],
                 "blocking_reasons": deepcopy(item["blocking_reasons"]),
+                "guardrail_evidence": deepcopy(item["guardrail"]),
+                "stability_evidence": deepcopy(item["stability"]),
             }
             for item in leaderboard["entries"]
         ],

@@ -122,10 +122,10 @@ def _ranking_reason(entry: dict[str, Any], policy: dict[str, Any]) -> dict[str, 
         "direction": policy["ranking"]["direction"],
         "primary_change": entry["primary_target_change"],
         "guardrail_status": (
-            "pass" if not entry["guardrail"]["violation"] else "fail"
+            entry["guardrail"]["status"]
         ),
         "stability_status": (
-            "pass" if not entry["stability"]["violation"] else "fail"
+            entry["stability"]["status"]
         ),
         "physical_plausibility": entry["physical_plausibility"]["status"],
         "explainability": entry["explainability"]["status"],

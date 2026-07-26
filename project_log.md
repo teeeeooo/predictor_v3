@@ -29,6 +29,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5G resumable retry and gate-evidence audit repair
+
+### Decision
+
+- Preserve the first independent audit `FAIL` at
+  `029fefdd783c21f380f6d43c6bd6efe403a52b28` and historical successful
+  validation run `30199916760`; neither is an acceptance result.
+- Keep the accepted proposal, resolved before/delta/after, training-meaning
+  execution key, and total/used/remaining attempt allowance durable after a
+  pre-start failure. Resume reuses that exact pending execution, while duplicate
+  IDs/metadata and silent replacement cannot reset or replace the scope.
+- Treat configured unresolved guardrail or instability evidence as a dedicated
+  production hard-gate blocker. Preserve failed Candidates in history and
+  exploratory evidence, but exclude them from incumbent and recommendation.
+- Keep the repair in the existing Phase 5G application/policy owners and same
+  Draft PR. Do not add proposal override, production authority, Phase 5H, or
+  declare audit PASS; require a new independent exact-head re-audit.
+
 ## 2026-07-26 — Phase 5G agent-assisted campaign loop implementation
 
 ### Decision

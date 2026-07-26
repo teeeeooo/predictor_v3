@@ -1142,8 +1142,14 @@ Responsibility:
   configured metric direction/tolerance, guardrails, and instability thresholds
 - persist hypothesis plus resolved before/delta/after evidence before invoking
   the Phase 5F execution owner
+- retain accepted proposal identity and a training-meaning-derived execution
+  key across pre-start failure/resume, so proposal ID or descriptive metadata
+  cannot reset the persisted total attempt allowance
 - project lifecycle/result evidence into hard gates and deterministic
   leaderboard/incumbent state without changing Active
+- fail closed when a configured guardrail or instability requirement lacks
+  resolvable evidence, while keeping the Candidate as exploratory/history
+  evidence
 - preserve immutable approval-required recommendation history
 - expose budget increase only through a separate operator command with
   before/after approval evidence

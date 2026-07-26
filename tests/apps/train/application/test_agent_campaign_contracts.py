@@ -193,6 +193,156 @@ def test_gate_blocks_partial_experimental_and_threshold_violations_with_evidence
     assert all("evidence_reference" in item for item in gate["blocking_reasons"])
 
 
+def test_configured_guardrail_and_instability_evidence_fail_closed_when_unresolved():
+    policy = default_policy()
+    policy["ranking"]["guardrail_thresholds"] = [{
+        "target": "target-a",
+        "metric": "rmse",
+        "direction": "lower",
+        "max_degradation": 0.1,
+    }]
+    policy["ranking"]["instability_thresholds"] = [{
+        "target": "target-a",
+        "metric": "rmse",
+        "max_std": 0.1,
+    }]
+    analysis = _analysis()
+    del analysis["targets"][0]["metrics"]["rmse_std"]
+
+    gate = evaluate_candidate(
+        analysis,
+        run_record=_run_record(),
+        policy=policy,
+        baseline_analysis=None,
+        artifact_integrity={"valid": True},
+    )
+    missing_metric = _analysis()
+    del missing_metric["targets"][0]["metrics"]["rmse"]
+    metric_gate = evaluate_candidate(
+        missing_metric,
+        run_record=_run_record(candidate_id="candidate-missing-metric"),
+        policy=policy,
+        baseline_analysis=_analysis(rmse=1.0),
+        artifact_integrity={"valid": True},
+    )
+
+    codes = {item["code"] for item in gate["blocking_reasons"]}
+    assert gate["guardrail_evidence"]["status"] == "unresolved"
+    assert gate["stability_evidence"]["status"] == "unresolved"
+    assert {
+        "guardrail_evidence_unresolved",
+        "instability_evidence_unresolved",
+    } <= codes
+    assert gate["gate_pass"] is False
+    assert gate["production_eligible"] is False
+    assert gate["exploratory_eligible"] is True
+    assert "guardrail_evidence_unresolved" in {
+        item["code"] for item in metric_gate["blocking_reasons"]
+    }
+
+
+def test_configured_gate_evidence_distinguishes_pass_violation_and_not_configured():
+    policy = default_policy()
+    policy["ranking"]["guardrail_thresholds"] = [{
+        "target": "target-a",
+        "metric": "rmse",
+        "direction": "lower",
+        "max_degradation": 0.1,
+    }]
+    policy["ranking"]["instability_thresholds"] = [{
+        "target": "target-a",
+        "metric": "rmse",
+        "max_std": 0.1,
+    }]
+    baseline = _analysis(rmse=1.0)
+    passed = evaluate_candidate(
+        _analysis(rmse=0.95, rmse_std=0.05),
+        run_record=_run_record(candidate_id="candidate-pass"),
+        policy=policy,
+        baseline_analysis=baseline,
+        artifact_integrity={"valid": True},
+    )
+    violated = evaluate_candidate(
+        _analysis(rmse=1.5, rmse_std=0.2),
+        run_record=_run_record(candidate_id="candidate-violated"),
+        policy=policy,
+        baseline_analysis=baseline,
+        artifact_integrity={"valid": True},
+    )
+    unconfigured = evaluate_candidate(
+        _analysis(rmse=0.9),
+        run_record=_run_record(candidate_id="candidate-unconfigured"),
+        policy=default_policy(),
+        baseline_analysis=None,
+        artifact_integrity={"valid": True},
+    )
+
+    assert passed["gate_pass"] is True
+    assert passed["guardrail_evidence"]["status"] == "passed"
+    assert passed["stability_evidence"]["status"] == "passed"
+    violation_codes = {
+        item["code"] for item in violated["blocking_reasons"]
+    }
+    assert {"guardrail_violation", "excessive_instability"} <= violation_codes
+    assert violated["guardrail_evidence"]["status"] == "violated"
+    assert violated["stability_evidence"]["status"] == "violated"
+    assert unconfigured["gate_pass"] is True
+    assert unconfigured["guardrail_evidence"]["status"] == "not_configured"
+    assert unconfigured["stability_evidence"]["status"] == "not_configured"
+
+
+def test_unresolved_gate_evidence_is_excluded_from_incumbent_and_recommendation():
+    policy = default_policy()
+    policy["ranking"]["guardrail_thresholds"] = [{
+        "target": "target-a",
+        "metric": "rmse",
+        "direction": "lower",
+        "max_degradation": 0.1,
+    }]
+    analysis = _analysis()
+    gate = evaluate_candidate(
+        analysis,
+        run_record=_run_record(candidate_id="candidate-unresolved"),
+        policy=policy,
+        baseline_analysis=None,
+        artifact_integrity={"valid": True},
+    )
+    baseline = {
+        "mode": "no_active",
+        "active_candidate_id": None,
+        "comparable": False,
+    }
+    leaderboard = rebuild_leaderboard(
+        [gate], policy=policy, baseline=baseline
+    )
+    campaign = {
+        "campaign_id": "campaign-unresolved",
+        "policy": policy,
+        "baseline": baseline,
+        "budget": {"remaining_iterations": 0},
+        "leaderboard": leaderboard,
+        "iterations": [],
+    }
+
+    artifact = build_recommendation(
+        campaign,
+        recommendation_id="recommendation-unresolved",
+        created_at="2026-07-26T00:00:00+00:00",
+    )
+
+    assert leaderboard["incumbent_candidate_id"] is None
+    assert leaderboard["entries"][0]["rank"] is None
+    assert artifact["recommended_candidate"] is None
+    assert artifact["runner_up"] is None
+    assert artifact["rejected_candidates"][0]["reason_codes"] == [
+        "guardrail_evidence_unresolved"
+    ]
+    assert (
+        artifact["hard_gate_results"][0]["guardrail_evidence"]["status"]
+        == "unresolved"
+    )
+
+
 def test_partial_target_scoped_evidence_is_exploratory_but_not_production_eligible():
     specification = deepcopy(_run_record()["resolved_specification"])
     specification["targets"]["primary"] = ["target-a"]

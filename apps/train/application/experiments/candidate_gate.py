@@ -121,6 +121,12 @@ def evaluate_candidate(
             evidence_reference,
             "A configured guardrail degradation threshold was exceeded.",
         ))
+    if guardrail["unresolved"]:
+        blockers.append(_reason(
+            "guardrail_evidence_unresolved",
+            evidence_reference,
+            "Configured guardrail evidence is missing or cannot be compared.",
+        ))
     stability = stability_evidence(
         completed, policy["ranking"]["instability_thresholds"]
     )
@@ -129,6 +135,12 @@ def evaluate_candidate(
             "excessive_instability",
             evidence_reference,
             "A configured instability threshold was exceeded.",
+        ))
+    if stability["unresolved"]:
+        blockers.append(_reason(
+            "instability_evidence_unresolved",
+            evidence_reference,
+            "Configured instability evidence is missing or cannot be calculated.",
         ))
 
     blockers = _deduplicate(blockers)
@@ -140,6 +152,8 @@ def evaluate_candidate(
         "incomplete_artifact",
         "guardrail_violation",
         "excessive_instability",
+        "guardrail_evidence_unresolved",
+        "instability_evidence_unresolved",
     }
     if (
         specification["features"]["included"]

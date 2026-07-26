@@ -14,6 +14,11 @@ from apps.train.interfaces.headless.cli import main
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.target_registry.runtime import model_registry_snapshot
 from tools.dev.mock_smoke.generators import write_mock_training_data
+from tests.apps.train.application.test_experiment_integration import (
+    _DynamicArtifactExecution,
+    _StartFailureExecution,
+    _service,
+)
 
 
 def _definition(data_path):  # noqa: ANN001
@@ -128,6 +133,161 @@ def test_agent_campaign_persists_budget_rejection_iteration_and_operator_extensi
     assert extension["approval_recorded"] is True
     assert extension["old_total_maximum"] == 5
     assert extension["new_total_maximum"] == 7
+
+
+def test_prestart_failure_preserves_proposal_and_resume_reuses_attempt_scope(
+    tmp_path,
+):
+    factories = {"count": 0}
+
+    def execution_factory():
+        factories["count"] += 1
+        if factories["count"] == 1:
+            return _StartFailureExecution()
+        return _DynamicArtifactExecution()
+
+    service, _snapshot, repository = _service(tmp_path, execution_factory)
+    data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
+    definition = _definition(data)
+    definition["base_specification"]["targets"]["primary"] = list(
+        definition["base_specification"]["targets"]["production_required"]
+    )
+    definition["base_specification"]["retry"] = {
+        "max_attempts": 2,
+        "retryable_statuses": ["training_failure"],
+    }
+    campaigns = AgentCampaignApplicationService(service)
+    campaigns.create(definition, campaign_id="resumable-agent-loop")
+    accepted = campaigns.submit_proposal(
+        "resumable-agent-loop", _proposal({"optuna": {"trials": 1}})
+    )
+    execution_key = accepted["pending_execution"]["execution_key"]
+
+    failed = campaigns.execute("resumable-agent-loop", "bounded-tuning")
+
+    assert failed["status"] == "failed_resumable"
+    assert failed["current_proposal_id"] == "bounded-tuning"
+    assert failed["pending_execution"] == {
+        "proposal_id": "bounded-tuning",
+        "execution_key": execution_key,
+        "iteration": 1,
+        "evidence_reference": accepted["pending_execution"]["evidence_reference"],
+        "max_attempts": 2,
+        "attempts_used": 1,
+        "remaining_attempts": 1,
+    }
+    assert failed["budget"]["consumed_iterations"] == 0
+    assert failed["attempt_history"][0]["proposal_id"] == "bounded-tuning"
+    assert failed["attempt_history"][0]["attempt_scope"] == execution_key
+    assert repository.list_candidates() == ()
+    assert repository.read_active(optional=True) is None
+
+    restarted_service, _snapshot, restarted_repository = _service(
+        tmp_path, execution_factory
+    )
+    restarted = AgentCampaignApplicationService(restarted_service)
+    resumed = restarted.resume("resumable-agent-loop")
+
+    assert resumed["budget"]["consumed_iterations"] == 1
+    assert [item["attempt"] for item in resumed["attempt_history"]] == [1, 2]
+    assert {
+        item["attempt_scope"] for item in resumed["attempt_history"]
+    } == {execution_key}
+    assert all(
+        item["proposal_id"] == "bounded-tuning"
+        for item in resumed["attempt_history"]
+    )
+    assert resumed["current_proposal_id"] is None
+    assert resumed["pending_execution"] is None
+    assert len(restarted_repository.list_candidates()) == 1
+    assert restarted_repository.read_active(optional=True) is None
+
+
+def test_proposal_identity_cannot_reset_exhausted_attempt_allowance(tmp_path):
+    factories = {"count": 0}
+
+    def execution_factory():
+        factories["count"] += 1
+        return _StartFailureExecution()
+
+    service, _snapshot, repository = _service(tmp_path, execution_factory)
+    data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
+    definition = _definition(data)
+    definition["base_specification"]["retry"] = {
+        "max_attempts": 1,
+        "retryable_statuses": ["training_failure"],
+    }
+    campaigns = AgentCampaignApplicationService(service)
+    campaigns.create(definition, campaign_id="exhausted-agent-proposal")
+    campaigns.submit_proposal(
+        "exhausted-agent-proposal", _proposal({"optuna": {"trials": 1}})
+    )
+    failed = campaigns.execute(
+        "exhausted-agent-proposal", "bounded-tuning"
+    )
+    record_path = (
+        service.store.campaigns / "exhausted-agent-proposal" / "record.json"
+    )
+    before = record_path.read_bytes()
+    duplicate = _proposal({"optuna": {"trials": 1}})
+    duplicate.update({
+        "proposal_id": "renamed-proposal",
+        "hypothesis": "Different display text for the same resolved change.",
+        "expected_effect": "Different display text.",
+        "rationale": "Different display metadata.",
+    })
+
+    rejected = campaigns.submit_proposal(
+        "exhausted-agent-proposal", duplicate
+    )
+    replacement = _proposal({"optuna": {"trials": 3}})
+    replacement["proposal_id"] = "materially-different"
+    replacement_rejected = campaigns.submit_proposal(
+        "exhausted-agent-proposal", replacement
+    )
+
+    assert failed["pending_execution"]["remaining_attempts"] == 0
+    assert rejected["status"] == "proposal_rejected"
+    assert rejected["failure"]["code"] == "proposal_retry_exhausted"
+    assert rejected["failure"]["pending_proposal_id"] == "bounded-tuning"
+    assert replacement_rejected["failure"]["code"] == "proposal_replacement_blocked"
+    assert factories["count"] == 1
+    assert len(failed["attempt_history"]) == 1
+    assert record_path.read_bytes() == before
+    assert repository.list_candidates() == ()
+    assert repository.read_active(optional=True) is None
+
+
+def test_materially_different_proposal_gets_new_scope_after_terminal_iteration(
+    tmp_path,
+):
+    service, _snapshot, _repository = _service(
+        tmp_path, lambda: _DynamicArtifactExecution()
+    )
+    data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
+    campaigns = AgentCampaignApplicationService(service)
+    definition = _definition(data)
+    definition["base_specification"]["targets"]["primary"] = list(
+        definition["base_specification"]["targets"]["production_required"]
+    )
+    campaigns.create(definition, campaign_id="terminal-agent-proposal")
+    first = campaigns.submit_proposal(
+        "terminal-agent-proposal", _proposal({"optuna": {"trials": 1}})
+    )
+    first_key = first["pending_execution"]["execution_key"]
+    completed = campaigns.execute(
+        "terminal-agent-proposal", "bounded-tuning"
+    )
+    next_proposal = _proposal({"optuna": {"trials": 3}})
+    next_proposal["proposal_id"] = "materially-different"
+
+    accepted = campaigns.submit_proposal(
+        "terminal-agent-proposal", next_proposal
+    )
+
+    assert completed["current_proposal_id"] is None
+    assert accepted["status"] == "ready_to_execute"
+    assert accepted["pending_execution"]["execution_key"] != first_key
 
 
 def test_budget_exhaustion_blocks_new_proposal_and_training(tmp_path):

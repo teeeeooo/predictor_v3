@@ -18,7 +18,12 @@
 ## Current Slice
 
 Phase 5G Agent-assisted Campaign Loop source is complete on one owner-aligned
-branch and is awaiting independent exact-head audit in an open Draft PR. It
+branch and remains in an open Draft PR. The first independent audit failed at
+`029fefdd783c21f380f6d43c6bd6efe403a52b28`: pre-start failure discarded the
+pending proposal/retry scope, and configured unresolved guardrail or stability
+evidence passed the production gate. The same-branch bounded repair now
+preserves stable pending execution/attempt allowance across resume and fails
+closed on configured unresolved gate evidence. It
 adds externally submitted one-step proposals, default configurable total
 five-iteration budget, durable before/delta/after evidence, Core-start-only
 consumption, hard gates, deterministic leaderboard/incumbent, immutable
@@ -94,7 +99,9 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Obtain an independent exact-head audit of the Phase 5G Draft PR. The Worker
+Obtain an independent exact-head re-audit of the repaired Phase 5G Draft PR.
+Preserve the first audit `FAIL` and successful historical validation run
+`30199916760` as historical evidence only. The Worker
 must not declare audit PASS or merge. Do not begin Phase 5H migration,
 retention, compatibility, or final-confirmation work.
 

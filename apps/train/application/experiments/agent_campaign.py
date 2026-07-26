@@ -15,7 +15,7 @@ from .leaderboard import rebuild_leaderboard
 from .campaign_operator import (
     complete_without_recommendation, create_recommendation, extend_budget_operator
 )
-from .proposal_submission import submit_proposal
+from .proposal_submission import pending_submission_outcome, submit_proposal
 from .records import utc_now
 from .service import ExperimentApplicationService
 
@@ -48,9 +48,8 @@ class AgentCampaignApplicationService:
         if record["budget"]["remaining_iterations"] <= 0:
             return self._detached_budget_exhausted(record)
         if record["current_proposal_id"] is not None:
-            raise ExperimentContractError(
-                "proposal_already_pending",
-                "The current proposal must execute or be cleared before another submission.",
+            return pending_submission_outcome(
+                self._experiments, record, proposal
             )
         return submit_proposal(
             self._experiments, self._store, record, proposal
@@ -83,11 +82,11 @@ class AgentCampaignApplicationService:
             resolved,
             iteration - 1,
             record,
-            attempt_scope=proposal_id,
+            attempt_scope=record["pending_execution"]["execution_key"],
         )
+        record = self._sync_pending_execution(record, run_id)
         if not started:
             if record["status"] != "lock_conflict":
-                record["current_proposal_id"] = None
                 record["updated_at"] = utc_now()
                 self._store.update_campaign(campaign_id, record)
             return record
@@ -137,6 +136,7 @@ class AgentCampaignApplicationService:
         record["gates"].append(gate)
         record["current"] = None
         record["current_proposal_id"] = None
+        record["pending_execution"] = None
         record["budget"]["remaining_iterations"] = (
             record["budget"]["max_iterations"]
             - record["budget"]["consumed_iterations"]
@@ -180,10 +180,21 @@ class AgentCampaignApplicationService:
 
     def resume(self, campaign_id: str) -> dict[str, Any]:
         record = self.status(campaign_id)
-        if record["status"] not in {"paused", "lock_conflict", "proposal_rejected"}:
+        if record["status"] not in {
+            "paused", "lock_conflict", "proposal_rejected", "failed_resumable"
+        }:
             raise ExperimentContractError(
                 "campaign_not_resumable", "Agent campaign is not paused or resumable."
             )
+        if (
+            record["status"] == "failed_resumable"
+            and record["pending_execution"]["remaining_attempts"] <= 0
+        ):
+            return self._detached_retry_exhausted(record)
+        retry_pending = (
+            record["status"] == "failed_resumable"
+            and record["current_proposal_id"] is not None
+        )
         self._store.clear_control(campaign_id)
         record["pause_requested"] = False
         record["cancel_requested"] = False
@@ -193,6 +204,8 @@ class AgentCampaignApplicationService:
         )
         record["updated_at"] = utc_now()
         self._store.update_campaign(campaign_id, record)
+        if retry_pending:
+            return self.execute(campaign_id, record["current_proposal_id"])
         return record
 
     def extend_budget_operator(
@@ -240,6 +253,57 @@ class AgentCampaignApplicationService:
             "message": "No proposal or training may start without operator extension.",
         }
         return outcome
+
+    @staticmethod
+    def _detached_retry_exhausted(record: dict[str, Any]) -> dict[str, Any]:
+        pending = record["pending_execution"]
+        outcome = deepcopy(record)
+        outcome["status"] = "retry_exhausted"
+        outcome["failure"] = {
+            "code": "campaign_retry_exhausted",
+            "message": "The persisted proposal exhausted its attempt allowance.",
+            "proposal_id": pending["proposal_id"],
+            "execution_key": pending["execution_key"],
+            "attempts_used": pending["attempts_used"],
+            "max_attempts": pending["max_attempts"],
+            "remaining_attempts": 0,
+        }
+        return outcome
+
+    def _sync_pending_execution(
+        self, record: dict[str, Any], run_id: str
+    ) -> dict[str, Any]:
+        pending = record["pending_execution"]
+        matching = [
+            item for item in record["attempt_history"]
+            if (
+                item.get("iteration") == pending["iteration"]
+                and item.get("attempt_scope") == pending["execution_key"]
+            )
+        ]
+        if (
+            run_id
+            and record["status"] == "failed_resumable"
+            and all(item.get("run_id") != run_id for item in matching)
+        ):
+            record["attempt_history"].append({
+                "iteration": pending["iteration"],
+                "attempt": len(matching) + 1,
+                "run_id": run_id,
+                "status": "training_failure",
+                "training_started": False,
+                "consumed_iteration": False,
+                "attempt_scope": pending["execution_key"],
+                "proposal_id": pending["proposal_id"],
+            })
+            matching.append(record["attempt_history"][-1])
+        for item in matching:
+            item["proposal_id"] = pending["proposal_id"]
+        pending["attempts_used"] = len(matching)
+        pending["remaining_attempts"] = max(
+            pending["max_attempts"] - pending["attempts_used"], 0
+        )
+        return record
 
     @staticmethod
     def _require_supported(record: dict[str, Any]) -> None:

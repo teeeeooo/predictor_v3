@@ -17,6 +17,11 @@ The Phase 5F `predictor_v3.experiment.v1` resolved specification remains the
 training input. Accepted proposal deltas are resolved through that owner, and
 the before specification, delta, after specification, hypothesis, expected
 effect, and policy decision are durably written before training can start.
+The campaign record also preserves a pending execution owner with the accepted
+proposal identity, a stable execution key, total/used/remaining attempt
+allowance, and attempt history. The execution key is derived from campaign,
+baseline, resolved before/delta/after, Target roles, and execution policy; a
+new proposal ID or changed descriptive text cannot reset retry allowance.
 
 ## Commands
 
@@ -51,6 +56,13 @@ allowance survive process restart. Only the Phase 5F Core-owned structured
 training-start acknowledgement consumes one iteration. Retry attempts retain
 their existing total per-iteration allowance and do not consume another
 iteration.
+
+A failure before Core training-start keeps the accepted proposal pending.
+`failed_resumable` resume reads that proposal and its persisted attempt history,
+then executes the next attempt without resubmission. An exhausted duplicate or
+an attempted replacement returns a detached structured rejection referencing
+the pending execution and does not change training, attempts, iterations,
+Candidate, or Active.
 
 Agent campaign creation requires explicit primary and production-required
 Target roles. Every declared guardrail Target must have a configured metric,
@@ -91,6 +103,13 @@ results, leakage or unreproducible Features reported by lifecycle evidence,
 invalid Derived output, contract/integrity failure, configured guardrail or
 instability violation, target-scoped exploration, or unpublished experimental
 Features.
+
+Configured guardrail and instability evidence is fail-closed. Each projection
+distinguishes `not_configured`, `passed`, `violated`, and `unresolved`.
+Configured missing metric, baseline, direction/comparison, seed, or fold
+evidence records a dedicated unresolved blocker and excludes the Candidate
+from production incumbent and recommendation while retaining exploratory and
+history evidence. Unconfigured gates do not invent missing-evidence blockers.
 
 The leaderboard is rebuilt deterministically from persisted gates. It ranks
 only gate-passing Candidates in this order: primary metric, guardrails,

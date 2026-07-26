@@ -1364,6 +1364,11 @@ Current implementation boundary (2026-07-26):
   category and closed delta paths, resolves the full before/delta/after
   specification, and writes immutable proposal evidence before delegating to
   the Phase 5F training-start-accounted execution path.
+- Accepted proposal identity, resolved evidence, stable execution key, and
+  total/used/remaining attempt allowance remain pending after a pre-start
+  failure. Resume executes the next persisted attempt without proposal
+  resubmission; a new proposal ID or descriptive metadata cannot reset the
+  same training-meaning scope.
 - Agent campaign budget defaults to a configurable total of five. Restart reads
   persisted consumed/remaining allowance; proposal rejection, lock conflict,
   and pre-start failure do not consume it. Only a separate operator command can
@@ -1372,6 +1377,10 @@ Current implementation boundary (2026-07-26):
   exploratory eligibility and closed blocking reason codes. The deterministic
   leaderboard ranks only gate-passing Candidates and keeps campaign incumbent
   distinct from Active.
+- Configured guardrail and instability requirements distinguish
+  `not_configured`, `passed`, `violated`, and `unresolved`; configured
+  unresolved evidence fails the production gate and is retained losslessly in
+  Candidate, leaderboard, and recommendation history.
 - Comparable Active requires matching current data/evaluation evidence;
   unbenchmarked Active receives no improvement claim; Bootstrap selects a
   first valid incumbent without claiming production readiness.
@@ -1381,8 +1390,11 @@ Current implementation boundary (2026-07-26):
 - Headless commands and the existing Train read-only campaign label use the
   same store. The GUI adds no agent controls, prompt, API configuration,
   promotion, or budget-extension action.
-- Phase 5G source is complete on its Draft PR but remains pending independent
-  exact-head audit. Phase 5H remains unstarted.
+- The first Phase 5G independent audit failed at
+  `029fefdd783c21f380f6d43c6bd6efe403a52b28` on resumable retry-scope loss and
+  non-fail-closed configured gate evidence. The bounded repair is source
+  complete on the same Draft PR and remains pending independent exact-head
+  re-audit. Phase 5H remains unstarted.
 
 ### Phase 5H — Reproducibility, retention, compatibility, and closeout
 
