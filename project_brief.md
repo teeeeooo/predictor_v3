@@ -19,12 +19,13 @@ Train/Model UI/UX is complete. The user accepted repaired head
 `main` as `78e9d097693c3e3b8c23d2ed18dd7e68dc1f44b0`. Both independent audit
 `FAIL` results remain historical evidence; no independent `PASS` is
 retroactively declared. Phase 5E is complete and merged. Phase 5F Headless
-Experiment Interface is implemented on an unmerged worker branch. Its first
-independent audit returned `FAIL` at
-`b5ce141711c3660e2ce38b738f58f478a333d251`, and its second audit returned
-`FAIL` at `e5558e82d7ca736bb45ca71eb94ab83b71a19950`. Both bounded repair sets
-remain on the same Draft PR and await another independent exact-head re-audit.
-Phase 5G and Phase 5H remain unstarted.
+Experiment Interface is also complete and merged: final accepted head
+`fa13ddd75c5cf8a423d3ffc1fc046f552086e01a`, required validation run
+`30197335156`, and PR #33 squash merge
+`1f441c6d82545943aa160919c7d97d3a4b969580`. Its two independent audit `FAIL`
+heads `b5ce141711c3660e2ce38b738f58f478a333d251` and
+`e5558e82d7ca736bb45ca71eb94ab83b71a19950` remain historical evidence.
+Phase 5G is next and unstarted; Phase 5H remains unstarted.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -276,8 +277,8 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ## Deferred / Hold
 
-- Phase 5F headless campaign foundation is implemented and pending audit.
-  Phase 5G agent-assisted selection/ranking/recommendation remains deferred.
+- Phase 5F headless campaign foundation is complete and merged. Phase 5G
+  agent-assisted selection/ranking/recommendation is next and remains unstarted.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.

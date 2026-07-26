@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5F post-merge closeout
+
+### Decision
+
+- Record final independent audit `PASS` for exact head `fa13ddd75c5cf8a423d3ffc1fc046f552086e01a` and
+  required validation run `30197335156` success.
+- Record PR #33 guarded squash merge to `main` as `1f441c6d82545943aa160919c7d97d3a4b969580` and close Phase 5F.
+- Preserve the two earlier audit `FAIL` heads
+  `b5ce141711c3660e2ce38b738f58f478a333d251` and
+  `e5558e82d7ca736bb45ca71eb94ab83b71a19950`, with runs `30193572243` and
+  `30195511666` retained as validation-only historical evidence.
+- Preserve the shared GUI/headless specification and training owner, Core-owned
+  start accounting, total retry allowance, detached compatibility blocks,
+  read-only validation/resolution, writer lock, Candidate/Active non-mutation,
+  explicit user promotion, export, and Predict reload boundaries.
+- Make Phase 5G the next unstarted slice. Do not start Phase 5G implementation or
+  any Phase 5H migration, retention, compatibility, or final-confirmation work
+  in this closeout.
+
 ## 2026-07-26 — Phase 5F second independent-audit repair
 
 ### Decision
