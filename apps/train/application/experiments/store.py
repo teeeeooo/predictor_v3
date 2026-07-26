@@ -94,6 +94,53 @@ class ExperimentStore:
             ) / "record.json"
         )
 
+    def write_campaign_evidence(
+        self,
+        campaign_id: str,
+        collection: str,
+        identity: str,
+        filename: str,
+        payload: dict[str, Any],
+    ) -> str:
+        if collection not in {
+            "proposals",
+            "iterations",
+            "recommendations",
+            "budget_extensions",
+        }:
+            raise ValueError("unsupported campaign evidence collection")
+        if _SAFE_ID.fullmatch(identity) is None or _SAFE_ID.fullmatch(filename) is None:
+            raise ValueError("campaign evidence identity is not safe")
+        campaign = self._identity_path(
+            self.campaigns, campaign_id, create_parent=False
+        )
+        self._require_owned_directory(campaign)
+        collection_path = campaign / collection
+        collection_path.mkdir(exist_ok=True)
+        self._require_owned_directory(collection_path)
+        directory = collection_path / identity
+        directory.mkdir(exist_ok=True)
+        self._require_owned_directory(directory)
+        path = directory / filename
+        self._write_exclusive(path, payload)
+        return (
+            f"experiments/campaigns/{campaign_id}/{collection}/"
+            f"{identity}/{filename}"
+        )
+
+    def read_campaign_evidence(
+        self,
+        campaign_id: str,
+        collection: str,
+        identity: str,
+        filename: str,
+    ) -> dict[str, Any]:
+        campaign = self._identity_path(
+            self.campaigns, campaign_id, create_parent=False
+        )
+        path = campaign / collection / identity / filename
+        return self._read_json(path)
+
     def list_campaigns(self) -> tuple[dict[str, Any], ...]:
         if not self.campaigns.exists():
             return ()

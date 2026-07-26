@@ -30,7 +30,7 @@ from apps.train.controllers.train_controller import TrainController
 from apps.train.state.training_run_state import TrainingLogEvent, TrainingProgress, TrainingRequest, TrainingResult
 from apps.train.ui.models.static_table_model import StaticTableModel
 from apps.train.ui.model_management_panel import ModelManagementPanel
-from apps.train.ui.experiments.status_text import campaign_status_text
+from apps.train.ui.experiments.status_text import campaign_summary_text
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
@@ -290,12 +290,7 @@ class TrainModelPanel(QWidget):
         )
         campaign = inspect() if inspect is not None else None
         self.external_campaign_label.setText(
-            (
-                "외부 Campaign 상태: "
-                f"{campaign_status_text(campaign['status'])}"
-                if campaign
-                else ""
-            )
+            campaign_summary_text(campaign) if campaign else ""
         )
 
     def _handle_log_event(self, event: TrainingLogEvent) -> None:

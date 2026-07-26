@@ -29,6 +29,26 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5G agent-assisted campaign loop implementation
+
+### Decision
+
+- Keep the Phase 5G release unit on one owner-aligned Draft PR and require an
+  independent exact-head audit; the Worker does not declare audit PASS or merge.
+- Add separate versioned agent campaign, proposal, gate, leaderboard,
+  recommendation, and operator-extension contracts while reusing the Phase 5F
+  Experiment Specification, training application service, Core-owned start
+  accounting, bounded attempts, writer lock, and Candidate lifecycle.
+- Accept only explicit external one-step proposals. Persist hypothesis and the
+  resolved before/delta/after contract before training; reject forbidden
+  authority or unsupported execution changes without budget consumption.
+- Keep Active distinct from deterministic campaign incumbent, require fair
+  current evidence for comparable Active claims, and preserve unbenchmarked
+  Active/Bootstrap limitations.
+- Keep every recommendation approval- and Phase 5H-confirmation-required.
+  Definition publication, Active promotion, deployment replacement, retention,
+  migration, final confirmation, and production-quality claims remain outside.
+
 ## 2026-07-26 — Phase 5F post-merge closeout
 
 ### Decision

@@ -41,6 +41,26 @@ def resolve_registry(
     input_names = tuple(dict.fromkeys(
         (*snapshot.input_ml_names, *(name for name in experimental_names if name))
     ))
+    group_references = {
+        reference: group.identity
+        for group in snapshot.groups
+        for reference in (group.identity, group.registry_key)
+    }
+    requested_overrides = {
+        item["group"]: item["enabled"]
+        for item in payload["rfecv"]["group_overrides"]
+    }
+    unknown_groups = set(requested_overrides).difference(group_references)
+    if unknown_groups:
+        raise ExperimentContractError(
+            "rfecv_group_unknown",
+            "RFECV override references unknown Model group(s): "
+            + ", ".join(sorted(unknown_groups)),
+        )
+    overrides = {
+        group_references[reference]: enabled
+        for reference, enabled in requested_overrides.items()
+    }
     groups = []
     for group in snapshot.groups:
         targets = []
@@ -62,7 +82,11 @@ def resolve_registry(
                 legacy_noop_policy_names=(),
             ))
         groups.append(RuntimeModelGroup(
-            group.identity, group.registry_key, group.name, group.use_rfe, tuple(targets)
+            group.identity,
+            group.registry_key,
+            group.name,
+            overrides.get(group.identity, group.use_rfe),
+            tuple(targets),
         ))
     return replace(
         snapshot,

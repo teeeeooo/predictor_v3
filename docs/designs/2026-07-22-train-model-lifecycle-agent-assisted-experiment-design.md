@@ -1354,6 +1354,36 @@ Purpose:
 - user-only budget extension
 - no production authority
 
+Current implementation boundary (2026-07-26):
+
+- `apps/train/application/experiments/` owns separate versioned agent campaign,
+  proposal, gate, leaderboard, recommendation, and operator-extension
+  contracts while retaining `predictor_v3.experiment.v1` as the shared
+  resolved training contract.
+- External proposals are one-step commands. The application validates the
+  category and closed delta paths, resolves the full before/delta/after
+  specification, and writes immutable proposal evidence before delegating to
+  the Phase 5F training-start-accounted execution path.
+- Agent campaign budget defaults to a configurable total of five. Restart reads
+  persisted consumed/remaining allowance; proposal rejection, lock conflict,
+  and pre-start failure do not consume it. Only a separate operator command can
+  increase the total and must preserve approval evidence.
+- Candidate gates project lifecycle/result evidence into production versus
+  exploratory eligibility and closed blocking reason codes. The deterministic
+  leaderboard ranks only gate-passing Candidates and keeps campaign incumbent
+  distinct from Active.
+- Comparable Active requires matching current data/evaluation evidence;
+  unbenchmarked Active receives no improvement claim; Bootstrap selects a
+  first valid incumbent without claiming production readiness.
+- Recommendation artifacts are immutable approval-required history and cannot
+  publish Definition, promote Active, export/replace deployment, or perform
+  Phase 5H confirmation.
+- Headless commands and the existing Train read-only campaign label use the
+  same store. The GUI adds no agent controls, prompt, API configuration,
+  promotion, or budget-extension action.
+- Phase 5G source is complete on its Draft PR but remains pending independent
+  exact-head audit. Phase 5H remains unstarted.
+
 ### Phase 5H — Reproducibility, retention, compatibility, and closeout
 
 Purpose:

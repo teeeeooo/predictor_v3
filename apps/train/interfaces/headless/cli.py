@@ -10,6 +10,8 @@ from apps.common.model_lifecycle import (
     default_model_lifecycle_root,
 )
 from apps.train.application.experiments.campaign import CampaignApplicationService
+from apps.train.application.experiments.agent_campaign import AgentCampaignApplicationService
+from apps.train.application.experiments.agent_contracts import AGENT_CAMPAIGN_VERSION
 from apps.train.application.experiments.contracts import (
     ExperimentContractError,
     load_specification,
@@ -36,6 +38,7 @@ from .command_contract import (
     require_run_version,
     run_exit,
 )
+from .agent_commands import dispatch_agent_mutation, dispatch_agent_read
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,6 +68,9 @@ def main(argv: list[str] | None = None) -> int:
 
 def _dispatch(args: argparse.Namespace) -> int:
     lifecycle_root = default_model_lifecycle_root()
+    agent_read = dispatch_agent_read(args, lifecycle_root)
+    if agent_read is not None:
+        return agent_read
     if args.command in {"run-status", "run-result", "run-logs", "run-artifacts"}:
         record = ExperimentStore(lifecycle_root).read_run(args.run_id)
         require_run_version(record)
@@ -130,6 +136,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         lifecycle_root=lifecycle_root,
         campaign_id=campaign_id,
     )
+    agent_mutation = dispatch_agent_mutation(args, service)
+    if agent_mutation is not None:
+        return agent_mutation
     if args.command == "resolve":
         assert specification is not None
         resolved = service.resolve_current(specification)
@@ -180,7 +189,12 @@ def _dispatch(args: argparse.Namespace) -> int:
         emit(args.command, record["status"], "Campaign execution returned.", data=record)
         return campaign_exit(record["status"])
     if args.command == "campaign-resume":
-        record = CampaignApplicationService(service).resume(args.campaign_id)
+        stored = ExperimentStore(lifecycle_root).read_campaign(args.campaign_id)
+        record = (
+            AgentCampaignApplicationService(service).resume(args.campaign_id)
+            if stored.get("schema_version") == AGENT_CAMPAIGN_VERSION
+            else CampaignApplicationService(service).resume(args.campaign_id)
+        )
         emit(args.command, record["status"], "Campaign resume returned.", data=record)
         return campaign_exit(record["status"])
     raise ExperimentContractError("command_unsupported", "Unsupported command.")
