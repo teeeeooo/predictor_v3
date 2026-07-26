@@ -13,10 +13,15 @@ class PredictModelLifecycleUi:
         workspace.command_bar.reload_model_button.clicked.connect(self.reload_active)
 
     def refresh(self) -> None:
-        status = self._workspace.prediction_controller.refresh_model_lifecycle()
+        controller = self._workspace.prediction_controller
+        status = controller.refresh_model_lifecycle()
         if status is None:
             self._workspace.command_bar.reload_model_button.setVisible(False)
             return
+        if not controller.is_model_lifecycle_operation_current(status.operation_id):
+            status = controller.current_model_lifecycle_status()
+            if status is None:
+                return
         self.render(status)
 
     def render(self, status, *, diagnostics=None) -> None:  # noqa: ANN001
@@ -51,11 +56,6 @@ class PredictModelLifecycleUi:
     def reload_active(self) -> None:
         workspace = self._workspace
         controller = workspace.prediction_controller
-        if controller.is_running:
-            workspace.status_label.setText(
-                "현재 예측 때문에 모델을 다시 불러올 수 없습니다."
-            )
-            return
         button = workspace.command_bar.reload_model_button
         button.setEnabled(False)
         workspace.status_label.setText("새 Active 모델을 다시 불러오는 중...")
@@ -69,8 +69,10 @@ class PredictModelLifecycleUi:
             workspace.model_lifecycle_unexpected_traceback = traceback.format_exc()
             button.setEnabled(True)
             return
-        if not controller.is_model_reload_operation_current(outcome.operation_id):
-            self.refresh()
+        if not controller.is_model_lifecycle_operation_current(outcome.operation_id):
+            status = controller.current_model_lifecycle_status()
+            if status is not None:
+                self.render(status)
         elif outcome.applied_to_shared_state:
             self.render(outcome.model_status, diagnostics=outcome)
         button.setEnabled(not controller.is_running)

@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from types import SimpleNamespace
 
+import pytest
+
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton  # noqa: E402
@@ -27,9 +29,14 @@ class FakeController:
         self.status = status
         self.is_running = False
         self.reload_calls = 0
+        self.refresh_calls = 0
         self.outcome = None
 
     def refresh_model_lifecycle(self):
+        self.refresh_calls += 1
+        return self.status
+
+    def current_model_lifecycle_status(self):
         return self.status
 
     def reload_active_model(self):
@@ -42,6 +49,9 @@ class FakeController:
         )
 
     def is_model_reload_operation_current(self, operation_id):
+        return operation_id == self.status.operation_id
+
+    def is_model_lifecycle_operation_current(self, operation_id):
         return operation_id == self.status.operation_id
 
 
@@ -94,10 +104,36 @@ def test_reload_failed_and_running_block_preserve_user_facing_state():
     assert "기존 모델" in workspace.status_label.text()
 
     workspace.prediction_controller.is_running = True
+    running_message = (
+        "현재 예측이 실행 중이라 새 모델을 불러올 수 없습니다. "
+        "기존에 로드된 모델은 그대로 유지됩니다. "
+        "예측이 끝난 뒤 다시 시도하세요."
+    )
+    running_status = PredictModelLifecycleStatus(
+        "reload-failed",
+        status.loaded,
+        status.active_candidate_id,
+        status.active_revision,
+        running_message,
+        reason_code="prediction_running",
+        operation_id=status.operation_id,
+    )
+    workspace.prediction_controller.status = running_status
+    workspace.prediction_controller.outcome = ModelReloadOutcome(
+        "blocked",
+        running_status,
+        running_message,
+        reason_code="prediction_running",
+        preserved_loaded_model=True,
+        recommended_action="예측이 끝난 뒤 다시 시도하세요.",
+        operation_id=running_status.operation_id,
+    )
     adapter.reload_active()
 
-    assert workspace.prediction_controller.reload_calls == 1
-    assert "현재 예측" in workspace.status_label.text()
+    assert workspace.prediction_controller.reload_calls == 2
+    assert "현재 예측이 실행 중" in workspace.status_label.text()
+    assert "로드된 모델은 그대로 유지" in workspace.status_label.text()
+    assert "예측이 끝난 뒤 다시 시도" in workspace.status_label.text()
 
 
 def test_stale_reload_completion_does_not_replace_newer_ui_state():
@@ -133,6 +169,81 @@ def test_stale_reload_completion_does_not_replace_newer_ui_state():
     assert "candidate-c" in workspace.model_badge.text()
     assert "다시 불러오기 실패" not in workspace.model_badge.text()
     assert workspace.status_label.text() == current.message
+    assert workspace.prediction_controller.refresh_calls == 0
+
+
+def test_stale_refresh_callback_renders_authoritative_current_state():
+    current = PredictModelLifecycleStatus(
+        "current",
+        LoadedModelIdentity("candidate-c", 3, "generation-1"),
+        "candidate-c",
+        3,
+        "현재 C 모델을 사용 중입니다.",
+        operation_id=3,
+    )
+    stale_refresh = PredictModelLifecycleStatus(
+        "reload-required",
+        LoadedModelIdentity("candidate-a", 1, "generation-1"),
+        "candidate-b",
+        2,
+        "stale A/B refresh",
+        operation_id=2,
+    )
+    workspace = _workspace(current)
+    controller = workspace.prediction_controller
+    controller.refresh_model_lifecycle = lambda: stale_refresh
+    adapter = PredictModelLifecycleUi(workspace)
+
+    adapter.refresh()
+
+    assert workspace.status_label.text() == current.message
+    assert "candidate-c" in workspace.model_badge.text()
+    assert "다시 불러오기 필요" not in workspace.model_badge.text()
+
+
+@pytest.mark.parametrize("stale_outcome_status", ("failed", "reloaded"))
+def test_stale_reload_callback_preserves_latest_structured_failure(
+    stale_outcome_status,
+):
+    latest_failure = PredictModelLifecycleStatus(
+        "reload-failed",
+        LoadedModelIdentity("candidate-a", 1, "generation-1"),
+        "candidate-c",
+        3,
+        (
+            "현재 Active 모델이 현재 정의와 호환되지 않습니다. "
+            "기존에 로드된 모델은 그대로 유지됩니다. "
+            "현재 정의로 다시 학습하거나 호환되는 모델을 선택하세요."
+        ),
+        reason_code="incompatible_active",
+        recommended_action="현재 정의로 다시 학습하세요.",
+        operation_id=3,
+    )
+    stale_b_failure = PredictModelLifecycleStatus(
+        "reload-failed",
+        latest_failure.loaded,
+        "candidate-b",
+        2,
+        "stale B failure",
+        operation_id=2,
+    )
+    workspace = _workspace(latest_failure)
+    workspace.prediction_controller.outcome = ModelReloadOutcome(
+        stale_outcome_status,
+        stale_b_failure,
+        stale_b_failure.message,
+        reason_code="stale_active_revision",
+        operation_id=2,
+        applied_to_shared_state=False,
+    )
+    adapter = PredictModelLifecycleUi(workspace)
+
+    adapter.reload_active()
+
+    assert workspace.status_label.text() == latest_failure.message
+    assert "호환되지 않습니다" in workspace.status_label.text()
+    assert workspace.prediction_controller.refresh_calls == 0
+    assert workspace.model_lifecycle_diagnostics is latest_failure
 
 
 def test_unexpected_ui_exception_is_redacted_and_traceback_is_preserved():

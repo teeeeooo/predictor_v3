@@ -10,6 +10,7 @@ from apps.common.model_lifecycle.deployment_export import (
 )
 from apps.common.model_lifecycle.deployment_export_outcomes import (
     deployment_export_failure,
+    unexpected_deployment_export_failure,
 )
 from apps.common.model_lifecycle.errors import ModelLifecycleError
 from apps.common.model_lifecycle.promotion import ModelPromotionService
@@ -145,10 +146,13 @@ class ModelManagementService:
                 "training_running",
                 diagnostic="training_running",
             )
-        return self._deployment_export.export_active(
-            destination_parent,
-            expected_revision=expected_revision,
-        )
+        try:
+            return self._deployment_export.export_active(
+                destination_parent,
+                expected_revision=expected_revision,
+            )
+        except Exception as exc:
+            return unexpected_deployment_export_failure(exc)
 
     def _review(self, snapshot, active_candidate_id: str) -> CandidateReview:  # noqa: ANN001
         manifest = snapshot.manifest

@@ -21,6 +21,9 @@ from PySide6.QtWidgets import (
 )
 
 from apps.common.ui import style
+from apps.common.model_lifecycle.deployment_export_outcomes import (
+    unexpected_deployment_export_failure,
+)
 from apps.train.application.model_management import (
     CandidateReview,
     ModelManagementSnapshot,
@@ -328,10 +331,13 @@ class ModelManagementPanel(QFrame):
                 False,
             )
             return
-        outcome = export(
-            destination,
-            expected_revision=self._snapshot.active_revision,
-        )
+        try:
+            outcome = export(
+                destination,
+                expected_revision=self._snapshot.active_revision,
+            )
+        except Exception as exc:
+            outcome = unexpected_deployment_export_failure(exc)
         self.model_export_diagnostics = outcome
         message = outcome.message
         if outcome.status == "exported":

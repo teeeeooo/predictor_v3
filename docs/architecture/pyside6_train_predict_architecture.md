@@ -1053,12 +1053,17 @@ Responsibility:
   final Active revision guard only while Predict is idle
 - preserve the prior loaded service and identity on every reload preparation,
   compatibility, recovery, corruption, or Active-race failure
-- assign every explicit reload a monotonic application-owned operation identity;
-  only the current operation may install a service or publish shared lifecycle
-  status, and controller/UI completion adapters reject stale operation results
+- assign every refresh and explicit reload a monotonic application-owned
+  observation identity; only the current operation may install a service or
+  publish shared lifecycle status, stale callers may retain their observed
+  result, and controller/UI adapters render the read-only authoritative current
+  status instead of starting an unguarded replacement refresh
 - return structured reload/export reason codes, preservation state, recommended
   action, raw diagnostic, and diagnostic traceback; default UI consumes only
   the user guidance and retains internal detail in its diagnostics state
+- route prediction-running reload and unexpected export failures through those
+  application-owned outcomes; UI event containment does not parse exception
+  strings and never exposes raw internal details in the default message
 - derive immutable deployment exports only from a guarded current Active
   Candidate, publish them from verified staging without overwrite, and leave
   Candidate, Active, history, and source artifacts unchanged

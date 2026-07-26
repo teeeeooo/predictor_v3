@@ -25,7 +25,6 @@ from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
 
 class PredictModelLifecycleService:
     """Keep a usable loaded bundle while observing and reloading Active."""
-
     def __init__(
         self,
         repository: ModelLifecycleRepository,
@@ -47,11 +46,13 @@ class PredictModelLifecycleService:
 
     @property
     def loaded(self) -> LoadedModelIdentity:
-        return self._loaded
+        with self._operation_lock:
+            return self._loaded
 
     @property
     def status(self) -> PredictModelLifecycleStatus:
-        return self._last_status
+        with self._operation_lock:
+            return self._last_status
 
     def is_operation_current(self, operation_id: int) -> bool:
         with self._operation_lock:
@@ -68,34 +69,36 @@ class PredictModelLifecycleService:
         active_revision: int,
     ) -> None:
         service.prepare_model()
-        self._loaded = LoadedModelIdentity(
-            candidate_id,
-            active_revision,
-            self._runtime_snapshot.generation_id,
-        )
+        with self._operation_lock:
+            self._loaded = LoadedModelIdentity(
+                candidate_id,
+                active_revision,
+                self._runtime_snapshot.generation_id,
+            )
         self.refresh()
 
     def record_startup_failure(self, message: str) -> None:
-        self._last_status = PredictModelLifecycleStatus(
+        operation_id = self._begin_status_operation()
+        status = PredictModelLifecycleStatus(
             "startup-failed",
-            self._loaded,
+            self.loaded,
             message="현재 Active 모델을 시작할 수 없습니다.",
             diagnostic=message,
+            operation_id=operation_id,
         )
+        self._publish_status(status, operation_id=operation_id)
 
-    def refresh(
-        self,
-        *,
-        operation_id: int | None = None,
-    ) -> PredictModelLifecycleStatus:
-        observed = self._observe_status(operation_id=operation_id or 0)
-        return self._publish_status(observed, operation_id=operation_id)
+    def refresh(self) -> PredictModelLifecycleStatus:
+        operation_id = self._begin_status_operation()
+        observed = self._observe_status(operation_id=operation_id)
+        self._publish_status(observed, operation_id=operation_id)
+        return observed
 
-    def _observe_status(self, *, operation_id: int = 0) -> PredictModelLifecycleStatus:
+    def _observe_status(self, *, operation_id: int) -> PredictModelLifecycleStatus:
         resolution = ActiveModelResolver(self._repository).resolve()
         return observed_model_status(
             resolution,
-            self._loaded,
+            self.loaded,
             operation_id=operation_id,
         )
 
@@ -105,7 +108,7 @@ class PredictModelLifecycleService:
         prediction_running: bool,
         swap_service: Callable[[PredictionServicePort], None],
     ) -> ModelReloadOutcome:
-        operation_id = self._begin_reload_operation()
+        operation_id = self._begin_status_operation()
         if prediction_running:
             return self._reload_failure(
                 "blocked",
@@ -141,9 +144,7 @@ class PredictModelLifecycleService:
             ):
                 with self._operation_lock:
                     if operation_id != self._current_operation_id:
-                        raise StaleActiveRevisionError(
-                            "reload operation was superseded"
-                        )
+                        raise StaleActiveRevisionError("reload operation was superseded")
                     swap_service(prepared)
                     self._loaded = LoadedModelIdentity(
                         resolution.candidate_id,
@@ -174,18 +175,19 @@ class PredictModelLifecycleService:
                 f"{type(exc).__name__}: {str(exc)}",
                 traceback.format_exc(),
             )
-        status = self.refresh(operation_id=operation_id)
-        applied = self.is_operation_current(operation_id)
+        status = self._observe_status(operation_id=operation_id)
+        published = self._publish_status(status, operation_id=operation_id)
+        applied = published is status
         return ModelReloadOutcome(
             "reloaded",
-            status,
+            published,
             "새 Active 모델을 안전하게 다시 불러왔습니다.",
             preserved_loaded_model=False,
             operation_id=operation_id,
             applied_to_shared_state=applied,
         )
 
-    def _begin_reload_operation(self) -> int:
+    def _begin_status_operation(self) -> int:
         with self._operation_lock:
             self._next_operation_id += 1
             self._current_operation_id = self._next_operation_id
@@ -195,13 +197,10 @@ class PredictModelLifecycleService:
         self,
         status: PredictModelLifecycleStatus,
         *,
-        operation_id: int | None,
+        operation_id: int,
     ) -> PredictModelLifecycleStatus:
         with self._operation_lock:
-            if (
-                operation_id is not None
-                and operation_id != self._current_operation_id
-            ):
+            if operation_id != self._current_operation_id:
                 return self._last_status
             self._last_status = status
             return status
@@ -215,13 +214,14 @@ class PredictModelLifecycleService:
         diagnostic_traceback: str = "",
     ) -> ModelReloadOutcome:
         observed = self._observe_status(operation_id=operation_id)
+        loaded = observed.loaded
         message, action = reload_failure_guidance(
             reason_code,
-            loaded_model_exists=bool(self._loaded.candidate_id),
+            loaded_model_exists=bool(loaded.candidate_id),
         )
         failure_status = PredictModelLifecycleStatus(
-            "reload-failed" if self._loaded.candidate_id else "startup-failed",
-            self._loaded,
+            "reload-failed" if loaded.candidate_id else "startup-failed",
+            loaded,
             observed.active_candidate_id,
             observed.active_revision,
             message,
@@ -241,7 +241,7 @@ class PredictModelLifecycleService:
             published,
             message,
             reason_code,
-            preserved_loaded_model=bool(self._loaded.candidate_id),
+            preserved_loaded_model=bool(loaded.candidate_id),
             recommended_action=action,
             diagnostic=diagnostic,
             diagnostic_traceback=diagnostic_traceback,

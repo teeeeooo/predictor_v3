@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5E second L4 audit repair
+
+### Decision
+
+- Preserve the second independent audit verdict as `FAIL` at exact head
+  `f22d6e9526bc3c31d0775123a9614b860fadbf5b`; validation run `30180190868`
+  remains successful historical evidence, not audit PASS.
+- Repair only its four findings: order every refresh observation/publication,
+  prevent stale UI callbacks from starting a new unguarded refresh, route
+  prediction-running reload through structured application guidance, and
+  contain unexpected export exceptions as structured internal failures.
+- Use one application-owned monotonic sequence for reload and refresh. Stale
+  callers may receive their own result, while shared status and UI use the
+  read-only authoritative current status.
+- Preserve loaded runtime, Active/Candidate/history, existing exports, raw
+  diagnostics, immutable publication, and all earlier Phase 5E boundaries.
+- Leave Draft PR #32 open and unmerged for exact-head independent L4 re-audit;
+  do not begin Phase 5F or later scope.
+
 ## 2026-07-26 — Phase 5E first L4 audit repair
 
 ### Decision

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from apps.common.model_lifecycle.deployment_export_outcomes import (
+    unexpected_deployment_export_failure,
+)
 from apps.train.application.training_lifecycle import TrainingLifecycleService
 from apps.train.application.model_management import ModelManagementService
 from apps.common.model_lifecycle.promotion import ModelPromotionService
@@ -101,7 +104,10 @@ class TrainController:
     ):  # noqa: ANN201
         if self._model_management is None:
             raise RuntimeError("Model lifecycle management is unavailable.")
-        return self._model_management.export_active(
-            destination_parent,
-            expected_revision=expected_revision,
-        )
+        try:
+            return self._model_management.export_active(
+                destination_parent,
+                expected_revision=expected_revision,
+            )
+        except Exception as exc:
+            return unexpected_deployment_export_failure(exc)

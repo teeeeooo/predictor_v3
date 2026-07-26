@@ -202,6 +202,51 @@ def test_export_failure_ui_hides_diagnostics_and_retains_structured_outcome(
     assert panel.model_export_diagnostics is failure
 
 
+def test_unexpected_export_ui_exception_is_contained_and_redacted(monkeypatch):
+    _app()
+    controller = FakeController(ModelManagementSnapshot(
+        "active",
+        "candidate-a",
+        7,
+        (_candidate("candidate-a", active=True),),
+        "active",
+    ))
+    controller.export_active_model = lambda *_args, **_kwargs: (
+        (_ for _ in ()).throw(
+            RuntimeError("secret /tmp/export candidate-a fingerprint-value")
+        )
+    )
+    notifications = []
+    panel = ModelManagementPanel(
+        controller,
+        notify=lambda title, message, success: notifications.append(
+            (title, message, success)
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.train.ui.model_management_panel.QFileDialog.getExistingDirectory",
+        lambda *_args: "/tmp/exports",
+    )
+
+    panel.export_button.click()
+
+    assert len(notifications) == 1
+    title, message, success = notifications[0]
+    assert title == "Deployment export"
+    assert not success
+    assert "예상하지 못한 오류" in message
+    assert "기존 Active 모델" in message
+    assert "이미 생성된 export" in message
+    assert "대상 위치와 진단 정보" in message
+    assert "secret" not in message
+    assert "/tmp" not in message
+    assert "RuntimeError" not in message
+    assert "secret /tmp/export" in panel.model_export_diagnostics.diagnostic
+    assert "RuntimeError" in (
+        panel.model_export_diagnostics.diagnostic_traceback
+    )
+
+
 def test_empty_corrupt_and_candidate_metric_states_are_explicit():
     _app()
     controller = FakeController(ModelManagementSnapshot(

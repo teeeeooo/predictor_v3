@@ -72,6 +72,11 @@ class PredictionController:
             return None
         return self._model_lifecycle.refresh()
 
+    def current_model_lifecycle_status(self) -> PredictModelLifecycleStatus | None:
+        if self._model_lifecycle is None:
+            return None
+        return self._model_lifecycle.status
+
     def reload_active_model(self) -> ModelReloadOutcome:
         if self._model_lifecycle is None:
             raise RuntimeError("Model lifecycle reload is unavailable.")
@@ -81,6 +86,9 @@ class PredictionController:
         )
 
     def is_model_reload_operation_current(self, operation_id: int) -> bool:
+        return self.is_model_lifecycle_operation_current(operation_id)
+
+    def is_model_lifecycle_operation_current(self, operation_id: int) -> bool:
         if self._model_lifecycle is None:
             return False
         return self._model_lifecycle.is_operation_current(operation_id)

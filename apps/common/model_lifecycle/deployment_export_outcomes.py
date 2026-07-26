@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import traceback
 
 
 @dataclass(frozen=True)
@@ -59,7 +60,7 @@ _EXPORT_GUIDANCE = {
     ),
     "internal_failure": (
         "예상하지 못한 오류로 export를 완료하지 못했습니다.",
-        "진단 정보를 확인한 뒤 다시 시도하세요.",
+        "대상 위치와 진단 정보를 확인한 뒤 다시 시도하세요.",
     ),
 }
 
@@ -74,11 +75,20 @@ def deployment_export_failure(
     return DeploymentExportResult(
         "failed",
         message=(
-            f"{problem} 기존 Active 모델과 Candidate는 변경되지 않았습니다. {action}"
+            f"{problem} 기존 Active 모델, Candidate와 이미 생성된 export는 "
+            f"변경되지 않았습니다. {action}"
         ),
         reason_code=reason_code,
         preserved_active=True,
         recommended_action=action,
         diagnostic=diagnostic,
         diagnostic_traceback=diagnostic_traceback,
+    )
+
+
+def unexpected_deployment_export_failure(exc: Exception) -> DeploymentExportResult:
+    return deployment_export_failure(
+        "internal_failure",
+        diagnostic=f"{type(exc).__name__}: {str(exc)}",
+        diagnostic_traceback=traceback.format_exc(),
     )
