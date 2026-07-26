@@ -1300,6 +1300,24 @@ Purpose:
 - GUI/CLI interoperability
 - shared execution lock
 
+Current implementation boundary (2026-07-26):
+
+- `predictor_v3.experiment.v1` JSON is the shared GUI/headless contract.
+- `apps/train/application/experiments/` owns strict resolution, persisted
+  run/campaign records, campaign policy, and the workspace execution lock.
+- `app_experiment.py` delegates real work to the same
+  `TrainingLifecycleService`, child training job, Candidate publisher, and
+  Phase 5C artifact owners used by Train GUI.
+- Run and campaign records live below the existing lifecycle workspace in
+  `experiments/`; callers cannot select or overwrite output paths.
+- Phase 5F runs only explicit campaign experiments. Reserved early-stopping and
+  recommendation-threshold fields are preserved but do not execute Phase 5G
+  proposal, ranking, recommendation, or autonomous iteration behavior.
+- Resume compares the saved current-version execution identity and fails closed
+  when Definition/runtime, training, preprocessing, metric, specification, or
+  build identity changes. Phase 5H historical adapters and immutable snapshot
+  policy remain deferred.
+
 ### Phase 5G — Agent-assisted campaign loop
 
 Purpose:

@@ -97,12 +97,16 @@ class CandidatePublisher:
             run_id=request.run_id,
             candidate_id=request.candidate_id,
             evidence=evidence,
-            required_target_identities=tuple(
-                target.identity for target in targets
+            required_target_identities=(
+                tuple(json.loads(request.production_required_target_ids_json))
+                if request.production_required_target_ids_json
+                else tuple(target.identity for target in targets)
             ),
             baseline=baseline,
             baseline_identity=baseline_identity,
             baseline_unavailable_reason=baseline_reason,
+            contains_unpublished_features=request.contains_unpublished_features,
+            exploratory_feature_policy=request.exploratory_feature_policy,
             publication_outcome="published",
             include_core_evidence_artifact=True,
         )
@@ -137,6 +141,7 @@ class CandidatePublisher:
             ) for target in targets),
             promotion_eligible=promotion_eligible,
             blocking_reasons=blocking_reasons,
+            contains_unpublished_features=request.contains_unpublished_features,
             analysis_contract_version=TRAINING_RESULT_SCHEMA_VERSION,
             analysis_artifacts=artifact_references,
             schema_version=CANDIDATE_SCHEMA_VERSION,

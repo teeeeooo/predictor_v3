@@ -18,7 +18,9 @@ Train/Model UI/UX is complete. The user accepted repaired head
 `a2ea64464e595d28d58db77a28d31eac60c6a72d`, and PR #31 was squash-merged to
 `main` as `78e9d097693c3e3b8c23d2ed18dd7e68dc1f44b0`. Both independent audit
 `FAIL` results remain historical evidence; no independent `PASS` is
-retroactively declared. Phase 5E is the next active but unstarted phase.
+retroactively declared. Phase 5E is complete and merged. Phase 5F Headless
+Experiment Interface is implemented on an unmerged worker branch and awaits
+independent exact-head audit; Phase 5G and Phase 5H remain unstarted.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -60,6 +62,13 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - A pre-Phase-5 `model.pkl` becomes the initial Active model only when complete
   compatibility is proven. Otherwise the original is preserved and the workspace
   begins in Bootstrap / Retraining required state.
+- Phase 5F uses one strict versioned Experiment Specification across Train GUI
+  and headless execution. Explicit campaigns persist current-version contracts,
+  bounded attempts, pause/cancel/resume state, and safe run/Candidate/evidence
+  references below that same lifecycle workspace.
+- GUI, headless single-run, campaign, and resume share one non-stealable
+  workspace training-writer lock. Read-only run/campaign/model inspection
+  remains available during training, and no headless promotion authority exists.
 - Train and Predict remain separate PySide6 applications under `apps/train/` and
   `apps/predict/`; the calculator shell and Tkinter path stay separate.
 - Canonical calculator launch remains `app_calculator.py` →
@@ -259,8 +268,8 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ## Deferred / Hold
 
-- Phase 5F–5G headless campaign and agent-assisted loop work remains ordered
-  after the lifecycle and Train/Model UI slices.
+- Phase 5F headless campaign foundation is implemented and pending audit.
+  Phase 5G agent-assisted selection/ranking/recommendation remains deferred.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.

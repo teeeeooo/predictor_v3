@@ -49,6 +49,12 @@ class TrainRuntimeParticipant:
     def registry_snapshot(self) -> ModelRegistrySnapshot:
         return self._registry
 
+    @property
+    def derived_evaluation_snapshot(self):  # noqa: ANN201
+        from core.data_definition.derived.evaluator import evaluation_snapshot
+
+        return evaluation_snapshot(self._active.manifest)
+
     def revision_token(self) -> str:
         evidence = self._selected_data_evidence()
         return (

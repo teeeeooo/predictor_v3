@@ -45,6 +45,7 @@ def train_all_models_with_analysis(
     data_path=None, log_callback=None, model_output_path=None,
     *, registry_snapshot: ModelRegistrySnapshot | None = None,
     optimization_config: TrainingOptimizationConfig | None = None,
+    derived_evaluation_snapshot=None,  # noqa: ANN001
 ):
     if not model_output_path:
         raise ValueError("Training caller must provide a staging model_output_path.")
@@ -59,7 +60,9 @@ def train_all_models_with_analysis(
     custom_log(f"📦 데이터 로드 및 전처리 시작... ({os.path.basename(file)})")
     raw_df = pd.read_csv(file)
     df = load_and_preprocess(file)
-    quality_df = calculate_derived_features(df)
+    quality_df = calculate_derived_features(
+        df, definitions=derived_evaluation_snapshot
+    )
     snapshot = registry_snapshot or compatibility_registry_snapshot()
     validate_training_input_headers(df.columns, registry_snapshot=snapshot)
 
@@ -92,7 +95,12 @@ def train_all_models_with_analysis(
         custom_log(f"\n==============================================")
         custom_log(f"🚀 [{config['name']}] 학습 준비 중...")
 
-        X_full, y_full = prepare_pipeline(df, config, registry_snapshot=snapshot)
+        X_full, y_full = prepare_pipeline(
+            df,
+            config,
+            registry_snapshot=snapshot,
+            derived_evaluation_snapshot=derived_evaluation_snapshot,
+        )
         mandatory_features = config.get("mandatory_features", [])
         use_rfe = config.get("use_rfe", False)
 

@@ -30,6 +30,16 @@ def training_process_arguments(
             if request.registry_payload_json
             else []
         ),
+        *(
+            ["--optimization-config-json", request.optimization_config_json]
+            if request.optimization_config_json
+            else []
+        ),
+        *(
+            ["--derived-evaluation-json", request.derived_evaluation_json]
+            if request.derived_evaluation_json
+            else []
+        ),
         *extra_args,
     ]
 

@@ -20,6 +20,16 @@ from apps.train.application.candidate_publication import (
     CandidateArtifactGenerationError,
     CandidatePublicationPort,
 )
+from apps.train.application.experiments.execution_lock import (
+    ExecutionLockConflict,
+)
+from apps.train.application.experiments.execution_owner import (
+    TrainingExecutionOwnership,
+    lock_conflict_result,
+)
+from apps.train.application.experiments.terminal_policy import (
+    apply_exploratory_terminal_policy,
+)
 from apps.train.ports.training_execution_port import (
     TrainingExecutionCallbacks,
     TrainingExecutionFactory,
@@ -49,6 +59,7 @@ class TrainingLifecycleService:
         registry_provider: Callable[[], ModelRegistrySnapshot] | None = None,
         repository: ModelLifecycleRepository | None = None,
         publisher: CandidatePublicationPort | None = None,
+        execution_lock_factory=None,  # noqa: ANN001
     ) -> None:
         self._validation = validation or TrainingService()
         self._execution = execution
@@ -56,6 +67,9 @@ class TrainingLifecycleService:
         self._registry_provider = registry_provider
         self._repository = repository
         self._publisher = publisher
+        self._execution_ownership = TrainingExecutionOwnership(
+            repository, execution_lock_factory
+        )
         self._is_running = False
         self._last_result: TrainingResult | None = None
         self._active_request: TrainingRequest | None = None
@@ -125,8 +139,18 @@ class TrainingLifecycleService:
             return invalid
         if self._repository is not None:
             try:
+                self._execution_ownership.acquire(resolved)
+            except ExecutionLockConflict as exc:
+                result = lock_conflict_result(resolved, exc)
+                self._last_result = result
+                _notify(callbacks.get("status_callback"), result.message)
+                _notify(callbacks.get("failed_callback"), result)
+                return result
+        if self._repository is not None:
+            try:
                 self._staging = self._repository.create_staging(resolved.candidate_id)
             except Exception as exc:
+                self._release_execution_lock()
                 result = _error_result(resolved, str(exc).splitlines()[0])
                 self._last_result = result
                 _notify(callbacks.get("status_callback"), result.message)
@@ -137,7 +161,23 @@ class TrainingLifecycleService:
             )
         self._active_request = resolved
         self._callbacks = callbacks
+        self._update_execution_stage("training_starting")
         _notify(callbacks.get("status_callback"), "Training run starting.")
+        try:
+            _notify(callbacks.get("accepted_callback"), resolved)
+        except Exception as exc:
+            result = _error_result(
+                resolved,
+                "Training preflight persistence failed: "
+                f"{str(exc).splitlines()[0]}",
+            )
+            self._discard_staging()
+            self._release_execution_lock()
+            self._active_request = None
+            self._callbacks = {}
+            self._last_result = result
+            _notify(callbacks.get("failed_callback"), result)
+            return result
         return self._start_execution(resolved)
 
     def cancel(self) -> bool:
@@ -201,6 +241,7 @@ class TrainingLifecycleService:
         return None
 
     def _handle_progress(self, progress: TrainingProgress) -> None:
+        self._update_execution_stage("training")
         _notify(self._callbacks.get("progress_callback"), progress)
         if progress.message:
             _notify(self._callbacks.get("status_callback"), progress.message)
@@ -211,7 +252,13 @@ class TrainingLifecycleService:
             "training_execution" if terminal != "finished" else ""
         )
         failure_reason = result.message if failure_stage else ""
+        terminal, result, failure_stage, failure_reason = (
+            apply_exploratory_terminal_policy(
+                request, terminal, result, failure_stage, failure_reason
+            )
+        )
         if terminal == "finished" and request is not None and self._repository is not None:
+            self._update_execution_stage("candidate_publication")
             try:
                 assert self._publisher is not None and self._staging is not None
                 result = self._publisher.publish(request, result, self._staging)
@@ -304,6 +351,7 @@ class TrainingLifecycleService:
         execution, self._execution = self._execution, None
         if execution is not None:
             execution.dispose()
+        self._release_execution_lock()
         self._callbacks = {}
 
     def _discard_staging(self) -> None:
@@ -311,6 +359,12 @@ class TrainingLifecycleService:
             assert self._repository is not None
             self._repository.discard_staging(self._staging)
             self._staging = None
+
+    def _update_execution_stage(self, stage: str) -> None:
+        self._execution_ownership.update(stage)
+
+    def _release_execution_lock(self) -> None:
+        self._execution_ownership.release()
 
 
 def _error_result(request: TrainingRequest, message: str) -> TrainingResult:

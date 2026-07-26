@@ -33,13 +33,17 @@ def calculate_derived_features(df, definitions=None, *, requested_outputs=None):
         snapshot_for_dependency_projection(snapshot, projection),
     )
 
-def prepare_pipeline(df, config, *, registry_snapshot=None):
+def prepare_pipeline(
+    df, config, *, registry_snapshot=None, derived_evaluation_snapshot=None
+):
     """
     모델 설정에 맞춰 피처/타겟 분리 및 Leakage 제거.
     이 함수는 'Pipeline' 객체를 반환하는 것이 아니라 데이터를 정제하여 반환합니다.
     """
     # 1. 파생 피처 계산
-    df_processed = calculate_derived_features(df)
+    df_processed = calculate_derived_features(
+        df, definitions=derived_evaluation_snapshot
+    )
 
     # 2. 제거할 컬럼 리스트 생성 (현재 타겟 + 전체 타겟 목록 합치기)
     # 다른 모델의 결과값이 피처로 들어가는 Data Leakage를 원천 차단합니다.

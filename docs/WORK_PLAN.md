@@ -17,6 +17,17 @@
 
 ## Current Slice
 
+Phase 5F Headless Experiment Interface is implemented on the worker branch as
+one owner-aligned source slice and is pending independent exact-head audit.
+The implementation establishes the shared strict Experiment Specification,
+GUI/headless request parity, versioned machine output, single-run and explicit
+campaign execution, pause/cancel/resume/retry records, current-version
+fail-closed resume identity, and a workspace-wide GUI/headless/campaign writer
+lock. It reuses Phase 5B Candidate/Active lifecycle, Phase 5C result artifacts,
+Phase 5D explicit promotion, and Phase 5E export/reload boundaries. No audit
+PASS is declared. Phase 5G agent selection/ranking/recommendation and Phase 5H
+full snapshot/compatibility/retention work remain unstarted.
+
 Phase 5D Train/Model UI/UX is complete and merged. The user accepted repaired
 head `a2ea64464e595d28d58db77a28d31eac60c6a72d` and authorized PR #31 closeout;
 GitHub squash-merged it to `main` as
@@ -61,15 +72,15 @@ Train/Model can create a checksum-verified immutable export only from the
 guarded current Active without changing Candidate, Active, or history. Phase 5D
 promotion and rollback remain unchanged. No-hot-swap, explicit idle reload,
 reload-failure preservation, and immutable current-Active-only export remain
-the Phase 5E contracts. CLI, Campaign, leaderboard, the Agent-assisted
-Experiment Loop, retention, and executable packaging remain later slices.
+the Phase 5E contracts. Leaderboard, the Agent-assisted Experiment Loop,
+retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Begin Phase 5F Headless Experiment Interface. It is the next active phase and
-has not started. Preserve both Phase 5E audit `FAIL` results, their repaired
-heads, and prior successful validations as historical evidence; do not rewrite
-or relabel those records.
+Run the independent exact-head audit against the open Phase 5F Draft PR. Keep
+the PR unmerged and do not begin Phase 5G or Phase 5H. Preserve both Phase 5E
+audit `FAIL` results, their repaired heads, and prior successful validations as
+historical evidence.
 
 ## Active Blockers
 
@@ -130,8 +141,9 @@ or relabel those records.
 
 ## Deferred / Hold
 
-- Phase 5F–5G CLI/campaign and agent-assisted loop work remains later than the
-  lifecycle and Train/Model UI slices; it must not displace the UI/UX priority.
+- Phase 5F CLI/campaign foundation is implemented and pending audit. Phase 5G
+  agent-assisted selection/ranking/recommendation remains deferred and must not
+  displace the accepted Train/Model UI workflow.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh

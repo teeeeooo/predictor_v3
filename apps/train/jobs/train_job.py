@@ -30,6 +30,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dev-predict-delay-ms", type=int, default=0)
     parser.add_argument("--hang-before-start", action="store_true")
     parser.add_argument("--registry-payload-json", default="")
+    parser.add_argument("--optimization-config-json", default="")
+    parser.add_argument("--derived-evaluation-json", default="")
     return parser.parse_args()
 
 
@@ -144,6 +146,12 @@ def main() -> int:
                     ModelRegistrySnapshot.from_payload(json.loads(request.registry_payload_json))
                     if request.registry_payload_json else None
                 ),
+                optimization_config=_optimization_config(
+                    args.optimization_config_json
+                ),
+                derived_evaluation_snapshot=_derived_evaluation_snapshot(
+                    args.derived_evaluation_json
+                ),
             )
             summary = output.summary
         if _CANCELLED:
@@ -184,6 +192,7 @@ def run_production_training(
     log_callback,
     registry_snapshot=None,  # noqa: ANN001
     optimization_config=None,  # noqa: ANN001
+    derived_evaluation_snapshot=None,  # noqa: ANN001
 ):
     """Run the production Core owner and persist its structured evidence."""
     from core.ml.training import train_all_models_with_analysis
@@ -194,6 +203,7 @@ def run_production_training(
         model_output_path=str(temp_model_path),
         registry_snapshot=registry_snapshot,
         optimization_config=optimization_config,
+        derived_evaluation_snapshot=derived_evaluation_snapshot,
     )
     evidence_path = Path(request.model_output_path).parent / "core_training_evidence.json"
     evidence_path.write_text(
@@ -207,6 +217,47 @@ def run_production_training(
         encoding="utf-8",
     )
     return output, evidence_path
+
+
+def _optimization_config(payload_json: str):  # noqa: ANN202
+    if not payload_json:
+        return None
+    from core.ml.training_results import TrainingOptimizationConfig
+
+    payload = json.loads(payload_json)
+    if not isinstance(payload, dict):
+        raise ValueError("optimization configuration must be an object")
+    allowed = set(TrainingOptimizationConfig.__dataclass_fields__)
+    if set(payload) != allowed:
+        raise ValueError("optimization configuration fields are invalid")
+    config = TrainingOptimizationConfig(**payload)
+    config.validate()
+    return config
+
+
+def _derived_evaluation_snapshot(payload_json: str):  # noqa: ANN202
+    if not payload_json:
+        return None
+    from core.data_definition.derived.evaluator import (
+        DerivedEvaluationDefinition,
+        DerivedEvaluationSnapshot,
+        DerivedEvaluatorInput,
+    )
+
+    payload = json.loads(payload_json)
+    if not isinstance(payload, dict) or set(payload) != {
+        "generation_id", "definitions", "evaluator_inputs"
+    }:
+        raise ValueError("derived evaluation snapshot fields are invalid")
+    return DerivedEvaluationSnapshot(
+        generation_id=str(payload["generation_id"]),
+        definitions=tuple(
+            DerivedEvaluationDefinition(**item) for item in payload["definitions"]
+        ),
+        evaluator_inputs=tuple(
+            DerivedEvaluatorInput(**item) for item in payload["evaluator_inputs"]
+        ),
+    )
 
 
 def _run_dev_fast(request: TrainingRequest, temp_model_path: Path, args: argparse.Namespace) -> str:

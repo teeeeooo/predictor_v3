@@ -23,6 +23,8 @@ from apps.train.application.runtime_generation import (
     RuntimeGenerationCoordinator,
     TrainRuntimeParticipant,
 )
+from apps.train.application.experiments.service import ExperimentApplicationService
+from apps.train.application.training_lifecycle import TrainingLifecycleService
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.controllers.train_controller import TrainController
@@ -91,11 +93,24 @@ def create_shell(
         train_participant,
         mapping_participant,
     ))
-    train_controller = TrainController(
+    training_lifecycle = TrainingLifecycleService(
         execution_factory=QProcessTrainingRunner,
         registry_provider=registry_provider,
+        repository=lifecycle_repository,
+        publisher=build_candidate_publisher(lifecycle_repository),
+    )
+    experiment_service = ExperimentApplicationService(
+        training_lifecycle,
+        lifecycle_root=lifecycle_repository.root,
+        derived_snapshot_provider=lambda: (
+            train_participant.derived_evaluation_snapshot
+        ),
+    )
+    train_controller = TrainController(
+        lifecycle_service=training_lifecycle,
         lifecycle_repository=lifecycle_repository,
-        candidate_publisher=build_candidate_publisher(lifecycle_repository),
+        registry_provider=registry_provider,
+        experiment_service=experiment_service,
     )
     return TrainShell(
         train_controller=train_controller,

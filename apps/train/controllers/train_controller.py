@@ -6,9 +6,11 @@ from apps.common.model_lifecycle.deployment_export_outcomes import (
     unexpected_deployment_export_failure,
 )
 from apps.train.application.training_lifecycle import TrainingLifecycleService
+from apps.train.application.experiments.execution_lock import execution_lock_is_held
 from apps.train.application.model_management import ModelManagementService
 from apps.common.model_lifecycle.promotion import ModelPromotionService
 from apps.train.services.training_service import TrainingService
+from apps.train.state.training_run_state import TrainingRequest
 
 
 class TrainController:
@@ -24,6 +26,7 @@ class TrainController:
         candidate_publisher=None,  # noqa: ANN001
         lifecycle_service: TrainingLifecycleService | None = None,
         model_management_service: ModelManagementService | None = None,
+        experiment_service=None,  # noqa: ANN001
     ) -> None:
         self._lifecycle = lifecycle_service or TrainingLifecycleService(
             validation=service,
@@ -34,6 +37,7 @@ class TrainController:
             publisher=candidate_publisher,
         )
         self._validation = service or TrainingService()
+        self._experiments = experiment_service
         self._model_management = model_management_service
         if (
             self._model_management is None
@@ -43,7 +47,12 @@ class TrainController:
             self._model_management = ModelManagementService(
                 lifecycle_repository,
                 ModelPromotionService(lifecycle_repository, registry_provider),
-                training_running=lambda: self._lifecycle.is_running,
+                training_running=lambda: (
+                    self._lifecycle.is_running
+                    or execution_lock_is_held(
+                        lifecycle_repository.root / ".training-execution.lock"
+                    )
+                ),
             )
 
     @property
@@ -74,6 +83,35 @@ class TrainController:
 
     def start(self, request=None, **kwargs):  # noqa: ANN001, ANN201
         return self._lifecycle.start(request, **kwargs)
+
+    def start_gui_experiment(
+        self, data_path: str, *, run_id: str, **callbacks
+    ):  # noqa: ANN201
+        if self._experiments is None:
+            return self.start(
+                TrainingRequest(run_id=run_id, data_path=data_path),
+                **callbacks,
+            )
+        resolved, _request = self._experiments.resolve_gui_request(
+            data_path, run_id=run_id
+        )
+        return self._experiments.run(
+            resolved,
+            run_id=run_id,
+            execution_owner="gui",
+            callbacks=callbacks,
+        )
+
+    def inspect_experiment_run(self, run_id: str):  # noqa: ANN201
+        if self._experiments is None:
+            return None
+        return self._experiments.inspect_run(run_id)
+
+    def inspect_latest_campaign(self):  # noqa: ANN201
+        if self._experiments is None:
+            return None
+        campaigns = self._experiments.store.list_campaigns()
+        return campaigns[-1] if campaigns else None
 
     def cancel(self) -> bool:
         return self._lifecycle.cancel()
