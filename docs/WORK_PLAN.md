@@ -17,25 +17,22 @@
 
 ## Current Slice
 
-Phase 5G Agent-assisted Campaign Loop source is complete on one owner-aligned
-branch and remains in an open Draft PR. The first independent audit failed at
-`029fefdd783c21f380f6d43c6bd6efe403a52b28`: pre-start failure discarded the
-pending proposal/retry scope, and configured unresolved guardrail or stability
-evidence passed the production gate. The same-branch bounded repair now
-preserves stable pending execution/attempt allowance across resume and fails
-closed on configured unresolved gate evidence. The next independent audit
-failed at `a58f4584344fce921341bddc25091aef79403485`: `NaN` or Infinity could be
-treated as valid primary, guardrail, or instability evidence and reach
-production selection. The bounded follow-up now uses one finite-number
-projection boundary, rejects non-finite policy limits, records safe
-missing/non-finite context, and emits standard-JSON selection artifacts. It
-adds externally submitted one-step proposals, default configurable total
-five-iteration budget, durable before/delta/after evidence, Core-start-only
-consumption, hard gates, deterministic leaderboard/incumbent, immutable
-approval-required recommendations, and operator-only total budget extension.
-The application does not generate hypotheses or receive production authority.
-Phase 5H snapshot/history/retention and final-confirmation work remains
-unstarted.
+Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
+independent re-audit accepted exact head
+`3344be1237f56752f8fcb607074152c53ea75c52`; required exact-head run
+`30203030680` succeeded, and PR #34 was guarded squash-merged to `main` as
+`cb9183353dd6492dff07012c4276e4beb2b582b8`. Preserve the two earlier audit
+`FAIL` heads `029fefdd783c21f380f6d43c6bd6efe403a52b28` and
+`a58f4584344fce921341bddc25091aef79403485`, plus successful runs
+`30199916760` and `30201667033`, as historical validation evidence only.
+The merged Phase 5G contract accepts only explicit external one-step proposals,
+keeps stable retry scope and total attempt allowance across pre-start resume,
+uses Core-start-only iteration accounting, rejects proposal-side budget
+escalation, fails closed on unavailable or non-finite selection evidence, and
+rebuilds deterministic campaign incumbent, leaderboard, and immutable
+approval-required recommendations without changing Active, Definition, or
+deployment. Phase 5H snapshot/history/retention and final-confirmation work is
+next and remains unstarted.
 
 Phase 5F Headless Experiment Interface is complete and merged. The final
 independent re-audit accepted exact head
@@ -104,13 +101,11 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Obtain an independent exact-head re-audit of the repaired Phase 5G Draft PR.
-Preserve the first audit `FAIL` and successful historical validation run
-`30199916760`, plus the second audit `FAIL` at
-`a58f4584344fce921341bddc25091aef79403485` and successful run `30201667033`,
-as historical evidence only. The Worker
-must not declare audit PASS or merge. Do not begin Phase 5H migration,
-retention, compatibility, or final-confirmation work.
+Phase 5H snapshot/history/retention and final-confirmation is the next
+unstarted slice. Begin it only through a fresh current-state and design gate that
+confirms snapshot freeze, independent production-target confirmation, migration,
+retention/delete authority, and explicit final user confirmation. Do not begin
+Phase 5H implementation in this closeout.
 
 ## Active Blockers
 
@@ -171,9 +166,9 @@ retention, compatibility, or final-confirmation work.
 
 ## Deferred / Hold
 
-- Phase 5G agent-assisted selection/ranking/recommendation source is complete
-  and awaiting independent exact-head audit. It must not displace the accepted
-  Train/Model UI workflow or gain production authority.
+- Phase 5G agent-assisted selection/ranking/recommendation is complete and
+  merged. Phase 5H remains unstarted and must not grant autonomous production
+  authority or bypass explicit final confirmation.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh
@@ -190,6 +185,7 @@ retention, compatibility, or final-confirmation work.
 - Supporting Phase 5 UI/UX design: `docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md`
 - Phase 5A decision record: `result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md`
 - Phase 5B closeout record: `result_reports/records/2026-07/2026-07-25-train-admin-phase5b-post-merge-closeout.md`
+- Phase 5G closeout record: `result_reports/records/2026-07/2026-07-26-phase5g-post-merge-closeout.md`
 - Phase 3 foundation design: `docs/designs/2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`
 - Arc 15 owner foundation: `docs/designs/2026-07-06-arc15-unified-data-definition-manager-foundation.md`
 - Phase 4A result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4a-contract-audit-closeout.md`

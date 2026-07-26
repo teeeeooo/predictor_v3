@@ -25,7 +25,13 @@ Experiment Interface is also complete and merged: final accepted head
 `1f441c6d82545943aa160919c7d97d3a4b969580`. Its two independent audit `FAIL`
 heads `b5ce141711c3660e2ce38b738f58f478a333d251` and
 `e5558e82d7ca736bb45ca71eb94ab83b71a19950` remain historical evidence.
-Phase 5G is next and unstarted; Phase 5H remains unstarted.
+Phase 5G is complete and merged: final accepted head
+`3344be1237f56752f8fcb607074152c53ea75c52`, required run `30203030680`, and
+PR #34 squash merge `cb9183353dd6492dff07012c4276e4beb2b582b8`. Its earlier audit `FAIL`
+heads `029fefdd783c21f380f6d43c6bd6efe403a52b28` and
+`a58f4584344fce921341bddc25091aef79403485`, with runs `30199916760` and
+`30201667033`, remain historical evidence. Phase 5H is next and remains
+unstarted.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -78,6 +84,12 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - GUI, headless single-run, campaign, and resume share one non-stealable
   workspace training-writer lock. Read-only run/campaign/model inspection
   remains available during training, and no headless promotion authority exists.
+- Phase 5G accepts only explicit external proposals, persists before/delta/after
+  evidence before training, preserves stable retry scope, consumes iteration only
+  at Core training start, fails closed on unavailable or non-finite gate evidence,
+  and keeps deterministic campaign incumbent/recommendation separate from Active.
+  Budget extension remains operator-only and every recommendation remains
+  approval- and Phase 5H-confirmation-required.
 - Train and Predict remain separate PySide6 applications under `apps/train/` and
   `apps/predict/`; the calculator shell and Tkinter path stay separate.
 - Canonical calculator launch remains `app_calculator.py` →
@@ -222,45 +234,19 @@ activation, and Predict internal redesign is not part of Phase 4.
 Phase 4 is complete for repository-automated scope. Its owner and compatibility
 boundaries remain the baseline for Phase 5.
 
-### Current Workstream — Train/Admin Phase 5E Export and Predict Reload Boundary
+### Next Workstream — Train/Admin Phase 5H Final Confirmation and Retention
 
-Phase 5 retains this primary user flow:
+Phases 5B through 5G are complete and merged. Phase 5H remains unstarted and is
+the next workstream. It must begin with a fresh current-state/design gate before
+any implementation.
 
-```text
-select training data → train → check progress → review results
-```
-
-Phase 5D is complete on merged `main`. Its Candidate/Active surface preserves
-no-auto-active, explicit revision-guarded promotion, rollback by re-promotion,
-current compatibility, target-level comparison meaning, complete Advanced
-evidence, and fail-closed guidance. Phase 5E is next but has not started. It
-must retain those contracts while adding immutable deployment export and the
-running Predict reload-required/reload-failure boundary. The headless campaign
-and agent-assisted experiment loop remain later capabilities.
-
-Phase 5B established the audit-frozen default-workspace and legacy-model
-migration contracts. Lifecycle state uses stable workspace identity under the
-user-state root, never the repository absolute path as permanent identity.
-Existing `model.pkl` continuity is accepted only after complete compatibility
-proof; otherwise the original remains untouched and Bootstrap / Retraining
-required is shown. Training success remains Candidate publication, never
-automatic Active replacement; promotion stays explicit and revision-guarded.
-
-Schema, Feature, mapping, and compatibility validation is automatic and internal.
-The default surface presents the user's next action and outcome, not normal
-technical readiness details. Errors lead with a user-facing explanation and
-resolution action; Diagnostics/logs provide deeper technical context.
-
-Phase 5D presents Candidate and Active state through understandable,
-metric-centered UI; provide explicit `이 모델 사용` promotion; support rollback
-by selecting a previous Candidate; and handle Bootstrap/no-active state normally.
-The UI displays the Phase 5C contract and does not recalculate metrics or
-eligibility; detailed internal information belongs in an Advanced area.
-Existing Train, ML, persistence, artifact, and public contracts plus the Phase 4
-dynamic Feature/Target provider remain preserved.
-
-CLI, Campaign, leaderboard, the Agent-assisted Experiment Loop, runtime reload,
-export, and retention remain later steps.
+The Phase 5H boundary is to freeze the selected resolved specification, retrain
+all production-required Targets without further search mutation, perform an
+independent confirmation evaluation and optional locked final test, preserve
+versioned history, define migration and retention/delete authority, and require
+explicit final user confirmation before promotion. This closeout does not add
+snapshot, migration, retention, deletion, promotion, or final-confirmation
+behavior.
 
 ### Later — Predict UI/UX Overhaul
 
@@ -277,8 +263,9 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ## Deferred / Hold
 
-- Phase 5F headless campaign foundation is complete and merged. Phase 5G
-  agent-assisted selection/ranking/recommendation is next and remains unstarted.
+- Phase 5F and Phase 5G are complete and merged. Phase 5H snapshot/history,
+  retention/delete, migration, and final confirmation are next and remain
+  unstarted.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.
