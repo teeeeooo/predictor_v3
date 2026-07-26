@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from apps.common.model_lifecycle import ModelLifecycleRepository, ModelResolution
 from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
 from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
 from apps.predict.adapters.pyside_prediction_runner import PySidePredictionRunner
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
+from apps.predict.application.model_lifecycle import PredictModelLifecycleService
 from apps.predict.application.prediction_usecase import PredictionUseCase
 from apps.predict.application.runtime_snapshot import (
     PredictRuntimeSnapshot,
@@ -72,6 +74,9 @@ def build_predict_workspace_composition(
     predict_projection: tuple[PredictSchemaV2Row, ...] | None = None,
     runtime_snapshot: PredictRuntimeSnapshot | None = None,
     model_file: str = MODEL_FILE,
+    lifecycle_repository: ModelLifecycleRepository | None = None,
+    model_resolution: ModelResolution | None = None,
+    model_lifecycle: PredictModelLifecycleService | None = None,
 ) -> PredictWorkspaceComposition:
     """Build the concrete Predict object graph without constructing widgets."""
 
@@ -118,11 +123,33 @@ def build_predict_workspace_composition(
         model_file=model_file,
         runtime_snapshot=runtime,
     )
+    lifecycle = model_lifecycle
+    if lifecycle is None and lifecycle_repository is not None:
+        lifecycle = PredictModelLifecycleService(
+            lifecycle_repository,
+            runtime,
+            lambda path, snapshot: PredictionService(
+                model_file=path,
+                runtime_snapshot=snapshot,
+            ),
+        )
+        if model_resolution is not None and model_resolution.status == "resolved":
+            try:
+                lifecycle.initialize_loaded(
+                    service,
+                    candidate_id=model_resolution.candidate_id,
+                    active_revision=model_resolution.revision,
+                )
+            except Exception as exc:
+                lifecycle.record_startup_failure(
+                    f"{type(exc).__name__}: {str(exc)}"
+                )
     prediction_controller = PredictionController(
         resolved_session,
         usecase=usecase,
         service=service,
         runner_factory=runner_factory or _build_pyside_runner,
+        model_lifecycle=lifecycle,
     )
     columns = build_case_table_column_schema(predict_projection)
     dropdown_option_adapter = DropdownOptionAdapter(

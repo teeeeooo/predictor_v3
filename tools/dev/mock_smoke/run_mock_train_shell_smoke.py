@@ -77,7 +77,7 @@ def main() -> int:
         button.text(): button
         for button in shell.tabs.widget(1).findChildren(QPushButton)
     }
-    for text in ("학습 데이터 선택", "학습 실행"):
+    for text in ("학습 데이터 선택", "학습 실행", "현재 모델 Export"):
         if not train_buttons[text].isEnabled():
             raise RuntimeError(f"Train control is disabled: {text}")
     if train_buttons["중지"].isEnabled():
@@ -89,6 +89,7 @@ def main() -> int:
         "새로고침",
         "고급 정보 보기",
         "이 모델 사용",
+        "현재 모델 Export",
     }
     if set(train_buttons) != expected_train_controls:
         raise RuntimeError(f"unexpected Train controls: {sorted(train_buttons)}")

@@ -70,6 +70,8 @@ def create_shell(
     predict_composition = build_predict_workspace_composition(
         runtime_snapshot=build_predict_runtime_snapshot(active),
         model_file=resolved_model_path,
+        lifecycle_repository=lifecycle_repository,
+        model_resolution=resolution,
     )
     mapping_service = DataMappingService()
     definition_controller = DataDefinitionController(DataDefinitionService(

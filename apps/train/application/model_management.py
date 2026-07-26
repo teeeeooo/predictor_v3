@@ -4,6 +4,14 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from apps.common.model_lifecycle.deployment_export import (
+    DeploymentExportResult,
+    DeploymentExportService,
+)
+from apps.common.model_lifecycle.deployment_export_outcomes import (
+    deployment_export_failure,
+    unexpected_deployment_export_failure,
+)
 from apps.common.model_lifecycle.errors import ModelLifecycleError
 from apps.common.model_lifecycle.promotion import ModelPromotionService
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
@@ -31,10 +39,15 @@ class ModelManagementService:
         promotion: ModelPromotionService,
         *,
         training_running: Callable[[], bool] | None = None,
+        deployment_export: DeploymentExportService | None = None,
     ) -> None:
         self._repository = repository
         self._promotion = promotion
         self._training_running = training_running or (lambda: False)
+        self._deployment_export = deployment_export or DeploymentExportService(
+            repository,
+            promotion,
+        )
 
     def inspect(self) -> ModelManagementSnapshot:
         try:
@@ -121,6 +134,25 @@ class ModelManagementService:
             reason_code=result.reason_code,
             diagnostic_message=result.message,
         )
+
+    def export_active(
+        self,
+        destination_parent: str,
+        *,
+        expected_revision: int,
+    ) -> DeploymentExportResult:
+        if self._training_running():
+            return deployment_export_failure(
+                "training_running",
+                diagnostic="training_running",
+            )
+        try:
+            return self._deployment_export.export_active(
+                destination_parent,
+                expected_revision=expected_revision,
+            )
+        except Exception as exc:
+            return unexpected_deployment_export_failure(exc)
 
     def _review(self, snapshot, active_candidate_id: str) -> CandidateReview:  # noqa: ANN001
         manifest = snapshot.manifest

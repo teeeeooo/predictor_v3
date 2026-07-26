@@ -50,6 +50,9 @@ class PredictionServicePort(Protocol):
     def model_status(self) -> PredictionModelStatus:
         """Return model artifact status without mutating session state."""
 
+    def prepare_model(self) -> None:
+        """Fully load and validate the immutable runtime bundle or raise."""
+
     def predict_many(
         self,
         requests: list[PredictionInputRequest],

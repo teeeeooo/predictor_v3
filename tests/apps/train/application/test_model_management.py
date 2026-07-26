@@ -509,3 +509,54 @@ def test_real_lifecycle_stale_guard_and_rollback_by_repromotion(
     assert [item.candidate_id for item in active.history] == [
         "candidate-a", "candidate-b", "candidate-a",
     ]
+
+
+def test_unexpected_export_dependency_failure_is_structured_and_preserves_state(
+    tmp_path,
+):
+    repository = ModelLifecycleRepository(tmp_path / "lifecycle")
+    registry = model_registry_snapshot(bootstrap_manifest())
+    publish_candidate(repository, registry, "candidate-a")
+    repository.replace_active(
+        "candidate-a",
+        activated_at="2026-07-26T00:00:00+00:00",
+        source="test",
+        expected_revision=0,
+    )
+    destination = tmp_path / "exports"
+    destination.mkdir()
+    existing_export = destination / "existing-export"
+    existing_export.mkdir()
+    (existing_export / "manifest.json").write_text("preserved", encoding="utf-8")
+    active_before = repository.read_active()
+    candidates_before = repository.list_candidates()
+
+    class UnexpectedExport:
+        def export_active(self, *_args, **_kwargs):
+            raise RuntimeError(
+                "secret /tmp/model.pkl candidate-a fingerprint-value"
+            )
+
+    outcome = ModelManagementService(
+        repository,
+        ModelPromotionService(repository, lambda: registry),
+        deployment_export=UnexpectedExport(),
+    ).export_active(str(destination), expected_revision=1)
+
+    assert outcome.status == "failed"
+    assert outcome.reason_code == "internal_failure"
+    assert outcome.preserved_active
+    assert "기존 Active 모델" in outcome.message
+    assert "이미 생성된 export" in outcome.message
+    assert "대상 위치와 진단 정보" in outcome.message
+    assert "secret" not in outcome.message
+    assert "/tmp" not in outcome.message
+    assert "RuntimeError" not in outcome.message
+    assert "secret /tmp/model.pkl" in outcome.diagnostic
+    assert "RuntimeError" in outcome.diagnostic_traceback
+    assert repository.read_active() == active_before
+    assert repository.list_candidates() == candidates_before
+    assert [item.name for item in destination.iterdir()] == ["existing-export"]
+    assert (existing_export / "manifest.json").read_text(
+        encoding="utf-8"
+    ) == "preserved"

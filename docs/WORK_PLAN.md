@@ -33,19 +33,39 @@ The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
 the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
-Phase 5E Promotion, Rollback, Export, and Predict Reload Boundary is the next
-active but unstarted slice. Phase 5D already completed promotion and rollback;
-Phase 5E must preserve those contracts while adding immutable deployment export
-and an explicit running-Predict reload-required/reload-failure boundary. CLI,
-Campaign, leaderboard, the Agent-assisted Experiment Loop, and retention remain
+Phase 5E Deployment Export and Predict Reload Boundary is implemented on its
+separate worker branch and remains unmerged. The first independent L4 audit
+returned `FAIL` at exact head
+`5364ff7a106f27975e649d44a3b0059509dc797e`: an older reload failure could
+overwrite a newer successful reload state, and reload/export failures were not
+structured or safely separated from raw diagnostics. The bounded repair adds a
+monotonic application-owned reload operation guard and structured Korean
+failure guidance while retaining raw diagnostics/traceback outside the default
+message. The second independent L4 audit also returned `FAIL` at repaired exact
+head `f22d6e9526bc3c31d0775123a9614b860fadbf5b`: ordinary refresh could bypass
+ordering, stale UI completion could start another unguarded refresh,
+prediction-running UI bypassed structured application guidance, and unexpected
+export exceptions could escape the UI event boundary. The second bounded repair
+uses one monotonic status-observation sequence for refresh and reload, renders
+stale callbacks from the read-only authoritative status, routes running reload
+through the application outcome, and normalizes unexpected export failures
+while preserving raw diagnostics.
+Predict now keeps a process-loaded Candidate/revision, observes current Active
+without hot-swap, exposes explicit idle reload, and preserves the prior bundle
+on corruption, incompatibility, recovery, running-state, or Active-race failure.
+Train/Model can create a checksum-verified immutable export only from the
+guarded current Active without changing Candidate, Active, or history. Phase 5D
+promotion and rollback remain unchanged. CLI, Campaign, leaderboard, the
+Agent-assisted Experiment Loop, retention, and executable packaging remain
 later slices.
 
 ## Next Action
 
-Prepare the bounded Phase 5E owner/audit slice from merged `main`; do not start
-implementation without a separate Phase 5E task. Preserve Phase 5D lifecycle,
-promotion, rollback, Train, and Predict invariants. Keep CLI, Campaign,
-leaderboard, the Agent-assisted Experiment Loop, and retention deferred.
+Preserve Phase 5E Draft PR #32 at the second repaired exact worker head for
+independent L4 re-audit. Keep both audit `FAIL` results and prior successful
+validations as historical evidence. Do not merge or declare audit PASS from the worker. Keep
+Phase 5F and later CLI, Campaign, leaderboard, Agent-assisted Experiment Loop,
+retention, and packaging work unstarted.
 
 ## Active Blockers
 

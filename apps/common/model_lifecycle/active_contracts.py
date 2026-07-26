@@ -117,3 +117,4 @@ class ModelResolution:
     candidate_id: str = ""
     revision: int = 0
     message: str = ""
+    diagnostic_traceback: str = ""

@@ -59,6 +59,11 @@ class PredictionService:
             message="Model artifact exists.",
         )
 
+    def prepare_model(self) -> None:
+        """Eagerly load and validate a replacement before runtime installation."""
+        if self._load_model_data() is None:
+            raise ValueError(self._load_error or "Model could not be loaded.")
+
     def predict_many(
         self,
         requests: list[PredictionInputRequest],
