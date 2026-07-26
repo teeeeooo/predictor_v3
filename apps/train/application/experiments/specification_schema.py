@@ -24,7 +24,7 @@ PROJECT_DEFAULTS: dict[str, Any] = {
         "experimental_derived": [],
     },
     "preprocessing": {"contract_version": "v1.0"},
-    "rfecv": {"mode": "registry"},
+    "rfecv": {"mode": "registry", "group_overrides": []},
     "optuna": {
         "cv_folds": 5,
         "trials": 30,
@@ -60,7 +60,7 @@ SPECIFICATION_SHAPE = {
         "experimental_derived": None,
     },
     "preprocessing": {"contract_version": None},
-    "rfecv": {"mode": None},
+    "rfecv": {"mode": None, "group_overrides": None},
     "optuna": {
         "cv_folds": None,
         "trials": None,

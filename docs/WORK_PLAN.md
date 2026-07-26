@@ -17,6 +17,26 @@
 
 ## Current Slice
 
+Phase 5G Agent-assisted Campaign Loop source is complete on one owner-aligned
+branch and remains in an open Draft PR. The first independent audit failed at
+`029fefdd783c21f380f6d43c6bd6efe403a52b28`: pre-start failure discarded the
+pending proposal/retry scope, and configured unresolved guardrail or stability
+evidence passed the production gate. The same-branch bounded repair now
+preserves stable pending execution/attempt allowance across resume and fails
+closed on configured unresolved gate evidence. The next independent audit
+failed at `a58f4584344fce921341bddc25091aef79403485`: `NaN` or Infinity could be
+treated as valid primary, guardrail, or instability evidence and reach
+production selection. The bounded follow-up now uses one finite-number
+projection boundary, rejects non-finite policy limits, records safe
+missing/non-finite context, and emits standard-JSON selection artifacts. It
+adds externally submitted one-step proposals, default configurable total
+five-iteration budget, durable before/delta/after evidence, Core-start-only
+consumption, hard gates, deterministic leaderboard/incumbent, immutable
+approval-required recommendations, and operator-only total budget extension.
+The application does not generate hypotheses or receive production authority.
+Phase 5H snapshot/history/retention and final-confirmation work remains
+unstarted.
+
 Phase 5F Headless Experiment Interface is complete and merged. The final
 independent re-audit accepted exact head
 `fa13ddd75c5cf8a423d3ffc1fc046f552086e01a`; required validation run
@@ -30,11 +50,10 @@ Specification and training application owner, versioned machine output,
 single-run and explicit bounded campaign execution, pause/cancel/resume, total
 per-iteration retry allowance, Core-owned training-start accounting,
 repository-owned build identity, detached fail-closed compatibility outcomes,
-read-only validate/resolve, and one workspace-wide training writer lock. It
+read-only validate/resolve, and one workspace-wide training writer lock. Phase
+5G reuses these owners without changing their accounting meaning. It
 preserves explicit user promotion, immutable deployment export, and Predict
-reload boundaries. Phase 5G Agent-assisted selection/ranking/recommendation and
-bounded loop work is next and unstarted. Phase 5H snapshot/history/retention and
-final-confirmation work remains unstarted.
+reload boundaries.
 
 Phase 5D Train/Model UI/UX is complete and merged. The user accepted repaired
 head `a2ea64464e595d28d58db77a28d31eac60c6a72d` and authorized PR #31 closeout;
@@ -85,9 +104,12 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Phase 5G Agent-assisted campaign loop is next and remains unstarted. Await an
-explicit implementation task before changing proposal, ranking,
-recommendation, or automatic-loop behavior. Do not begin Phase 5H migration,
+Obtain an independent exact-head re-audit of the repaired Phase 5G Draft PR.
+Preserve the first audit `FAIL` and successful historical validation run
+`30199916760`, plus the second audit `FAIL` at
+`a58f4584344fce921341bddc25091aef79403485` and successful run `30201667033`,
+as historical evidence only. The Worker
+must not declare audit PASS or merge. Do not begin Phase 5H migration,
 retention, compatibility, or final-confirmation work.
 
 ## Active Blockers
@@ -149,9 +171,9 @@ retention, compatibility, or final-confirmation work.
 
 ## Deferred / Hold
 
-- Phase 5F CLI/campaign foundation is complete and merged. Phase 5G
-  agent-assisted selection/ranking/recommendation is next and unstarted and must
-  not displace the accepted Train/Model UI workflow.
+- Phase 5G agent-assisted selection/ranking/recommendation source is complete
+  and awaiting independent exact-head audit. It must not displace the accepted
+  Train/Model UI workflow or gain production authority.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh

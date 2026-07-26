@@ -9,6 +9,26 @@ from apps.train.application.experiments.records import utc_now
 from apps.train.application.experiments.service import ExperimentApplicationService
 
 
+def execute_one_iteration(
+    experiments: ExperimentApplicationService,
+    campaign_id: str,
+    experiment: ResolvedExperiment,
+    index: int,
+    record: dict[str, Any],
+    *,
+    attempt_scope: str = "",
+) -> tuple[str, bool, str, dict[str, Any]]:
+    """Reuse Phase 5F training-start and bounded-attempt accounting."""
+    return _run_iteration(
+        experiments,
+        campaign_id,
+        experiment,
+        index,
+        record,
+        attempt_scope=attempt_scope,
+    )
+
+
 def execute_campaign(
     experiments: ExperimentApplicationService,
     campaign_id: str,
@@ -64,10 +84,14 @@ def _run_iteration(
     experiment: ResolvedExperiment,
     index: int,
     record: dict[str, Any],
+    *,
+    attempt_scope: str = "",
 ) -> tuple[str, bool, str, dict[str, Any]]:
     store = experiments.store
     previous_attempts = sum(
-        item.get("iteration") == index + 1 for item in record["attempt_history"]
+        item.get("iteration") == index + 1
+        and item.get("attempt_scope", "") == attempt_scope
+        for item in record["attempt_history"]
     )
     maximum = experiment.payload["retry"]["max_attempts"]
     terminal_status = ""
@@ -75,7 +99,11 @@ def _run_iteration(
     if previous_attempts >= maximum:
         return terminal_status, False, run_id, record
     for attempt in range(previous_attempts + 1, maximum + 1):
-        run_id = f"{campaign_id}-iteration-{index + 1}-attempt-{attempt}"
+        scope_fragment = f"-{attempt_scope}" if attempt_scope else ""
+        run_id = (
+            f"{campaign_id}-iteration-{index + 1}{scope_fragment}"
+            f"-attempt-{attempt}"
+        )
         record["status"] = "running"
         record["current"] = {
             "iteration": index + 1,
@@ -121,14 +149,17 @@ def _run_iteration(
         record = store.read_campaign(campaign_id)
         terminal_status = run["status"]
         started = bool(run.get("training_started"))
-        record["attempt_history"].append({
+        attempt_entry = {
             "iteration": index + 1,
             "attempt": attempt,
             "run_id": run_id,
             "status": terminal_status,
             "training_started": started,
             "consumed_iteration": started,
-        })
+        }
+        if attempt_scope:
+            attempt_entry["attempt_scope"] = attempt_scope
+        record["attempt_history"].append(attempt_entry)
         if not started:
             return terminal_status, False, run_id, _start_failure(
                 store, campaign_id, record, result, run_id

@@ -37,8 +37,36 @@ def parser() -> argparse.ArgumentParser:
     start = subcommands.add_parser("campaign-start")
     start.add_argument("specification")
     start.add_argument("--campaign-id", default=f"campaign-{uuid4().hex}")
+    create = subcommands.add_parser("campaign-create")
+    create.add_argument("definition")
+    create.add_argument("--campaign-id", default=f"campaign-{uuid4().hex}")
+    submit = subcommands.add_parser("campaign-proposal-submit")
+    submit.add_argument("campaign_id")
+    submit.add_argument("proposal")
+    execute = subcommands.add_parser("campaign-execute")
+    execute.add_argument("campaign_id")
+    execute.add_argument("proposal_id")
+    extend = subcommands.add_parser("campaign-budget-extend")
+    extend.add_argument("campaign_id")
+    extend.add_argument("new_total", type=int)
+    extend.add_argument("--operator-reference", required=True)
+    recommend = subcommands.add_parser("campaign-recommendation-create")
+    recommend.add_argument("campaign_id")
+    recommend.add_argument("--recommendation-id")
+    recommendation = subcommands.add_parser("campaign-recommendation")
+    recommendation.add_argument("campaign_id")
+    recommendation.add_argument("recommendation_id")
+    complete = subcommands.add_parser("campaign-complete")
+    complete.add_argument("campaign_id")
+    complete.add_argument("--without-recommendation", action="store_true")
     for name in (
-        "campaign-status", "campaign-pause", "campaign-cancel", "campaign-resume"
+        "campaign-status",
+        "campaign-pause",
+        "campaign-cancel",
+        "campaign-resume",
+        "campaign-budget",
+        "campaign-leaderboard",
+        "campaign-incumbent",
     ):
         command = subcommands.add_parser(name)
         command.add_argument("campaign_id")
@@ -76,7 +104,10 @@ def require_run_version(record: dict) -> None:
 
 
 def require_campaign_version(record: dict) -> None:
-    if record.get("schema_version") != "predictor_v3.campaign.v1":
+    if record.get("schema_version") not in {
+        "predictor_v3.campaign.v1",
+        "predictor_v3.agent_campaign.v1",
+    }:
         raise ExperimentContractError(
             "unsupported_campaign_version",
             "Unsupported campaign record version.",
@@ -107,4 +138,6 @@ def campaign_exit(status: str) -> int:
         return EXIT_CANCELLED
     if status in {"failed_resumable", "blocked", "retry_exhausted"}:
         return EXIT_TRAINING_FAILURE
+    if status == "proposal_rejected":
+        return EXIT_VALIDATION
     return EXIT_SUCCESS

@@ -1120,12 +1120,48 @@ Responsibility:
   validated training mutation explicitly initializes Bootstrap when required
 
 The headless adapter has no promotion, caller-triggered Definition publication,
-Active mutation,
-deployment replacement, cleanup, arbitrary-code, arbitrary-output, or budget
-extension command. GUI keeps its visible training flow; its data selection uses
-the shared resolver, and a concise label projects external Campaign status.
-Phase 5G decisions and Phase 5H historical compatibility remain outside this
-owner.
+Active mutation, deployment replacement, cleanup, arbitrary-code, or
+arbitrary-output command. GUI keeps its visible training flow; its data
+selection uses the shared resolver, and a concise label projects external
+Campaign status.
+
+### 11.5C Agent-assisted campaign decision boundary
+
+Files:
+
+- `apps/train/application/experiments/agent_*.py`
+- `apps/train/application/experiments/candidate_gate.py`
+- `apps/train/application/experiments/leaderboard.py`
+- `apps/train/application/experiments/recommendation.py`
+- `apps/train/application/experiments/campaign_operator.py`
+
+Responsibility:
+
+- accept only externally supplied versioned proposals one step at a time
+- own total iteration allowance, allowed categories, baseline classification,
+  configured metric direction/tolerance, guardrails, and instability thresholds
+- persist hypothesis plus resolved before/delta/after evidence before invoking
+  the Phase 5F execution owner
+- retain accepted proposal identity and a training-meaning-derived execution
+  key across pre-start failure/resume, so proposal ID or descriptive metadata
+  cannot reset the persisted total attempt allowance
+- project lifecycle/result evidence into hard gates and deterministic
+  leaderboard/incumbent state without changing Active
+- fail closed when a configured guardrail or instability requirement lacks
+  resolvable evidence, while keeping the Candidate as exploratory/history
+  evidence
+- normalize every selection-critical metric through one finite-number
+  projection boundary; non-finite current/baseline evidence remains
+  diagnostically distinguishable but cannot enter aggregation, ranking,
+  recommendation, or machine-readable numeric output
+- preserve immutable approval-required recommendation history
+- expose budget increase only through a separate operator command with
+  before/after approval evidence
+
+This boundary does not generate experiments, call an LLM, publish canonical
+Definitions, promote Active, replace deployment, delete artifacts, or perform
+Phase 5H final confirmation. The existing Train surface is a read-only
+projection of the same campaign store.
 
 ### 11.6 Data Mapping service
 

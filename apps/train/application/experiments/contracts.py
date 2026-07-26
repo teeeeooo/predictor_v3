@@ -166,6 +166,23 @@ def _validate_resolved(payload: dict[str, Any]) -> None:
         raise ExperimentContractError(
             "rfecv_mode_unsupported", "rfecv.mode must be 'registry'."
         )
+    overrides = payload["rfecv"]["group_overrides"]
+    if (
+        not isinstance(overrides, list)
+        or any(
+            not isinstance(item, dict)
+            or set(item) != {"group", "enabled"}
+            or type(item["group"]) is not str
+            or not item["group"]
+            or type(item["enabled"]) is not bool
+            for item in overrides
+        )
+        or len({item["group"] for item in overrides}) != len(overrides)
+    ):
+        raise ExperimentContractError(
+            "rfecv_override_invalid",
+            "rfecv.group_overrides must contain unique group/boolean entries.",
+        )
     if (
         payload["evaluation"]["metric_contract"] != METRIC_CONTRACT_ID
         or payload["evaluation"]["splitter"] != "KFold"
