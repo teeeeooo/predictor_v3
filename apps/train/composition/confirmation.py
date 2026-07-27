@@ -21,6 +21,7 @@ from apps.train.application.confirmation import (
     RecommendationPromotionAuthorization,
     SnapshotFreezeService,
     TrainingLifecycleConfirmationExecutor,
+    TrustedUserAuthorityIssuer,
 )
 from apps.train.application.experiments.records import current_revision
 from apps.train.composition.experiments import (
@@ -59,6 +60,7 @@ def build_headless_confirmation_services(
     execution = TrainingLifecycleConfirmationExecutor(
         experiments,
         lifecycle_repository,
+        generation_repository,
         closeout_store=closeout,
     )
     snapshots = SnapshotFreezeService(
@@ -74,10 +76,12 @@ def build_headless_confirmation_services(
         closeout_store=closeout,
         build_identity_provider=lambda: current_revision(PROJECT_ROOT),
     )
+    authority_issuer = TrustedUserAuthorityIssuer()
     decisions = FinalDecisionApplicationService(
         lifecycle_repository,
         promotion,
         closeout_store=closeout,
+        authority_issuer=authority_issuer,
     )
     retention = LifecycleRetentionApplicationService(
         lifecycle_repository,
@@ -90,5 +94,6 @@ def build_headless_confirmation_services(
         "snapshots": snapshots,
         "confirmations": confirmations,
         "decisions": decisions,
+        "authority_issuer": authority_issuer,
         "retention": retention,
     }

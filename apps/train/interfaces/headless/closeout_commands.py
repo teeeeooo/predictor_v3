@@ -10,7 +10,6 @@ from apps.common.model_lifecycle.closeout.compatibility import (
     inspect_persisted_contract,
 )
 from apps.common.model_lifecycle.closeout.retention import RetentionPolicy
-from apps.train.application.confirmation import UserAuthorityContext
 from apps.train.composition.confirmation import (
     build_headless_confirmation_services,
 )
@@ -89,11 +88,8 @@ def dispatch_closeout(args, lifecycle_root: Path) -> int | None:  # noqa: ANN001
         outcome = decisions.decide(
             args.confirmation_id,
             approve=args.decision == "approve",
-            authority=UserAuthorityContext(
-                "user",
-                args.authority_context,
-                interactive=True,
-                external_agent=False,
+            authority=services["authority_issuer"].issue(
+                args.authority_context
             ),
             expected_active_revision=args.expected_active_revision,
             decision_id=args.decision_id,

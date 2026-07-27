@@ -7,6 +7,7 @@ from typing import Any
 from apps.common.model_lifecycle.closeout.contracts import (
     LOCKED_FINAL_TEST_VERSION,
 )
+from apps.common.model_lifecycle.closeout.canonical import content_sha256
 
 
 def record_arguments(record: dict[str, Any]) -> dict[str, Any]:
@@ -32,6 +33,7 @@ def locked_projection(
     *,
     consumed: bool,
     independent_passed: bool = False,
+    result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if value is None:
         return {
@@ -39,13 +41,17 @@ def locked_projection(
             "status": "not_configured",
             "independent_final_test_passed": False,
         }
-    return {
+    projection = {
         "configured": True,
         "seal_id": value["seal_id"],
         "schema_version": LOCKED_FINAL_TEST_VERSION,
         "status": "consumed" if consumed else "sealed",
         "independent_final_test_passed": bool(independent_passed),
     }
+    if result is not None:
+        projection["result_id"] = result["result_id"]
+        projection["result_evidence_sha256"] = content_sha256(result)
+    return projection
 
 
 def blocked_outcome(code: str, message: str) -> dict[str, Any]:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 from typing import Any
 
 from .canonical import canonical_payload, content_sha256, require_safe_identity
@@ -20,6 +19,7 @@ class ArtifactNode:
     pinned: bool = False
     hold: str = ""
     version_disposition: str = "current_and_executable"
+    source_artifact_identity: str = ""
 
 
 @dataclass(frozen=True)
@@ -61,6 +61,17 @@ PROTECTION_REASONS = {
     "loaded_model_lease_expired",
     "loaded_model_lease_unknown",
     "reference_graph_incomplete",
+    "run_candidate",
+    "campaign_proposal",
+    "campaign_attempt",
+    "attempt_run",
+    "campaign_gate",
+    "gate_candidate",
+    "campaign_leaderboard",
+    "campaign_recommendation",
+    "snapshot_materialized_data",
+    "locked_final_test_evidence",
+    "confirmation_final_test",
 }
 
 
@@ -80,6 +91,9 @@ def build_retention_preview(
     incoming: dict[str, list[ArtifactReference]] = {
         identity: [] for identity in by_id
     }
+    outgoing: dict[str, list[ArtifactReference]] = {
+        identity: [] for identity in by_id
+    }
     graph_incomplete = not reference_complete
     for reference in references:
         require_safe_identity(reference.source_id, "retention reference source")
@@ -91,6 +105,8 @@ def build_retention_preview(
             graph_incomplete = True
         elif reference.active:
             incoming[reference.target_id].append(reference)
+            if reference.source_id in outgoing:
+                outgoing[reference.source_id].append(reference)
     lease_reason = {
         "current": "",
         "missing": "loaded_model_lease_missing",
@@ -160,22 +176,47 @@ def build_retention_preview(
             "reference_completeness": (
                 "complete" if not graph_incomplete else "incomplete"
             ),
+            "incoming_references": sorted(
+                [asdict(item) for item in incoming[node.artifact_id]],
+                key=lambda item: (
+                    item["source_id"], item["target_id"], item["reason_code"]
+                ),
+            ),
+            "outgoing_references": sorted(
+                [asdict(item) for item in outgoing[node.artifact_id]],
+                key=lambda item: (
+                    item["source_id"], item["target_id"], item["reason_code"]
+                ),
+            ),
         })
+    ordered_nodes = sorted(
+        (asdict(item) for item in nodes),
+        key=lambda item: (item["artifact_class"], item["artifact_id"]),
+    )
+    ordered_references = sorted(
+        (asdict(item) for item in references),
+        key=lambda item: (
+            item["source_id"], item["target_id"], item["reason_code"]
+        ),
+    )
     identity_input = {
-        "nodes": [asdict(item) for item in nodes],
-        "references": [asdict(item) for item in references],
+        "nodes": ordered_nodes,
+        "references": ordered_references,
         "policy": asdict(policy),
         "reference_complete": reference_complete,
         "loaded_model_lease_status": loaded_model_lease_status,
     }
+    preview_id = f"retention-preview-{content_sha256(identity_input)}"
     return canonical_payload({
         "schema_version": RETENTION_PREVIEW_VERSION,
-        "preview_id": f"retention-preview-{content_sha256(identity_input)}",
-        "created_at": created_at or datetime.now(timezone.utc).isoformat(),
+        "preview_id": preview_id,
+        "created_at": f"content-addressed:{preview_id}",
         "policy": asdict(policy),
         "reference_complete": not graph_incomplete,
         "loaded_model_lease_status": loaded_model_lease_status,
         "entries": entries,
+        "nodes": ordered_nodes,
+        "references": ordered_references,
         "eligible_reclaim_bytes": reclaim_total,
         "delete_authority": False,
         "apply_implemented": False,

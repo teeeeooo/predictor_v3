@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from datetime import datetime, timezone
 
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
+from apps.common.runtime_generation.repository import (
+    DataDefinitionGenerationRepository,
+)
 from apps.train.application.experiments.contracts import ResolvedExperiment
 from apps.train.application.experiments.service import ExperimentApplicationService
 
@@ -14,6 +18,7 @@ from .execution_contracts import (
     ConfirmationExecutionResult,
     FrozenConfirmationRequest,
 )
+from .locked_test_evaluator import LockedFinalTestEvaluator
 
 
 class TrainingLifecycleConfirmationExecutor:
@@ -23,12 +28,18 @@ class TrainingLifecycleConfirmationExecutor:
         self,
         experiments: ExperimentApplicationService,
         repository: ModelLifecycleRepository,
+        generations: DataDefinitionGenerationRepository,
         *,
         closeout_store: LifecycleCloseoutStore | None = None,
+        clock=None,  # noqa: ANN001
     ) -> None:
         self._experiments = experiments
         self._repository = repository
         self._store = closeout_store or LifecycleCloseoutStore(repository.root)
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._locked_evaluator = LockedFinalTestEvaluator(
+            repository, generations, self._store, clock=self._clock
+        )
 
     def execute(
         self, request: FrozenConfirmationRequest
@@ -93,6 +104,39 @@ class TrainingLifecycleConfirmationExecutor:
             target_results=targets,
             confirmation_candidate_id=candidate.manifest.candidate_id,
         )
+
+    def preflight_locked_final_test(
+        self, seal: dict, snapshot: dict
+    ) -> None:
+        self._locked_evaluator.preflight(seal, snapshot)
+
+    def execute_locked_final_test(
+        self,
+        request: FrozenConfirmationRequest,
+        candidate_id: str,
+    ) -> dict:
+        if request.locked_final_test is None:
+            raise ValueError("locked final-test is not configured")
+        snapshot = self._store.read_snapshot(request.snapshot_id)
+        self._locked_evaluator.preflight(
+            request.locked_final_test, snapshot
+        )
+        self._store.consume_locked_final_test(
+            request.locked_final_test["seal_id"],
+            confirmation_id=request.confirmation_id,
+            consumed_at=self._clock().isoformat(),
+        )
+        try:
+            return self._locked_evaluator.evaluate(
+                request.locked_final_test,
+                confirmation_id=request.confirmation_id,
+                candidate_id=candidate_id,
+            )
+        except Exception as exc:
+            raise ValueError(
+                "locked final-test evaluation failed: "
+                + str(exc).splitlines()[0]
+            ) from exc
 
 
 def _specification_fingerprint(payload: dict) -> str:

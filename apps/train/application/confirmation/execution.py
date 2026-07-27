@@ -27,6 +27,7 @@ from .record_projection import (
     locked_projection,
     record_arguments,
 )
+from .snapshot_integrity import SnapshotIntegrityValidator
 
 
 class ConfirmationApplicationService:
@@ -39,6 +40,7 @@ class ConfirmationApplicationService:
         *,
         closeout_store: LifecycleCloseoutStore | None = None,
         build_identity_provider=None,  # noqa: ANN001
+        integrity_validator=None,  # noqa: ANN001
         clock=None,  # noqa: ANN001
     ) -> None:
         self._repository = repository
@@ -48,6 +50,10 @@ class ConfirmationApplicationService:
         self._store = closeout_store or LifecycleCloseoutStore(repository.root)
         self._build_identity = build_identity_provider
         self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._integrity = integrity_validator or SnapshotIntegrityValidator(
+            repository, generations, self._store,
+            build_identity_provider=build_identity_provider,
+        )
 
     def preflight(
         self,
@@ -90,11 +96,38 @@ class ConfirmationApplicationService:
         locked_final_test_seal_id: str | None = None,
     ) -> dict[str, Any]:
         identity = confirmation_id or f"confirmation-{uuid4().hex}"
+        if confirmation_id is not None:
+            try:
+                existing = self._store.read_confirmation(identity)
+            except FileNotFoundError:
+                pass
+            else:
+                if existing["snapshot_id"] != snapshot_id:
+                    return blocked_outcome(
+                        "confirmation_identity_conflict",
+                        "Confirmation identity belongs to another snapshot.",
+                    )
+                return existing
         now = self._clock().isoformat()
         try:
             snapshot = self._store.read_snapshot(snapshot_id)
             if snapshot["status"] != "frozen":
                 raise ValueError("confirmation requires one frozen snapshot")
+            for initial in self._store.list_records(
+                self._store.confirmations, "confirmation.json"
+            ):
+                prior = self._store.read_confirmation(
+                    initial["confirmation_id"]
+                )
+                locked = prior.get("locked_final_test") or {}
+                if (
+                    prior["snapshot_id"] == snapshot_id
+                    and locked.get("configured") is True
+                    and locked.get("status") == "consumed"
+                ):
+                    raise ValueError(
+                        "consumed locked final-test requires a new snapshot"
+                    )
             self._validate_current_meaning(snapshot["meaning"])
             request = self._request(
                 snapshot,
@@ -126,12 +159,6 @@ class ConfirmationApplicationService:
             self._store.append_confirmation(
                 running, expected_status="confirmation_pending"
             )
-            if locked_final_test_seal_id:
-                self._store.consume_locked_final_test(
-                    locked_final_test_seal_id,
-                    confirmation_id=identity,
-                    consumed_at=self._clock().isoformat(),
-                )
             result = self._execution.execute(request)
             return self._finish(running, request, result)
         except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
@@ -141,6 +168,11 @@ class ConfirmationApplicationService:
                 return blocked_outcome(
                     "confirmation_start_blocked", str(exc).splitlines()[0]
                 )
+            if current["status"] not in {
+                "confirmation_pending",
+                "confirmation_running",
+            }:
+                return current
             blocked = build_confirmation_record(
                 **{
                     **record_arguments(current),
@@ -166,6 +198,7 @@ class ConfirmationApplicationService:
         request: FrozenConfirmationRequest,
         result: ConfirmationExecutionResult,
     ) -> dict[str, Any]:
+        locked_result = None
         if result.status == "cancelled":
             status = "cancelled"
             blockers = [{"code": "confirmation_cancelled", "reason": result.message}]
@@ -184,6 +217,10 @@ class ConfirmationApplicationService:
                 candidate_id, candidate_hash = self._validate_success(
                     request, result
                 )
+                if request.locked_final_test:
+                    locked_result = self._execution.execute_locked_final_test(
+                        request, candidate_id
+                    )
             except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
                 status = "failed"
                 blockers = [{
@@ -195,7 +232,7 @@ class ConfirmationApplicationService:
             else:
                 if (
                     request.locked_final_test
-                    and not result.independent_final_test_passed
+                    and not locked_result["passed"]
                 ):
                     status = "failed"
                     blockers = [{
@@ -208,14 +245,23 @@ class ConfirmationApplicationService:
                 else:
                     status = "awaiting_user_decision"
                     blockers = []
+        locked_consumed = False
+        if request.locked_final_test:
+            locked_consumed = (
+                self._store.read_locked_final_test(
+                    request.locked_final_test["seal_id"]
+                )["status"]
+                == "consumed"
+            )
         locked = locked_projection(
             request.locked_final_test,
-            consumed=bool(request.locked_final_test),
+            consumed=locked_consumed,
             independent_passed=(
-                result.independent_final_test_passed
+                bool(locked_result and locked_result["passed"])
                 if request.locked_final_test
                 else False
             ),
+            result=locked_result if request.locked_final_test else None,
         )
         completed = build_confirmation_record(
             **{
@@ -273,16 +319,8 @@ class ConfirmationApplicationService:
         )
 
     def _validate_current_meaning(self, meaning: dict[str, Any]) -> None:
+        self._integrity.validate(meaning)
         selected = meaning["selected_candidate"]
-        candidate = self._repository.read_candidate(selected["candidate_id"])
-        if file_sha256(candidate.path / "manifest.json") != selected[
-            "manifest_sha256"
-        ]:
-            raise ValueError("selected Candidate manifest changed")
-        generation = meaning["definition_runtime"]["generation_id"]
-        if self._generations.active_generation_id() != generation:
-            raise ValueError("Definition/runtime generation changed")
-        self._generations.read_generation(generation)
         compatibility = self._promotion.inspect_compatibility(
             selected["candidate_id"]
         )
@@ -291,10 +329,6 @@ class ConfirmationApplicationService:
                 compatibility.reason_code
                 or "selected Candidate lifecycle compatibility changed"
             )
-        if self._build_identity is not None:
-            current = self._build_identity()
-            if current != meaning["build_identity"]:
-                raise ValueError("training-semantic build identity changed")
 
     def _request(
         self,
@@ -331,6 +365,17 @@ class ConfirmationApplicationService:
                 raise ValueError("locked final-test seal is already consumed")
             if set(locked["target_identities"]) != set(required):
                 raise ValueError("locked final-test Target set differs")
+            preflight = getattr(
+                self._execution, "preflight_locked_final_test", None
+            )
+            execute = getattr(
+                self._execution, "execute_locked_final_test", None
+            )
+            if not callable(preflight) or not callable(execute):
+                raise ValueError(
+                    "locked final-test execution is unavailable"
+                )
+            preflight(locked, snapshot)
         return FrozenConfirmationRequest(
             confirmation_id,
             snapshot["snapshot_id"],

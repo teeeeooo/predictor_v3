@@ -32,6 +32,7 @@ class TrainController:
         experiment_service=None,  # noqa: ANN001
         closeout_store=None,  # noqa: ANN001
         final_decision_service=None,  # noqa: ANN001
+        user_authority_issuer=None,  # noqa: ANN001
     ) -> None:
         self._lifecycle = lifecycle_service or TrainingLifecycleService(
             validation=service,
@@ -45,6 +46,7 @@ class TrainController:
         self._experiments = experiment_service
         self._closeout_store = closeout_store
         self._final_decisions = final_decision_service
+        self._user_authority_issuer = user_authority_issuer
         self._model_management = model_management_service
         if (
             self._model_management is None
@@ -230,16 +232,13 @@ class TrainController:
     ):  # noqa: ANN201
         if self._final_decisions is None:
             raise RuntimeError("Final confirmation decision is unavailable.")
-        from apps.train.application.confirmation import UserAuthorityContext
-
+        if self._user_authority_issuer is None:
+            raise RuntimeError("Trusted user interaction boundary is unavailable.")
         return self._final_decisions.decide(
             confirmation_id,
             approve=approve,
-            authority=UserAuthorityContext(
-                "user",
-                "train-gui-explicit-decision",
-                interactive=True,
-                external_agent=False,
+            authority=self._user_authority_issuer.issue(
+                "train-gui-explicit-decision"
             ),
             expected_active_revision=expected_active_revision,
             reason=reason,

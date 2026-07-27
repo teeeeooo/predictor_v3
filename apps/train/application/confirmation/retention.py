@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from apps.common.model_lifecycle.closeout.compatibility import (
@@ -21,6 +20,10 @@ from apps.common.model_lifecycle.closeout.retention import (
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
 from apps.train.application.experiments.store import ExperimentStore
+
+from .retention_closeout import closeout_inventory
+from .retention_experiments import experiment_inventory
+from .retention_nodes import age_days, directory_size
 
 
 class LifecycleRetentionApplicationService:
@@ -43,19 +46,15 @@ class LifecycleRetentionApplicationService:
         lease_status, loaded_candidates = inspect_loaded_model_leases(
             leases, now=now.isoformat()
         )
-        for candidate_id in loaded_candidates:
-            references.append(ArtifactReference(
-                "predict-runtime",
-                candidate_id,
-                "loaded_predict_model",
-            ))
+        self._lease_nodes(
+            leases, loaded_candidates, nodes, references, now
+        )
         preview = build_retention_preview(
             nodes=nodes,
             references=references,
             policy=policy,
             reference_complete=reference_complete,
             loaded_model_lease_status=lease_status,
-            created_at=now.isoformat(),
         )
         self._store.write_retention_preview(preview)
         return preview
@@ -63,10 +62,38 @@ class LifecycleRetentionApplicationService:
     def _inventory(
         self, now: datetime
     ) -> tuple[list[ArtifactNode], list[ArtifactReference], bool]:
-        nodes = []
-        references = []
-        reference_complete = True
-        active = self._repository.read_active(optional=True)
+        nodes, references = self._candidate_active_inventory(now)
+        try:
+            campaigns = self._experiments.list_campaigns()
+        except (FileNotFoundError, OSError, TypeError, ValueError):
+            campaigns = ()
+        experiment_nodes, experiment_references, _experiment_complete = (
+            experiment_inventory(self._experiments, campaigns, now)
+        )
+        closeout_nodes, closeout_references, _closeout_complete = (
+            closeout_inventory(self._store, now)
+        )
+        nodes.extend(experiment_nodes)
+        nodes.extend(closeout_nodes)
+        references.extend(experiment_references)
+        references.extend(closeout_references)
+        # Phase 5E exports have no lifecycle-root index. Keep the class visible
+        # and the graph incomplete rather than omitting unknown deployments.
+        nodes.append(ArtifactNode(
+            "deployment-export-index",
+            "deployment_export",
+            now.isoformat(),
+            0,
+            version_disposition="corrupt_or_incomplete",
+            source_artifact_identity="missing:deployment-export-index",
+        ))
+        return nodes, references, False
+
+    def _candidate_active_inventory(
+        self, now: datetime
+    ) -> tuple[list[ArtifactNode], list[ArtifactReference]]:
+        nodes: list[ArtifactNode] = []
+        references: list[ArtifactReference] = []
         for candidate in self._repository.list_candidates():
             manifest = candidate.manifest
             disposition = inspect_persisted_contract(
@@ -76,257 +103,70 @@ class LifecycleRetentionApplicationService:
                 manifest.candidate_id,
                 "candidate",
                 manifest.created_at,
-                _directory_size(candidate.path),
-                _age_days(manifest.created_at, now),
+                directory_size(candidate.path),
+                age_days(manifest.created_at, now),
                 version_disposition=disposition.status,
+                source_artifact_identity=str(candidate.path),
             ))
-        if active is not None:
+        active = self._repository.read_active(optional=True)
+        if active is None:
+            return nodes, references
+        nodes.append(ArtifactNode(
+            "active-reference",
+            "active",
+            active.activated_at,
+            self._repository.active_reference_path.stat().st_size,
+            age_days(active.activated_at, now),
+            source_artifact_identity=str(
+                self._repository.active_reference_path
+            ),
+        ))
+        references.append(ArtifactReference(
+            "active-reference", active.candidate_id, "current_active"
+        ))
+        for record in active.history:
+            identity = f"active-history-r{record.revision}"
+            nodes.append(ArtifactNode(
+                identity,
+                "active_history",
+                record.activated_at,
+                0,
+                age_days(record.activated_at, now),
+                source_artifact_identity=(
+                    f"{self._repository.active_reference_path}"
+                    f"#history[{record.revision}]"
+                ),
+            ))
             references.append(ArtifactReference(
-                "active-reference",
-                active.candidate_id,
-                "current_active",
+                identity, record.candidate_id, "active_history"
             ))
-            references.extend(
-                ArtifactReference(
-                    f"active-history-r{record.revision}",
-                    record.candidate_id,
-                    "active_history",
-                )
-                for record in active.history
-            )
-        try:
-            campaigns = self._experiments.list_campaigns()
-        except (FileNotFoundError, OSError, TypeError, ValueError):
-            campaigns = ()
-            reference_complete = False
-        for campaign in campaigns:
-            reference_complete = self._campaign_references(
-                campaign, references
-            ) and reference_complete
-        closeout_nodes, closeout_references, closeout_complete = (
-            self._closeout_inventory(now)
-        )
-        nodes.extend(closeout_nodes)
-        references.extend(closeout_references)
-        reference_complete = closeout_complete and reference_complete
-        # Existing exports can live outside the lifecycle root and Phase 5E has
-        # no workspace export index. Until every export is registered, preview
-        # remains deliberately incomplete and therefore non-destructive.
-        reference_complete = False
-        return nodes, references, reference_complete
+        return nodes, references
 
-    @staticmethod
-    def _campaign_references(
-        campaign: dict[str, Any],
+    def _lease_nodes(
+        self,
+        leases: list[dict[str, Any]],
+        loaded_candidates: set[str],
+        nodes: list[ArtifactNode],
         references: list[ArtifactReference],
-    ) -> bool:
-        status = str(campaign.get("status", ""))
-        source = str(campaign.get("campaign_id", "campaign"))
-        reason = (
-            "campaign_in_progress"
-            if status in {
-                "created",
-                "running",
-                "ready_to_execute",
-                "awaiting_proposal",
-            }
-            else "campaign_resumable"
-            if status in {
-                "paused",
-                "failed_resumable",
-                "cancelled_resumable",
-                "lock_conflict",
-            }
-            else ""
-        )
-        if reason:
-            for run in campaign.get("completed_runs", ()):
-                candidate_id = (
-                    run.get("candidate_id") if isinstance(run, dict) else None
-                )
-                if candidate_id:
-                    references.append(ArtifactReference(
-                        source, candidate_id, reason
-                    ))
-        incumbent = campaign.get("incumbent_candidate_id")
-        if incumbent:
-            references.append(ArtifactReference(
-                source, incumbent, "campaign_incumbent"
+        now: datetime,
+    ) -> None:
+        for index, lease in enumerate(leases, 1):
+            identity = (
+                f"loaded-model-lease-{lease.get('lease_id', 'unknown')}-{index}"
+            )
+            nodes.append(ArtifactNode(
+                identity,
+                "loaded_model_lease",
+                str(lease.get("observed_at", now.isoformat())),
+                0,
+                source_artifact_identity=(
+                    f"{self._store.loaded_model_leases}/"
+                    f"{lease.get('lease_id', 'unknown')}"
+                ),
             ))
-        for item in campaign.get("recommendations", ()):
-            candidate = (
-                item.get("recommended_candidate")
-                if isinstance(item, dict)
-                else None
-            )
-            if isinstance(candidate, dict) and candidate.get("candidate_id"):
+            if lease.get("candidate_id") in loaded_candidates:
                 references.append(ArtifactReference(
-                    source,
-                    candidate["candidate_id"],
-                    "selected_recommendation",
+                    identity,
+                    lease["candidate_id"],
+                    "loaded_predict_model",
                 ))
-        return bool(campaign.get("schema_version"))
-
-    def _closeout_inventory(
-        self, now: datetime
-    ) -> tuple[list[ArtifactNode], list[ArtifactReference], bool]:
-        nodes: list[ArtifactNode] = []
-        references: list[ArtifactReference] = []
-        complete = True
-        try:
-            snapshots = self._store.list_records(
-                self._store.snapshots, "snapshot.json"
-            )
-            confirmations = self._store.list_records(
-                self._store.confirmations, "confirmation.json"
-            )
-            decisions = self._store.list_records(
-                self._store.decisions, "decision.json"
-            )
-            migration_previews = self._store.list_records(
-                self._store.migration_previews, "preview.json"
-            )
-        except (FileNotFoundError, OSError, TypeError, ValueError):
-            return nodes, references, False
-        for raw in snapshots:
-            try:
-                value = self._store.read_snapshot(raw["snapshot_id"])
-                nodes.append(_record_node(
-                    value["snapshot_id"],
-                    "confirmation_snapshot",
-                    value,
-                    self._store.snapshots / value["snapshot_id"],
-                    now,
-                    "snapshot",
-                ))
-                candidate = value["meaning"]["selected_candidate"]["candidate_id"]
-                references.append(ArtifactReference(
-                    value["snapshot_id"],
-                    candidate,
-                    "confirmation_snapshot",
-                ))
-            except (KeyError, OSError, TypeError, ValueError):
-                complete = False
-        for initial in confirmations:
-            try:
-                value = self._store.read_confirmation(
-                    initial["confirmation_id"]
-                )
-                nodes.append(_record_node(
-                    value["confirmation_id"],
-                    "confirmation",
-                    value,
-                    self._store.confirmations / value["confirmation_id"],
-                    now,
-                    "confirmation",
-                ))
-                references.append(ArtifactReference(
-                    value["confirmation_id"],
-                    value["snapshot_id"],
-                    "confirmation_snapshot",
-                ))
-                candidate = value.get("confirmation_candidate_id")
-                if candidate:
-                    references.append(ArtifactReference(
-                        value["confirmation_id"],
-                        candidate,
-                        "confirmation_candidate",
-                    ))
-            except (KeyError, OSError, TypeError, ValueError):
-                complete = False
-        for decision in decisions:
-            try:
-                decision_id = decision["decision_id"]
-                nodes.append(_record_node(
-                    decision_id,
-                    "final_decision",
-                    decision,
-                    self._store.decisions / decision_id,
-                    now,
-                    "final_decision",
-                ))
-                references.append(ArtifactReference(
-                    decision_id,
-                    decision["confirmation_id"],
-                    "final_decision_evidence",
-                ))
-                references.append(ArtifactReference(
-                    decision_id,
-                    decision["candidate_id"],
-                    "final_decision_evidence",
-                ))
-            except (KeyError, OSError, TypeError, ValueError):
-                complete = False
-        for preview in migration_previews:
-            try:
-                preview_id = preview["preview_id"]
-                nodes.append(_raw_node(
-                    preview_id,
-                    "migration_preview",
-                    preview,
-                    self._store.migration_previews / preview_id,
-                    now,
-                ))
-                references.append(ArtifactReference(
-                    preview_id,
-                    preview_id,
-                    "unresolved_migration",
-                ))
-            except (KeyError, OSError, TypeError, ValueError):
-                complete = False
-        return nodes, references, complete
-
-
-def _directory_size(path: Path) -> int:
-    return sum(
-        item.stat().st_size
-        for item in path.rglob("*")
-        if item.is_file() and not item.is_symlink()
-    )
-
-
-def _age_days(created_at: str, now: datetime) -> int:
-    try:
-        created = datetime.fromisoformat(created_at).astimezone(timezone.utc)
-    except (TypeError, ValueError):
-        return 0
-    return max((now - created).days, 0)
-
-
-def _record_node(
-    identity: str,
-    artifact_class: str,
-    payload: dict[str, Any],
-    path: Path,
-    now: datetime,
-    contract_kind: str,
-) -> ArtifactNode:
-    disposition = inspect_persisted_contract(contract_kind, payload)
-    return _raw_node(
-        identity,
-        artifact_class,
-        payload,
-        path,
-        now,
-        version_disposition=disposition.status,
-    )
-
-
-def _raw_node(
-    identity: str,
-    artifact_class: str,
-    payload: dict[str, Any],
-    path: Path,
-    now: datetime,
-    *,
-    version_disposition: str = "current_and_executable",
-) -> ArtifactNode:
-    created_at = str(payload.get("created_at", now.isoformat()))
-    return ArtifactNode(
-        identity,
-        artifact_class,
-        created_at,
-        _directory_size(path),
-        _age_days(created_at, now),
-        version_disposition=version_disposition,
-    )

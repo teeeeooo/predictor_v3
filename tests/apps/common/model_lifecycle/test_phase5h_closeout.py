@@ -115,25 +115,52 @@ def test_partial_nonfinite_and_unverified_external_snapshots_fail_closed(
 
 def test_locked_final_test_is_single_use(tmp_path: Path) -> None:
     store = LifecycleCloseoutStore(tmp_path / "lifecycle")
+    dataset = tmp_path / "locked.csv"
+    dataset.write_text("x,target\n1,2\n", encoding="utf-8")
+    data_hash = hashlib.sha256(dataset.read_bytes()).hexdigest()
+    membership = hashlib.sha256(b'["1","2"]\\n').hexdigest()
     seal = build_locked_final_test(
-        seal_id="seal-1",
-        data_sha256=HASH,
-        ordered_membership_sha256=HASH,
+        data_sha256=data_hash,
+        ordered_membership_sha256=membership,
         target_identities=["target-1"],
         split_policy="unseen external holdout",
         created_at=NOW,
         creation_identity="campaign-preselection",
+        evaluation_contract={
+            "metric_contract": HASH,
+            "schema_contract": HASH,
+        },
+        required_source_hashes={"snapshot": HASH},
+        dataset_reference={"path": str(dataset), "sha256": data_hash},
         created_before_selection=True,
     )
     store.write_locked_final_test(seal)
     consumed = store.consume_locked_final_test(
-        "seal-1", confirmation_id="confirmation-1", consumed_at=NOW
+        seal["seal_id"], confirmation_id="confirmation-1", consumed_at=NOW
     )
     assert consumed["status"] == "consumed"
-    assert store.read_locked_final_test("seal-1")["status"] == "consumed"
+    assert store.read_locked_final_test(seal["seal_id"])["status"] == "consumed"
     with pytest.raises(ValueError, match="already consumed"):
         store.consume_locked_final_test(
-            "seal-1", confirmation_id="confirmation-2", consumed_at=NOW
+            seal["seal_id"], confirmation_id="confirmation-2", consumed_at=NOW
+        )
+
+    with pytest.raises(ValueError, match="supplied seal_id"):
+        build_locked_final_test(
+            seal_id=seal["seal_id"],
+            data_sha256="b" * 64,
+            ordered_membership_sha256=membership,
+            target_identities=["target-1"],
+            split_policy="unseen external holdout",
+            created_at=NOW,
+            creation_identity="campaign-preselection",
+            evaluation_contract={
+                "metric_contract": HASH,
+                "schema_contract": HASH,
+            },
+            required_source_hashes={"snapshot": HASH},
+            dataset_reference={"path": str(dataset), "sha256": "b" * 64},
+            created_before_selection=True,
         )
 
 
@@ -170,3 +197,46 @@ def test_compatibility_and_previews_are_read_only_and_fail_closed() -> None:
         "preservation_reason_codes"
     ]
     assert inspect_loaded_model_leases([], now=NOW)[0] == "missing"
+
+
+def test_materialization_rejects_selected_run_hash_without_partial_blob(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "training.csv"
+    source.write_text("feature,target\n1,2\n", encoding="utf-8")
+    store = LifecycleCloseoutStore(tmp_path / "lifecycle")
+    with pytest.raises(ValueError, match="selected run"):
+        store.materialize_local_source(
+            source,
+            filtering_meaning={"selection": "all"},
+            expected_content_sha256="b" * 64,
+            expected_filtering_meaning={"selection": "all"},
+        )
+    assert not store.blobs.exists()
+
+
+def test_preview_payloads_are_byte_invariant_without_supplied_clock() -> None:
+    source = {"schema_version": "legacy.v1", "meaning": {"old": True}}
+    first = preview_migration(
+        artifact_kind="run",
+        payload=source,
+        source_sha256=HASH,
+        proposed_contract_version="predictor_v3.experiment_run.v1",
+    )
+    second = preview_migration(
+        artifact_kind="run",
+        payload=source,
+        source_sha256=HASH,
+        proposed_contract_version="predictor_v3.experiment_run.v1",
+    )
+    assert first == second
+    retention = dict(
+        nodes=[ArtifactNode("candidate-1", "candidate", NOW, 1)],
+        references=[],
+        policy=RetentionPolicy(),
+        reference_complete=False,
+        loaded_model_lease_status="missing",
+    )
+    assert build_retention_preview(**retention) == build_retention_preview(
+        **retention
+    )

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from apps.common.model_lifecycle.filesystem import LifecycleFilesystem
+from apps.common.model_lifecycle.locking import lifecycle_lock
 
 from .canonical import (
     canonical_payload,
@@ -19,6 +20,7 @@ from .contracts import (
     validate_confirmation_record,
     validate_final_decision,
     validate_locked_final_test,
+    validate_locked_final_test_result,
     validate_snapshot_record,
 )
 from .materialization import TrainingDataMaterializer
@@ -36,9 +38,14 @@ class LifecycleCloseoutStore:
         self.confirmations = self.closeout_root / "confirmations"
         self.decisions = self.closeout_root / "decisions"
         self.locked_tests = self.closeout_root / "locked_final_tests"
+        self.locked_test_results = (
+            self.closeout_root / "locked_final_test_results"
+        )
         self.migration_previews = self.closeout_root / "migration_previews"
         self.retention_previews = self.closeout_root / "retention_previews"
         self.loaded_model_leases = self.closeout_root / "loaded_model_leases"
+        self.pins = self.closeout_root / "pins"
+        self.holds = self.closeout_root / "holds"
         self._materializer = TrainingDataMaterializer(
             self._filesystem,
             self.blobs,
@@ -50,11 +57,15 @@ class LifecycleCloseoutStore:
         *,
         filtering_meaning: dict[str, Any],
         materialization_kind: str = "owned_source_bytes",
+        expected_content_sha256: str | None = None,
+        expected_filtering_meaning: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return self._materializer.materialize_local_source(
             source,
             filtering_meaning=filtering_meaning,
             materialization_kind=materialization_kind,
+            expected_content_sha256=expected_content_sha256,
+            expected_filtering_meaning=expected_filtering_meaning,
         )
 
     def validate_external_reference(
@@ -65,6 +76,11 @@ class LifecycleCloseoutStore:
 
     def owned_materialization_path(self, identity: str) -> Path:
         return self._materializer.owned_materialization_path(identity)
+
+    def verify_owned_materialization(
+        self, descriptor: dict[str, Any]
+    ) -> Path:
+        return self._materializer.verify_owned_materialization(descriptor)
 
     def write_snapshot(self, payload: dict[str, Any]) -> Path:
         value = validate_snapshot_record(payload)
@@ -130,6 +146,19 @@ class LifecycleCloseoutStore:
             self._read_identity(self.decisions, decision_id, "decision.json")
         )
 
+    def find_decision_for_confirmation(
+        self, confirmation_id: str
+    ) -> dict[str, Any] | None:
+        matches = [
+            validate_final_decision(item)
+            for item in self.list_records(self.decisions, "decision.json")
+            if item.get("confirmation_id") == confirmation_id
+            and item.get("status") in {"approved", "rejected"}
+        ]
+        if len(matches) > 1:
+            raise ValueError("confirmation has multiple final decisions")
+        return matches[0] if matches else None
+
     def write_locked_final_test(self, payload: dict[str, Any]) -> Path:
         value = validate_locked_final_test(payload)
         return self._write_identity(
@@ -171,6 +200,15 @@ class LifecycleCloseoutStore:
             value,
         )
         return value
+
+    def write_locked_final_test_result(
+        self, payload: dict[str, Any]
+    ) -> Path:
+        value = validate_locked_final_test_result(payload)
+        identity = value["result_id"]
+        return self._write_identity(
+            self.locked_test_results, identity, "result.json", value
+        )
 
     def write_migration_preview(self, payload: dict[str, Any]) -> Path:
         return self._write_versioned_preview(
@@ -251,7 +289,13 @@ class LifecycleCloseoutStore:
         if value.get("schema_version") != expected_version:
             raise ValueError("unsupported closeout preview version")
         identity = require_safe_identity(value.get(identity_field), identity_field)
-        return self._write_identity(collection, identity, filename, value)
+        with lifecycle_lock(
+            self.root / ".lifecycle-write.lock",
+            filesystem=self._filesystem,
+        ):
+            return self._write_identity(
+                collection, identity, filename, value
+            )
 
     def _write_identity(
         self,

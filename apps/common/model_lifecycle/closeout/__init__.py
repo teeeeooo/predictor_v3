@@ -5,6 +5,7 @@ from .contracts import (
     FINAL_DECISION_VERSION,
     LOADED_MODEL_LEASE_VERSION,
     LOCKED_FINAL_TEST_VERSION,
+    LOCKED_FINAL_TEST_RESULT_VERSION,
     MIGRATION_PREVIEW_VERSION,
     MIGRATION_RECEIPT_VERSION,
     RETENTION_PREVIEW_VERSION,
@@ -17,6 +18,7 @@ from .contracts import (
     validate_confirmation_record,
     validate_final_decision,
     validate_locked_final_test,
+    validate_locked_final_test_result,
     validate_snapshot_record,
 )
 from .store import LifecycleCloseoutStore
@@ -26,6 +28,7 @@ __all__ = [
     "FINAL_DECISION_VERSION",
     "LOADED_MODEL_LEASE_VERSION",
     "LOCKED_FINAL_TEST_VERSION",
+    "LOCKED_FINAL_TEST_RESULT_VERSION",
     "MIGRATION_PREVIEW_VERSION",
     "MIGRATION_RECEIPT_VERSION",
     "RETENTION_PREVIEW_VERSION",
@@ -39,5 +42,6 @@ __all__ = [
     "validate_confirmation_record",
     "validate_final_decision",
     "validate_locked_final_test",
+    "validate_locked_final_test_result",
     "validate_snapshot_record",
 ]

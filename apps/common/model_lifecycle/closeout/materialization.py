@@ -31,6 +31,8 @@ class TrainingDataMaterializer:
         *,
         filtering_meaning: dict[str, Any],
         materialization_kind: str = "owned_source_bytes",
+        expected_content_sha256: str | None = None,
+        expected_filtering_meaning: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if materialization_kind not in {
             "owned_source_bytes",
@@ -41,6 +43,20 @@ class TrainingDataMaterializer:
         before = _require_stable_regular_source(path)
         digest, size = _hash_source(path)
         header, rows, ordered_rows = _csv_shape(path)
+        if expected_content_sha256 is not None:
+            require_sha256(expected_content_sha256, "selected run data hash")
+            if digest != expected_content_sha256:
+                raise ValueError(
+                    "materialized training bytes differ from selected run"
+                )
+        filtering = canonical_payload(filtering_meaning)
+        if (
+            expected_filtering_meaning is not None
+            and filtering != canonical_payload(expected_filtering_meaning)
+        ):
+            raise ValueError(
+                "materialized training selection differs from selected run"
+            )
         after = path.stat()
         if _stat_identity(before) != _stat_identity(after):
             raise ValueError("training source changed during materialization")
@@ -61,12 +77,35 @@ class TrainingDataMaterializer:
             "row_count": rows,
             "column_count": len(header),
             "ordered_row_set_sha256": ordered_rows,
-            "filtering_meaning": canonical_payload(filtering_meaning),
+            "filtering_meaning": filtering,
             "source_reference": {
                 "kind": "historical_local_path",
                 "path": str(path),
             },
         }
+
+    def verify_owned_materialization(
+        self, descriptor: dict[str, Any]
+    ) -> Path:
+        path = self.owned_materialization_path(
+            str(descriptor.get("materialized_identity", ""))
+        )
+        digest, size = _hash_source(path)
+        header, rows, ordered_rows = _csv_shape(path)
+        expected = {
+            "content_sha256": digest,
+            "size_bytes": size,
+            "schema_columns": header,
+            "row_count": rows,
+            "column_count": len(header),
+            "ordered_row_set_sha256": ordered_rows,
+        }
+        for name, value in expected.items():
+            if descriptor.get(name) != value:
+                raise ValueError(
+                    f"materialized training evidence mismatch: {name}"
+                )
+        return path
 
     def validate_external_reference(
         self,
@@ -122,13 +161,18 @@ class TrainingDataMaterializer:
         return path
 
     def _copy_and_verify(self, source: Path, target: Path, digest: str) -> None:
-        with source.open("rb") as source_file, (
-            self._filesystem.open_exclusive(target)
-        ) as output:
-            for block in iter(lambda: source_file.read(1024 * 1024), b""):
-                output.write(block)
-        if file_sha256(target) != digest:
-            raise ValueError("materialized training blob hash mismatch")
+        try:
+            with source.open("rb") as source_file, (
+                self._filesystem.open_exclusive(target)
+            ) as output:
+                for block in iter(lambda: source_file.read(1024 * 1024), b""):
+                    output.write(block)
+            if file_sha256(target) != digest:
+                raise ValueError("materialized training blob hash mismatch")
+        except Exception:
+            if self._filesystem.entry_exists(target):
+                self._filesystem.remove_file(target, missing_ok=True)
+            raise
 
 
 def _valid_shape(reference: dict[str, Any]) -> bool:

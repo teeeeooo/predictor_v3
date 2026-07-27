@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from apps.common.model_lifecycle.closeout.canonical import file_sha256
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
+from apps.common.model_lifecycle.repository import ModelLifecycleRepository
 from apps.train.application.experiments.store import ExperimentStore
 
 
@@ -14,6 +16,7 @@ class RecommendationPromotionAuthorization:
     def __init__(self, lifecycle_root: str | Path) -> None:
         self._experiments = ExperimentStore(lifecycle_root)
         self._closeout = LifecycleCloseoutStore(lifecycle_root)
+        self._repository = ModelLifecycleRepository(lifecycle_root)
 
     def review(
         self,
@@ -25,6 +28,10 @@ class RecommendationPromotionAuthorization:
             decision_id = source.split(":", 1)[1]
             try:
                 decision = self._closeout.read_decision(decision_id)
+                confirmation = self._closeout.read_confirmation(
+                    decision["confirmation_id"]
+                )
+                candidate = self._repository.read_candidate(candidate_id)
             except (FileNotFoundError, OSError, TypeError, ValueError):
                 return False, "final_confirmation_authorization_invalid"
             if (
@@ -32,6 +39,17 @@ class RecommendationPromotionAuthorization:
                 or decision["candidate_id"] != candidate_id
                 or decision["observed_active_revision"]
                 != expected_active_revision
+                or candidate.manifest.source != "confirmation"
+                or confirmation.get("confirmation_candidate_id")
+                != candidate_id
+                or confirmation.get(
+                    "confirmation_candidate_manifest_sha256"
+                ) != file_sha256(candidate.path / "manifest.json")
+                or confirmation["status"] not in {
+                    "approved",
+                    "promotion-blocked",
+                    "promoted",
+                }
             ):
                 return False, "final_confirmation_authorization_invalid"
             return True, ""
@@ -43,6 +61,12 @@ class RecommendationPromotionAuthorization:
             return False, "confirmation_required"
         if confirmation_link:
             return False, "final_user_approval_required"
+        try:
+            candidate = self._repository.read_candidate(candidate_id)
+        except (FileNotFoundError, OSError, TypeError, ValueError):
+            return False, "promotion_authorization_evidence_incomplete"
+        if candidate.manifest.source == "confirmation":
+            return False, "confirmation_linkage_incomplete"
         return True, ""
 
     def _is_recommendation_candidate(self, candidate_id: str) -> bool | None:
@@ -74,5 +98,11 @@ class RecommendationPromotionAuthorization:
             except (FileNotFoundError, OSError, TypeError, ValueError):
                 return None
             if current.get("confirmation_candidate_id") == candidate_id:
-                return True
+                return current["status"] in {
+                    "awaiting_user_decision",
+                    "approved",
+                    "rejected",
+                    "promoted",
+                    "promotion-blocked",
+                }
         return False

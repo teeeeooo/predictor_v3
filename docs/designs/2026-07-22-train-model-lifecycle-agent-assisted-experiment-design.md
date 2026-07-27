@@ -1424,6 +1424,13 @@ and deterministic fixture coverage. It does not execute a real-user
 confirmation, promote a production Candidate, migrate historical bytes, or
 delete an artifact.
 
+The first independent audit failed at exact head
+`009e4d3d668df2fc3df13a06aa22a8991ec67299`. Historical exact-head run
+`30280886312` succeeded, but that run is validation evidence rather than audit
+acceptance. The ten blocking findings are repaired on the same Draft PR and
+require a new independent exact-head re-audit; the Worker does not declare
+`PASS`.
+
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
 identities, lifecycle-root content-addressed training input, immutable
@@ -1459,6 +1466,14 @@ path or hash alone is insufficient. If privacy or size policy prevents a
 lossless owned representation and no verified retrievable reference exists,
 freeze fails without changing Candidate, campaign, recommendation, or Active.
 
+Materialization rechecks the selected run's persisted byte hash and exact
+data-request/filtering identity at copy time, derives shape and ordered row-set
+identity from those same bytes, and publishes no partial blob or frozen
+snapshot on disagreement. Confirmation preflight and pre-publication success
+validation rehash the complete captured Candidate artifact map, Definition
+bundle, run/campaign/recommendation evidence, resolved specification,
+materialized blob, and build/training semantics.
+
 Any change to recommendation/Candidate, resolved specification, data bytes or
 row selection/order, target roles, feature order/mapping/derived semantics,
 preprocessing, evaluation/threshold/tolerance/split/seed, Definition/runtime
@@ -1471,6 +1486,14 @@ Confirmation transitions are:
 
 `confirmation_pending -> confirmation_running ->`
 `awaiting_user_decision | failed | blocked | cancelled`
+
+Final decision/promotion adds terminal `approved`, `rejected`, `promoted`, and
+`promotion-blocked` evidence. Replaying any terminal confirmation returns its
+existing immutable record without execution, Candidate publication, or a new
+transition. A `source=confirmation` Candidate is non-promotable unless its
+manifest hash is linked to a complete confirmation and exact approved decision;
+an orphan left by terminal-record publication failure remains preserved and
+fail-closed.
 
 The stored contract also recognizes terminal execution evidence named
 `succeeded`; the application immediately projects a valid succeeded execution
@@ -1487,25 +1510,40 @@ evidence.
 
 #### Locked final-test leakage boundary
 
-A locked final-test seal is `sealed -> consumed`. Its identity binds data hash,
-ordered membership, Target set, split policy, creation identity, and proof that
-it predated selection or is genuinely unseen external data. Labels, aggregate
-metrics, and results are not inputs to proposal, ranking, or recommendation.
-The seal is consumed before execution and remains consumed on success,
-failure, or cancellation; it cannot be retried. Re-execution requires a new
-seal, snapshot, and confirmation. Parameter or feature changes after observing
-the result end the confirmation and require a new campaign. CV-only
-confirmation remains valid without a seal but cannot claim
+A locked final-test seal is `sealed -> consumed`. Its computed content address
+binds contract version, data hash, ordered membership, Target set, split policy,
+schema/evaluation contract, and required snapshot source hashes; a caller
+supplied identity is accepted only when it equals that address. It also records
+creation identity and proof that it predated selection or is genuinely unseen
+external data. Labels, aggregate metrics, and results are not inputs to
+proposal, ranking, or recommendation.
+
+Preflight verifies sealed bytes, ordered membership, Target order,
+schema/evaluation policy, contract version, and every required source hash
+against the snapshot. Confirmation trains and publishes its exact Candidate
+without using sealed data, then consumes the seal immediately before shared
+Core prediction and locked metric evaluation. The immutable final-test result
+binds seal, confirmation, Candidate manifest, data, membership, Target metrics,
+and pass/fail. Once evaluation starts the seal remains consumed even when
+evaluation or result publication fails; it cannot be retried. Re-execution
+requires a new seal, snapshot, and confirmation. Parameter or feature changes
+after observing the result end the confirmation and require a new campaign.
+CV-only confirmation remains valid without a seal but cannot claim
 `independent_final_test_passed`.
 
 #### Final decision and promotion
 
 Final decision history is immutable `approved | rejected | stale` evidence.
 It binds snapshot ID, confirmation ID, confirmation Candidate ID and manifest
-hash, and the Active revision observed during review. Approval requires
-interactive user authority; external agent and unattended headless contexts
-fail closed. Any changed identity/hash/revision creates a stale decision and
-does not promote.
+hash, and the Active revision observed during review. Approval requires a
+non-serializable process-local opaque capability issued by the shared trusted
+GUI/headless interaction boundary; caller-constructed public fields, external
+agent and unattended headless contexts fail closed. One confirmation accepts
+one terminal approved or rejected decision. Identical replay returns or resumes
+that immutable decision, conflicting replay is blocked, and promotion resume
+recognizes an already-written exact Active revision without promoting twice.
+Any changed identity/hash/revision creates a stale attempt and does not replace
+an accepted decision.
 
 An approved application command calls the existing guarded
 `ModelPromotionService.promote()` with the exact expected Active revision. It
@@ -1541,6 +1579,11 @@ is migrated later must receive a new identity and receipt while preserving the
 original and rollback evidence. Migration apply remains a separately
 authorized operation.
 
+Migration and retention previews derive `created_at` from their content address
+rather than the wall clock. The store serializes duplicate publication and
+reuses the exact existing record, so reconstruction with the same immutable
+inputs returns byte-identical payloads rather than only matching IDs.
+
 #### Retention and delete-authority matrix
 
 | Artifact/reference | Protection reason |
@@ -1555,8 +1598,14 @@ authorized operation.
 | unknown/unsupported contract | `unknown_version`, `unsupported_version` |
 
 Retention preview returns exact artifact identity/class, size/age/count policy
-result, references, preservation reasons, disposition, and reference
-completeness. Unknown targets, incomplete graphs, and missing/expired/unknown
+result, true source-artifact identity, incoming/outgoing references,
+preservation reasons, disposition, and reference completeness. Its inventory
+represents Candidate, Active/history, deployment-index state, Predict leases,
+run/campaign/proposal/attempt/gate/leaderboard/incumbent/recommendation,
+snapshot/materialized blob, confirmation/Candidate, seal/result,
+decision/promotion linkage, migration source/preview, and available pin/hold
+evidence. Migration previews reference their actual source hash node rather
+than themselves. Unknown targets, incomplete graphs, and missing/expired/unknown
 Predict leases are protected, never inferred eligible. Existing deployment
 exports do not yet have a complete lifecycle-root index, so the application
 preview remains intentionally fail-closed.

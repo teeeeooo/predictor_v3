@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
 from .canonical import canonical_payload, content_sha256, require_sha256
@@ -64,5 +63,5 @@ def preview_migration(
         "original_preservation_required": True,
         "in_place_migration_allowed": False,
         "apply_implemented": False,
-        "created_at": created_at or datetime.now(timezone.utc).isoformat(),
+        "created_at": f"content-addressed:{preview_id}",
     })

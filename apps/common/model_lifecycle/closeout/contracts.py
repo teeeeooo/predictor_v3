@@ -9,6 +9,7 @@ SNAPSHOT_VERSION = "predictor_v3.confirmation_snapshot.v1"
 CONFIRMATION_VERSION = "predictor_v3.confirmation.v1"
 FINAL_DECISION_VERSION = "predictor_v3.final_decision.v1"
 LOCKED_FINAL_TEST_VERSION = "predictor_v3.locked_final_test.v1"
+LOCKED_FINAL_TEST_RESULT_VERSION = "predictor_v3.locked_final_test_result.v1"
 MIGRATION_PREVIEW_VERSION = "predictor_v3.migration_preview.v1"
 MIGRATION_RECEIPT_VERSION = "predictor_v3.migration_receipt.v1"
 RETENTION_PREVIEW_VERSION = "predictor_v3.retention_preview.v1"
@@ -23,6 +24,10 @@ CONFIRMATION_STATES = {
     "blocked",
     "cancelled",
     "awaiting_user_decision",
+    "approved",
+    "rejected",
+    "promoted",
+    "promotion-blocked",
 }
 DECISION_STATES = {"approved", "rejected", "stale"}
 SEAL_STATES = {"sealed", "consumed"}
@@ -48,6 +53,7 @@ from .confirmation_contracts import (  # noqa: E402
 from .locked_test_contracts import (  # noqa: E402
     build_locked_final_test,
     validate_locked_final_test,
+    validate_locked_final_test_result,
 )
 from .snapshot_contracts import (  # noqa: E402
     build_snapshot_record,
@@ -59,6 +65,7 @@ __all__ = [
     "FINAL_DECISION_VERSION",
     "LOADED_MODEL_LEASE_VERSION",
     "LOCKED_FINAL_TEST_VERSION",
+    "LOCKED_FINAL_TEST_RESULT_VERSION",
     "MIGRATION_PREVIEW_VERSION",
     "MIGRATION_RECEIPT_VERSION",
     "RETENTION_PREVIEW_VERSION",
@@ -71,5 +78,6 @@ __all__ = [
     "validate_confirmation_record",
     "validate_final_decision",
     "validate_locked_final_test",
+    "validate_locked_final_test_result",
     "validate_snapshot_record",
 ]

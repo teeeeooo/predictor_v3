@@ -18,6 +18,7 @@ from apps.common.model_lifecycle.promotion import ModelPromotionService
 from apps.train.application.confirmation import (
     FinalDecisionApplicationService,
     RecommendationPromotionAuthorization,
+    TrustedUserAuthorityIssuer,
 )
 from apps.train.adapters.data_definition_generation_repository import DataDefinitionGenerationRepository
 from apps.train.adapters.one_hot_vocabulary import load_persisted_mapping_vocabulary_snapshots
@@ -116,6 +117,7 @@ def create_shell(
     closeout_authorization = RecommendationPromotionAuthorization(
         lifecycle_repository.root
     )
+    authority_issuer = TrustedUserAuthorityIssuer()
     final_decisions = FinalDecisionApplicationService(
         lifecycle_repository,
         ModelPromotionService(
@@ -124,6 +126,7 @@ def create_shell(
             authorization_review=closeout_authorization.review,
         ),
         closeout_store=closeout_store,
+        authority_issuer=authority_issuer,
     )
     train_controller = TrainController(
         lifecycle_service=training_lifecycle,
@@ -132,6 +135,7 @@ def create_shell(
         experiment_service=experiment_service,
         closeout_store=closeout_store,
         final_decision_service=final_decisions,
+        user_authority_issuer=authority_issuer,
     )
     return TrainShell(
         train_controller=train_controller,

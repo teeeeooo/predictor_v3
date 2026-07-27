@@ -3,13 +3,20 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from apps.common.model_lifecycle.closeout.canonical import file_sha256
-from apps.common.model_lifecycle.closeout.contracts import build_snapshot_record
+from apps.common.model_lifecycle.closeout.contracts import (
+    build_confirmation_record,
+    build_snapshot_record,
+)
 from apps.common.model_lifecycle.closeout.contracts import build_final_decision
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
 from apps.common.model_lifecycle.promotion import PromotionResult
 from apps.train.application.confirmation.decision import (
     FinalDecisionApplicationService,
+    TrustedUserAuthorityIssuer,
+    UserAuthorityCapability,
     UserAuthorityContext,
 )
 from apps.train.application.confirmation.execution import (
@@ -67,6 +74,11 @@ class _Execution:
     def execute(self, request):
         self.requests.append(request)
         return self.result
+
+
+class _Integrity:
+    def validate(self, meaning):
+        return None
 
 
 def _candidate(root: Path, candidate_id: str, source: str):
@@ -172,11 +184,25 @@ def test_confirmation_uses_frozen_all_target_meaning_without_active_mutation(
         execution,
         closeout_store=store,
         build_identity_provider=lambda: {"training_semantic": "build-1"},
+        integrity_validator=_Integrity(),
     )
 
     result = service.start(snapshot["snapshot_id"], confirmation_id="confirm-1")
+    persisted_before = {
+        path.relative_to(store.confirmations): path.read_bytes()
+        for path in store.confirmations.rglob("*.json")
+    }
+    duplicate = service.start(
+        snapshot["snapshot_id"], confirmation_id="confirm-1"
+    )
+    persisted_after = {
+        path.relative_to(store.confirmations): path.read_bytes()
+        for path in store.confirmations.rglob("*.json")
+    }
 
     assert result["status"] == "awaiting_user_decision"
+    assert duplicate == result
+    assert persisted_after == persisted_before
     assert repository.active is None
     assert promotion.calls == []
     request = execution.requests[0]
@@ -207,6 +233,7 @@ def test_partial_confirmation_fails_and_exact_user_approval_uses_guarded_owner(
         )),
         closeout_store=store,
         build_identity_provider=lambda: {"training_semantic": "build-1"},
+        integrity_validator=_Integrity(),
     )
     failed = partial.start(
         snapshot["snapshot_id"], confirmation_id="confirm-partial"
@@ -225,26 +252,52 @@ def test_partial_confirmation_fails_and_exact_user_approval_uses_guarded_owner(
         )),
         closeout_store=store,
         build_identity_provider=lambda: {"training_semantic": "build-1"},
+        integrity_validator=_Integrity(),
     )
     complete.start(snapshot["snapshot_id"], confirmation_id="confirm-complete")
+    issuer = TrustedUserAuthorityIssuer()
     decision = FinalDecisionApplicationService(
-        repository, promotion, closeout_store=store
+        repository, promotion, closeout_store=store,
+        authority_issuer=issuer,
     )
+    with pytest.raises(PermissionError, match="trusted"):
+        decision.decide(
+            "confirm-complete",
+            approve=True,
+            expected_active_revision=0,
+            authority=UserAuthorityContext(
+                actor_kind="user",
+                authority_context="forged",
+                interactive=True,
+            ),
+        )
+    assert store.find_decision_for_confirmation("confirm-complete") is None
+    with pytest.raises(PermissionError, match="trusted"):
+        decision.decide(
+            "confirm-complete",
+            approve=True,
+            expected_active_revision=0,
+            authority=UserAuthorityCapability("user", "forged", object()),
+        )
+    capability = issuer.issue("interactive-test-user")
     outcome = decision.decide(
         "confirm-complete",
         approve=True,
         expected_active_revision=0,
         decision_id="decision-1",
-        authority=UserAuthorityContext(
-            actor_kind="user",
-            authority_context="interactive-test-user",
-            interactive=True,
-        ),
+        authority=capability,
     )
     assert outcome.status == "approved"
     assert promotion.calls == [
         ("confirmed-1", 0, "final-confirmation:decision-1")
     ]
+    with pytest.raises(PermissionError, match="trusted"):
+        decision.decide(
+            "confirm-complete",
+            approve=True,
+            expected_active_revision=0,
+            authority=capability,
+        )
 
     repository.active = SimpleNamespace(revision=1)
     stale = decision.decide(
@@ -252,13 +305,9 @@ def test_partial_confirmation_fails_and_exact_user_approval_uses_guarded_owner(
         approve=True,
         expected_active_revision=0,
         decision_id="decision-2",
-        authority=UserAuthorityContext(
-            actor_kind="user",
-            authority_context="interactive-test-user",
-            interactive=True,
-        ),
+        authority=issuer.issue("interactive-test-user"),
     )
-    assert stale.status == "stale"
+    assert stale.status == "approved"
     assert len(promotion.calls) == 1
 
 
@@ -277,13 +326,31 @@ def test_recommendation_promotion_requires_confirmation_decision(
     assert allowed is False
     assert reason == "confirmation_required"
 
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    policy._repository = _Repository(  # noqa: SLF001
+        root, {"confirmed-1": confirmed}
+    )
+    manifest_hash = file_sha256(confirmed.path / "manifest.json")
+    confirmation = build_confirmation_record(
+        confirmation_id="confirmation-1",
+        snapshot_id="snapshot-1",
+        selected_candidate_id="selected-1",
+        status="approved",
+        created_at=NOW,
+        updated_at=NOW,
+        production_required_targets=list(TARGETS),
+        target_results=list(_target_results()),
+        confirmation_candidate_id="confirmed-1",
+        confirmation_candidate_manifest_sha256=manifest_hash,
+    )
+    policy._closeout.write_confirmation(confirmation)  # noqa: SLF001
     decision = build_final_decision(
         decision_id="decision-approved",
         status="approved",
         snapshot_id="snapshot-1",
         confirmation_id="confirmation-1",
         candidate_id="confirmed-1",
-        candidate_manifest_sha256=HASH,
+        candidate_manifest_sha256=manifest_hash,
         observed_active_revision=0,
         created_at=NOW,
         actor_kind="user",
@@ -300,3 +367,48 @@ def test_recommendation_promotion_requires_confirmation_decision(
     )
     assert allowed is False
     assert reason == "final_confirmation_authorization_invalid"
+
+
+def test_terminal_record_failure_leaves_confirmation_candidate_non_promotable(
+    tmp_path: Path,
+) -> None:
+    class _FailTerminalStore(LifecycleCloseoutStore):
+        def append_confirmation(self, payload, *, expected_status):
+            if payload["status"] == "awaiting_user_decision":
+                raise OSError("injected terminal append failure")
+            return super().append_confirmation(
+                payload, expected_status=expected_status
+            )
+
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = _FailTerminalStore(root)
+    snapshot = _snapshot(store, selected)
+    service = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        _Execution(ConfirmationExecutionResult(
+            status="succeeded",
+            target_results=_target_results(),
+            confirmation_candidate_id="confirmed-1",
+        )),
+        closeout_store=store,
+        integrity_validator=_Integrity(),
+    )
+    outcome = service.start(
+        snapshot["snapshot_id"], confirmation_id="confirm-orphan"
+    )
+    assert outcome["status"] == "blocked"
+    policy = RecommendationPromotionAuthorization(root)
+    policy._closeout = store  # noqa: SLF001
+    policy._repository = repository  # noqa: SLF001
+    policy._experiments = SimpleNamespace(list_campaigns=lambda: ())  # noqa: SLF001
+    assert policy.review("confirmed-1", "user-promotion", 0) == (
+        False,
+        "confirmation_linkage_incomplete",
+    )

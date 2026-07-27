@@ -73,7 +73,14 @@ def validate_confirmation_record(payload: Any) -> dict[str, Any]:
     if candidate_id is not None:
         require_safe_identity(candidate_id, "confirmation_candidate_id")
         require_sha256(candidate_hash, "confirmation Candidate manifest hash")
-    if value["status"] in {"succeeded", "awaiting_user_decision"}:
+    if value["status"] in {
+        "succeeded",
+        "awaiting_user_decision",
+        "approved",
+        "rejected",
+        "promoted",
+        "promotion-blocked",
+    }:
         complete = {
             item.get("target_identity")
             for item in results

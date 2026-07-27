@@ -25,10 +25,14 @@ from .canonical import canonical_payload
 from .contracts import (
     CONFIRMATION_VERSION,
     FINAL_DECISION_VERSION,
+    LOCKED_FINAL_TEST_RESULT_VERSION,
+    LOCKED_FINAL_TEST_VERSION,
     SNAPSHOT_VERSION,
     ContractDisposition,
     validate_confirmation_record,
     validate_final_decision,
+    validate_locked_final_test,
+    validate_locked_final_test_result,
     validate_snapshot_record,
 )
 from .experiment_compatibility import (
@@ -66,6 +70,10 @@ def inspect_persisted_contract(
             return _validated(validate_confirmation_record, payload)
         if kind == "final_decision":
             return _validated(validate_final_decision, payload)
+        if kind == "locked_final_test":
+            return _validated(validate_locked_final_test, payload)
+        if kind == "locked_final_test_result":
+            return _validated(validate_locked_final_test_result, payload)
         if kind in EXPERIMENT_VERSIONS:
             return inspect_experiment(kind, payload)
         return ContractDisposition(
@@ -105,6 +113,7 @@ def _validated(
         "cancelled",
         "rejected",
         "stale",
+        "consumed",
     }
     if status in blocked_states:
         return ContractDisposition(
@@ -130,6 +139,8 @@ def _invalid_or_future(
         "snapshot": SNAPSHOT_VERSION,
         "confirmation": CONFIRMATION_VERSION,
         "final_decision": FINAL_DECISION_VERSION,
+        "locked_final_test": LOCKED_FINAL_TEST_VERSION,
+        "locked_final_test_result": LOCKED_FINAL_TEST_RESULT_VERSION,
     }.get(kind)
     if isinstance(version, str) and expected is not None and version != expected:
         return ContractDisposition(

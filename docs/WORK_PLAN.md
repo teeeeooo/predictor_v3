@@ -17,14 +17,19 @@
 
 ## Current Slice
 
-Phase 5H lifecycle closeout source is implemented on its Lane C Draft branch
-and is pending independent exact-head audit. It adds immutable content-addressed
-confirmation snapshots, all-production-Target fixed confirmation, single-use
-locked final-test seals, exact interactive user decisions routed through the
-existing guarded promotion owner, strict historical dispositions, read-only
-migration previews, Predict loaded-model leases, and fail-closed retention
-previews. No production confirmation/promotion, migration apply, deletion, or
-deployment mutation has been performed.
+Phase 5H lifecycle closeout source is under bounded repair on its Lane C Draft
+branch after the first independent audit failed at exact head
+`009e4d3d668df2fc3df13a06aa22a8991ec67299`. Historical run `30280886312`
+succeeded but did not make that audit a pass. The same PR now adds immutable
+content-addressed confirmation snapshots, all-production-Target fixed
+confirmation, content-addressed single-use locked final-test seals with actual
+evaluation, trusted opaque interactive user capabilities and single-use
+decisions routed through the existing guarded promotion owner, strict
+historical dispositions, byte-invariant migration/retention previews, Predict
+loaded-model leases, and a complete fail-closed lifecycle reference inventory.
+The repair remains pending independent exact-head re-audit. No production
+confirmation/promotion, migration apply, deletion, or deployment mutation has
+been performed.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
@@ -109,7 +114,8 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Obtain one independent exact-head audit of the Phase 5H Draft PR. Do not merge
+Complete Worker validation and provide the new exact head for one independent
+exact-head re-audit of the Phase 5H Draft PR. Do not merge
 or claim Phase 5 completion until that audit and required CI evidence accept the
 same head. Keep real-user confirmation/promotion and migration/delete apply as
 separately authorized controlled operations.

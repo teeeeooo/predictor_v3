@@ -183,14 +183,20 @@ class SnapshotFreezeService:
         artifacts = candidate_artifacts(candidate.path, candidate.manifest)
         definition_files = directory_artifacts(generation.path)
         source_path = specification["data"]["source_path"]
+        selected_data_request = run["contract_identity"]["data_request"]
+        if selected_data_request != specification["data"]:
+            raise ValueError("selected run data selection identity mismatch")
+        filtering_meaning = {
+            "selection": selected_data_request,
+            "preprocessing": specification["preprocessing"],
+            "row_filter_owner": "core.ml.training.load_and_preprocess",
+        }
         training_data = (
             self._store.materialize_local_source(
                 source_path,
-                filtering_meaning={
-                    "selection": specification["data"],
-                    "preprocessing": specification["preprocessing"],
-                    "row_filter_owner": "core.ml.training.load_and_preprocess",
-                },
+                filtering_meaning=filtering_meaning,
+                expected_content_sha256=run["contract_identity"]["data_sha256"],
+                expected_filtering_meaning=filtering_meaning,
             )
             if materialize
             else preflight_data(source_path, run)

@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-28 — Phase 5H lifecycle safety audit repair
+
+### Decision
+
+- Preserve the first independent audit `FAIL` at exact head
+  `009e4d3d668df2fc3df13a06aa22a8991ec67299` and historical successful run
+  `30280886312`; neither is acceptance.
+- Bind snapshot materialization and confirmation revalidation to selected-run
+  bytes and complete captured artifacts; make locked-test seals
+  content-addressed and execute sealed data only after confirmation Candidate
+  publication.
+- Require trusted opaque user capability, one terminal decision per
+  confirmation, exact confirmation-Candidate linkage, terminal replay
+  invariance, and byte-invariant migration/retention previews.
+- Complete the read-only retention inventory and true source references while
+  keeping missing export/lease state fail-closed. Do not add production
+  confirmation, promotion, migration apply, deletion, merge, or audit-PASS
+  authority; require a new independent exact-head re-audit.
+
 ## 2026-07-26 — Phase 5G post-merge closeout
 
 ### Decision

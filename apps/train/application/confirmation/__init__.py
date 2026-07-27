@@ -3,6 +3,8 @@
 from .decision import (
     FinalDecisionApplicationService,
     FinalDecisionOutcome,
+    TrustedUserAuthorityIssuer,
+    UserAuthorityCapability,
     UserAuthorityContext,
 )
 from .execution import (
@@ -27,6 +29,8 @@ __all__ = [
     "SnapshotFreezeOutcome",
     "SnapshotFreezeService",
     "UserAuthorityContext",
+    "UserAuthorityCapability",
+    "TrustedUserAuthorityIssuer",
     "TrainingLifecycleConfirmationExecutor",
     "LifecycleRetentionApplicationService",
 ]
