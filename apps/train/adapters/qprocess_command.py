@@ -40,6 +40,22 @@ def training_process_arguments(
             if request.derived_evaluation_json
             else []
         ),
+        *(
+            [
+                "--confirmation-fixed-parameters-json",
+                request.confirmation_fixed_parameters_json,
+            ]
+            if request.confirmation_fixed_parameters_json
+            else []
+        ),
+        *(
+            [
+                "--confirmation-fixed-features-json",
+                request.confirmation_fixed_features_json,
+            ]
+            if request.confirmation_fixed_features_json
+            else []
+        ),
         *extra_args,
     ]
 

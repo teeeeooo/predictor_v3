@@ -36,6 +36,9 @@ class TrainingRequest:
     target_scoped_exploratory: bool = False
     execution_owner: str = "gui"
     campaign_id: str = ""
+    publication_source: str = "training"
+    confirmation_fixed_parameters_json: str = ""
+    confirmation_fixed_features_json: str = ""
 
 
 @dataclass(frozen=True)

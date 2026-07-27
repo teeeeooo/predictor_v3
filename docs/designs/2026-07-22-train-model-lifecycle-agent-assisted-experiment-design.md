@@ -1416,7 +1416,166 @@ Purpose:
 - schema-version compatibility
 - full lifecycle acceptance and documentation closeout
 
-The worker may split a slice further when repository change gates require smaller changes.
+#### Implemented source boundary
+
+Phase 5H is implemented as one owner-aligned lifecycle closeout boundary. It
+adds source contracts, application services, shared GUI/headless projections,
+and deterministic fixture coverage. It does not execute a real-user
+confirmation, promote a production Candidate, migrate historical bytes, or
+delete an artifact.
+
+The persisted owner is
+`apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
+identities, lifecycle-root content-addressed training input, immutable
+snapshot/confirmation/decision/final-test evidence, compatibility
+dispositions, migration previews, Predict loaded-model leases, and retention
+previews. `apps/train/application/confirmation/` owns orchestration and reuses
+the existing Candidate publisher, Experiment Specification execution owner,
+promotion revision guard, Definition generation repository, and campaign
+evidence store. GUI and headless adapters call these application owners; they
+do not contain confirmation, promotion, or retention policy.
+
+#### Snapshot and confirmation state
+
+Snapshot transitions are:
+
+`creating -> frozen | failed | blocked_incomplete`
+
+Only `frozen` is executable. Snapshot identity is the SHA-256 of the canonical
+versioned meaning payload; creation time and actor are audit metadata and do
+not change that identity. A frozen record binds recommendation, campaign,
+selected Candidate/source run, required Candidate and Definition artifacts,
+fully resolved specification and fingerprint, target roles, ordered feature
+and preprocessing semantics, evaluation/split/fold/seed policy, selected
+training parameters, baseline/Active revision, build/training-semantic
+identity, and a materialized training-input identity.
+
+Local training input is copied byte-for-byte, or as a provably lossless
+training projection, into lifecycle-owned SHA-256 storage. A verified external
+reference is contract-valid only with an immutable object version, hashes,
+shape and ordered membership, preserved filtering/preprocessing input meaning,
+bounded retrievability proof, and access-time hash verification. A movable
+path or hash alone is insufficient. If privacy or size policy prevents a
+lossless owned representation and no verified retrievable reference exists,
+freeze fails without changing Candidate, campaign, recommendation, or Active.
+
+Any change to recommendation/Candidate, resolved specification, data bytes or
+row selection/order, target roles, feature order/mapping/derived semantics,
+preprocessing, evaluation/threshold/tolerance/split/seed, Definition/runtime
+generation, selected parameters, baseline, training-semantic build identity,
+or required artifact content requires a new snapshot. A UI-only build change
+is reusable only when the same training-semantic identity is independently
+proven.
+
+Confirmation transitions are:
+
+`confirmation_pending -> confirmation_running ->`
+`awaiting_user_decision | failed | blocked | cancelled`
+
+The stored contract also recognizes terminal execution evidence named
+`succeeded`; the application immediately projects a valid succeeded execution
+to `awaiting_user_decision`. Confirmation accepts one exact frozen snapshot,
+uses its selected parameters and seed/split policy, disables proposal, Optuna,
+RFECV feature search and search-space mutation, and executes every
+production-required Target. Missing, partial, failed, non-finite, corrupted,
+stale, unpublished-feature, or lifecycle-incompatible evidence cannot reach
+user decision. A successful retraining publishes a new immutable
+`source=confirmation` Candidate through the existing publisher. It is retained
+in confirmation history and is never inserted into the campaign leaderboard.
+No confirmation state changes Active, recommendation, incumbent, or prior
+evidence.
+
+#### Locked final-test leakage boundary
+
+A locked final-test seal is `sealed -> consumed`. Its identity binds data hash,
+ordered membership, Target set, split policy, creation identity, and proof that
+it predated selection or is genuinely unseen external data. Labels, aggregate
+metrics, and results are not inputs to proposal, ranking, or recommendation.
+The seal is consumed before execution and remains consumed on success,
+failure, or cancellation; it cannot be retried. Re-execution requires a new
+seal, snapshot, and confirmation. Parameter or feature changes after observing
+the result end the confirmation and require a new campaign. CV-only
+confirmation remains valid without a seal but cannot claim
+`independent_final_test_passed`.
+
+#### Final decision and promotion
+
+Final decision history is immutable `approved | rejected | stale` evidence.
+It binds snapshot ID, confirmation ID, confirmation Candidate ID and manifest
+hash, and the Active revision observed during review. Approval requires
+interactive user authority; external agent and unattended headless contexts
+fail closed. Any changed identity/hash/revision creates a stale decision and
+does not promote.
+
+An approved application command calls the existing guarded
+`ModelPromotionService.promote()` with the exact expected Active revision. It
+does not create another Active writer. Confirmation success alone never
+changes Active, export, or the Predict loaded model. Recommendation-selected
+and confirmation Candidates cannot use generic promotion to bypass their
+required evidence, while ordinary Candidates outside recommendation workflow
+retain backward-compatible explicit promotion. Rollback remains
+re-promotion.
+
+#### Compatibility and migration matrix
+
+| Contract | Current writer | Historical read | Executable rule |
+| --- | --- | --- | --- |
+| Candidate manifest/result/analysis | existing v2/current writers | legacy Candidate v1 and legacy `model.pkl` continuity retained | legacy or ambiguous meaning is historical-only until current revalidation |
+| Active reference | existing current writer | current strict reader | malformed or unknown version blocks |
+| Experiment Specification/run | existing Phase 5F v1 writers | complete resolved v1 is readable | missing resolved meaning or execution identity is historical-only |
+| Phase 5F/5G campaign, proposal, attempt | existing v1 writers | strict versioned projection | resume requires complete persisted identity and nested evidence |
+| gate/leaderboard/recommendation | existing Phase 5G v1 writers | strict nested read | invalid gate, authority flags, or referenced evidence blocks reuse |
+| snapshot/confirmation/final decision | Phase 5H v1 writers | exact v1 read | only frozen/eligible current states execute |
+
+Every reader returns one of `current_and_executable`,
+`current_but_blocked`, `readable_historical_only`,
+`unsupported_future_version`, or `corrupt_or_incomplete`. Unknown future
+versions and ambiguous missing fields fail closed. Persisted resolved
+specifications never receive new defaults. Read adapters and migration
+previews do not change source bytes.
+
+Migration source owns eligibility, source/payload hashes, proposed output
+identity, original-preservation and no-in-place requirements, and blocked
+reason. It deliberately exposes no apply command. An immutable artifact that
+is migrated later must receive a new identity and receipt while preserving the
+original and rollback evidence. Migration apply remains a separately
+authorized operation.
+
+#### Retention and delete-authority matrix
+
+| Artifact/reference | Protection reason |
+| --- | --- |
+| current Active and Active history Candidate | `current_active`, `active_history` |
+| process-loaded Predict Candidate | `loaded_predict_model`; missing, expired, or unknown lease fails closed |
+| current deployment export/source | `deployment_export`; absent export index makes the graph incomplete |
+| active/resumable campaign, incumbent, recommendation | campaign/recommendation reason codes |
+| snapshot, confirmation Candidate, final decision | confirmation/final-decision reason codes |
+| unresolved migration | `unresolved_migration` |
+| user pin or audit/legal/manual hold | corresponding immutable reason |
+| unknown/unsupported contract | `unknown_version`, `unsupported_version` |
+
+Retention preview returns exact artifact identity/class, size/age/count policy
+result, references, preservation reasons, disposition, and reference
+completeness. Unknown targets, incomplete graphs, and missing/expired/unknown
+Predict leases are protected, never inferred eligible. Existing deployment
+exports do not yet have a complete lifecycle-root index, so the application
+preview remains intentionally fail-closed.
+
+No delete command exists in Phase 5H source. A future delete apply is Lane D
+and requires an exact preview, explicit user authorization, same-target
+reference/protection revalidation, bounded apply, same-session postcheck,
+immutable deletion receipt, and residual-state confirmation. Automatic
+cleanup, training-success cleanup, agent deletion, and incomplete-reference
+deletion remain prohibited.
+
+#### Remaining controlled operations
+
+Real user-data snapshot/confirmation/final-test execution, production
+promotion or deployment replacement, historical migration apply, and
+retention/delete apply are not Phase 5H source acceptance. Each requires its
+own explicit authority and operational evidence. The Phase 5H Draft PR
+requires independent exact-head audit before merge; Worker validation is not
+audit acceptance.
 
 ---
 

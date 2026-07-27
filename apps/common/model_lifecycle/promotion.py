@@ -50,11 +50,15 @@ class ModelPromotionService:
         registry_provider: Callable[[], ModelRegistrySnapshot],
         *,
         prediction_smoke: Callable[[CandidateSnapshot], None] | None = None,
+        authorization_review: (
+            Callable[[str, str, int], tuple[bool, str]] | None
+        ) = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._repository = repository
         self._registry_provider = registry_provider
         self._prediction_smoke = prediction_smoke or _bounded_structural_smoke
+        self._authorization_review = authorization_review
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def promote(
@@ -64,6 +68,19 @@ class ModelPromotionService:
         expected_revision: int,
         source: str = "user-promotion",
     ) -> PromotionResult:
+        if self._authorization_review is not None:
+            allowed, reason_code = self._authorization_review(
+                candidate_id,
+                source,
+                expected_revision,
+            )
+            if not allowed:
+                return PromotionResult(
+                    "blocked",
+                    candidate_id,
+                    message="Candidate requires exact lifecycle authorization.",
+                    reason_code=reason_code or "promotion_authorization_blocked",
+                )
         try:
             snapshot = self._repository.read_candidate(candidate_id)
             compatibility = self._compatibility_review(

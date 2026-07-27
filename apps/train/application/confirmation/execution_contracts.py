@@ -1,0 +1,38 @@
+"""Port contracts for fixed-meaning confirmation execution."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Protocol
+
+
+@dataclass(frozen=True)
+class FrozenConfirmationRequest:
+    confirmation_id: str
+    snapshot_id: str
+    selected_candidate_id: str
+    resolved_specification: dict[str, Any]
+    production_required_targets: tuple[str, ...]
+    selected_parameters: dict[str, dict[str, Any]]
+    training_data: dict[str, Any]
+    definition_runtime: dict[str, Any]
+    evaluation_contract: dict[str, Any]
+    locked_final_test: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class ConfirmationExecutionResult:
+    status: str
+    target_results: tuple[dict[str, Any], ...] = ()
+    confirmation_candidate_id: str = ""
+    message: str = ""
+    reason_code: str = ""
+    independent_final_test_passed: bool = False
+
+
+class ConfirmationExecutionPort(Protocol):
+    """Must publish through TrainingLifecycle/CandidatePublisher with no search."""
+
+    def execute(
+        self, request: FrozenConfirmationRequest
+    ) -> ConfirmationExecutionResult: ...

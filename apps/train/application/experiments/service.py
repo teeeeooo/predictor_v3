@@ -140,6 +140,28 @@ class ExperimentApplicationService:
             execution_owner=execution_owner,
             campaign_id=campaign_id,
         )
+        return self.run_resolved_request(
+            resolved,
+            request,
+            attempt=attempt,
+            callbacks=callbacks,
+        )
+
+    def run_resolved_request(
+        self,
+        resolved: ResolvedExperiment,
+        request: TrainingRequest,
+        *,
+        attempt: int = 1,
+        callbacks: dict[str, Any] | None = None,
+    ) -> TrainingResult | None:
+        """Run an application-frozen request through the shared lifecycle owner."""
+        identity = request.run_id
+        if request.experiment_contract_fingerprint != resolved.fingerprint:
+            raise ExperimentContractError(
+                "frozen_request_contract_mismatch",
+                "Frozen request does not match its resolved Experiment contract.",
+            )
         external = callbacks or {}
         recorder = ExperimentRunRecorder(
             self._store,
@@ -199,6 +221,7 @@ class ExperimentApplicationService:
         candidate_id: str,
         execution_owner: str = "headless-single",
         campaign_id: str = "",
+        data_path_override: str | None = None,
     ) -> TrainingRequest:
         return self._request_from_resolved(
             resolved,
@@ -206,6 +229,7 @@ class ExperimentApplicationService:
             candidate_id=candidate_id,
             execution_owner=execution_owner,
             campaign_id=campaign_id,
+            data_path_override=data_path_override,
         )
 
     def _request_from_resolved(
@@ -216,6 +240,7 @@ class ExperimentApplicationService:
         candidate_id: str,
         execution_owner: str = "validation",
         campaign_id: str = "",
+        data_path_override: str | None = None,
     ) -> TrainingRequest:
         return build_training_request(
             self._lifecycle,
@@ -225,6 +250,7 @@ class ExperimentApplicationService:
             execution_owner=execution_owner,
             campaign_id=campaign_id,
             derived_snapshot_provider=self._derived_snapshot_provider,
+            data_path_override=data_path_override,
         )
 
     def _current_build_identity(self) -> dict[str, Any]:

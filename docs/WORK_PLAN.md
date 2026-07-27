@@ -17,6 +17,15 @@
 
 ## Current Slice
 
+Phase 5H lifecycle closeout source is implemented on its Lane C Draft branch
+and is pending independent exact-head audit. It adds immutable content-addressed
+confirmation snapshots, all-production-Target fixed confirmation, single-use
+locked final-test seals, exact interactive user decisions routed through the
+existing guarded promotion owner, strict historical dispositions, read-only
+migration previews, Predict loaded-model leases, and fail-closed retention
+previews. No production confirmation/promotion, migration apply, deletion, or
+deployment mutation has been performed.
+
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
 `3344be1237f56752f8fcb607074152c53ea75c52`; required exact-head run
@@ -31,8 +40,7 @@ uses Core-start-only iteration accounting, rejects proposal-side budget
 escalation, fails closed on unavailable or non-finite selection evidence, and
 rebuilds deterministic campaign incumbent, leaderboard, and immutable
 approval-required recommendations without changing Active, Definition, or
-deployment. Phase 5H snapshot/history/retention and final-confirmation work is
-next and remains unstarted.
+deployment. Phase 5H reuses those immutable recommendation and execution owners.
 
 Phase 5F Headless Experiment Interface is complete and merged. The final
 independent re-audit accepted exact head
@@ -101,11 +109,10 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Phase 5H snapshot/history/retention and final-confirmation is the next
-unstarted slice. Begin it only through a fresh current-state and design gate that
-confirms snapshot freeze, independent production-target confirmation, migration,
-retention/delete authority, and explicit final user confirmation. Do not begin
-Phase 5H implementation in this closeout.
+Obtain one independent exact-head audit of the Phase 5H Draft PR. Do not merge
+or claim Phase 5 completion until that audit and required CI evidence accept the
+same head. Keep real-user confirmation/promotion and migration/delete apply as
+separately authorized controlled operations.
 
 ## Active Blockers
 
@@ -167,8 +174,8 @@ Phase 5H implementation in this closeout.
 ## Deferred / Hold
 
 - Phase 5G agent-assisted selection/ranking/recommendation is complete and
-  merged. Phase 5H remains unstarted and must not grant autonomous production
-  authority or bypass explicit final confirmation.
+  merged. Phase 5H source is pending independent audit and must not grant
+  autonomous production/delete authority or bypass explicit final confirmation.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh

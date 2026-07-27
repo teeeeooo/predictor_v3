@@ -32,6 +32,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--registry-payload-json", default="")
     parser.add_argument("--optimization-config-json", default="")
     parser.add_argument("--derived-evaluation-json", default="")
+    parser.add_argument("--confirmation-fixed-parameters-json", default="")
+    parser.add_argument("--confirmation-fixed-features-json", default="")
     return parser.parse_args()
 
 
@@ -107,6 +109,15 @@ def main() -> int:
         ordered_ml_fingerprint=str(registry_payload.get("ordered_ml_fingerprint", "")),
         derived_semantics_fingerprint=str(registry_payload.get("derived_semantics_fingerprint", "")),
         one_hot_fingerprint=str(registry_payload.get("one_hot_fingerprint", "")),
+        publication_source=(
+            "confirmation"
+            if args.confirmation_fixed_parameters_json
+            else "training"
+        ),
+        confirmation_fixed_parameters_json=(
+            args.confirmation_fixed_parameters_json
+        ),
+        confirmation_fixed_features_json=args.confirmation_fixed_features_json,
     )
     temp_model_path = Path(
         args.temp_model_output_path
@@ -156,6 +167,14 @@ def main() -> int:
                 derived_evaluation_snapshot=_derived_evaluation_snapshot(
                     args.derived_evaluation_json
                 ),
+                confirmation_fixed_parameters=_confirmation_mapping(
+                    args.confirmation_fixed_parameters_json,
+                    "confirmation fixed parameters",
+                ),
+                confirmation_fixed_features=_confirmation_mapping(
+                    args.confirmation_fixed_features_json,
+                    "confirmation fixed features",
+                ),
             )
             summary = output.summary
         if _CANCELLED:
@@ -197,6 +216,8 @@ def run_production_training(
     registry_snapshot=None,  # noqa: ANN001
     optimization_config=None,  # noqa: ANN001
     derived_evaluation_snapshot=None,  # noqa: ANN001
+    confirmation_fixed_parameters=None,  # noqa: ANN001
+    confirmation_fixed_features=None,  # noqa: ANN001
 ):
     """Run the production Core owner and persist its structured evidence."""
     from core.ml.training import train_all_models_with_analysis
@@ -208,6 +229,8 @@ def run_production_training(
         registry_snapshot=registry_snapshot,
         optimization_config=optimization_config,
         derived_evaluation_snapshot=derived_evaluation_snapshot,
+        confirmation_fixed_parameters=confirmation_fixed_parameters,
+        confirmation_fixed_features=confirmation_fixed_features,
         training_started_callback=lambda: emit_training_started(request.run_id),
     )
     evidence_path = Path(request.model_output_path).parent / "core_training_evidence.json"
@@ -263,6 +286,19 @@ def _derived_evaluation_snapshot(payload_json: str):  # noqa: ANN202
             DerivedEvaluatorInput(**item) for item in payload["evaluator_inputs"]
         ),
     )
+
+
+def _confirmation_mapping(payload_json: str, name: str):  # noqa: ANN202
+    if not payload_json:
+        return None
+    payload = json.loads(payload_json)
+    if (
+        not isinstance(payload, dict)
+        or not payload
+        or any(type(key) is not str or not key for key in payload)
+    ):
+        raise ValueError(f"{name} must be a non-empty object")
+    return payload
 
 
 def _run_dev_fast(request: TrainingRequest, temp_model_path: Path, args: argparse.Namespace) -> str:

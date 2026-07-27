@@ -13,6 +13,12 @@ from apps.common.model_lifecycle import (
     ModelLifecycleRepository,
     default_model_lifecycle_root,
 )
+from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
+from apps.common.model_lifecycle.promotion import ModelPromotionService
+from apps.train.application.confirmation import (
+    FinalDecisionApplicationService,
+    RecommendationPromotionAuthorization,
+)
 from apps.train.adapters.data_definition_generation_repository import DataDefinitionGenerationRepository
 from apps.train.adapters.one_hot_vocabulary import load_persisted_mapping_vocabulary_snapshots
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
@@ -106,11 +112,26 @@ def create_shell(
             train_participant.derived_evaluation_snapshot
         ),
     )
+    closeout_store = LifecycleCloseoutStore(lifecycle_repository.root)
+    closeout_authorization = RecommendationPromotionAuthorization(
+        lifecycle_repository.root
+    )
+    final_decisions = FinalDecisionApplicationService(
+        lifecycle_repository,
+        ModelPromotionService(
+            lifecycle_repository,
+            registry_provider,
+            authorization_review=closeout_authorization.review,
+        ),
+        closeout_store=closeout_store,
+    )
     train_controller = TrainController(
         lifecycle_service=training_lifecycle,
         lifecycle_repository=lifecycle_repository,
         registry_provider=registry_provider,
         experiment_service=experiment_service,
+        closeout_store=closeout_store,
+        final_decision_service=final_decisions,
     )
     return TrainShell(
         train_controller=train_controller,

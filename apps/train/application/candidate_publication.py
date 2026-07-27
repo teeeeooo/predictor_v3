@@ -126,7 +126,7 @@ class CandidatePublisher:
             candidate_id=request.candidate_id,
             run_id=request.run_id,
             created_at=datetime.now(timezone.utc).isoformat(),
-            source="training",
+            source=request.publication_source,
             model_sha256=model_sha256,
             definition_generation_id=request.generation_id,
             registry_fingerprint=request.registry_fingerprint,
