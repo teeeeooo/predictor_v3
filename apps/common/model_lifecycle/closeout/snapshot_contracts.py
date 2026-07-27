@@ -64,10 +64,11 @@ def validate_snapshot_record(payload: Any) -> dict[str, Any]:
     require_sha256(value.get("meaning_sha256"), "meaning_sha256")
     if content_sha256(meaning) != value["meaning_sha256"]:
         raise ValueError("confirmation snapshot meaning hash mismatch")
-    expected = f"snapshot-{content_sha256({
-        'schema_version': SNAPSHOT_VERSION,
-        'meaning': meaning,
-    })}"
+    identity_input = {
+        "schema_version": SNAPSHOT_VERSION,
+        "meaning": meaning,
+    }
+    expected = f"snapshot-{content_sha256(identity_input)}"
     if value["snapshot_id"] != expected:
         raise ValueError("confirmation snapshot identity mismatch")
     return deepcopy(value)

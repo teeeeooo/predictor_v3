@@ -43,10 +43,11 @@ def preview_migration(
         "proposed_contract_version": proposed_contract_version,
     }
     proposed_identity = f"migration-output-{content_sha256(identity_input)}"
-    preview_id = f"migration-preview-{content_sha256({
+    preview_payload = {
         **identity_input,
-        'source_payload_sha256': content_sha256(payload),
-    })}"
+        "source_payload_sha256": content_sha256(payload),
+    }
+    preview_id = f"migration-preview-{content_sha256(preview_payload)}"
     return canonical_payload({
         "schema_version": MIGRATION_PREVIEW_VERSION,
         "preview_id": preview_id,

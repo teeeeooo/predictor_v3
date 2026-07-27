@@ -201,9 +201,10 @@ class LifecycleCloseoutStore:
         observed_at = value.get("observed_at")
         if type(observed_at) is not str or not observed_at:
             raise ValueError("loaded model lease observed_at is invalid")
-        event_id = f"{candidate_id}-{hashlib.sha256(
-            observed_at.encode('utf-8')
-        ).hexdigest()[:16]}"
+        observed_digest = hashlib.sha256(
+            observed_at.encode("utf-8")
+        ).hexdigest()[:16]
+        event_id = f"{candidate_id}-{observed_digest}"
         return self._write_identity(
             self.loaded_model_leases / lease_id,
             event_id,
