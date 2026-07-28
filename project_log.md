@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-29 — Phase 5H transactional finalization recovery
+
+### Decision
+
+- Preserve the third independent audit `FAIL` at exact head
+  `ae20c626a12c15906c5ffb9e4f159875418caed4` and historical successful run
+  `30323789487`; neither grants acceptance or supersedes earlier audit history.
+- Bind each execution claim to one versioned, hashed pending confirmation and
+  recover its exact initial record under the lifecycle writer lock before one
+  durable execution-start marker. Corrupt claim/record identity or bytes fail
+  closed without another confirmation or execution.
+- Treat snapshot, locked seal/dataset/membership/Target/split/evaluation
+  contract, immutable locked result, and staged Candidate linkage as one final
+  integrity fence inside the shared Candidate writer. Fence failure leaves the
+  seal consumed and evidence immutable but exposes no public Candidate.
+- Keep the Draft PR open and unmerged and require a new independent exact-head
+  re-audit. No production confirmation/promotion, migration apply, retention or
+  delete apply, deployment mutation, or Worker audit-PASS authority is added.
+
 ## 2026-07-28 — Phase 5H lifecycle safety audit repair
 
 ### Decision

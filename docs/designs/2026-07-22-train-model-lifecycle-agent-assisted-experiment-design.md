@@ -1439,6 +1439,17 @@ retention preview identity, and public Candidate publication before the final
 snapshot-integrity gate. They are repaired in the same owners and require
 another independent exact-head re-audit.
 
+The third independent audit failed at exact head
+`ae20c626a12c15906c5ffb9e4f159875418caed4`. Historical exact-head run
+`30323789487` succeeded, but it is validation evidence and not audit
+acceptance. The remaining blockers were a durable execution claim whose
+pending confirmation publication could fail without a recoverable service
+path, and a locked final-test path that did not revalidate all locked evidence
+after immutable result publication and immediately before public Candidate
+finalization. The bounded transactional repair stays in the existing
+closeout-store, confirmation executor, locked evaluator, and shared Candidate
+writer owners and requires another independent exact-head re-audit.
+
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
 identities, lifecycle-root content-addressed training input, immutable
@@ -1506,12 +1517,21 @@ fail-closed.
 Every start derives a canonical execution key from the frozen snapshot,
 confirmation contract, CV-only/locked mode, seal, production Target set,
 evaluation/execution policy, and training-semantic identity. The key has one
-durable writer-locked claim containing the exact pending identity. Implicit
-starts use its deterministic confirmation ID; caller-selected IDs are
-compatibility labels for the first claim and cannot create another execution.
-Pending, running, terminal, concurrent, reconstructed-process, and alternate-ID
-retries resolve to the same record without rerunning training, locked
-evaluation, or Candidate publication.
+versioned durable writer-locked claim containing the exact pending record and
+its canonical hash. The claim owns confirmation identity and execution
+meaning. If claim publication succeeds but the initial record is absent,
+including an empty partial identity directory, a reconstructed service
+validates and exclusive-creates the exact embedded pending record. Claim
+version/hash/identity, initial-record bytes, or immutable execution-field
+disagreement fails closed without another identity or execution. A separate
+durable single-start marker is acquired under the same writer lock only after
+pending publication, so ambiguous record-publication failure and concurrent
+recovery still allow exactly one execution owner. Implicit starts use the
+claim's deterministic confirmation ID; caller-selected IDs are compatibility
+labels and cannot create another execution. Pending, running, terminal,
+concurrent, reconstructed-process, and alternate-ID retries resolve to the same
+record without rerunning training, locked evaluation, or Candidate
+publication.
 
 The stored contract also recognizes terminal execution evidence named
 `succeeded`; the application immediately projects a valid succeeded execution
@@ -1523,11 +1543,16 @@ stale, unpublished-feature, or lifecycle-incompatible evidence cannot reach
 user decision. A successful retraining publishes a new immutable
 `source=confirmation` Candidate through the existing publisher. Before public
 finalization, the Candidate remains in private staging while configured locked
-evaluation, complete captured snapshot revalidation, and generated-Candidate
-validation run under the shared lifecycle writer lock. Integrity failure
-preserves non-discoverable terminal evidence and publishes no Candidate or
-success link. It is retained
-in confirmation history and is never inserted into the campaign leaderboard.
+evaluation and immutable result publication complete. One finalization
+integrity fence then revalidates complete captured snapshot evidence, initial
+and consumed seal identity/version/payload, locked dataset bytes and ordered
+membership, Target/split/evaluation policy, immutable locked result bytes/hash,
+staged Candidate model/manifest hashes, and exact result-to-Candidate linkage
+under the shared lifecycle writer lock. Only after that fence succeeds may the
+existing atomic Candidate finalization run. Integrity failure preserves
+immutable non-discoverable terminal evidence and publishes no Candidate or
+success link. It is retained in confirmation history and is never inserted
+into the campaign leaderboard.
 No confirmation state changes Active, recommendation, incumbent, or prior
 evidence.
 
@@ -1546,11 +1571,15 @@ schema/evaluation policy, contract version, and every required source hash
 against the snapshot. Confirmation trains its exact Candidate in private
 staging without using sealed data, then consumes the seal immediately before
 shared Core prediction and locked metric evaluation against that staged model.
-Complete snapshot integrity is rechecked after evaluation and before public
-Candidate finalization. The immutable final-test result
-binds seal, confirmation, Candidate manifest, data, membership, Target metrics,
-and pass/fail. Once evaluation starts the seal remains consumed even when
-evaluation or result publication fails; it cannot be retried. Re-execution
+The immutable final-test result binds seal, confirmation, Candidate manifest,
+data, membership, Target metrics, and pass/fail. After it is published, the
+single finalization fence rechecks the complete snapshot and all locked/staged
+evidence together; dataset, membership, split, Target, seal, result, or staged
+Candidate drift blocks public Candidate visibility. Once evaluation starts the
+seal remains consumed even when evaluation, result publication, the final
+fence, or Candidate finalization fails; it cannot be retried. Failure evidence
+remains immutable, while Candidate inventory, Active, source Candidate,
+campaign, recommendation, and leaderboard remain unchanged. Re-execution
 requires a new seal, snapshot, and confirmation. Parameter or feature changes
 after observing the result end the confirmation and require a new campaign.
 CV-only confirmation remains valid without a seal but cannot claim

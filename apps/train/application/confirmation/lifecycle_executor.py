@@ -103,7 +103,18 @@ class TrainingLifecycleConfirmationExecutor:
                     candidate_path=staging,
                     manifest=manifest,
                 )
-            if request.prepublication_integrity is not None:
+                if request.prepublication_integrity is not None:
+                    request.prepublication_integrity()
+                self._locked_evaluator.finalization_integrity_fence(
+                    request.locked_final_test,
+                    self._store.read_snapshot(request.snapshot_id),
+                    confirmation_id=request.confirmation_id,
+                    candidate_id=candidate_id,
+                    candidate_path=staging,
+                    manifest=manifest,
+                    result=locked_result,
+                )
+            elif request.prepublication_integrity is not None:
                 request.prepublication_integrity()
 
         immediate = self._experiments.run_resolved_request(

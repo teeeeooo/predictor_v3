@@ -131,12 +131,10 @@ class ConfirmationApplicationService:
                         "confirmation_identity_conflict",
                         "Confirmation identity belongs to another execution.",
                     )
-                return identity_record
-            existing = self._store.find_confirmation_by_execution_key(
-                execution_key
-            )
-            if existing is not None:
-                return existing
+                claimed = self._store.find_confirmation_by_execution_key(
+                    execution_key
+                )
+                return claimed if claimed is not None else identity_record
             self._validate_current_meaning(snapshot["meaning"])
             identity = confirmation_id or (
                 f"confirmation-{execution_key}"
@@ -162,15 +160,13 @@ class ConfirmationApplicationService:
                     request.locked_final_test, consumed=False
                 ),
             )
-            pending, owns_execution = (
+            pending, _owns_creation = (
                 self._store.claim_confirmation_execution(
                     execution_key,
                     requested_confirmation_id=confirmation_id,
                     pending=pending,
                 )
             )
-            if not owns_execution:
-                return pending
             running = build_confirmation_record(
                 **{
                     **record_arguments(pending),
@@ -178,9 +174,12 @@ class ConfirmationApplicationService:
                     "updated_at": self._clock().isoformat(),
                 }
             )
-            self._store.append_confirmation(
-                running, expected_status="confirmation_pending"
+            running, owns_execution = self._store.begin_confirmation_execution(
+                execution_key,
+                running=running,
             )
+            if not owns_execution:
+                return running
             result = self._execution.execute(request)
             return self._finish(running, request, result)
         except (FileNotFoundError, OSError, TypeError, ValueError) as exc:

@@ -199,6 +199,75 @@ class LockedFinalTestEvaluator:
         self._store.write_locked_final_test_result(result)
         return result
 
+    def finalization_integrity_fence(
+        self,
+        seal: dict[str, Any],
+        snapshot: dict[str, Any],
+        *,
+        confirmation_id: str,
+        candidate_id: str,
+        candidate_path: Path,
+        manifest: CandidateManifest,
+        result: dict[str, Any],
+    ) -> None:
+        """Revalidate all locked evidence before public Candidate visibility."""
+        initial = self._store.read_initial_locked_final_test(seal["seal_id"])
+        if initial != seal:
+            raise ValueError("locked final-test seal payload changed")
+        consumed = self._store.read_locked_final_test(seal["seal_id"])
+        expected_consumed_meaning = {
+            key: value for key, value in consumed.items()
+            if key not in {
+                "status",
+                "consumed_at",
+                "consumed_by_confirmation_id",
+            }
+        }
+        if (
+            consumed["status"] != "consumed"
+            or consumed.get("consumed_by_confirmation_id") != confirmation_id
+            or expected_consumed_meaning != {
+                key: value for key, value in seal.items() if key != "status"
+            }
+        ):
+            raise ValueError("locked final-test seal consumption changed")
+        self.preflight(consumed, snapshot)
+
+        persisted_result = self._store.read_locked_final_test_result(
+            result["result_id"]
+        )
+        if persisted_result != result:
+            raise ValueError("locked final-test result bytes changed")
+        manifest_sha256 = _persisted_manifest_sha256(manifest)
+        expected_targets = tuple(seal["target_identities"])
+        result_targets = tuple(
+            item.get("target_identity")
+            for item in result["target_results"]
+        )
+        if (
+            result["seal_id"] != seal["seal_id"]
+            or result["confirmation_id"] != confirmation_id
+            or result["candidate_id"] != candidate_id
+            or result["candidate_manifest_sha256"] != manifest_sha256
+            or result["data_sha256"] != seal["data_sha256"]
+            or result["ordered_membership_sha256"]
+            != seal["ordered_membership_sha256"]
+            or result_targets != expected_targets
+        ):
+            raise ValueError(
+                "locked final-test result/Candidate linkage changed"
+            )
+        if (
+            manifest.candidate_id != candidate_id
+            or manifest.source != "confirmation"
+            or tuple(item.identity for item in manifest.targets)
+            != expected_targets
+            or file_sha256(candidate_path / "model.pkl")
+            != manifest.model_sha256
+        ):
+            raise ValueError("staged confirmation Candidate identity changed")
+        self._repository.validate_staged_candidate(candidate_path, manifest)
+
 
 def _ordered_membership(path: Path) -> str:
     digest = hashlib.sha256()

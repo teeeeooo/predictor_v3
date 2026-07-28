@@ -11,9 +11,13 @@ from apps.common.model_lifecycle.locking import lifecycle_lock
 
 from .canonical import (
     canonical_payload,
+    content_sha256,
     require_safe_identity,
+    require_sha256,
 )
 from .contracts import (
+    CONFIRMATION_EXECUTION_CLAIM_VERSION,
+    CONFIRMATION_EXECUTION_START_VERSION,
     MIGRATION_PREVIEW_VERSION,
     RETENTION_PREVIEW_VERSION,
     LOADED_MODEL_LEASE_VERSION,
@@ -141,19 +145,12 @@ class LifecycleCloseoutStore:
     def find_confirmation_by_execution_key(
         self, execution_key: str
     ) -> dict[str, Any] | None:
-        require_safe_identity(execution_key, "confirmation execution_key")
+        require_sha256(execution_key, "confirmation execution_key")
         try:
-            claim = self._read_identity(
-                self.confirmation_executions,
-                execution_key,
-                "claim.json",
-            )
+            claim = self._read_confirmation_execution_claim(execution_key)
         except FileNotFoundError:
             return None
-        confirmation_id = require_safe_identity(
-            claim.get("confirmation_id"), "confirmation_id"
-        )
-        return self.read_confirmation(confirmation_id)
+        return self._read_claimed_confirmation(claim)
 
     def claim_confirmation_execution(
         self,
@@ -163,7 +160,7 @@ class LifecycleCloseoutStore:
         pending: dict[str, Any],
     ) -> tuple[dict[str, Any], bool]:
         """Durably claim one execution meaning before training can start."""
-        require_safe_identity(execution_key, "confirmation execution_key")
+        require_sha256(execution_key, "confirmation execution_key")
         pending_value = validate_confirmation_record(pending)
         confirmation_id = pending_value["confirmation_id"]
         if pending_value.get("execution_key") != execution_key:
@@ -178,11 +175,7 @@ class LifecycleCloseoutStore:
             filesystem=self._filesystem,
         ):
             try:
-                claim = self._read_identity(
-                    self.confirmation_executions,
-                    execution_key,
-                    "claim.json",
-                )
+                claim = self._read_confirmation_execution_claim(execution_key)
             except FileNotFoundError:
                 try:
                     identity_record = self.read_confirmation(confirmation_id)
@@ -195,9 +188,11 @@ class LifecycleCloseoutStore:
                         )
                     return identity_record, False
                 claim = {
+                    "schema_version": CONFIRMATION_EXECUTION_CLAIM_VERSION,
                     "execution_key": execution_key,
                     "confirmation_id": confirmation_id,
-                    "pending": pending_value,
+                    "pending_record_sha256": content_sha256(pending_value),
+                    "pending_record": pending_value,
                 }
                 self._write_identity(
                     self.confirmation_executions,
@@ -212,23 +207,155 @@ class LifecycleCloseoutStore:
                     # pending record needed by a later fail-closed recovery.
                     raise
                 return pending_value, True
-            claimed_id = require_safe_identity(
-                claim.get("confirmation_id"), "confirmation_id"
-            )
             try:
-                existing = self.read_confirmation(claimed_id)
+                existing = self._read_claimed_confirmation(claim)
             except FileNotFoundError:
-                recovered = validate_confirmation_record(claim.get("pending"))
-                if (
-                    recovered.get("execution_key") != execution_key
-                    or recovered["confirmation_id"] != claimed_id
-                ):
-                    raise ValueError(
-                        "partial confirmation execution claim is inconsistent"
-                    )
-                self.write_confirmation(recovered)
+                recovered = claim["pending_record"]
+                self._recover_confirmation_from_claim(recovered)
                 return recovered, True
             return existing, False
+
+    def begin_confirmation_execution(
+        self,
+        execution_key: str,
+        *,
+        running: dict[str, Any],
+    ) -> tuple[dict[str, Any], bool]:
+        """Claim the single execution start after pending publication."""
+        require_sha256(execution_key, "confirmation execution_key")
+        running_value = validate_confirmation_record(running)
+        if (
+            running_value.get("execution_key") != execution_key
+            or running_value["status"] != "confirmation_running"
+        ):
+            raise ValueError("confirmation execution start metadata mismatch")
+        with lifecycle_lock(
+            self.root / ".lifecycle-write.lock",
+            filesystem=self._filesystem,
+        ):
+            claim = self._read_confirmation_execution_claim(execution_key)
+            current = self._read_claimed_confirmation(claim)
+            if current["status"] != "confirmation_pending":
+                return current, False
+            if any(
+                running_value[name] != current[name]
+                for name in (
+                    "confirmation_id",
+                    "snapshot_id",
+                    "selected_candidate_id",
+                    "created_at",
+                    "production_required_targets",
+                    "execution_key",
+                )
+            ):
+                raise ValueError(
+                    "confirmation execution start identity conflict"
+                )
+            claim_directory = self.confirmation_executions / execution_key
+            start_path = claim_directory / "started.json"
+            if self._filesystem.entry_exists(start_path):
+                return current, False
+            self._filesystem.write_json_exclusive(start_path, {
+                "schema_version": CONFIRMATION_EXECUTION_START_VERSION,
+                "execution_key": execution_key,
+                "confirmation_id": claim["confirmation_id"],
+                "pending_record_sha256": claim["pending_record_sha256"],
+            })
+            self.append_confirmation(
+                running_value,
+                expected_status="confirmation_pending",
+            )
+            return running_value, True
+
+    def _recover_confirmation_from_claim(
+        self, pending: dict[str, Any]
+    ) -> None:
+        confirmation_id = pending["confirmation_id"]
+        directory = self.confirmations / confirmation_id
+        record_path = directory / "confirmation.json"
+        if not self._filesystem.entry_exists(directory):
+            self.write_confirmation(pending)
+            return
+        self._filesystem.require_directory(directory)
+        if self._filesystem.entry_exists(record_path):
+            raise ValueError(
+                "partial confirmation record is unreadable or corrupt"
+            )
+        history = directory / "history"
+        if self._filesystem.entry_exists(history):
+            self._filesystem.require_directory(history)
+            if tuple(history.iterdir()):
+                raise ValueError(
+                    "partial confirmation has history without an initial record"
+                )
+        self._filesystem.write_json_exclusive(record_path, pending)
+
+    def _read_confirmation_execution_claim(
+        self, execution_key: str
+    ) -> dict[str, Any]:
+        claim = canonical_payload(self._read_identity(
+            self.confirmation_executions,
+            execution_key,
+            "claim.json",
+        ))
+        if claim.get("schema_version") != CONFIRMATION_EXECUTION_CLAIM_VERSION:
+            raise ValueError("unsupported confirmation execution claim version")
+        if claim.get("execution_key") != execution_key:
+            raise ValueError("confirmation execution claim identity mismatch")
+        require_sha256(claim.get("execution_key"), "confirmation execution_key")
+        confirmation_id = require_safe_identity(
+            claim.get("confirmation_id"), "confirmation_id"
+        )
+        pending = validate_confirmation_record(claim.get("pending_record"))
+        pending_hash = require_sha256(
+            claim.get("pending_record_sha256"),
+            "pending confirmation record hash",
+        )
+        if (
+            content_sha256(pending) != pending_hash
+            or pending["confirmation_id"] != confirmation_id
+            or pending.get("execution_key") != execution_key
+            or pending["status"] != "confirmation_pending"
+        ):
+            raise ValueError(
+                "partial confirmation execution claim is inconsistent"
+            )
+        return {
+            **claim,
+            "pending_record": pending,
+        }
+
+    def _read_claimed_confirmation(
+        self, claim: dict[str, Any]
+    ) -> dict[str, Any]:
+        confirmation_id = claim["confirmation_id"]
+        initial = validate_confirmation_record(self._read_identity(
+            self.confirmations,
+            confirmation_id,
+            "confirmation.json",
+        ))
+        if (
+            initial != claim["pending_record"]
+            or content_sha256(initial) != claim["pending_record_sha256"]
+        ):
+            raise ValueError(
+                "confirmation execution claim/record identity conflict"
+            )
+        current = self.read_confirmation(confirmation_id)
+        if (
+            current["confirmation_id"] != confirmation_id
+            or current.get("execution_key") != claim["execution_key"]
+            or current["snapshot_id"] != initial["snapshot_id"]
+            or current["selected_candidate_id"]
+            != initial["selected_candidate_id"]
+            or current["created_at"] != initial["created_at"]
+            or current["production_required_targets"]
+            != initial["production_required_targets"]
+        ):
+            raise ValueError(
+                "confirmation execution claim/record identity conflict"
+            )
+        return current
 
     def write_decision(self, payload: dict[str, Any]) -> Path:
         value = validate_final_decision(payload)
@@ -270,6 +397,13 @@ class LifecycleCloseoutStore:
         )
         return validate_locked_final_test(payload)
 
+    def read_initial_locked_final_test(
+        self, seal_id: str
+    ) -> dict[str, Any]:
+        return validate_locked_final_test(
+            self._read_identity(self.locked_tests, seal_id, "seal.json")
+        )
+
     def consume_locked_final_test(
         self,
         seal_id: str,
@@ -304,6 +438,13 @@ class LifecycleCloseoutStore:
         return self._write_identity(
             self.locked_test_results, identity, "result.json", value
         )
+
+    def read_locked_final_test_result(
+        self, result_id: str
+    ) -> dict[str, Any]:
+        return validate_locked_final_test_result(self._read_identity(
+            self.locked_test_results, result_id, "result.json"
+        ))
 
     def write_migration_preview(self, payload: dict[str, Any]) -> Path:
         return self._write_versioned_preview(

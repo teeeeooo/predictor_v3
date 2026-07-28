@@ -207,6 +207,14 @@ class ModelLifecycleRepository:
         self._filesystem.require_directory(stage)
         return load_candidate_model(self._filesystem, stage / "model.pkl")
 
+    def validate_staged_candidate(
+        self,
+        staging: str | Path,
+        manifest: CandidateManifest,
+    ) -> None:
+        stage = self._owned_staging(staging)
+        validate_candidate_files(self._filesystem, stage, manifest)
+
     def copy_model_to_staging(
         self, staging: str | Path, source: str | Path
     ) -> str:

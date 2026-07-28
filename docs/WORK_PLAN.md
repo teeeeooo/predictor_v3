@@ -30,13 +30,17 @@ evaluation, trusted opaque interactive user capabilities and single-use
 decisions routed through the existing guarded promotion owner, strict
 historical dispositions, byte-invariant migration/retention previews, Predict
 loaded-model leases, and a complete fail-closed lifecycle reference inventory.
-The final repair derives one durable execution key per immutable confirmation
-meaning, removes process time from retention inventory identity, and runs
-locked evaluation plus complete snapshot revalidation against private staged
-Candidate evidence inside the shared writer lock before atomic public
-finalization. The repair remains pending independent exact-head re-audit. No production
-confirmation/promotion, migration apply, deletion, or deployment mutation has
-been performed.
+The third independent audit failed at exact head
+`ae20c626a12c15906c5ffb9e4f159875418caed4`; historical exact-head run
+`30323789487` succeeded but remains validation-only evidence. Its two blockers
+are repaired by a versioned, hashed execution claim that can reconstruct the
+exact pending confirmation before one durable start, and one locked-test
+finalization integrity fence that revalidates snapshot, seal, dataset,
+membership, Target/split/evaluation policy, immutable result, and staged
+Candidate linkage inside the shared writer lock before atomic public
+finalization. The repair remains pending independent exact-head re-audit. No
+production confirmation/promotion, migration apply, deletion, or deployment
+mutation has been performed.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
