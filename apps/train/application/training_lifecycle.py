@@ -263,7 +263,20 @@ class TrainingLifecycleService:
             self._update_execution_stage("candidate_publication")
             try:
                 assert self._publisher is not None and self._staging is not None
-                result = self._publisher.publish(request, result, self._staging)
+                publication_guard = self._callbacks.get(
+                    "candidate_prepublication_guard"
+                )
+                if publication_guard is None:
+                    result = self._publisher.publish(
+                        request, result, self._staging
+                    )
+                else:
+                    result = self._publisher.publish(
+                        request,
+                        result,
+                        self._staging,
+                        prepublication_guard=publication_guard,
+                    )
                 self._staging = None
             except CandidateArtifactGenerationError as exc:
                 terminal = "failed"

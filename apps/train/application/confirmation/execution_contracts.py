@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -18,6 +19,7 @@ class FrozenConfirmationRequest:
     definition_runtime: dict[str, Any]
     evaluation_contract: dict[str, Any]
     locked_final_test: dict[str, Any] | None = None
+    prepublication_integrity: Callable[[], None] | None = None
 
 
 @dataclass(frozen=True)
@@ -28,6 +30,7 @@ class ConfirmationExecutionResult:
     message: str = ""
     reason_code: str = ""
     independent_final_test_passed: bool = False
+    locked_final_test_result: dict[str, Any] | None = None
 
 
 class ConfirmationExecutionPort(Protocol):

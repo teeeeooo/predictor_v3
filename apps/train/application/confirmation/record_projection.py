@@ -11,7 +11,7 @@ from apps.common.model_lifecycle.closeout.canonical import content_sha256
 
 
 def record_arguments(record: dict[str, Any]) -> dict[str, Any]:
-    return {
+    values = {
         key: record[key]
         for key in (
             "confirmation_id",
@@ -26,6 +26,8 @@ def record_arguments(record: dict[str, Any]) -> dict[str, Any]:
             "blocking_reasons",
         )
     }
+    values["execution_key"] = record.get("execution_key")
+    return values
 
 
 def locked_projection(

@@ -7,6 +7,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
+from apps.common.model_lifecycle.candidate_contracts import CandidateManifest
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
 from apps.common.runtime_generation.repository import (
     DataDefinitionGenerationRepository,
@@ -81,7 +82,35 @@ class TrainingLifecycleConfirmationExecutor:
                 fixed_features, sort_keys=True
             ),
         )
-        immediate = self._experiments.run_resolved_request(resolved, training)
+        locked_result: dict | None = None
+
+        def guard(staging, manifest: CandidateManifest) -> None:  # noqa: ANN001
+            nonlocal locked_result
+            if request.locked_final_test is not None:
+                snapshot = self._store.read_snapshot(request.snapshot_id)
+                self._locked_evaluator.preflight(
+                    request.locked_final_test, snapshot
+                )
+                self._store.consume_locked_final_test(
+                    request.locked_final_test["seal_id"],
+                    confirmation_id=request.confirmation_id,
+                    consumed_at=self._clock().isoformat(),
+                )
+                locked_result = self._locked_evaluator.evaluate_staged(
+                    request.locked_final_test,
+                    confirmation_id=request.confirmation_id,
+                    candidate_id=candidate_id,
+                    candidate_path=staging,
+                    manifest=manifest,
+                )
+            if request.prepublication_integrity is not None:
+                request.prepublication_integrity()
+
+        immediate = self._experiments.run_resolved_request(
+            resolved,
+            training,
+            callbacks={"candidate_prepublication_guard": guard},
+        )
         record = self._experiments.inspect_run(run_id)
         if record["status"] != "success":
             result = record.get("result") or {}
@@ -103,6 +132,10 @@ class TrainingLifecycleConfirmationExecutor:
             "succeeded",
             target_results=targets,
             confirmation_candidate_id=candidate.manifest.candidate_id,
+            independent_final_test_passed=bool(
+                locked_result and locked_result["passed"]
+            ),
+            locked_final_test_result=locked_result,
         )
 
     def preflight_locked_final_test(

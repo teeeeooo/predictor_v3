@@ -167,7 +167,7 @@ def _migration_nodes(store, records, nodes, references, now) -> bool:  # noqa: A
             if not any(item.artifact_id == source_id for item in nodes):
                 nodes.append(ArtifactNode(
                     source_id, "migration_source",
-                    str(value.get("created_at", now.isoformat())), 0,
+                    str(value.get("created_at") or "unknown"), 0,
                     version_disposition=value["source_disposition"],
                     source_artifact_identity=f"sha256:{digest}",
                 ))
@@ -227,7 +227,7 @@ def hold_inventory(
                 identity = f"{artifact_class}-{file_sha256(path)[:24]}"
                 nodes.append(ArtifactNode(
                     identity, artifact_class,
-                    str(payload.get("created_at", now.isoformat())),
+                    str(payload.get("created_at") or "unknown"),
                     path.stat().st_size,
                     pinned=reason == "user_pin",
                     hold=reason if reason != "user_pin" else "",

@@ -475,7 +475,7 @@ def test_retention_service_keeps_missing_deployment_index_visible_and_stable(
     second = LifecycleRetentionApplicationService(
         repository,
         clock=lambda: SimpleNamespace(
-            isoformat=lambda: NOW,
+            isoformat=lambda: "2036-12-31T23:59:59+00:00",
         ),
     ).preview(RetentionPolicy())
     assert first == second
@@ -488,3 +488,68 @@ def test_retention_service_keeps_missing_deployment_index_visible_and_stable(
     )
     assert first["reference_complete"] is False
     assert all(item["disposition"] == "blocked" for item in first["entries"])
+
+
+def test_retention_populated_synthetic_inventory_is_clock_independent(
+    tmp_path: Path,
+) -> None:
+    repository = SimpleNamespace(
+        root=tmp_path,
+        active_reference_path=tmp_path / "active_model.json",
+        list_candidates=lambda: (),
+        read_active=lambda optional=False: None,
+    )
+    campaign = {
+        "schema_version": "predictor_v3.agent_campaign.v1",
+        "campaign_id": "campaign-stable",
+        "status": "completed",
+        "created_at": NOW,
+        "proposals": [{"proposal_id": "proposal-stable"}],
+        "attempt_history": [{"iteration": 1, "run_id": "run-stable"}],
+        "gates": [{"candidate_id": "candidate-stable"}],
+        "leaderboard": [],
+        "incumbent_candidate_id": "candidate-stable",
+        "recommendations": [{
+            "recommendation_id": "recommendation-stable",
+            "recommended_candidate": {"candidate_id": "candidate-stable"},
+        }],
+    }
+
+    def build(clock_value: str) -> LifecycleRetentionApplicationService:
+        service = LifecycleRetentionApplicationService(
+            repository,
+            clock=lambda: SimpleNamespace(
+                isoformat=lambda: clock_value,
+            ),
+        )
+        service._experiments = SimpleNamespace(  # noqa: SLF001
+            runs=tmp_path / "runs",
+            campaigns=tmp_path / "campaigns",
+            list_campaigns=lambda: (campaign,),
+        )
+        return service
+
+    first = build(NOW).preview(RetentionPolicy())
+    path = (
+        tmp_path / "closeout" / "retention_previews"
+        / first["preview_id"] / "preview.json"
+    )
+    before = path.read_bytes()
+    second = build("2046-01-01T00:00:00+00:00").preview(
+        RetentionPolicy()
+    )
+    assert second == first
+    assert path.read_bytes() == before
+    assert {
+        node["artifact_class"] for node in first["nodes"]
+    }.issuperset({"proposal", "attempt", "gate", "leaderboard"})
+    assert all(
+        node["created_at"] != "2046-01-01T00:00:00+00:00"
+        for node in first["nodes"]
+    )
+
+    campaign["gates"].append({"candidate_id": "candidate-changed"})
+    changed = build("2056-01-01T00:00:00+00:00").preview(
+        RetentionPolicy()
+    )
+    assert changed["preview_id"] != first["preview_id"]

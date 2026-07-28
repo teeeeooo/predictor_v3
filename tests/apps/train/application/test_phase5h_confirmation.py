@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 
 import pytest
 
@@ -81,6 +83,25 @@ class _Integrity:
         return None
 
 
+class _DriftingIntegrity:
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        self.calls = 0
+
+    def validate(self, meaning):
+        self.calls += 1
+        if self.calls == 2:
+            raise ValueError(self.reason)
+
+
+class _GuardedExecution(_Execution):
+    def execute(self, request):
+        self.requests.append(request)
+        assert request.prepublication_integrity is not None
+        request.prepublication_integrity()
+        return self.result
+
+
 def _candidate(root: Path, candidate_id: str, source: str):
     path = root / "candidates" / candidate_id
     path.mkdir(parents=True)
@@ -98,7 +119,12 @@ def _candidate(root: Path, candidate_id: str, source: str):
     )
 
 
-def _snapshot(store: LifecycleCloseoutStore, selected) -> dict:
+def _snapshot(
+    store: LifecycleCloseoutStore,
+    selected,
+    *,
+    training_semantic_identity: str = HASH,
+) -> dict:
     meaning = {
         "recommendation": {"recommendation_id": "recommendation-1"},
         "campaign": {"campaign_id": "campaign-1"},
@@ -134,7 +160,7 @@ def _snapshot(store: LifecycleCloseoutStore, selected) -> dict:
         },
         "baseline": {"active_revision": 0},
         "build_identity": {"training_semantic": "build-1"},
-        "training_semantic_identity": HASH,
+        "training_semantic_identity": training_semantic_identity,
         "training_data": {
             "materialization_kind": "owned_source_bytes",
             "materialized_identity": f"sha256:{HASH}",
@@ -210,6 +236,159 @@ def test_confirmation_uses_frozen_all_target_meaning_without_active_mutation(
     assert request.selected_parameters["target-a"] == {"depth": 3}
 
 
+def test_implicit_and_explicit_duplicate_start_share_one_execution(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    execution = _Execution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+
+    def build_service() -> ConfirmationApplicationService:
+        return ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            execution,
+            closeout_store=LifecycleCloseoutStore(root),
+            integrity_validator=_Integrity(),
+        )
+
+    first = build_service().start(snapshot["snapshot_id"])
+    implicit_retry = build_service().start(snapshot["snapshot_id"])
+    explicit_retry = build_service().start(
+        snapshot["snapshot_id"], confirmation_id="caller-selected-rerun"
+    )
+    identity_conflict = build_service().start(
+        snapshot["snapshot_id"],
+        confirmation_id=first["confirmation_id"],
+        locked_final_test_seal_id="different-seal",
+    )
+
+    assert first == implicit_retry == explicit_retry
+    assert first["execution_key"]
+    assert first["confirmation_id"] == (
+        f"confirmation-{first['execution_key']}"
+    )
+    assert len(execution.requests) == 1
+    assert len(tuple(store.confirmations.iterdir())) == 1
+    assert not (store.confirmations / "caller-selected-rerun").exists()
+    assert identity_conflict["reason_code"] == "confirmation_identity_conflict"
+
+
+def test_concurrent_duplicate_start_has_one_durable_owner(
+    tmp_path: Path,
+) -> None:
+    class _BlockingExecution(_Execution):
+        def __init__(self, result) -> None:  # noqa: ANN001
+            super().__init__(result)
+            self.started = Event()
+            self.release = Event()
+
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            self.started.set()
+            assert self.release.wait(timeout=5)
+            return self.result
+
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    execution = _BlockingExecution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+
+    def service() -> ConfirmationApplicationService:
+        return ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            execution,
+            closeout_store=LifecycleCloseoutStore(root),
+            integrity_validator=_Integrity(),
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first_future = pool.submit(service().start, snapshot["snapshot_id"])
+        assert execution.started.wait(timeout=5)
+        duplicate = pool.submit(
+            service().start, snapshot["snapshot_id"]
+        ).result(timeout=5)
+        execution.release.set()
+        first = first_future.result(timeout=5)
+
+    assert duplicate["confirmation_id"] == first["confirmation_id"]
+    assert duplicate["status"] in {
+        "confirmation_pending", "confirmation_running",
+        "awaiting_user_decision",
+    }
+    assert len(execution.requests) == 1
+    reconstructed = service().start(snapshot["snapshot_id"])
+    assert reconstructed == first
+    assert len(tuple(store.confirmations.iterdir())) == 1
+
+
+@pytest.mark.parametrize("reason", (
+    "captured Candidate artifacts changed",
+    "captured Definition generation artifacts changed",
+    "captured campaign evidence changed",
+    "owned materialized training data hash mismatch",
+))
+def test_prepublication_snapshot_drift_blocks_without_candidate_link(
+    tmp_path: Path,
+    reason: str,
+) -> None:
+    root = tmp_path / reason.split()[1]
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    integrity = _DriftingIntegrity(reason)
+    execution = _GuardedExecution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+    before = tuple(repository.candidates)
+
+    outcome = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        execution,
+        closeout_store=store,
+        integrity_validator=integrity,
+    ).start(snapshot["snapshot_id"])
+
+    assert outcome["status"] == "blocked"
+    assert outcome["confirmation_candidate_id"] is None
+    assert outcome["blocking_reasons"] == [{
+        "code": "confirmation_start_blocked",
+        "reason": reason,
+    }]
+    assert tuple(repository.candidates) == before
+    assert integrity.calls == 2
+
+
 def test_partial_confirmation_fails_and_exact_user_approval_uses_guarded_owner(
     tmp_path: Path,
 ) -> None:
@@ -241,6 +420,9 @@ def test_partial_confirmation_fails_and_exact_user_approval_uses_guarded_owner(
     assert failed["status"] == "failed"
     assert repository.active is None
 
+    retry_snapshot = _snapshot(
+        store, selected, training_semantic_identity="b" * 64
+    )
     complete = ConfirmationApplicationService(
         repository,
         _Generations(),
@@ -254,7 +436,9 @@ def test_partial_confirmation_fails_and_exact_user_approval_uses_guarded_owner(
         build_identity_provider=lambda: {"training_semantic": "build-1"},
         integrity_validator=_Integrity(),
     )
-    complete.start(snapshot["snapshot_id"], confirmation_id="confirm-complete")
+    complete.start(
+        retry_snapshot["snapshot_id"], confirmation_id="confirm-complete"
+    )
     issuer = TrustedUserAuthorityIssuer()
     decision = FinalDecisionApplicationService(
         repository, promotion, closeout_store=store,

@@ -89,7 +89,7 @@ def _proposal_nodes(campaign, path, source, nodes, references, now) -> None:  # 
         identity = proposal["proposal_id"]
         nodes.append(ArtifactNode(
             identity, "proposal",
-            str(proposal.get("created_at", now.isoformat())), 0,
+            _stable_created_at(proposal, campaign), 0,
             source_artifact_identity=f"{path}/proposals/{identity}",
         ))
         references.append(ArtifactReference(
@@ -103,7 +103,7 @@ def _attempt_nodes(campaign, path, source, nodes, references, now) -> None:  # n
             continue
         identity = f"{source}-attempt-{attempt.get('iteration', 0)}-{index}"
         nodes.append(ArtifactNode(
-            identity, "attempt", now.isoformat(), 0,
+            identity, "attempt", _stable_created_at(attempt, campaign), 0,
             source_artifact_identity=f"{path}/record.json#attempt[{index}]",
         ))
         references.append(ArtifactReference(
@@ -121,7 +121,7 @@ def _gate_nodes(campaign, path, source, nodes, references, now) -> None:  # noqa
             continue
         identity = f"{source}-gate-{index}"
         nodes.append(ArtifactNode(
-            identity, "gate", now.isoformat(), 0,
+            identity, "gate", _stable_created_at(gate, campaign), 0,
             source_artifact_identity=f"{path}/record.json#gate[{index}]",
         ))
         references.append(ArtifactReference(source, identity, "campaign_gate"))
@@ -134,7 +134,7 @@ def _gate_nodes(campaign, path, source, nodes, references, now) -> None:  # noqa
 def _selection_nodes(campaign, path, source, nodes, references, now) -> None:  # noqa: ANN001
     leaderboard = f"{source}-leaderboard"
     nodes.append(ArtifactNode(
-        leaderboard, "leaderboard", now.isoformat(), 0,
+        leaderboard, "leaderboard", _stable_created_at(campaign), 0,
         source_artifact_identity=f"{path}/record.json#leaderboard",
     ))
     references.append(ArtifactReference(
@@ -157,7 +157,7 @@ def _selection_nodes(campaign, path, source, nodes, references, now) -> None:  #
         if identity:
             nodes.append(ArtifactNode(
                 identity, "recommendation",
-                str(item.get("created_at", now.isoformat())), 0,
+                _stable_created_at(item, campaign), 0,
                 source_artifact_identity=(
                     f"{path}/recommendations/{identity}/recommendation.json"
                 ),
@@ -170,3 +170,12 @@ def _selection_nodes(campaign, path, source, nodes, references, now) -> None:  #
             candidate["candidate_id"],
             "selected_recommendation",
         ))
+
+
+def _stable_created_at(*payloads: dict[str, Any]) -> str:
+    for payload in payloads:
+        for name in ("created_at", "started_at", "completed_at", "updated_at"):
+            value = payload.get(name)
+            if type(value) is str and value:
+                return value
+    return "unknown"

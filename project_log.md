@@ -47,6 +47,14 @@
   keeping missing export/lease state fail-closed. Do not add production
   confirmation, promotion, migration apply, deletion, merge, or audit-PASS
   authority; require a new independent exact-head re-audit.
+- Preserve the second independent audit `FAIL` at repaired exact head
+  `97914c0285c7155ecfbd6da1fb9fa1d7c60f24a7` and historical successful run
+  `30286229720`; neither supersedes the first failure or grants acceptance.
+- Derive one durable execution claim from immutable confirmation meaning so
+  implicit, alternate-ID, concurrent, and reconstructed retries cannot rerun.
+  Remove process time from retention inventory identity, and perform locked
+  evaluation plus full snapshot integrity validation against private staged
+  Candidate evidence inside the shared writer lock before public finalization.
 
 ## 2026-07-26 — Phase 5G post-merge closeout
 

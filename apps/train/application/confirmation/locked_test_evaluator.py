@@ -21,6 +21,7 @@ from apps.common.model_lifecycle.closeout.contracts import (
     LOCKED_FINAL_TEST_RESULT_VERSION,
 )
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
+from apps.common.model_lifecycle.candidate_contracts import CandidateManifest
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
 from apps.common.runtime_generation.repository import (
     DataDefinitionGenerationRepository,
@@ -91,11 +92,32 @@ class LockedFinalTestEvaluator:
         candidate_id: str,
     ) -> dict[str, Any]:
         candidate = self._repository.read_candidate(candidate_id)
+        return self.evaluate_staged(
+            seal,
+            confirmation_id=confirmation_id,
+            candidate_id=candidate_id,
+            candidate_path=candidate.path,
+            manifest=candidate.manifest,
+            candidate_manifest_sha256=file_sha256(
+                candidate.path / "manifest.json"
+            ),
+        )
+
+    def evaluate_staged(
+        self,
+        seal: dict[str, Any],
+        *,
+        confirmation_id: str,
+        candidate_id: str,
+        candidate_path: Path,
+        manifest: CandidateManifest,
+        candidate_manifest_sha256: str | None = None,
+    ) -> dict[str, Any]:
         generation = self._generations.read_generation(
-            candidate.manifest.definition_generation_id
+            manifest.definition_generation_id
         )
         runtime = build_predict_runtime_snapshot(generation)
-        model_data = joblib.load(candidate.path / "model.pkl")
+        model_data = joblib.load(candidate_path / "model.pkl")
         dataset = Path(seal["dataset_reference"]["path"])
         if (
             file_sha256(dataset) != seal["data_sha256"]
@@ -104,7 +126,7 @@ class LockedFinalTestEvaluator:
         ):
             raise ValueError("locked final-test bytes changed at evaluation")
         target_by_identity = {
-            item.identity: item.ml_name for item in candidate.manifest.targets
+            item.identity: item.ml_name for item in manifest.targets
         }
         truth_columns = dict(runtime.target_result_keys)
         truth: dict[str, list[float]] = {
@@ -159,8 +181,9 @@ class LockedFinalTestEvaluator:
             "seal_id": seal["seal_id"],
             "confirmation_id": confirmation_id,
             "candidate_id": candidate_id,
-            "candidate_manifest_sha256": file_sha256(
-                candidate.path / "manifest.json"
+            "candidate_manifest_sha256": (
+                candidate_manifest_sha256
+                or _persisted_manifest_sha256(manifest)
             ),
             "data_sha256": file_sha256(dataset),
             "ordered_membership_sha256": _ordered_membership(dataset),
@@ -193,6 +216,19 @@ def _ordered_membership(path: Path) -> str:
             )
             digest.update(b"\n")
     return digest.hexdigest()
+
+
+def _persisted_manifest_sha256(manifest: CandidateManifest) -> str:
+    encoded = (
+        json.dumps(
+            manifest.to_payload(),
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+        )
+        + "\n"
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _typed_value(value: str) -> str | float:

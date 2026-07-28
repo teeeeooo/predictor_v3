@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,11 +21,9 @@ def directory_size(path: Path) -> int:
 
 
 def age_days(created_at: str, now: datetime) -> int:
-    try:
-        created = datetime.fromisoformat(created_at).astimezone(timezone.utc)
-    except (TypeError, ValueError):
-        return 0
-    return max((now - created).days, 0)
+    # A process clock is observation metadata, not immutable inventory meaning.
+    # Without a persisted policy-as-of value, fail closed on age eligibility.
+    return 0
 
 
 def record_node(
@@ -56,7 +54,7 @@ def raw_node(
     *,
     version_disposition: str = "current_and_executable",
 ) -> ArtifactNode:
-    created_at = str(payload.get("created_at", now.isoformat()))
+    created_at = str(payload.get("created_at") or "unknown")
     return ArtifactNode(
         identity,
         artifact_class,

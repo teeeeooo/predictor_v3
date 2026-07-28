@@ -1431,6 +1431,14 @@ acceptance. The ten blocking findings are repaired on the same Draft PR and
 require a new independent exact-head re-audit; the Worker does not declare
 `PASS`.
 
+The second independent audit failed at repaired exact head
+`97914c0285c7155ecfbd6da1fb9fa1d7c60f24a7`. Historical exact-head run
+`30286229720` succeeded, but it is not audit acceptance. Its three reproduced
+blockers were duplicate implicit confirmation execution, process-time-derived
+retention preview identity, and public Candidate publication before the final
+snapshot-integrity gate. They are repaired in the same owners and require
+another independent exact-head re-audit.
+
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
 identities, lifecycle-root content-addressed training input, immutable
@@ -1495,6 +1503,16 @@ manifest hash is linked to a complete confirmation and exact approved decision;
 an orphan left by terminal-record publication failure remains preserved and
 fail-closed.
 
+Every start derives a canonical execution key from the frozen snapshot,
+confirmation contract, CV-only/locked mode, seal, production Target set,
+evaluation/execution policy, and training-semantic identity. The key has one
+durable writer-locked claim containing the exact pending identity. Implicit
+starts use its deterministic confirmation ID; caller-selected IDs are
+compatibility labels for the first claim and cannot create another execution.
+Pending, running, terminal, concurrent, reconstructed-process, and alternate-ID
+retries resolve to the same record without rerunning training, locked
+evaluation, or Candidate publication.
+
 The stored contract also recognizes terminal execution evidence named
 `succeeded`; the application immediately projects a valid succeeded execution
 to `awaiting_user_decision`. Confirmation accepts one exact frozen snapshot,
@@ -1503,7 +1521,12 @@ RFECV feature search and search-space mutation, and executes every
 production-required Target. Missing, partial, failed, non-finite, corrupted,
 stale, unpublished-feature, or lifecycle-incompatible evidence cannot reach
 user decision. A successful retraining publishes a new immutable
-`source=confirmation` Candidate through the existing publisher. It is retained
+`source=confirmation` Candidate through the existing publisher. Before public
+finalization, the Candidate remains in private staging while configured locked
+evaluation, complete captured snapshot revalidation, and generated-Candidate
+validation run under the shared lifecycle writer lock. Integrity failure
+preserves non-discoverable terminal evidence and publishes no Candidate or
+success link. It is retained
 in confirmation history and is never inserted into the campaign leaderboard.
 No confirmation state changes Active, recommendation, incumbent, or prior
 evidence.
@@ -1520,9 +1543,11 @@ proposal, ranking, or recommendation.
 
 Preflight verifies sealed bytes, ordered membership, Target order,
 schema/evaluation policy, contract version, and every required source hash
-against the snapshot. Confirmation trains and publishes its exact Candidate
-without using sealed data, then consumes the seal immediately before shared
-Core prediction and locked metric evaluation. The immutable final-test result
+against the snapshot. Confirmation trains its exact Candidate in private
+staging without using sealed data, then consumes the seal immediately before
+shared Core prediction and locked metric evaluation against that staged model.
+Complete snapshot integrity is rechecked after evaluation and before public
+Candidate finalization. The immutable final-test result
 binds seal, confirmation, Candidate manifest, data, membership, Target metrics,
 and pass/fail. Once evaluation starts the seal remains consumed even when
 evaluation or result publication fails; it cannot be retried. Re-execution
@@ -1583,6 +1608,10 @@ Migration and retention previews derive `created_at` from their content address
 rather than the wall clock. The store serializes duplicate publication and
 reuses the exact existing record, so reconstruction with the same immutable
 inputs returns byte-identical payloads rather than only matching IDs.
+Retention inventory nodes additionally use only persisted timestamps or the
+explicit stable value `unknown`; synthetic placeholders, age eligibility, and
+lease projection do not consume the process clock. Without an immutable
+policy-as-of value age eligibility stays conservatively blocked.
 
 #### Retention and delete-authority matrix
 

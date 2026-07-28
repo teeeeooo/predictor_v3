@@ -177,6 +177,39 @@ def test_publication_exception_becomes_terminal_error_and_preserves_active(
     assert repository.list_candidates() == ()
 
 
+def test_prepublication_guard_blocks_before_candidate_visibility(
+    tmp_path, registry_snapshot
+):
+    repository = ModelLifecycleRepository(tmp_path / "lifecycle")
+    service = _service(
+        repository,
+        execution=ArtifactExecution(artifact_for(registry_snapshot)),
+        registry_provider=lambda: registry_snapshot,
+    )
+    observed = []
+    failed = []
+
+    def drift_guard(staging, manifest):  # noqa: ANN001
+        observed.append((
+            (staging / "model.pkl").is_file(),
+            (staging / "training_result.json").is_file(),
+            manifest.candidate_id,
+            len(repository.list_candidates()),
+        ))
+        raise ValueError("captured Definition generation artifacts changed")
+
+    service.start(
+        _request(tmp_path, registry_snapshot, "candidate-drift"),
+        candidate_prepublication_guard=drift_guard,
+        failed_callback=failed.append,
+    )
+
+    assert observed == [(True, True, "candidate-drift", 0)]
+    assert repository.list_candidates() == ()
+    assert failed[0].publication_outcome == "failed"
+    assert "Definition generation artifacts changed" in failed[0].message
+
+
 def test_lifecycle_resource_status_reports_controlled_bootstrap(
     tmp_path, registry_snapshot
 ):

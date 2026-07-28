@@ -40,11 +40,12 @@ class LifecycleRetentionApplicationService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def preview(self, policy: RetentionPolicy) -> dict[str, Any]:
-        now = self._clock()
+        # Canonical inventory must be independent from the observation clock.
+        now = datetime(1970, 1, 1, tzinfo=timezone.utc)
         nodes, references, reference_complete = self._inventory(now)
         leases = list(self._store.list_loaded_model_leases())
         lease_status, loaded_candidates = inspect_loaded_model_leases(
-            leases, now=now.isoformat()
+            leases, now=_persisted_lease_observation(leases)
         )
         self._lease_nodes(
             leases, loaded_candidates, nodes, references, now
@@ -82,7 +83,7 @@ class LifecycleRetentionApplicationService:
         nodes.append(ArtifactNode(
             "deployment-export-index",
             "deployment_export",
-            now.isoformat(),
+            "unknown",
             0,
             version_disposition="corrupt_or_incomplete",
             source_artifact_identity="missing:deployment-export-index",
@@ -157,7 +158,7 @@ class LifecycleRetentionApplicationService:
             nodes.append(ArtifactNode(
                 identity,
                 "loaded_model_lease",
-                str(lease.get("observed_at", now.isoformat())),
+                str(lease.get("observed_at") or "unknown"),
                 0,
                 source_artifact_identity=(
                     f"{self._store.loaded_model_leases}/"
@@ -170,3 +171,20 @@ class LifecycleRetentionApplicationService:
                     lease["candidate_id"],
                     "loaded_predict_model",
                 ))
+
+
+def _persisted_lease_observation(leases: list[dict[str, Any]]) -> str:
+    values: list[datetime] = []
+    for lease in leases:
+        try:
+            observed = datetime.fromisoformat(str(lease["observed_at"]))
+            if observed.tzinfo is None:
+                continue
+            values.append(observed.astimezone(timezone.utc))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return (
+        max(values).isoformat()
+        if values
+        else datetime(1970, 1, 1, tzinfo=timezone.utc).isoformat()
+    )

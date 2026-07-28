@@ -23,6 +23,7 @@ def build_confirmation_record(
     created_at: str,
     updated_at: str,
     production_required_targets: list[str],
+    execution_key: str | None = None,
     target_results: list[dict[str, Any]] | None = None,
     confirmation_candidate_id: str | None = None,
     confirmation_candidate_manifest_sha256: str | None = None,
@@ -38,6 +39,7 @@ def build_confirmation_record(
         "created_at": created_at,
         "updated_at": updated_at,
         "production_required_targets": production_required_targets,
+        "execution_key": execution_key,
         "target_results": target_results or [],
         "confirmation_candidate_id": confirmation_candidate_id,
         "confirmation_candidate_manifest_sha256": (
@@ -54,6 +56,9 @@ def validate_confirmation_record(payload: Any) -> dict[str, Any]:
         raise ValueError("unsupported confirmation record version")
     for name in ("confirmation_id", "snapshot_id", "selected_candidate_id"):
         require_safe_identity(value.get(name), name)
+    execution_key = value.get("execution_key")
+    if execution_key is not None:
+        require_sha256(execution_key, "confirmation execution_key")
     if value.get("status") not in CONFIRMATION_STATES:
         raise ValueError("unsupported confirmation state")
     required_text(value.get("created_at"), "confirmation created_at")

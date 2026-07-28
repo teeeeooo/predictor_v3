@@ -6,7 +6,7 @@ import json
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, Protocol
 
 from apps.common.model_lifecycle.candidate_contracts import (
     CANDIDATE_SCHEMA_VERSION,
@@ -34,7 +34,12 @@ class CandidateArtifactGenerationError(RuntimeError):
 
 class CandidatePublicationPort(Protocol):
     def publish(
-        self, request: TrainingRequest, result: TrainingResult, staging: Path
+        self,
+        request: TrainingRequest,
+        result: TrainingResult,
+        staging: Path,
+        *,
+        prepublication_guard: Callable[[Path, CandidateManifest], None] | None = None,
     ) -> TrainingResult: ...
 
     def preserve_terminal_evidence(
@@ -70,6 +75,8 @@ class CandidatePublisher:
         request: TrainingRequest,
         result: TrainingResult,
         staging: Path,
+        *,
+        prepublication_guard: Callable[[Path, CandidateManifest], None] | None = None,
     ) -> TrainingResult:
         model_sha256, payload = self._repository.inspect_staged_model(staging)
         if not isinstance(payload, dict):
@@ -154,7 +161,19 @@ class CandidatePublisher:
             promotion_eligible,
             blocking_reasons,
         )
-        candidate = self._repository.publish(staging, manifest, publication)
+        if prepublication_guard is None:
+            candidate = self._repository.publish(
+                staging, manifest, publication
+            )
+        else:
+            candidate = self._repository.publish(
+                staging,
+                manifest,
+                publication,
+                prepublication_guard=lambda: prepublication_guard(
+                    staging, manifest
+                ),
+            )
         self._publication_evidence = None
         return replace(
             result,

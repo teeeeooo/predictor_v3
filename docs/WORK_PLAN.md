@@ -17,17 +17,24 @@
 
 ## Current Slice
 
-Phase 5H lifecycle closeout source is under bounded repair on its Lane C Draft
-branch after the first independent audit failed at exact head
+Phase 5H lifecycle closeout source is under final bounded repair on its Lane C
+Draft branch after the first independent audit failed at exact head
 `009e4d3d668df2fc3df13a06aa22a8991ec67299`. Historical run `30280886312`
-succeeded but did not make that audit a pass. The same PR now adds immutable
+succeeded but did not make that audit a pass. The second independent audit also
+failed at repaired exact head
+`97914c0285c7155ecfbd6da1fb9fa1d7c60f24a7`; historical run `30286229720`
+succeeded but is likewise validation-only evidence. The same PR now adds immutable
 content-addressed confirmation snapshots, all-production-Target fixed
 confirmation, content-addressed single-use locked final-test seals with actual
 evaluation, trusted opaque interactive user capabilities and single-use
 decisions routed through the existing guarded promotion owner, strict
 historical dispositions, byte-invariant migration/retention previews, Predict
 loaded-model leases, and a complete fail-closed lifecycle reference inventory.
-The repair remains pending independent exact-head re-audit. No production
+The final repair derives one durable execution key per immutable confirmation
+meaning, removes process time from retention inventory identity, and runs
+locked evaluation plus complete snapshot revalidation against private staged
+Candidate evidence inside the shared writer lock before atomic public
+finalization. The repair remains pending independent exact-head re-audit. No production
 confirmation/promotion, migration apply, deletion, or deployment mutation has
 been performed.
 

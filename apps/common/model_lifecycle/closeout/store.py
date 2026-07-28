@@ -36,6 +36,9 @@ class LifecycleCloseoutStore:
         self.blobs = self.closeout_root / "blobs" / "sha256"
         self.snapshots = self.closeout_root / "snapshots"
         self.confirmations = self.closeout_root / "confirmations"
+        self.confirmation_executions = (
+            self.closeout_root / "confirmation_executions"
+        )
         self.decisions = self.closeout_root / "decisions"
         self.locked_tests = self.closeout_root / "locked_final_tests"
         self.locked_test_results = (
@@ -134,6 +137,98 @@ class LifecycleCloseoutStore:
             if entries:
                 payload = self._filesystem.read_json(entries[-1])
         return validate_confirmation_record(payload)
+
+    def find_confirmation_by_execution_key(
+        self, execution_key: str
+    ) -> dict[str, Any] | None:
+        require_safe_identity(execution_key, "confirmation execution_key")
+        try:
+            claim = self._read_identity(
+                self.confirmation_executions,
+                execution_key,
+                "claim.json",
+            )
+        except FileNotFoundError:
+            return None
+        confirmation_id = require_safe_identity(
+            claim.get("confirmation_id"), "confirmation_id"
+        )
+        return self.read_confirmation(confirmation_id)
+
+    def claim_confirmation_execution(
+        self,
+        execution_key: str,
+        *,
+        requested_confirmation_id: str | None,
+        pending: dict[str, Any],
+    ) -> tuple[dict[str, Any], bool]:
+        """Durably claim one execution meaning before training can start."""
+        require_safe_identity(execution_key, "confirmation execution_key")
+        pending_value = validate_confirmation_record(pending)
+        confirmation_id = pending_value["confirmation_id"]
+        if pending_value.get("execution_key") != execution_key:
+            raise ValueError("confirmation execution claim metadata mismatch")
+        if (
+            requested_confirmation_id is not None
+            and requested_confirmation_id != confirmation_id
+        ):
+            raise ValueError("requested confirmation identity mismatch")
+        with lifecycle_lock(
+            self.root / ".lifecycle-write.lock",
+            filesystem=self._filesystem,
+        ):
+            try:
+                claim = self._read_identity(
+                    self.confirmation_executions,
+                    execution_key,
+                    "claim.json",
+                )
+            except FileNotFoundError:
+                try:
+                    identity_record = self.read_confirmation(confirmation_id)
+                except FileNotFoundError:
+                    identity_record = None
+                if identity_record is not None:
+                    if identity_record.get("execution_key") != execution_key:
+                        raise ValueError(
+                            "confirmation identity belongs to another execution"
+                        )
+                    return identity_record, False
+                claim = {
+                    "execution_key": execution_key,
+                    "confirmation_id": confirmation_id,
+                    "pending": pending_value,
+                }
+                self._write_identity(
+                    self.confirmation_executions,
+                    execution_key,
+                    "claim.json",
+                    canonical_payload(claim),
+                )
+                try:
+                    self.write_confirmation(pending_value)
+                except Exception:
+                    # The claim remains authoritative and contains the exact
+                    # pending record needed by a later fail-closed recovery.
+                    raise
+                return pending_value, True
+            claimed_id = require_safe_identity(
+                claim.get("confirmation_id"), "confirmation_id"
+            )
+            try:
+                existing = self.read_confirmation(claimed_id)
+            except FileNotFoundError:
+                recovered = validate_confirmation_record(claim.get("pending"))
+                if (
+                    recovered.get("execution_key") != execution_key
+                    or recovered["confirmation_id"] != claimed_id
+                ):
+                    raise ValueError(
+                        "partial confirmation execution claim is inconsistent"
+                    )
+                self.write_confirmation(recovered)
+                return recovered, True
+            return existing, False
 
     def write_decision(self, payload: dict[str, Any]) -> Path:
         value = validate_final_decision(payload)

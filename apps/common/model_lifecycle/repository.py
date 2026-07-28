@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 import json
 import os
@@ -70,6 +70,8 @@ class ModelLifecycleRepository:
         staging: str | Path,
         manifest: CandidateManifest,
         result: CandidateResult,
+        *,
+        prepublication_guard: Callable[[], None] | None = None,
     ) -> CandidateSnapshot:
         _require_safe_identity(manifest.candidate_id)
         if (
@@ -88,6 +90,17 @@ class ModelLifecycleRepository:
                     f"Candidate publication validation failed: "
                     f"{str(exc).splitlines()[0]}"
                 ) from exc
+            if prepublication_guard is not None:
+                prepublication_guard()
+                try:
+                    validate_candidate_files(
+                        self._filesystem, stage, manifest
+                    )
+                except _CANDIDATE_VALIDATION_FAILURES as exc:
+                    raise CandidatePublicationValidationError(
+                        "Candidate changed during pre-publication validation: "
+                        f"{str(exc).splitlines()[0]}"
+                    ) from exc
             self._filesystem.ensure_directory(self.candidates_path)
             final = self.candidates_path / manifest.candidate_id
             self._recovery.require_candidate_clear(manifest.candidate_id)

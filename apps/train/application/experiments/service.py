@@ -183,6 +183,9 @@ class ExperimentApplicationService:
             finished_callback=recorder.terminal,
             failed_callback=recorder.terminal,
             cancelled_callback=recorder.terminal,
+            candidate_prepublication_guard=external.get(
+                "candidate_prepublication_guard"
+            ),
         )
 
     def inspect_run(self, run_id: str) -> dict[str, Any]:

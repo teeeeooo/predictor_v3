@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
-from uuid import uuid4
 
-from apps.common.model_lifecycle.closeout.canonical import file_sha256
+from apps.common.model_lifecycle.closeout.canonical import (
+    content_sha256,
+    file_sha256,
+)
 from apps.common.model_lifecycle.closeout.contracts import (
+    CONFIRMATION_VERSION,
     build_confirmation_record,
 )
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
@@ -95,45 +98,55 @@ class ConfirmationApplicationService:
         confirmation_id: str | None = None,
         locked_final_test_seal_id: str | None = None,
     ) -> dict[str, Any]:
-        identity = confirmation_id or f"confirmation-{uuid4().hex}"
+        identity = confirmation_id
+        identity_record = None
+        owns_execution = False
         if confirmation_id is not None:
             try:
-                existing = self._store.read_confirmation(identity)
+                identity_record = self._store.read_confirmation(
+                    confirmation_id
+                )
             except FileNotFoundError:
                 pass
             else:
-                if existing["snapshot_id"] != snapshot_id:
+                if identity_record["snapshot_id"] != snapshot_id:
                     return blocked_outcome(
                         "confirmation_identity_conflict",
                         "Confirmation identity belongs to another snapshot.",
                     )
-                return existing
-        now = self._clock().isoformat()
         try:
             snapshot = self._store.read_snapshot(snapshot_id)
             if snapshot["status"] != "frozen":
                 raise ValueError("confirmation requires one frozen snapshot")
-            for initial in self._store.list_records(
-                self._store.confirmations, "confirmation.json"
-            ):
-                prior = self._store.read_confirmation(
-                    initial["confirmation_id"]
-                )
-                locked = prior.get("locked_final_test") or {}
+            execution_key = self._execution_key(
+                snapshot, locked_final_test_seal_id
+            )
+            if identity_record is not None:
+                persisted_key = identity_record.get("execution_key")
                 if (
-                    prior["snapshot_id"] == snapshot_id
-                    and locked.get("configured") is True
-                    and locked.get("status") == "consumed"
+                    persisted_key is not None
+                    and persisted_key != execution_key
                 ):
-                    raise ValueError(
-                        "consumed locked final-test requires a new snapshot"
+                    return blocked_outcome(
+                        "confirmation_identity_conflict",
+                        "Confirmation identity belongs to another execution.",
                     )
+                return identity_record
+            existing = self._store.find_confirmation_by_execution_key(
+                execution_key
+            )
+            if existing is not None:
+                return existing
             self._validate_current_meaning(snapshot["meaning"])
+            identity = confirmation_id or (
+                f"confirmation-{execution_key}"
+            )
             request = self._request(
                 snapshot,
                 confirmation_id=identity,
                 locked_final_test_seal_id=locked_final_test_seal_id,
             )
+            now = self._clock().isoformat()
             pending = build_confirmation_record(
                 confirmation_id=identity,
                 snapshot_id=snapshot_id,
@@ -144,11 +157,20 @@ class ConfirmationApplicationService:
                 production_required_targets=list(
                     request.production_required_targets
                 ),
+                execution_key=execution_key,
                 locked_final_test=locked_projection(
                     request.locked_final_test, consumed=False
                 ),
             )
-            self._store.write_confirmation(pending)
+            pending, owns_execution = (
+                self._store.claim_confirmation_execution(
+                    execution_key,
+                    requested_confirmation_id=confirmation_id,
+                    pending=pending,
+                )
+            )
+            if not owns_execution:
+                return pending
             running = build_confirmation_record(
                 **{
                     **record_arguments(pending),
@@ -162,6 +184,10 @@ class ConfirmationApplicationService:
             result = self._execution.execute(request)
             return self._finish(running, request, result)
         except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
+            if identity is None or not owns_execution:
+                return blocked_outcome(
+                    "confirmation_start_blocked", str(exc).splitlines()[0]
+                )
             try:
                 current = self._store.read_confirmation(identity)
             except (FileNotFoundError, OSError, TypeError, ValueError):
@@ -218,9 +244,13 @@ class ConfirmationApplicationService:
                     request, result
                 )
                 if request.locked_final_test:
-                    locked_result = self._execution.execute_locked_final_test(
-                        request, candidate_id
-                    )
+                    locked_result = result.locked_final_test_result
+                    if locked_result is None:
+                        locked_result = (
+                            self._execution.execute_locked_final_test(
+                                request, candidate_id
+                            )
+                        )
             except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
                 status = "failed"
                 blockers = [{
@@ -387,4 +417,36 @@ class ConfirmationApplicationService:
             meaning["definition_runtime"],
             meaning["evaluation_contract"],
             locked,
+            lambda: self._validate_current_meaning(
+                self._store.read_snapshot(snapshot["snapshot_id"])["meaning"]
+            ),
         )
+
+    @staticmethod
+    def _execution_key(
+        snapshot: dict[str, Any],
+        locked_final_test_seal_id: str | None,
+    ) -> str:
+        meaning = snapshot["meaning"]
+        required = meaning["target_roles"]["production_required"]
+        return content_sha256({
+            "snapshot_id": snapshot["snapshot_id"],
+            "confirmation_contract_version": CONFIRMATION_VERSION,
+            "mode": (
+                "locked_final_test"
+                if locked_final_test_seal_id is not None
+                else "cv_only"
+            ),
+            "locked_final_test_seal_id": locked_final_test_seal_id,
+            "production_required_targets": required,
+            "frozen_execution_policy": {
+                "evaluation_contract": meaning["evaluation_contract"],
+                "training_configuration": meaning["training_configuration"],
+                "resolved_specification_fingerprint": meaning[
+                    "specification_fingerprint"
+                ],
+            },
+            "training_semantic_identity": meaning[
+                "training_semantic_identity"
+            ],
+        })
