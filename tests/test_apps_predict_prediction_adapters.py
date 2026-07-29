@@ -118,6 +118,48 @@ def test_row_to_ml_adapter_validation_errors_are_controlled():
     assert "cooling_capa must be numeric." in outcome.errors
 
 
+def test_result_adapter_projects_required_and_numeric_errors_with_schema_labels():
+    adapter = PredictionResultAdapter()
+
+    row = adapter.invalid_result(
+        "case-0001",
+        "cooling_capa is required.; heating_capa must be numeric.",
+    )
+
+    assert row.status == "invalid"
+    assert row.message == (
+        "냉방능력: 필수 입력값입니다. / 난방능력: 숫자로 입력해 주세요."
+    )
+    assert "cooling_capa" not in row.message
+    assert "heating_capa" not in row.message
+    assert "required" not in row.message
+    assert "numeric" not in row.message
+
+
+def test_result_adapter_projects_range_and_dropdown_allowed_values_in_korean():
+    adapter = PredictionResultAdapter()
+
+    row = adapter.invalid_result(
+        "case-0001",
+        "cooling_capa must be between 1000 and 10000.; "
+        "ref_type must be one of: R410A, R32, R290.",
+    )
+
+    assert row.message == (
+        "냉방능력: 1000 이상 10000 이하로 입력해 주세요. / "
+        "냉매종류: 허용된 값(R410A, R32, R290) 중에서 선택해 주세요."
+    )
+    assert "cooling_capa" not in row.message
+    assert "ref_type" not in row.message
+
+
+def test_internal_validation_outcome_keeps_original_key_and_structured_errors():
+    outcome = RowToMlInputAdapter().build_request(_case(cooling_capa="bad"))
+
+    assert outcome.case_id == "case-0001"
+    assert outcome.errors == ("cooling_capa must be numeric.",)
+
+
 def test_prediction_result_adapter_maps_core_targets_to_result_keys():
     result = PredictionServiceResult(
         case_id="case-0001",
@@ -150,6 +192,24 @@ def test_prediction_result_adapter_handles_missing_targets_as_partial():
 
     assert row.status == "partial"
     assert "Missing prediction target" in row.message
+
+
+def test_runtime_error_is_not_translated_as_input_validation_or_exposed(caplog):
+    row = PredictionResultAdapter().from_service_result(
+        PredictionServiceResult(
+            case_id="case-0001",
+            status="error",
+            message="ValueError: secret model path /tmp/model.pkl\ntraceback",
+        )
+    )
+
+    assert row.status == "error"
+    assert row.message == (
+        "예측 실행 중 오류가 발생했습니다. 입력을 확인한 뒤 다시 시도해 주세요."
+    )
+    assert "ValueError" not in row.message
+    assert "/tmp/model.pkl" not in row.message
+    assert "secret model path" in caplog.text
 
 
 def test_prediction_service_model_missing_is_graceful(tmp_path):

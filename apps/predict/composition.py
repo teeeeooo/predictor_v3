@@ -110,6 +110,9 @@ def build_predict_workspace_composition(
     )
     resolved_result_mapper = result_mapper or PredictionResultAdapter(
         build_result_column_schema(predict_projection),
+        input_columns=tuple(
+            item for item in predict_columns if item.group in {"input", "auto"}
+        ),
         active_targets=runtime.active_targets,
         target_result_keys=runtime.target_result_keys,
         generation_id=runtime.generation_id,

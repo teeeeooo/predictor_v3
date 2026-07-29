@@ -1,14 +1,20 @@
 """Convert prediction service outcomes into session result rows."""
 
+import logging
 from math import isfinite
+import re
 from typing import Any
 
 from apps.predict.application.models import PredictionServiceResult
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
+    build_input_column_schema,
     build_result_column_schema,
 )
 from apps.predict.state.result_row import ResultRow
+
+
+logger = logging.getLogger(__name__)
 
 
 class PredictionResultAdapter:
@@ -18,11 +24,16 @@ class PredictionResultAdapter:
         self,
         columns: tuple[PredictColumn, ...] | None = None,
         *,
+        input_columns: tuple[PredictColumn, ...] | None = None,
         active_targets: tuple[str, ...] | None = None,
         target_result_keys: tuple[tuple[str, str], ...] | None = None,
         generation_id: str = "legacy",
     ) -> None:
         self._columns = columns or build_result_column_schema()
+        self._input_labels = {
+            column.key: column.header
+            for column in (input_columns or build_input_column_schema())
+        }
         self._target_to_result_key = dict(target_result_keys) if target_result_keys is not None else {
             column.ml_target: column.key for column in self._columns if column.ml_target
         }
@@ -42,10 +53,14 @@ class PredictionResultAdapter:
     def from_service_result(self, result: PredictionServiceResult) -> ResultRow:
         """Convert one service result into a ResultRow."""
         if result.status != "complete":
+            message = result.message
+            if result.status == "error":
+                self._log_runtime_failure(result.case_id, message)
+                message = _RUNTIME_FAILURE_MESSAGE
             return ResultRow(
                 case_id=result.case_id,
                 status=result.status,
-                message=self._clean_message(result.message),
+                message=self._clean_message(message),
             )
 
         missing_targets = [
@@ -72,7 +87,11 @@ class PredictionResultAdapter:
 
     def invalid_result(self, case_id: str, message: str) -> ResultRow:
         """Build a row-level invalid result without model execution."""
-        return ResultRow(case_id=case_id, status="invalid", message=self._clean_message(message))
+        return ResultRow(
+            case_id=case_id,
+            status="invalid",
+            message=self._clean_message(self._validation_message(case_id, message)),
+        )
 
     def running_result(self, case_id: str) -> ResultRow:
         """Build a row-level running result."""
@@ -92,11 +111,43 @@ class PredictionResultAdapter:
 
     def infrastructure_failure_result(self, case_id: str, message: str) -> ResultRow:
         """Build an error row for a runner/infrastructure failure."""
+        self._log_runtime_failure(case_id, message)
         return ResultRow(
             case_id=case_id,
             status="error",
-            message=self._clean_message(message),
+            message=_RUNTIME_FAILURE_MESSAGE,
         )
+
+    def _validation_message(self, case_id: str, message: str) -> str:
+        raw_messages = tuple(
+            item.strip() for item in str(message).split(";") if item.strip()
+        )
+        projected = tuple(
+            self._project_validation_item(item) for item in raw_messages
+        )
+        if projected and all(projected):
+            return " / ".join(projected)
+        logger.warning(
+            "Unrecognized Predict validation detail for %s: %s",
+            case_id,
+            message,
+        )
+        return "입력값을 확인해 주세요."
+
+    def _project_validation_item(self, message: str) -> str:
+        for pattern, formatter in _VALIDATION_MESSAGE_PATTERNS:
+            match = pattern.fullmatch(message.strip())
+            if match is None:
+                continue
+            values = match.groupdict()
+            label = self._input_labels.get(values["key"], "해당 입력 항목")
+            return formatter(label, values)
+        if _contains_korean(message):
+            return message
+        return ""
+
+    def _log_runtime_failure(self, case_id: str, message: str) -> None:
+        logger.error("Predict runtime failure for %s: %s", case_id, message)
 
     def _format_number(self, value: Any) -> str:
         if value is None:
@@ -122,3 +173,58 @@ class PredictionResultAdapter:
 def apply_prediction_result(result: PredictionServiceResult) -> ResultRow:
     """Convert one prediction service result with the default adapter."""
     return PredictionResultAdapter().from_service_result(result)
+
+
+_RUNTIME_FAILURE_MESSAGE = (
+    "예측 실행 중 오류가 발생했습니다. 입력을 확인한 뒤 다시 시도해 주세요."
+)
+
+
+def _required_message(label: str, _values: dict[str, str]) -> str:
+    return f"{label}: 필수 입력값입니다."
+
+
+def _numeric_message(label: str, _values: dict[str, str]) -> str:
+    return f"{label}: 숫자로 입력해 주세요."
+
+
+def _range_message(label: str, values: dict[str, str]) -> str:
+    return (
+        f"{label}: {values['minimum']} 이상 {values['maximum']} 이하로 입력해 주세요."
+    )
+
+
+def _allowed_values_message(label: str, values: dict[str, str]) -> str:
+    return f"{label}: 허용된 값({values['allowed']}) 중에서 선택해 주세요."
+
+
+_FIELD_KEY = r"(?P<key>[A-Za-z_][A-Za-z0-9_]*)"
+_VALIDATION_MESSAGE_PATTERNS = (
+    (
+        re.compile(rf"{_FIELD_KEY} is required\.?", re.IGNORECASE),
+        _required_message,
+    ),
+    (
+        re.compile(rf"{_FIELD_KEY} must be numeric\.?", re.IGNORECASE),
+        _numeric_message,
+    ),
+    (
+        re.compile(
+            rf"{_FIELD_KEY} must be between "
+            r"(?P<minimum>.+?) and (?P<maximum>.+?)\.?",
+            re.IGNORECASE,
+        ),
+        _range_message,
+    ),
+    (
+        re.compile(
+            rf"{_FIELD_KEY} must be one of: (?P<allowed>.+?)\.?",
+            re.IGNORECASE,
+        ),
+        _allowed_values_message,
+    ),
+)
+
+
+def _contains_korean(message: str) -> bool:
+    return any("\uac00" <= character <= "\ud7a3" for character in message)

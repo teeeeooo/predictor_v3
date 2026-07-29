@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from collections.abc import Callable
+import logging
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -36,6 +37,10 @@ from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
 from apps.predict.ui.runtime_generation import apply_runtime_composition
 from apps.predict.ui.model_lifecycle_ui import PredictModelLifecycleUi
+
+
+logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from apps.predict.mapping.mapping_repository import PredictMappingRepository
@@ -344,9 +349,12 @@ class PredictWorkspace(QWidget):
                 progress_callback=self._handle_prediction_progress,
                 finished_callback=self._handle_prediction_finished,
             )
-        except Exception as exc:
+        except Exception:
+            logger.exception("Predict start failed")
             self._set_running_state(False)
-            self.status_label.setText(f"예측 실행 오류: {str(exc).splitlines()[0]}")
+            self.status_label.setText(
+                "예측 실행 중 오류가 발생했습니다. 입력을 확인한 뒤 다시 시도해 주세요."
+            )
             return
 
     def _refresh_generation(self) -> None:

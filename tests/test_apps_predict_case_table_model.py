@@ -115,7 +115,8 @@ def test_case_table_model_invalid_numeric_tooltip_and_background():
 
     assert model.setData(index, "not-number", Qt.EditRole)
     assert model.is_invalid(0, index.column())
-    assert model.data(index, Qt.ToolTipRole)
+    assert model.data(index, Qt.ToolTipRole) == "냉방능력: 숫자로 입력해 주세요."
+    assert "cooling_capa" not in model.data(index, Qt.ToolTipRole)
     assert model.data(index, Qt.BackgroundRole).isValid()
 
 
