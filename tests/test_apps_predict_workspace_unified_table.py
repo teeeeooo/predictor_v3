@@ -154,6 +154,128 @@ def test_workspace_reset_clears_table_undo_history():
     assert workspace.case_model.cell_value(0, cooling) == ""
 
 
+@pytest.mark.parametrize(
+    ("result_status", "summary", "terminal_text"),
+    (
+        (
+            "complete",
+            PredictionRunSummary(total=3, complete=1, error=0, invalid=0),
+            "예측 완료",
+        ),
+        (
+            "invalid",
+            PredictionRunSummary(total=3, complete=0, error=0, invalid=1),
+            "입력 확인 1건",
+        ),
+        (
+            "error",
+            PredictionRunSummary(total=3, complete=0, error=1, invalid=0),
+            "오류 1건",
+        ),
+        (
+            "cancelled",
+            PredictionRunSummary(
+                total=3,
+                complete=0,
+                error=0,
+                invalid=0,
+                cancelled=1,
+            ),
+            "예측 취소",
+        ),
+    ),
+)
+def test_workspace_reset_reprojects_terminal_session_as_idle(
+    result_status: str,
+    summary: PredictionRunSummary,
+    terminal_text: str,
+):
+    _app()
+    workspace = PredictWorkspace()
+    model_status = workspace.model_badge.text()
+    case_id = workspace.session.case_order[0]
+    workspace.session.set_result(
+        ResultRow(case_id=case_id, status=result_status, message="terminal")
+    )
+    workspace.case_model.refresh_case_id(case_id)
+    workspace._set_running_state(True)
+    workspace._handle_prediction_progress(
+        PredictionProgress(
+            run_id="run-reset",
+            completed=1,
+            total=3,
+            current_case_id=case_id,
+        )
+    )
+    workspace._handle_prediction_finished(summary)
+
+    assert terminal_text in workspace.status_label.text()
+
+    workspace._reset_rows()
+
+    counts = workspace.session.summary_counts()
+    assert counts == {
+        "total": 3,
+        "completed": 0,
+        "errors": 0,
+        "running": 0,
+        "invalid": 0,
+        "cancelled": 0,
+        "warnings": 0,
+        "dirty": 0,
+    }
+    assert all(
+        workspace.session.result_for_case(case_id).status == "pending"
+        for case_id in workspace.session.case_order
+    )
+    assert "실행 중 0건" in workspace.summary_label.text()
+    assert "예측 완료 0건" in workspace.summary_label.text()
+    assert "취소 0건" in workspace.summary_label.text()
+    assert "대기" in workspace.result_badge.text()
+    assert workspace.status_label.text() == "대기 중"
+    assert workspace.command_bar.run_button.isEnabled()
+    assert not workspace.command_bar.cancel_button.isEnabled()
+    assert workspace.command_bar.reset_button.isEnabled()
+    assert workspace.model_badge.text() == model_status
+
+
+def test_workspace_reset_allows_new_input_and_next_prediction(monkeypatch):
+    _app()
+    workspace = PredictWorkspace()
+    case_id = workspace.session.case_order[0]
+    workspace.session.set_result(ResultRow(case_id=case_id, status="complete"))
+    workspace._handle_prediction_finished(
+        PredictionRunSummary(total=3, complete=1, error=0, invalid=0)
+    )
+    workspace._reset_rows()
+
+    cooling = _column_index(workspace, "cooling_capa")
+    index = workspace.case_model.index(0, cooling)
+    workspace.case_table.selectionModel().setCurrentIndex(
+        index,
+        QItemSelectionModel.ClearAndSelect,
+    )
+    assert workspace.case_table.replace_current_cell("3500")
+
+    calls = []
+
+    def start_all(**callbacks):
+        calls.append(tuple(callbacks))
+        callbacks["finished_callback"](
+            PredictionRunSummary(total=3, complete=1, error=0, invalid=0)
+        )
+
+    monkeypatch.setattr(workspace.prediction_controller, "start_all", start_all)
+
+    workspace._run_prediction()
+
+    assert len(calls) == 1
+    assert workspace.case_model.cell_value(0, cooling) == "3500"
+    assert "예측 완료" in workspace.status_label.text()
+    assert workspace.command_bar.run_button.isEnabled()
+    assert not workspace.command_bar.cancel_button.isEnabled()
+
+
 def test_workspace_command_bar_running_state_disables_row_mutation():
     _app()
     workspace = PredictWorkspace()

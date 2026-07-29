@@ -289,7 +289,7 @@ class PredictWorkspace(QWidget):
         self.table_edit_controller.reset_rows(DEFAULT_INITIAL_ROWS)
         self._end_reset_models()
         self.case_table.clear_undo_history()
-        self._refresh_after_row_change()
+        self._refresh_idle_session_projection()
 
     def _refresh(self) -> None:
         self.case_model.refresh()
@@ -305,6 +305,12 @@ class PredictWorkspace(QWidget):
         self._refresh_result_badge(counts)
         if not self.status_label.text():
             self.status_label.setText("대기 중")
+
+    def _refresh_idle_session_projection(self) -> None:
+        """Project one fully reset Predict session as idle."""
+        self._set_running_state(False)
+        self._refresh_after_row_change()
+        self.status_label.setText("대기 중")
 
     def _refresh_result_badge(self, counts: dict[str, int]) -> None:
         if counts["errors"]:
