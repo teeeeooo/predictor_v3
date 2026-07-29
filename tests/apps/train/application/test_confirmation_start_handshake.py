@@ -10,6 +10,7 @@ import pytest
 
 from apps.common.model_lifecycle.closeout.start_handshake import (
     CONFIRMATION_START_HANDSHAKE_VERSION,
+    build_confirmation_start_grant,
     build_confirmation_start_handshake,
     build_confirmation_start_permit,
 )
@@ -70,6 +71,7 @@ def _request(
         attempt_id=attempt_id,
         training_meaning_sha256=HASH,
         permit_path=permit_path,
+        liveness_lock_path=tmp_path / f".{attempt_id}.lock",
     )
     request = TrainingRequest(
         run_id=run_id,
@@ -134,16 +136,14 @@ def test_child_does_no_work_when_parent_fails_before_permit(
     )
     requested = []
 
-    started, finished, failed = _run(
-        request,
-        work_marker=work_marker,
-        start_requested=requested.append,
-    )
+    with pytest.raises(FileNotFoundError):
+        _run(
+            request,
+            work_marker=work_marker,
+            start_requested=requested.append,
+        )
 
     assert len(requested) == 1
-    assert started == []
-    assert finished == []
-    assert len(failed) == 1
     assert not permit_path.exists()
     assert not work_marker.exists()
     assert not Path(request.model_output_path).exists()
@@ -161,11 +161,13 @@ def test_child_starts_only_after_exact_durable_permit(
         permit_path=permit_path,
     )
 
-    def permit(_start_request) -> None:  # noqa: ANN001
+    def permit(_start_request):  # noqa: ANN202
+        evidence = build_confirmation_start_permit(handshake)
         permit_path.write_text(
-            json.dumps(build_confirmation_start_permit(handshake)),
+            json.dumps(evidence),
             encoding="utf-8",
         )
+        return build_confirmation_start_grant(handshake, evidence)
 
     started, finished, failed = _run(
         request,
@@ -205,20 +207,18 @@ def test_corrupt_or_stale_permit_never_crosses_work_boundary(
         permit_path=permit_path,
     )
 
-    def corrupt(_start_request) -> None:  # noqa: ANN001
-        permit = build_confirmation_start_permit(handshake)
-        permit[field] = replacement
-        permit_path.write_text(json.dumps(permit), encoding="utf-8")
+    def corrupt(_start_request):  # noqa: ANN202
+        evidence = build_confirmation_start_permit(handshake)
+        corrupt_permit = {**evidence, field: replacement}
+        permit_path.write_text(json.dumps(corrupt_permit), encoding="utf-8")
+        return build_confirmation_start_grant(handshake, evidence)
 
-    started, finished, failed = _run(
-        request,
-        work_marker=work_marker,
-        start_requested=corrupt,
-    )
-
-    assert started == []
-    assert finished == []
-    assert len(failed) == 1
+    with pytest.raises(ValueError, match="corrupt or stale"):
+        _run(
+            request,
+            work_marker=work_marker,
+            start_requested=corrupt,
+        )
     assert not work_marker.exists()
     assert not Path(request.model_output_path).exists()
 
@@ -226,41 +226,45 @@ def test_corrupt_or_stale_permit_never_crosses_work_boundary(
 def test_stale_waiting_child_cannot_consume_replacement_attempt_permit(
     tmp_path: Path,
 ) -> None:
-    permit_path = tmp_path / "execution_started.json"
+    first_permit = tmp_path / "attempt-first-permit.json"
+    second_permit = tmp_path / "attempt-second-permit.json"
     first_marker = tmp_path / "first-work"
     second_marker = tmp_path / "second-work"
     first, _first_handshake = _request(
         tmp_path,
         run_id="stale-first-child",
         attempt_id="attempt-first",
-        permit_path=permit_path,
+        permit_path=first_permit,
     )
     second, second_handshake = _request(
         tmp_path,
         run_id="replacement-child",
         attempt_id="attempt-second",
-        permit_path=permit_path,
+        permit_path=second_permit,
     )
 
-    def publish_replacement(_start_request) -> None:  # noqa: ANN001
-        permit_path.write_text(
-            json.dumps(build_confirmation_start_permit(second_handshake)),
+    def publish_replacement(_start_request):  # noqa: ANN202
+        evidence = build_confirmation_start_permit(second_handshake)
+        second_permit.write_text(
+            json.dumps(evidence),
             encoding="utf-8",
         )
+        return build_confirmation_start_grant(
+            second_handshake, evidence
+        )
 
-    first_started, _first_finished, first_failed = _run(
-        first,
-        work_marker=first_marker,
-        start_requested=publish_replacement,
-    )
+    with pytest.raises(FileNotFoundError):
+        _run(
+            first,
+            work_marker=first_marker,
+            start_requested=publish_replacement,
+        )
     second_started, second_finished, second_failed = _run(
         second,
         work_marker=second_marker,
-        start_requested=lambda _request: None,
+        start_requested=publish_replacement,
     )
 
-    assert first_started == []
-    assert len(first_failed) == 1
     assert not first_marker.exists()
     assert second_started == [second]
     assert len(second_finished) == 1
@@ -325,25 +329,31 @@ def test_normal_confirmation_completes_real_subprocess_and_candidate_publication
         for target in group.targets
     )
     execution_key = "c" * 64
+    attempt_id = "attempt-real-process"
     permit_path = store.confirmation_execution_start_permit_path(
-        execution_key
+        execution_key, attempt_id
     )
 
     def prepare(training_meaning_sha256: str) -> dict:
         return build_confirmation_start_handshake(
             confirmation_id="confirmation-real-process",
             execution_key=execution_key,
-            attempt_id="attempt-real-process",
+            attempt_id=attempt_id,
             training_meaning_sha256=training_meaning_sha256,
             permit_path=permit_path,
+            liveness_lock_path=store.confirmation_attempt_liveness_path(
+                execution_key, attempt_id
+            ),
         )
 
-    def permit(handshake: dict) -> None:
+    def permit(handshake: dict) -> dict:
         permit_path.parent.mkdir(parents=True, exist_ok=True)
+        evidence = build_confirmation_start_permit(handshake)
         permit_path.write_text(
-            json.dumps(build_confirmation_start_permit(handshake)),
+            json.dumps(evidence),
             encoding="utf-8",
         )
+        return build_confirmation_start_grant(handshake, evidence)
 
     executor = TrainingLifecycleConfirmationExecutor(
         experiments,

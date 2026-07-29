@@ -19,6 +19,7 @@ from apps.train.ports.training_execution_port import (
 )
 from apps.train.state.training_run_state import TrainingRequest
 from apps.common.model_lifecycle.closeout.start_handshake import (
+    build_confirmation_start_grant,
     build_confirmation_start_handshake,
     build_confirmation_start_permit,
 )
@@ -124,6 +125,7 @@ def test_qprocess_confirmation_waits_for_exact_start_permit(
         attempt_id="attempt-qprocess",
         training_meaning_sha256="b" * 64,
         permit_path=permit_path,
+        liveness_lock_path=tmp_path / ".attempt-qprocess.lock",
     )
     request = replace(
         request,
@@ -134,12 +136,14 @@ def test_qprocess_confirmation_waits_for_exact_start_permit(
     )
     requested = []
 
-    def permit(start_request) -> None:  # noqa: ANN001
+    def permit(start_request):  # noqa: ANN202
         requested.append(start_request)
+        evidence = build_confirmation_start_permit(handshake)
         permit_path.write_text(
-            json.dumps(build_confirmation_start_permit(handshake)),
+            json.dumps(evidence),
             encoding="utf-8",
         )
+        return build_confirmation_start_grant(handshake, evidence)
 
     runner = QProcessTrainingRunner(
         extra_args=("--dev-fast", "--dev-rows", "8")

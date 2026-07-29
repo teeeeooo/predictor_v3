@@ -6,20 +6,15 @@ import argparse
 import json
 import os
 import signal
-import sys
 import time
 from pathlib import Path
 
-from apps.common.model_lifecycle.closeout.start_handshake import (
-    validate_confirmation_start_handshake,
-    validate_confirmation_start_permit,
+from apps.train.jobs.confirmation_start_gate import (
+    TrainingStartCancelled,
+    authorize_confirmation_training_start,
 )
 from apps.train.state.training_run_state import TrainingRequest
 _CANCELLED = False
-
-
-class TrainingStartCancelled(RuntimeError):
-    """A waiting confirmation child was cancelled before actual work."""
 
 
 def _handle_signal(_signum, _frame) -> None:  # noqa: ANN001
@@ -373,39 +368,13 @@ def authorize_training_start(
     timeout_seconds: float = 30.0,
 ) -> None:
     """Block Core until the exact confirmation attempt has a durable permit."""
-    if not request.confirmation_start_handshake_json:
-        emit_training_started(request.run_id)
-        return
-    if timeout_seconds <= 0:
-        raise ValueError("training start permit timeout must be positive")
-    handshake = validate_confirmation_start_handshake(
-        json.loads(request.confirmation_start_handshake_json)
+    handshake = authorize_confirmation_training_start(
+        request,
+        emit_event=emit,
+        cancellation_requested=lambda: _CANCELLED,
+        timeout_seconds=timeout_seconds,
     )
-    emit({
-        "type": "training_start_requested",
-        "run_id": request.run_id,
-        "handshake": handshake,
-    })
-    deadline = time.monotonic() + timeout_seconds
-    permit_path = Path(handshake["permit_path"])
-    while True:
-        if _CANCELLED:
-            raise TrainingStartCancelled()
-        try:
-            permit = json.loads(permit_path.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            permit = None
-        except json.JSONDecodeError:
-            permit = None
-        if permit is not None:
-            validate_confirmation_start_permit(permit, handshake)
-            emit_training_started(request.run_id, handshake)
-            return
-        if time.monotonic() >= deadline:
-            raise RuntimeError(
-                "durable confirmation start permit was not published"
-            )
-        time.sleep(0.02)
+    emit_training_started(request.run_id, handshake)
 
 
 def enter_training_work(

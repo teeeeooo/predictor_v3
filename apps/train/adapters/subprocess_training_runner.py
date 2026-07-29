@@ -13,7 +13,10 @@ from apps.train.adapters.qprocess_command import (
     training_process_arguments,
 )
 from apps.train.adapters.qprocess_terminal import process_result
-from apps.train.adapters.training_process_events import parse_training_event
+from apps.train.adapters.training_process_events import (
+    parse_training_event,
+    serialize_training_start_grant,
+)
 from apps.train.ports.training_execution_port import TrainingExecutionCallbacks
 from apps.train.state.training_run_state import TrainingRequest, TrainingResult
 
@@ -57,6 +60,7 @@ class SubprocessTrainingRunner:
             [self._python, *arguments],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE,
             text=True,
             encoding="utf-8",
             errors="replace",
@@ -93,7 +97,15 @@ class SubprocessTrainingRunner:
                         "Training start permit authority is unavailable."
                     )
                 try:
-                    callbacks.start_requested(event)
+                    grant = callbacks.start_requested(event)
+                    if process.stdin is None:
+                        raise RuntimeError(
+                            "Training start grant transport is unavailable."
+                        )
+                    process.stdin.write(
+                        serialize_training_start_grant(request, grant)
+                    )
+                    process.stdin.flush()
                 except Exception:
                     self._abort_protocol(process)
                     raise

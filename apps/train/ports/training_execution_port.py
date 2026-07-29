@@ -25,7 +25,9 @@ class TrainingExecutionCallbacks:
     finished: Callable[[TrainingResult], None]
     failed: Callable[[TrainingResult], None]
     cancelled: Callable[[TrainingResult], None]
-    start_requested: Callable[[TrainingStartRequest], None] | None = None
+    start_requested: (
+        Callable[[TrainingStartRequest], dict] | None
+    ) = None
 
 
 @runtime_checkable

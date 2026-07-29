@@ -49,8 +49,16 @@
 - Preserve replay of complete durable terminal/Candidate pairs, one live
   Confirmation compute, at-most-once public/terminal finalization, explicit
   trusted-user promotion, and all existing no-production/no-delete boundaries.
-  This is documentation-only; bounded source implementation and then fresh
-  independent exact-head audit remain required.
+- The bounded source implementation now uses an attempt-specific
+  process-lifetime lock acquired by the child before its start request. Under
+  the existing execution-key/lifecycle writers, recovery keeps live or
+  uncertain attempts running and atomically abandons only proven-ended
+  attempts before registering one isolated replacement.
+- Exact permit plus post-durability grant authorization, attempt-bound run and
+  private staging identity, stale-attempt prepublication rejection, terminal
+  Candidate-pair replay validation, and whole-Confirmation abandonment after
+  consumed-seal failure are source complete. Fresh independent exact-head
+  audit remains required.
 
 ## 2026-07-29 — Phase 5H atomic permit publication recovery
 

@@ -14,6 +14,7 @@ from apps.common.model_lifecycle.closeout.canonical import (
 )
 from apps.common.model_lifecycle.closeout.contracts import (
     build_confirmation_record,
+    build_locked_final_test,
     build_snapshot_record,
 )
 from apps.common.model_lifecycle.closeout.contracts import build_final_decision
@@ -247,6 +248,44 @@ def test_confirmation_uses_frozen_all_target_meaning_without_active_mutation(
     request = execution.requests[0]
     assert request.production_required_targets == TARGETS
     assert request.selected_parameters["target-a"] == {"depth": 3}
+
+
+def test_terminal_replay_requires_complete_public_candidate_linkage(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    execution = _Execution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+    service = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        execution,
+        closeout_store=store,
+        integrity_validator=_Integrity(),
+    )
+    completed = service.start(snapshot["snapshot_id"])
+    del repository.candidates["confirmed-1"]
+
+    replay = service.start(
+        snapshot["snapshot_id"],
+        confirmation_id="alternate-retry",
+    )
+
+    assert completed["status"] == "awaiting_user_decision"
+    assert replay["status"] == "blocked"
+    assert "unavailable" in replay["message"]
+    assert len(execution.requests) == 1
 
 
 def test_implicit_and_explicit_duplicate_start_share_one_execution(
@@ -732,7 +771,9 @@ def test_prepared_start_recovers_after_running_transition_failure(
     )
     assert sum("confirmation_running" in path.name for path in history) == 1
     assert tuple(
-        store.confirmation_executions.glob("*/execution_started.json")
+        store.confirmation_executions.glob(
+            "*/start_attempts/*/permit.json"
+        )
     )
 
 
@@ -916,7 +957,9 @@ def test_process_reconstruction_replaces_only_prepermit_attempt(
         ).start(snapshot["snapshot_id"])
 
     assert not tuple(
-        store.confirmation_executions.glob("*/execution_started.json")
+        store.confirmation_executions.glob(
+            "*/start_attempts/*/permit.json"
+        )
     )
     recovered_execution = _Execution(result)
     recovered = ConfirmationApplicationService(
@@ -948,15 +991,21 @@ def test_process_reconstruction_replaces_only_prepermit_attempt(
         for payload in attempt_payloads
     }) == 1
     old_request = crashed.requests[0]
+    new_request = recovered_execution.requests[0]
+    assert old_request.start_attempt_id != new_request.start_attempt_id
+    assert old_request.start_permit_path != new_request.start_permit_path
     assert old_request.execution_start_permit is not None
     with pytest.raises(
         ValueError,
         match="confirmation execution",
     ):
         old_request.execution_start_permit(crashed.handshake)
+    assert old_request.prepublication_integrity is not None
+    with pytest.raises(ValueError, match="confirmation"):
+        old_request.prepublication_integrity()
 
 
-def test_durable_permit_before_parent_exit_blocks_automatic_rerun(
+def test_ended_attempt_with_durable_permit_is_abandoned_and_restarted(
     tmp_path: Path,
 ) -> None:
     class _PermitThenCrash(_Execution):
@@ -989,8 +1038,10 @@ def test_durable_permit_before_parent_exit_blocks_automatic_rerun(
             integrity_validator=_Integrity(),
         ).start(snapshot["snapshot_id"])
 
-    permit_path = next(
-        store.confirmation_executions.glob("*/execution_started.json")
+    first_permit_path = next(
+        store.confirmation_executions.glob(
+            "*/start_attempts/*/permit.json"
+        )
     )
     retry_execution = _Execution(result)
     retry_service = ConfirmationApplicationService(
@@ -1008,10 +1059,268 @@ def test_durable_permit_before_parent_exit_blocks_automatic_rerun(
     )
 
     assert implicit == alternate
-    assert implicit["status"] == "confirmation_running"
-    assert retry_execution.requests == []
-    assert permit_path.exists()
+    assert implicit["status"] == "awaiting_user_decision"
+    assert len(retry_execution.requests) == 1
+    assert first_permit_path.exists()
+    attempts = tuple(
+        store.confirmation_executions.glob("*/start_attempts/*/attempt.json")
+    )
+    abandoned = tuple(
+        store.confirmation_executions.glob(
+            "*/start_attempts/*/abandoned.json"
+        )
+    )
+    assert len(attempts) == 2
+    assert len(abandoned) == 1
     assert repository.active is None
+
+
+def test_failed_preseal_attempt_restarts_from_new_attempt(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    failed_execution = _Execution(ConfirmationExecutionResult(
+        status="failed",
+        reason_code="injected_training_failure",
+        message="injected",
+    ))
+    first = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        failed_execution,
+        closeout_store=store,
+        integrity_validator=_Integrity(),
+    ).start(snapshot["snapshot_id"])
+    succeeding_execution = _Execution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+    recovered = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        succeeding_execution,
+        closeout_store=LifecycleCloseoutStore(root),
+        integrity_validator=_Integrity(),
+    ).start(
+        snapshot["snapshot_id"],
+        confirmation_id="alternate-retry",
+    )
+
+    assert first["status"] == "confirmation_running"
+    assert recovered["status"] == "awaiting_user_decision"
+    assert recovered["confirmation_id"] == first["confirmation_id"]
+    assert len(failed_execution.requests) == 1
+    assert len(succeeding_execution.requests) == 1
+    assert (
+        failed_execution.requests[0].start_attempt_id
+        != succeeding_execution.requests[0].start_attempt_id
+    )
+    attempts = tuple(
+        store.confirmation_executions.glob("*/start_attempts/*/attempt.json")
+    )
+    abandoned = tuple(
+        store.confirmation_executions.glob(
+            "*/start_attempts/*/abandoned.json"
+        )
+    )
+    assert len(attempts) == 2
+    assert len(abandoned) == 1
+    assert repository.active is None
+
+
+def test_concurrent_ended_attempt_recovery_has_one_replacement(
+    tmp_path: Path,
+) -> None:
+    class _CrashBeforePermit(_Execution):
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            assert request.execution_start_prepare is not None
+            request.execution_start_prepare(HASH)
+            raise SystemExit("injected")
+
+    class _BlockingExecution(_Execution):
+        def __init__(self, result) -> None:  # noqa: ANN001
+            super().__init__(result)
+            self.started = Event()
+            self.release = Event()
+
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            _ack_execution_start(request)
+            self.started.set()
+            assert self.release.wait(timeout=5)
+            return self.result
+
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    result = ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    )
+    with pytest.raises(SystemExit):
+        ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            _CrashBeforePermit(result),
+            closeout_store=store,
+            integrity_validator=_Integrity(),
+        ).start(snapshot["snapshot_id"])
+    replacement = _BlockingExecution(result)
+
+    def recover(identity: str) -> dict:
+        return ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            replacement,
+            closeout_store=LifecycleCloseoutStore(root),
+            integrity_validator=_Integrity(),
+        ).start(snapshot["snapshot_id"], confirmation_id=identity)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first_future = pool.submit(recover, "alternate-a")
+        assert replacement.started.wait(timeout=5)
+        second_future = pool.submit(recover, "alternate-b")
+        replacement.release.set()
+        first = first_future.result(timeout=5)
+        second = second_future.result(timeout=5)
+
+    assert first == second
+    assert first["status"] == "awaiting_user_decision"
+    assert len(replacement.requests) == 1
+    attempts = tuple(
+        store.confirmation_executions.glob("*/start_attempts/*/attempt.json")
+    )
+    abandoned = tuple(
+        store.confirmation_executions.glob(
+            "*/start_attempts/*/abandoned.json"
+        )
+    )
+    assert len(attempts) == 2
+    assert len(abandoned) == 1
+
+
+def test_consumed_seal_crash_abandons_confirmation_without_reexecution(
+    tmp_path: Path,
+) -> None:
+    class _ConsumeSealThenCrash(_Execution):
+        def __init__(self, store, seal_id) -> None:  # noqa: ANN001
+            super().__init__(ConfirmationExecutionResult(status="failed"))
+            self.store = store
+            self.seal_id = seal_id
+
+        def preflight_locked_final_test(self, _seal, _snapshot) -> None:
+            return None
+
+        def execute_locked_final_test(self, _request, _candidate_id):
+            raise AssertionError("locked evaluation must not be resumed")
+
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            _ack_execution_start(request)
+            self.store.consume_locked_final_test(
+                self.seal_id,
+                confirmation_id=request.confirmation_id,
+                consumed_at=NOW,
+            )
+            raise SystemExit("injected after seal consumption")
+
+    class _NoReexecution(_Execution):
+        def preflight_locked_final_test(self, _seal, _snapshot) -> None:
+            return None
+
+        def execute_locked_final_test(self, _request, _candidate_id):
+            raise AssertionError("locked evaluation must not be resumed")
+
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            raise AssertionError("training must not be resumed")
+
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    repository = _Repository(root, {"selected-1": selected})
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    seal = build_locked_final_test(
+        data_sha256="b" * 64,
+        ordered_membership_sha256="c" * 64,
+        target_identities=list(TARGETS),
+        split_policy="external holdout",
+        created_at=NOW,
+        creation_identity="preselection",
+        evaluation_contract={
+            "metric_contract": "d" * 64,
+            "schema_contract": "e" * 64,
+        },
+        required_source_hashes={"snapshot": "f" * 64},
+        dataset_reference={
+            "path": str(tmp_path / "locked.csv"),
+            "sha256": "b" * 64,
+        },
+        created_before_selection=True,
+    )
+    store.write_locked_final_test(seal)
+    crashed = _ConsumeSealThenCrash(store, seal["seal_id"])
+    with pytest.raises(SystemExit, match="seal consumption"):
+        ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            crashed,
+            closeout_store=store,
+            integrity_validator=_Integrity(),
+        ).start(
+            snapshot["snapshot_id"],
+            locked_final_test_seal_id=seal["seal_id"],
+        )
+    retry_execution = _NoReexecution(
+        ConfirmationExecutionResult(status="failed")
+    )
+    service = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        retry_execution,
+        closeout_store=LifecycleCloseoutStore(root),
+        integrity_validator=_Integrity(),
+    )
+    recovered = service.start(
+        snapshot["snapshot_id"],
+        confirmation_id="alternate-retry",
+        locked_final_test_seal_id=seal["seal_id"],
+    )
+    replay = service.start(
+        snapshot["snapshot_id"],
+        locked_final_test_seal_id=seal["seal_id"],
+    )
+
+    assert recovered == replay
+    assert recovered["status"] == "abandoned"
+    assert recovered["confirmation_id"] == crashed.requests[0].confirmation_id
+    assert recovered["confirmation_candidate_id"] is None
+    assert retry_execution.requests == []
+    assert store.read_locked_final_test(seal["seal_id"])["status"] == "consumed"
+    assert tuple(
+        path.name for path in (root / "candidates").iterdir()
+    ) == ("selected-1",)
 
 
 @pytest.mark.parametrize(
@@ -1056,7 +1365,9 @@ def test_corrupt_durable_start_permit_fails_closed_without_rerun(
             integrity_validator=_Integrity(),
         ).start(snapshot["snapshot_id"])
     permit_path = next(
-        store.confirmation_executions.glob("*/execution_started.json")
+        store.confirmation_executions.glob(
+            "*/start_attempts/*/permit.json"
+        )
     )
     permit = json.loads(permit_path.read_text(encoding="utf-8"))
     permit[field] = value

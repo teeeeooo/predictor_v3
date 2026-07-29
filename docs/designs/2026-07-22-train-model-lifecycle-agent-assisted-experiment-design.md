@@ -1489,9 +1489,9 @@ cannot by itself prove containing-directory durability or actual Core work.
 The approved product decision does not add a generic supervisor, child
 adoption, or cross-process transactional coordinator. It replaces the earlier
 actual-compute at-most-once/permanent-permit recovery direction with the
-abandon-and-restart contract below. This decision is documentation-only until
-the bounded Lane C source implementation is complete, after which a fresh
-independent exact-head re-audit is required.
+abandon-and-restart contract below. The bounded Lane C source implementation
+is now complete on the same Draft PR and requires a fresh independent
+exact-head re-audit; source completion does not grant audit acceptance.
 
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
@@ -1594,28 +1594,41 @@ treats that permit as necessary durable attempt evidence but not sufficient
 child authorization. Only after file and containing-directory durability
 succeed may the parent send an exact attempt-bound start grant; the child must
 validate both the permit and that post-durability grant before emitting
-`training_started` and returning to Core work. The current source does not yet
-implement that grant boundary. Ordinary non-confirmation training has no
-confirmation handshake and preserves its existing behavior.
+`training_started` and returning to Core work. The subprocess and QProcess
+adapters now transport that exact grant over the existing child input channel;
+ordinary non-confirmation training has no confirmation handshake and preserves
+its existing behavior.
 
 Permit publication remains attempt-bound evidence, but its final-path
 existence is neither sufficient child authorization nor permanent proof that
 Core work occurred. A replacement never starts while the prior child is alive
-or liveness is uncertain. Once that child is proven terminated and no complete
+or liveness is uncertain. Before emitting its exact start request, a
+confirmation child acquires an attempt-specific cross-platform lifecycle lock
+and holds it through process exit. Recovery remains serialized by the
+execution-key owner and probes that lock nonblockingly under the lifecycle
+writer. Failure to acquire is live-or-unknown and returns the existing running
+record without replacement. Successful acquisition is held through immutable
+abandonment publication, closing the stale-child race; only then may one new
+attempt be registered. Once that child is proven terminated and no complete
 official finalization exists, the incomplete attempt is quarantined and
-abandoned. A new private attempt under the same confirmation identity retrains
-from the beginning; it does not resume, append to, or combine the prior
-attempt's model, metric, manifest, staged Candidate, or terminal evidence.
-Stale children cannot consume a replacement attempt's authority. Abnormal
-attempt artifacts remain non-official and non-discoverable until ordinary
-retention policy addresses them; quarantine does not authorize immediate
-deletion or destructive cleanup.
+abandoned. A new private attempt under the same confirmation identity uses a
+new attempt-bound run, permit, grant, liveness lock, and private staging
+directory and retrains from the beginning; it does not resume, append to, or
+combine the prior attempt's model, metric, manifest, staged Candidate, or
+terminal evidence. Stale callbacks must still match the current exact attempt
+before pre-publication validation and cannot consume a replacement attempt's
+authority. Abnormal attempt artifacts remain non-official and
+non-discoverable until ordinary retention policy addresses them; quarantine
+does not authorize immediate deletion or destructive cleanup.
 
 This recovery contract guarantees at most one simultaneously live
 Confirmation compute, not actual-compute at-most-once across sequential
 abandon-and-restart attempts. Each attempt owns isolated private staging.
 Public Candidate finalization and terminal confirmation linkage remain
-at-most-once. Attempt registration, handshake, confirmation, execution key,
+at-most-once. A success-like terminal replay also revalidates that its exact
+public confirmation Candidate and manifest hash remain complete; missing or
+conflicting pair evidence fails closed without retraining. Attempt
+registration, handshake, confirmation, execution key,
 protocol, training meaning, history, claim, permit, or abandonment mismatch
 fails closed without a replacement or evidence rewrite. Implicit,
 alternate-ID, and concurrent requests still converge on the canonical

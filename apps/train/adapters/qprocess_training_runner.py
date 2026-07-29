@@ -12,7 +12,10 @@ from apps.train.adapters.qprocess_command import (
     training_process_arguments,
 )
 from apps.train.adapters.qprocess_terminal import process_result
-from apps.train.adapters.training_process_events import parse_training_event
+from apps.train.adapters.training_process_events import (
+    parse_training_event,
+    serialize_training_start_grant,
+)
 from apps.train.ports.training_execution_port import TrainingExecutionCallbacks
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
@@ -183,7 +186,22 @@ class QProcessTrainingRunner(QObject):
                 )
                 return
             try:
-                self._callbacks.start_requested(payload)
+                grant = self._callbacks.start_requested(payload)
+                if self._process is None:
+                    raise RuntimeError(
+                        "Training start grant transport is unavailable."
+                    )
+                encoded = serialize_training_start_grant(
+                    self._request, grant
+                ).encode("utf-8")
+                if self._process.write(encoded) != len(encoded):
+                    raise RuntimeError(
+                        "Training start grant transport write failed."
+                    )
+                if not self._process.waitForBytesWritten(1000):
+                    raise RuntimeError(
+                        "Training start grant transport was not flushed."
+                    )
             except Exception as exc:
                 self._reject_protocol(str(exc).splitlines()[0])
         elif event_type == "training_started":

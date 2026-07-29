@@ -239,6 +239,7 @@ class TrainingLifecycleService:
             self._finish("failed", result)
             return result
         return None
+
     def _handle_training_started(self, request: TrainingRequest) -> None:
         if self._active_request is None or request.run_id != self._active_request.run_id:
             raise RuntimeError("Training-start acknowledgement mismatch.")
@@ -248,7 +249,7 @@ class TrainingLifecycleService:
     def _handle_training_start_requested(
         self,
         start_request: TrainingStartRequest,
-    ) -> None:
+    ) -> dict:
         if (
             self._active_request is None
             or start_request.run_id != self._active_request.run_id
@@ -263,7 +264,11 @@ class TrainingLifecycleService:
         callback = self._callbacks.get("start_permit_callback")
         if callback is None:
             raise RuntimeError("Training start permit authority is unavailable.")
-        callback(start_request)
+        grant = callback(start_request)
+        if not isinstance(grant, dict):
+            raise RuntimeError("Training start grant was not returned.")
+        return grant
+
     def _handle_progress(self, progress: TrainingProgress) -> None:
         self._update_execution_stage("training")
         _notify(self._callbacks.get("progress_callback"), progress)

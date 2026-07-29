@@ -125,6 +125,17 @@ class ConfirmationApplicationService:
             execution_key = self._execution_key(
                 snapshot, locked_final_test_seal_id
             )
+            try:
+                claimed = self._store.find_confirmation_by_execution_key(
+                    execution_key
+                )
+            except FileNotFoundError:
+                # A durable claim may intentionally outlive the first
+                # confirmation-record write.  claim_confirmation_execution()
+                # owns exact pending-record reconstruction below.
+                claimed = None
+            if identity_record is None and claimed is not None:
+                identity_record = claimed
             if identity_record is not None:
                 persisted_key = identity_record.get("execution_key")
                 if (
@@ -139,23 +150,34 @@ class ConfirmationApplicationService:
                     "confirmation_pending",
                     "confirmation_running",
                 }:
-                    claimed = self._store.find_confirmation_by_execution_key(
-                        execution_key
+                    terminal = (
+                        claimed if claimed is not None else identity_record
                     )
-                    return claimed if claimed is not None else identity_record
+                    self._validate_terminal_replay(terminal)
+                    return terminal
             self._validate_current_meaning(snapshot["meaning"])
-            identity = confirmation_id or (
+            requested_identity = confirmation_id or (
                 f"confirmation-{execution_key}"
+            )
+            identity = (
+                identity_record["confirmation_id"]
+                if identity_record is not None
+                else requested_identity
             )
             request = self._request(
                 snapshot,
                 confirmation_id=identity,
                 locked_final_test_seal_id=locked_final_test_seal_id,
                 execution_key=execution_key,
+                allow_consumed=bool(
+                    identity_record
+                    and identity_record["status"]
+                    == "confirmation_running"
+                ),
             )
             now = self._clock().isoformat()
             pending = build_confirmation_record(
-                confirmation_id=identity,
+                confirmation_id=requested_identity,
                 snapshot_id=snapshot_id,
                 selected_candidate_id=request.selected_candidate_id,
                 status="confirmation_pending",
@@ -183,6 +205,7 @@ class ConfirmationApplicationService:
                     confirmation_id=pending["confirmation_id"],
                     locked_final_test_seal_id=locked_final_test_seal_id,
                     execution_key=execution_key,
+                    allow_consumed=True,
                 )
             running = build_confirmation_record(
                 **{
@@ -200,8 +223,23 @@ class ConfirmationApplicationService:
                 result = self._execution.execute(request)
                 if result.status == "succeeded":
                     self._store.require_confirmation_execution_started(
-                        execution_key
+                        execution_key,
+                        attempt_id=request.start_attempt_id,
                     )
+                elif (
+                    result.status != "cancelled"
+                    and not self._locked_seal_consumed(request)
+                ):
+                    self._store.abandon_confirmation_execution_attempt(
+                        execution_key,
+                        attempt_id=request.start_attempt_id,
+                        abandoned_at=self._clock().isoformat(),
+                        reason_code=(
+                            result.reason_code
+                            or "confirmation_attempt_failed"
+                        ),
+                    )
+                    return running
                 return self._finish(running, request, result)
         except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
             if identity is None or not owns_execution:
@@ -245,16 +283,28 @@ class ConfirmationApplicationService:
         result: ConfirmationExecutionResult,
     ) -> dict[str, Any]:
         locked_result = None
+        locked_consumed = self._locked_seal_consumed(request)
         if result.status == "cancelled":
             status = "cancelled"
             blockers = [{"code": "confirmation_cancelled", "reason": result.message}]
             candidate_id = None
             candidate_hash = None
         elif result.status != "succeeded":
-            status = "failed"
+            status = "abandoned" if locked_consumed else "failed"
             blockers = [{
-                "code": result.reason_code or "confirmation_execution_failed",
-                "reason": result.message or "Confirmation execution failed.",
+                "code": (
+                    "locked_confirmation_abandoned"
+                    if locked_consumed
+                    else result.reason_code
+                    or "confirmation_execution_failed"
+                ),
+                "reason": (
+                    "Locked seal was consumed without complete durable "
+                    "confirmation finalization."
+                    if locked_consumed
+                    else result.message
+                    or "Confirmation execution failed."
+                ),
             }]
             candidate_id = None
             candidate_hash = None
@@ -295,14 +345,20 @@ class ConfirmationApplicationService:
                 else:
                     status = "awaiting_user_decision"
                     blockers = []
-        locked_consumed = False
-        if request.locked_final_test:
-            locked_consumed = (
-                self._store.read_locked_final_test(
-                    request.locked_final_test["seal_id"]
-                )["status"]
-                == "consumed"
-            )
+        locked_consumed = self._locked_seal_consumed(request)
+        if (
+            locked_consumed
+            and status == "failed"
+            and locked_result is None
+        ):
+            status = "abandoned"
+            blockers = [{
+                "code": "locked_confirmation_abandoned",
+                "reason": (
+                    "Locked seal was consumed without complete durable "
+                    "confirmation finalization."
+                ),
+            }]
         locked = locked_projection(
             request.locked_final_test,
             consumed=locked_consumed,
@@ -380,6 +436,37 @@ class ConfirmationApplicationService:
                 or "selected Candidate lifecycle compatibility changed"
             )
 
+    def _validate_terminal_replay(self, record: dict[str, Any]) -> None:
+        if record["status"] not in {
+            "succeeded",
+            "awaiting_user_decision",
+            "approved",
+            "rejected",
+            "promoted",
+            "promotion-blocked",
+        }:
+            return
+        candidate_id = record.get("confirmation_candidate_id")
+        if not candidate_id:
+            raise ValueError(
+                "terminal confirmation Candidate linkage is incomplete"
+            )
+        try:
+            candidate = self._repository.read_candidate(candidate_id)
+        except (FileNotFoundError, KeyError) as exc:
+            raise ValueError(
+                "terminal confirmation Candidate is unavailable"
+            ) from exc
+        if (
+            candidate.manifest.source != "confirmation"
+            or candidate.manifest.candidate_id != candidate_id
+            or file_sha256(candidate.path / "manifest.json")
+            != record["confirmation_candidate_manifest_sha256"]
+        ):
+            raise ValueError(
+                "terminal confirmation Candidate linkage is corrupt"
+            )
+
     def _request(
         self,
         snapshot: dict[str, Any],
@@ -387,6 +474,7 @@ class ConfirmationApplicationService:
         confirmation_id: str,
         locked_final_test_seal_id: str | None,
         execution_key: str | None = None,
+        allow_consumed: bool = False,
     ) -> FrozenConfirmationRequest:
         meaning = snapshot["meaning"]
         roles = meaning["target_roles"]
@@ -412,7 +500,14 @@ class ConfirmationApplicationService:
             locked = self._store.read_locked_final_test(
                 locked_final_test_seal_id
             )
-            if locked["status"] != "sealed":
+            if (
+                locked["status"] != "sealed"
+                and not (
+                    allow_consumed
+                    and locked.get("consumed_by_confirmation_id")
+                    == confirmation_id
+                )
+            ):
                 raise ValueError("locked final-test seal is already consumed")
             if set(locked["target_identities"]) != set(required):
                 raise ValueError("locked final-test Target set differs")
@@ -442,7 +537,12 @@ class ConfirmationApplicationService:
                 training_meaning_sha256=training_meaning_sha256,
                 permit_path=(
                     self._store.confirmation_execution_start_permit_path(
-                        execution_key
+                        execution_key, attempt_id
+                    )
+                ),
+                liveness_lock_path=(
+                    self._store.confirmation_attempt_liveness_path(
+                        execution_key, attempt_id
                     )
                 ),
             )
@@ -451,6 +551,18 @@ class ConfirmationApplicationService:
                 handshake=handshake,
             )
             return handshake
+
+        def validate_prepublication() -> None:
+            self._validate_current_meaning(
+                self._store.read_snapshot(
+                    snapshot["snapshot_id"]
+                )["meaning"]
+            )
+            if execution_key is not None:
+                self._store.require_confirmation_execution_started(
+                    execution_key,
+                    attempt_id=attempt_id,
+                )
 
         return FrozenConfirmationRequest(
             confirmation_id=confirmation_id,
@@ -467,16 +579,14 @@ class ConfirmationApplicationService:
             start_permit_path=(
                 str(
                     self._store.confirmation_execution_start_permit_path(
-                        execution_key
+                        execution_key, attempt_id
                     )
                 )
                 if execution_key is not None
                 else ""
             ),
             locked_final_test=locked,
-            prepublication_integrity=lambda: self._validate_current_meaning(
-                self._store.read_snapshot(snapshot["snapshot_id"])["meaning"]
-            ),
+            prepublication_integrity=validate_prepublication,
             execution_start_prepare=(
                 prepare_start if execution_key is not None else None
             ),
@@ -488,6 +598,19 @@ class ConfirmationApplicationService:
                 if execution_key is not None
                 else None
             ),
+        )
+
+    def _locked_seal_consumed(
+        self,
+        request: FrozenConfirmationRequest,
+    ) -> bool:
+        if request.locked_final_test is None:
+            return False
+        return (
+            self._store.read_locked_final_test(
+                request.locked_final_test["seal_id"]
+            )["status"]
+            == "consumed"
         )
 
     @staticmethod

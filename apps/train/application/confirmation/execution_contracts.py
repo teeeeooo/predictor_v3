@@ -26,7 +26,9 @@ class FrozenConfirmationRequest:
     execution_start_prepare: (
         Callable[[str], dict[str, Any]] | None
     ) = None
-    execution_start_permit: Callable[[dict[str, Any]], None] | None = None
+    execution_start_permit: (
+        Callable[[dict[str, Any]], dict[str, Any]] | None
+    ) = None
 
 
 @dataclass(frozen=True)

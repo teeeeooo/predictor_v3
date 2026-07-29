@@ -34,6 +34,7 @@ CONFIRMATION_STATES = {
     "failed",
     "blocked",
     "cancelled",
+    "abandoned",
     "awaiting_user_decision",
     "approved",
     "rejected",

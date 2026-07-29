@@ -6,6 +6,8 @@ import json
 
 from apps.common.model_lifecycle.closeout.start_handshake import (
     validate_confirmation_start_handshake,
+    validate_confirmation_start_grant,
+    validate_confirmation_start_permit,
 )
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
@@ -86,3 +88,29 @@ def _exact_start_handshake(
     if actual != expected:
         raise ValueError("training start event handshake mismatch")
     return actual
+
+
+def serialize_training_start_grant(
+    request: TrainingRequest,
+    grant: dict,
+) -> str:
+    """Serialize one exact parent-to-child post-durability grant."""
+    if not request.confirmation_start_handshake_json:
+        raise ValueError("unexpected confirmation training start grant")
+    handshake = validate_confirmation_start_handshake(
+        json.loads(request.confirmation_start_handshake_json)
+    )
+    with open(handshake["permit_path"], "r", encoding="utf-8") as source:
+        permit = json.load(source)
+    validate_confirmation_start_permit(permit, handshake)
+    exact = validate_confirmation_start_grant(grant, handshake, permit)
+    return json.dumps(
+        {
+            "type": "training_start_granted",
+            "run_id": request.run_id,
+            "grant": exact,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ) + "\n"

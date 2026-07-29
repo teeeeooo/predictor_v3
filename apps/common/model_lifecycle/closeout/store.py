@@ -8,8 +8,15 @@ from pathlib import Path
 from typing import Any
 
 from apps.common.model_lifecycle.filesystem import LifecycleFilesystem
-from apps.common.model_lifecycle.locking import lifecycle_lock
+from apps.common.model_lifecycle.locking import (
+    lifecycle_lock,
+    try_lifecycle_lock,
+)
 
+from .attempt_contracts import (
+    build_attempt_abandoned,
+    validate_attempt_abandoned,
+)
 from .canonical import (
     canonical_payload,
     content_sha256,
@@ -22,6 +29,7 @@ from .contracts import (
     MIGRATION_PREVIEW_VERSION,
     RETENTION_PREVIEW_VERSION,
     LOADED_MODEL_LEASE_VERSION,
+    build_confirmation_record,
     validate_confirmation_record,
     validate_final_decision,
     validate_locked_final_test,
@@ -30,6 +38,7 @@ from .contracts import (
 )
 from .materialization import TrainingDataMaterializer
 from .start_handshake import (
+    build_confirmation_start_grant,
     build_confirmation_start_permit,
     validate_confirmation_start_handshake,
     validate_confirmation_start_permit,
@@ -237,7 +246,7 @@ class LifecycleCloseoutStore:
         *,
         running: dict[str, Any],
     ):
-        """Hold one recoverable owner until Core acknowledges actual start."""
+        """Serialize recovery, execution, and final disposition for one key."""
         require_sha256(execution_key, "confirmation execution_key")
         running_value = validate_confirmation_record(running)
         if (
@@ -262,7 +271,7 @@ class LifecycleCloseoutStore:
         execution_key: str,
         *,
         handshake: dict[str, Any],
-    ) -> None:
+    ) -> dict[str, Any]:
         """Publish the exact durable permit a waiting child may consume."""
         require_sha256(execution_key, "confirmation execution_key")
         start = validate_confirmation_start_handshake(handshake)
@@ -282,7 +291,7 @@ class LifecycleCloseoutStore:
                 or current["status"] != "confirmation_running"
                 or start["permit_path"] != str(
                     self.confirmation_execution_start_permit_path(
-                        execution_key
+                        execution_key, start["attempt_id"]
                     )
                 )
             ):
@@ -300,8 +309,14 @@ class LifecycleCloseoutStore:
                 raise ValueError(
                     "confirmation execution attempt registration mismatch"
                 )
-            directory = self.confirmation_executions / execution_key
-            path = directory / "execution_started.json"
+            active = self._active_confirmation_attempts(execution_key)
+            if len(active) != 1 or active[0] != start:
+                raise ValueError(
+                    "confirmation execution attempt is not current"
+                )
+            path = self.confirmation_execution_start_permit_path(
+                execution_key, start["attempt_id"]
+            )
             evidence = build_confirmation_start_permit(start)
             if self._filesystem.entry_exists(path):
                 try:
@@ -310,26 +325,51 @@ class LifecycleCloseoutStore:
                     )
                 except ValueError as exc:
                     raise ValueError(
-                        "confirmation execution-start evidence conflict"
+                        "confirmation execution-start evidence is corrupt "
+                        "or stale"
                     ) from exc
-                return
+                return build_confirmation_start_grant(start, evidence)
             publish_start_permit_atomic(
                 self._filesystem,
                 path,
                 evidence,
                 failure_hook=self._permit_publication_hook,
             )
+            return build_confirmation_start_grant(start, evidence)
 
     def confirmation_execution_start_permit_path(
         self,
         execution_key: str,
+        attempt_id: str | None = None,
     ) -> Path:
         require_sha256(execution_key, "confirmation execution_key")
+        if attempt_id is not None:
+            require_safe_identity(attempt_id, "confirmation start attempt_id")
+            return (
+                self.confirmation_executions
+                / execution_key
+                / "start_attempts"
+                / attempt_id
+                / "permit.json"
+            )
         return (
             self.confirmation_executions
             / execution_key
             / "execution_started.json"
         )
+
+    def confirmation_attempt_liveness_path(
+        self,
+        execution_key: str,
+        attempt_id: str,
+    ) -> Path:
+        require_sha256(execution_key, "confirmation execution_key")
+        require_safe_identity(attempt_id, "confirmation start attempt_id")
+        identity = content_sha256({
+            "execution_key": execution_key,
+            "attempt_id": attempt_id,
+        })
+        return self.root / f".confirmation-attempt-{identity}.lock"
 
     def register_confirmation_execution_start_attempt(
         self,
@@ -350,24 +390,28 @@ class LifecycleCloseoutStore:
             )
             current = self._read_claimed_confirmation(claim)
             permit_path = self.confirmation_execution_start_permit_path(
-                execution_key
+                execution_key, start["attempt_id"]
+            )
+            liveness_path = self.confirmation_attempt_liveness_path(
+                execution_key, start["attempt_id"]
             )
             if (
                 start["execution_key"] != execution_key
                 or start["confirmation_id"] != claim["confirmation_id"]
                 or start["permit_path"] != str(permit_path)
+                or start["liveness_lock_path"] != str(liveness_path)
                 or current != prepared["running_record"]
                 or current["status"] != "confirmation_running"
             ):
                 raise ValueError(
                     "confirmation execution attempt identity mismatch"
                 )
-            if self._filesystem.entry_exists(permit_path):
-                self._validate_confirmation_execution_started(
-                    permit_path, prepared
-                )
+            active = self._active_confirmation_attempts(execution_key)
+            if active:
+                if len(active) == 1 and active[0] == start:
+                    return
                 raise ValueError(
-                    "confirmation execution already has a durable start permit"
+                    "confirmation execution already has one active attempt"
                 )
             self._write_identity(
                 self.confirmation_executions
@@ -381,6 +425,8 @@ class LifecycleCloseoutStore:
     def require_confirmation_execution_started(
         self,
         execution_key: str,
+        *,
+        attempt_id: str | None = None,
     ) -> None:
         require_sha256(execution_key, "confirmation execution_key")
         with lifecycle_lock(
@@ -396,12 +442,45 @@ class LifecycleCloseoutStore:
                 raise ValueError(
                     "confirmation running evidence changed before completion"
                 )
+            active = self._active_confirmation_attempts(execution_key)
+            if attempt_id is not None:
+                active = tuple(
+                    item for item in active
+                    if item["attempt_id"] == attempt_id
+                )
+            if len(active) != 1:
+                raise ValueError(
+                    "confirmation execution active attempt is ambiguous"
+                )
             self._validate_confirmation_execution_started(
-                self.confirmation_executions
-                / execution_key
-                / "execution_started.json",
-                prepared,
+                Path(active[0]["permit_path"]), prepared
             )
+
+    def abandon_confirmation_execution_attempt(
+        self,
+        execution_key: str,
+        *,
+        attempt_id: str,
+        abandoned_at: str,
+        reason_code: str,
+    ) -> dict[str, Any]:
+        """Quarantine one terminated attempt without deleting its artifacts."""
+        require_sha256(execution_key, "confirmation execution_key")
+        require_safe_identity(attempt_id, "confirmation start attempt_id")
+        with lifecycle_lock(
+            self.root / ".lifecycle-write.lock",
+            filesystem=self._filesystem,
+        ):
+            handshake = self._read_start_attempt(execution_key, attempt_id)
+            abandoned = self._abandon_start_attempt(
+                execution_key,
+                handshake,
+                abandoned_at=abandoned_at,
+                reason_code=reason_code,
+            )
+            if abandoned is None:
+                raise ValueError("confirmation child liveness is unresolved")
+            return abandoned
 
     def _prepare_confirmation_execution(
         self,
@@ -435,16 +514,6 @@ class LifecycleCloseoutStore:
             }
             self._filesystem.write_json_exclusive(prepared_path, prepared)
         running = prepared["running_record"]
-        started_path = directory / "execution_started.json"
-        if self._filesystem.entry_exists(started_path):
-            self._validate_confirmation_execution_started(
-                started_path, prepared
-            )
-            if current != running:
-                raise ValueError(
-                    "execution-start evidence/running record conflict"
-                )
-            return current, False
         if current["status"] == "confirmation_pending":
             self.append_confirmation(
                 running,
@@ -454,7 +523,195 @@ class LifecycleCloseoutStore:
             raise ValueError(
                 "prepared execution/running record identity conflict"
             )
+        active = self._active_confirmation_attempts(execution_key)
+        if len(active) > 1:
+            raise ValueError(
+                "confirmation execution has multiple active attempts"
+            )
+        if active:
+            attempt = active[0]
+            liveness_path = Path(attempt["liveness_lock_path"])
+            expected_liveness = self.confirmation_attempt_liveness_path(
+                execution_key, attempt["attempt_id"]
+            )
+            if liveness_path != expected_liveness:
+                raise ValueError(
+                    "confirmation attempt liveness identity is corrupt"
+                )
+            abandoned = self._abandon_start_attempt(
+                execution_key,
+                attempt,
+                abandoned_at=proposed_running["updated_at"],
+                reason_code="confirmation_child_terminated",
+            )
+            if abandoned is None:
+                return running, False
+            if self._locked_seal_consumed(running):
+                abandoned = self._abandoned_confirmation(running)
+                self.append_confirmation(
+                    abandoned, expected_status="confirmation_running"
+                )
+                return abandoned, False
         return running, True
+
+    def _active_confirmation_attempts(
+        self,
+        execution_key: str,
+    ) -> tuple[dict[str, Any], ...]:
+        collection = (
+            self.confirmation_executions
+            / execution_key
+            / "start_attempts"
+        )
+        if not self._filesystem.entry_exists(collection):
+            return ()
+        active = []
+        for value in self.list_records(collection, "attempt.json"):
+            attempt = validate_confirmation_start_handshake(value)
+            permit_path = Path(attempt["permit_path"])
+            if permit_path != self.confirmation_execution_start_permit_path(
+                execution_key, attempt["attempt_id"]
+            ):
+                raise ValueError(
+                    "confirmation attempt permit identity is corrupt"
+                )
+            if self._filesystem.entry_exists(permit_path):
+                try:
+                    validate_confirmation_start_permit(
+                        self._filesystem.read_json(permit_path),
+                        attempt,
+                    )
+                except ValueError as exc:
+                    raise ValueError(
+                        "confirmation execution-start evidence is corrupt "
+                        "or stale"
+                    ) from exc
+            abandoned_path = (
+                collection / attempt["attempt_id"] / "abandoned.json"
+            )
+            if self._filesystem.entry_exists(abandoned_path):
+                abandoned = validate_attempt_abandoned(
+                    self._filesystem.read_json(abandoned_path)
+                )
+                if (
+                    abandoned["execution_key"] != execution_key
+                    or abandoned["confirmation_id"]
+                    != attempt["confirmation_id"]
+                    or abandoned["attempt_id"] != attempt["attempt_id"]
+                    or abandoned["handshake_sha256"]
+                    != attempt["handshake_sha256"]
+                ):
+                    raise ValueError(
+                        "confirmation attempt abandonment identity conflict"
+                    )
+                continue
+            active.append(attempt)
+        return tuple(active)
+
+    def _read_start_attempt(
+        self,
+        execution_key: str,
+        attempt_id: str,
+    ) -> dict[str, Any] | None:
+        attempt = validate_confirmation_start_handshake(self._read_identity(
+            self.confirmation_executions
+            / execution_key
+            / "start_attempts",
+            attempt_id,
+            "attempt.json",
+        ))
+        if attempt["execution_key"] != execution_key:
+            raise ValueError("confirmation attempt execution identity conflict")
+        return attempt
+
+    def _abandon_start_attempt(
+        self,
+        execution_key: str,
+        attempt: dict[str, Any],
+        *,
+        abandoned_at: str,
+        reason_code: str,
+    ) -> dict[str, Any]:
+        start = validate_confirmation_start_handshake(attempt)
+        if start["execution_key"] != execution_key:
+            raise ValueError("confirmation attempt execution identity conflict")
+        liveness_path = self.confirmation_attempt_liveness_path(
+            execution_key, start["attempt_id"]
+        )
+        with try_lifecycle_lock(
+            liveness_path, filesystem=self._filesystem
+        ) as terminated:
+            if not terminated:
+                return None
+            evidence = build_attempt_abandoned(
+                execution_key=execution_key,
+                confirmation_id=start["confirmation_id"],
+                attempt_id=start["attempt_id"],
+                handshake_sha256=start["handshake_sha256"],
+                abandoned_at=abandoned_at,
+                reason_code=reason_code,
+            )
+            directory = (
+                self.confirmation_executions
+                / execution_key
+                / "start_attempts"
+                / start["attempt_id"]
+            )
+            path = directory / "abandoned.json"
+            if self._filesystem.entry_exists(path):
+                existing = validate_attempt_abandoned(
+                    self._filesystem.read_json(path)
+                )
+                if existing != evidence:
+                    raise ValueError(
+                        "confirmation attempt abandonment conflict"
+                    )
+                return existing
+            self._write_transition(directory, "abandoned.json", evidence)
+            return evidence
+
+    def _locked_seal_consumed(self, running: dict[str, Any]) -> bool:
+        locked = running.get("locked_final_test")
+        if not isinstance(locked, dict) or not locked.get("configured"):
+            return False
+        seal_id = require_safe_identity(
+            locked.get("seal_id"), "locked final-test seal_id"
+        )
+        return self.read_locked_final_test(seal_id)["status"] == "consumed"
+
+    @staticmethod
+    def _abandoned_confirmation(
+        running: dict[str, Any],
+    ) -> dict[str, Any]:
+        locked = dict(running["locked_final_test"])
+        locked["status"] = "consumed"
+        locked["independent_final_test_passed"] = False
+        locked.pop("result_id", None)
+        locked.pop("result_evidence_sha256", None)
+        return build_confirmation_record(
+            **{
+                "confirmation_id": running["confirmation_id"],
+                "snapshot_id": running["snapshot_id"],
+                "selected_candidate_id": running[
+                    "selected_candidate_id"
+                ],
+                "status": "abandoned",
+                "created_at": running["created_at"],
+                "updated_at": running["updated_at"],
+                "production_required_targets": running[
+                    "production_required_targets"
+                ],
+                "execution_key": running.get("execution_key"),
+                "locked_final_test": locked,
+                "blocking_reasons": [{
+                    "code": "locked_confirmation_abandoned",
+                    "reason": (
+                        "Locked seal was consumed without complete durable "
+                        "confirmation finalization."
+                    ),
+                }],
+            }
+        )
 
     def _read_confirmation_execution_start(
         self,
@@ -837,3 +1094,4 @@ class LifecycleCloseoutStore:
         if not isinstance(value, dict):
             raise ValueError("persisted closeout record must be an object")
         return value
+    build_confirmation_record,

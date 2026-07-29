@@ -51,17 +51,19 @@ race is repaired by an optional confirmation-only child start handshake:
 the child blocks at the Core work boundary, the parent registers one exact
 launch attempt and durably publishes its identity-bound permit under the
 execution-key owner, and only that attempt may continue. Pre-permit parent
-failure remains recoverable with a new attempt; post-permit ambiguity never
-auto-reruns. The sixth independent audit failed at exact head
+failure remains recoverable with a new attempt. Its historical post-permit
+no-rerun direction is superseded by the seventh-audit abandon-and-restart
+contract below. The sixth independent audit failed at exact head
 `7175060236ede4596246f64f6acf0d1b932075ca`; historical exact-head run
 `30416243161` succeeded but remains validation-only evidence. Its final
 durability blocker is repaired by preparing and fsyncing canonical permit
 bytes at an attempt-private temporary path, verifying those bytes, then
 atomically and exclusively publishing the complete file into the final
 namespace and durably syncing the containing directory. Pre-commit failure
-leaves no final permit and remains retryable; post-commit ambiguity remains
-at-most-once and never auto-reruns. Temporary residue is neither start evidence
-nor a retry blocker. The seventh independent audit failed at exact head
+leaves no final permit and remains retryable. Its historical post-commit
+no-rerun direction is likewise superseded; temporary residue remains neither
+start evidence nor a retry blocker. The seventh independent audit failed at
+exact head
 `ed20d081ded7621b145ff95faa0e56e96163e303`; historical exact-head run
 `30421708922` succeeded but remains validation-only evidence. The approved
 recovery direction supersedes actual-compute at-most-once and permanent
@@ -73,9 +75,17 @@ is resumed or mixed. If a locked seal was consumed without a complete durable
 result, abandon the whole Confirmation; another run requires a new seal and
 Confirmation. Quarantine is not deletion, completed terminal/Candidate pairs
 remain replay-only, and public Candidate/terminal finalization remain
-at-most-once. This is a documentation decision pending a bounded Lane C source
-implementation; only after that implementation may a fresh independent
-exact-head audit begin. No
+at-most-once. The bounded source implementation now gives every child attempt
+an exact process-lifetime lock acquired before its start request and held until
+process exit. A reconstructed owner nonblockingly probes that lock under the
+existing execution-key and lifecycle writers: live or uncertain attempts stay
+running, while a proven-ended attempt receives immutable abandonment evidence
+before one new attempt is registered. Attempt identity also binds the permit,
+post-durability grant, run identity, and private staging path, so stale
+callbacks cannot enter Core work or Candidate publication. Consumed-seal
+incomplete attempts instead transition the whole Confirmation to terminal
+`abandoned`. The source, direct process regressions, and adjacent lifecycle
+validation are complete and require a fresh independent exact-head audit. No
 production confirmation/promotion, migration apply, deletion, or deployment
 mutation has been performed.
 
