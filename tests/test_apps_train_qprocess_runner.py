@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import json
+from dataclasses import replace
 from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -16,6 +18,10 @@ from apps.train.ports.training_execution_port import (
     TrainingExecutionPort,
 )
 from apps.train.state.training_run_state import TrainingRequest
+from apps.common.model_lifecycle.closeout.start_handshake import (
+    build_confirmation_start_handshake,
+    build_confirmation_start_permit,
+)
 from tools.dev.mock_smoke.generators import write_mock_training_data
 
 
@@ -34,6 +40,7 @@ def _run_to_terminal(
     request,
     *,
     after_start=None,
+    start_requested=None,
     timeout_ms: int = 20000,
 ):  # noqa: ANN001
     terminal = []
@@ -54,6 +61,7 @@ def _run_to_terminal(
         finished=lambda result: record("finished", result),
         failed=lambda result: record("failed", result),
         cancelled=lambda result: record("cancelled", result),
+        start_requested=start_requested,
     )
     timeout.timeout.connect(loop.quit)
     runner.start(request, callbacks)
@@ -102,6 +110,51 @@ def test_qprocess_runner_dev_fast_success_promotes_final_artifact(
     assert progress[-1].completed == progress[-1].total
     assert started == [request]
     assert isinstance(runner, TrainingExecutionPort)
+    runner.dispose()
+
+
+def test_qprocess_confirmation_waits_for_exact_start_permit(
+    tmp_path, qprocess_app
+):
+    request = _request(tmp_path, "run-process-confirmation")
+    permit_path = tmp_path / "execution_started.json"
+    handshake = build_confirmation_start_handshake(
+        confirmation_id="confirmation-qprocess",
+        execution_key="a" * 64,
+        attempt_id="attempt-qprocess",
+        training_meaning_sha256="b" * 64,
+        permit_path=permit_path,
+    )
+    request = replace(
+        request,
+        publication_source="confirmation",
+        confirmation_fixed_parameters_json='{"target": {"depth": 1}}',
+        confirmation_fixed_features_json='{"target": ["feature"]}',
+        confirmation_start_handshake_json=json.dumps(handshake),
+    )
+    requested = []
+
+    def permit(start_request) -> None:  # noqa: ANN001
+        requested.append(start_request)
+        permit_path.write_text(
+            json.dumps(build_confirmation_start_permit(handshake)),
+            encoding="utf-8",
+        )
+
+    runner = QProcessTrainingRunner(
+        extra_args=("--dev-fast", "--dev-rows", "8")
+    )
+    (kind, result), _progress, started = _run_to_terminal(
+        qprocess_app,
+        runner,
+        request,
+        start_requested=permit,
+    )
+
+    assert len(requested) == 1
+    assert started == [request]
+    assert (kind, result.status) == ("finished", "complete")
+    assert Path(request.model_output_path).exists()
     runner.dispose()
 
 

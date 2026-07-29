@@ -56,6 +56,14 @@ def training_process_arguments(
             if request.confirmation_fixed_features_json
             else []
         ),
+        *(
+            [
+                "--confirmation-start-handshake-json",
+                request.confirmation_start_handshake_json,
+            ]
+            if request.confirmation_start_handshake_json
+            else []
+        ),
         *extra_args,
     ]
 

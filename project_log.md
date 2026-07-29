@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-29 — Phase 5H process-boundary start handshake recovery
+
+### Decision
+
+- Preserve the fifth independent audit `FAIL` at exact head
+  `55141965c262bddd1fb1dd2b6692ed5bce99464d` and historical successful run
+  `30413469249`; neither grants acceptance.
+- Treat a child stdout start request as intent only. Confirmation children
+  block at the Core work boundary until the closeout owner durably publishes
+  an exact confirmation/execution/attempt/protocol/training-meaning permit.
+- Permit absence remains recoverable with a new attempt after parent exit;
+  permit presence is an irreversible at-most-once boundary. Stale attempts
+  cannot consume replacement permits, and ambiguous post-permit state does not
+  auto-rerun.
+- Keep the Draft PR open and unmerged and require a new independent exact-head
+  re-audit. No production confirmation/promotion, migration apply,
+  retention/delete apply, deployment mutation, or audit-PASS authority is
+  added.
+
 ## 2026-07-29 — Phase 5H durable execution-start recovery
 
 ### Decision

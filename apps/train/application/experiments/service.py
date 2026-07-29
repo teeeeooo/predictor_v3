@@ -180,6 +180,7 @@ class ExperimentApplicationService:
             status_callback=external.get("status_callback"),
             log_callback=recorder.log_event,
             progress_callback=external.get("progress_callback"),
+            start_permit_callback=external.get("start_permit_callback"),
             finished_callback=recorder.terminal,
             failed_callback=recorder.terminal,
             cancelled_callback=recorder.terminal,

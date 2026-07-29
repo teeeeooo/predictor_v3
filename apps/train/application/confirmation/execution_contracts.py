@@ -18,9 +18,15 @@ class FrozenConfirmationRequest:
     training_data: dict[str, Any]
     definition_runtime: dict[str, Any]
     evaluation_contract: dict[str, Any]
+    execution_key: str = ""
+    start_attempt_id: str = ""
+    start_permit_path: str = ""
     locked_final_test: dict[str, Any] | None = None
     prepublication_integrity: Callable[[], None] | None = None
-    execution_started: Callable[[], None] | None = None
+    execution_start_prepare: (
+        Callable[[str], dict[str, Any]] | None
+    ) = None
+    execution_start_permit: Callable[[dict[str, Any]], None] | None = None
 
 
 @dataclass(frozen=True)

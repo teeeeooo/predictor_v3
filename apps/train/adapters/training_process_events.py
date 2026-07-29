@@ -4,18 +4,29 @@ from __future__ import annotations
 
 import json
 
+from apps.common.model_lifecycle.closeout.start_handshake import (
+    validate_confirmation_start_handshake,
+)
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
     TrainingProgress,
     TrainingRequest,
     TrainingResult,
+    TrainingStartRequest,
 )
 
 
 def parse_training_event(
     line: str,
     request: TrainingRequest,
-) -> tuple[str, TrainingLogEvent | TrainingProgress | TrainingResult]:
+) -> tuple[
+    str,
+    TrainingLogEvent
+    | TrainingProgress
+    | TrainingResult
+    | TrainingRequest
+    | TrainingStartRequest,
+]:
     """Parse one child-process stdout line into a runner payload."""
     try:
         event = json.loads(line)
@@ -23,7 +34,15 @@ def parse_training_event(
         return "log", TrainingLogEvent(request.run_id, line)
 
     event_type = event.get("type")
+    if event_type == "training_start_requested":
+        handshake = _exact_start_handshake(event, request)
+        return "training_start_requested", TrainingStartRequest(
+            run_id=request.run_id,
+            handshake=handshake,
+        )
     if event_type == "training_started":
+        if request.confirmation_start_handshake_json:
+            _exact_start_handshake(event, request)
         return "training_started", request
     if event_type == "progress":
         return "progress", TrainingProgress(
@@ -50,3 +69,20 @@ def parse_training_event(
         message=str(event.get("message", line)),
         level=str(event.get("level", "info")),
     )
+
+
+def _exact_start_handshake(
+    event: dict,
+    request: TrainingRequest,
+) -> dict:
+    if event.get("run_id") != request.run_id:
+        raise ValueError("training start event run identity mismatch")
+    if not request.confirmation_start_handshake_json:
+        raise ValueError("unexpected confirmation training start handshake")
+    expected = validate_confirmation_start_handshake(
+        json.loads(request.confirmation_start_handshake_json)
+    )
+    actual = validate_confirmation_start_handshake(event.get("handshake"))
+    if actual != expected:
+        raise ValueError("training start event handshake mismatch")
+    return actual

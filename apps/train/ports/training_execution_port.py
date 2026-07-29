@@ -11,6 +11,7 @@ from apps.train.state.training_run_state import (
     TrainingProgress,
     TrainingRequest,
     TrainingResult,
+    TrainingStartRequest,
 )
 
 
@@ -24,6 +25,7 @@ class TrainingExecutionCallbacks:
     finished: Callable[[TrainingResult], None]
     failed: Callable[[TrainingResult], None]
     cancelled: Callable[[TrainingResult], None]
+    start_requested: Callable[[TrainingStartRequest], None] | None = None
 
 
 @runtime_checkable

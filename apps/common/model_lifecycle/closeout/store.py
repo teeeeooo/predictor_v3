@@ -18,7 +18,6 @@ from .canonical import (
 )
 from .contracts import (
     CONFIRMATION_EXECUTION_CLAIM_VERSION,
-    CONFIRMATION_EXECUTION_STARTED_VERSION,
     CONFIRMATION_EXECUTION_START_VERSION,
     MIGRATION_PREVIEW_VERSION,
     RETENTION_PREVIEW_VERSION,
@@ -30,6 +29,11 @@ from .contracts import (
     validate_snapshot_record,
 )
 from .materialization import TrainingDataMaterializer
+from .start_handshake import (
+    build_confirmation_start_permit,
+    validate_confirmation_start_handshake,
+    validate_confirmation_start_permit,
+)
 
 
 class LifecycleCloseoutStore:
@@ -248,11 +252,11 @@ class LifecycleCloseoutStore:
         self,
         execution_key: str,
         *,
-        confirmation_id: str,
+        handshake: dict[str, Any],
     ) -> None:
-        """Persist the existing Core-start acknowledgement exactly once."""
+        """Publish the exact durable permit a waiting child may consume."""
         require_sha256(execution_key, "confirmation execution_key")
-        require_safe_identity(confirmation_id, "confirmation_id")
+        start = validate_confirmation_start_handshake(handshake)
         with lifecycle_lock(
             self.root / ".lifecycle-write.lock",
             filesystem=self._filesystem,
@@ -263,30 +267,102 @@ class LifecycleCloseoutStore:
             )
             current = self._read_claimed_confirmation(claim)
             if (
-                confirmation_id != claim["confirmation_id"]
+                start["execution_key"] != execution_key
+                or start["confirmation_id"] != claim["confirmation_id"]
                 or current != prepared["running_record"]
                 or current["status"] != "confirmation_running"
+                or start["permit_path"] != str(
+                    self.confirmation_execution_start_permit_path(
+                        execution_key
+                    )
+                )
             ):
                 raise ValueError(
                     "confirmation execution acknowledgement mismatch"
                 )
+            registered = self._read_identity(
+                self.confirmation_executions
+                / execution_key
+                / "start_attempts",
+                start["attempt_id"],
+                "attempt.json",
+            )
+            if canonical_payload(registered) != start:
+                raise ValueError(
+                    "confirmation execution attempt registration mismatch"
+                )
             directory = self.confirmation_executions / execution_key
             path = directory / "execution_started.json"
-            evidence = {
-                "schema_version": CONFIRMATION_EXECUTION_STARTED_VERSION,
-                "execution_key": execution_key,
-                "confirmation_id": confirmation_id,
-                "running_record_sha256": prepared[
-                    "running_record_sha256"
-                ],
-            }
+            evidence = build_confirmation_start_permit(start)
             if self._filesystem.entry_exists(path):
-                if self._filesystem.read_json(path) != evidence:
+                try:
+                    validate_confirmation_start_permit(
+                        self._filesystem.read_json(path), start
+                    )
+                except ValueError as exc:
                     raise ValueError(
                         "confirmation execution-start evidence conflict"
-                    )
+                    ) from exc
                 return
             self._filesystem.write_json_exclusive(path, evidence)
+
+    def confirmation_execution_start_permit_path(
+        self,
+        execution_key: str,
+    ) -> Path:
+        require_sha256(execution_key, "confirmation execution_key")
+        return (
+            self.confirmation_executions
+            / execution_key
+            / "execution_started.json"
+        )
+
+    def register_confirmation_execution_start_attempt(
+        self,
+        execution_key: str,
+        *,
+        handshake: dict[str, Any],
+    ) -> None:
+        """Bind one launch attempt before its child may request a permit."""
+        require_sha256(execution_key, "confirmation execution_key")
+        start = validate_confirmation_start_handshake(handshake)
+        with lifecycle_lock(
+            self.root / ".lifecycle-write.lock",
+            filesystem=self._filesystem,
+        ):
+            claim = self._read_confirmation_execution_claim(execution_key)
+            prepared = self._read_confirmation_execution_start(
+                execution_key, claim
+            )
+            current = self._read_claimed_confirmation(claim)
+            permit_path = self.confirmation_execution_start_permit_path(
+                execution_key
+            )
+            if (
+                start["execution_key"] != execution_key
+                or start["confirmation_id"] != claim["confirmation_id"]
+                or start["permit_path"] != str(permit_path)
+                or current != prepared["running_record"]
+                or current["status"] != "confirmation_running"
+            ):
+                raise ValueError(
+                    "confirmation execution attempt identity mismatch"
+                )
+            if self._filesystem.entry_exists(permit_path):
+                self._validate_confirmation_execution_started(
+                    permit_path, prepared
+                )
+                raise ValueError(
+                    "confirmation execution already has a durable start permit"
+                )
+            self._write_identity(
+                self.confirmation_executions
+                / execution_key
+                / "start_attempts",
+                start["attempt_id"],
+                "attempt.json",
+                start,
+            )
 
     def require_confirmation_execution_started(
         self,
@@ -417,12 +493,29 @@ class LifecycleCloseoutStore:
         prepared: dict[str, Any],
     ) -> None:
         value = canonical_payload(self._filesystem.read_json(path))
-        if value != {
-            "schema_version": CONFIRMATION_EXECUTION_STARTED_VERSION,
-            "execution_key": prepared["execution_key"],
-            "confirmation_id": prepared["confirmation_id"],
-            "running_record_sha256": prepared["running_record_sha256"],
-        }:
+        try:
+            attempt_id = require_safe_identity(
+                value.get("attempt_id"),
+                "confirmation start attempt_id",
+            )
+            handshake = self._read_identity(
+                self.confirmation_executions
+                / prepared["execution_key"]
+                / "start_attempts",
+                attempt_id,
+                "attempt.json",
+            )
+            start = validate_confirmation_start_handshake(handshake)
+            validate_confirmation_start_permit(value, start)
+        except (FileNotFoundError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "confirmation execution-start evidence is corrupt"
+            ) from exc
+        if (
+            start["execution_key"] != prepared["execution_key"]
+            or start["confirmation_id"] != prepared["confirmation_id"]
+            or start["permit_path"] != str(path)
+        ):
             raise ValueError("confirmation execution-start evidence is corrupt")
 
     def _recover_confirmation_from_claim(

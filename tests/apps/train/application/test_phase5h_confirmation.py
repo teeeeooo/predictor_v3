@@ -38,6 +38,13 @@ NOW = "2026-07-27T00:00:00+00:00"
 TARGETS = ("target-a", "target-b")
 
 
+def _ack_execution_start(request) -> None:  # noqa: ANN001
+    assert request.execution_start_prepare is not None
+    assert request.execution_start_permit is not None
+    handshake = request.execution_start_prepare(HASH)
+    request.execution_start_permit(handshake)
+
+
 class _Repository:
     def __init__(self, root: Path, candidates: dict, active=None) -> None:
         self.root = root
@@ -79,8 +86,7 @@ class _Execution:
 
     def execute(self, request):
         self.requests.append(request)
-        if request.execution_started is not None:
-            request.execution_started()
+        _ack_execution_start(request)
         return self.result
 
 
@@ -103,8 +109,7 @@ class _DriftingIntegrity:
 class _GuardedExecution(_Execution):
     def execute(self, request):
         self.requests.append(request)
-        if request.execution_started is not None:
-            request.execution_started()
+        _ack_execution_start(request)
         assert request.prepublication_integrity is not None
         request.prepublication_integrity()
         return self.result
@@ -304,8 +309,7 @@ def test_concurrent_duplicate_start_has_one_durable_owner(
 
         def execute(self, request):  # noqa: ANN001
             self.requests.append(request)
-            if request.execution_started is not None:
-                request.execution_started()
+            _ack_execution_start(request)
             self.started.set()
             assert self.release.wait(timeout=5)
             return self.result
@@ -601,8 +605,7 @@ def test_concurrent_partial_execution_claim_recovery_has_one_owner(
 
         def execute(self, request):  # noqa: ANN001
             self.requests.append(request)
-            if request.execution_started is not None:
-                request.execution_started()
+            _ack_execution_start(request)
             self.started.set()
             assert self.release.wait(timeout=5)
             return self.result
@@ -817,8 +820,7 @@ def test_concurrent_prepared_start_recovery_has_one_execution_owner(
 
         def execute(self, request):  # noqa: ANN001
             self.requests.append(request)
-            if request.execution_started is not None:
-                request.execution_started()
+            _ack_execution_start(request)
             self.started.set()
             assert self.release.wait(timeout=5)
             return self.result
@@ -877,6 +879,210 @@ def test_concurrent_prepared_start_recovery_has_one_execution_owner(
         (store.confirmations / confirmation_id / "history").glob("*.json")
     )
     assert sum("confirmation_running" in path.name for path in history) == 1
+
+
+def test_process_reconstruction_replaces_only_prepermit_attempt(
+    tmp_path: Path,
+) -> None:
+    class _CrashBeforePermit(_Execution):
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            assert request.execution_start_prepare is not None
+            self.handshake = request.execution_start_prepare(HASH)
+            raise SystemExit("injected parent exit before permit")
+
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    result = ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    )
+    crashed = _CrashBeforePermit(result)
+    with pytest.raises(SystemExit, match="before permit"):
+        ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            crashed,
+            closeout_store=store,
+            integrity_validator=_Integrity(),
+        ).start(snapshot["snapshot_id"])
+
+    assert not tuple(
+        store.confirmation_executions.glob("*/execution_started.json")
+    )
+    recovered_execution = _Execution(result)
+    recovered = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        recovered_execution,
+        closeout_store=LifecycleCloseoutStore(root),
+        integrity_validator=_Integrity(),
+    ).start(
+        snapshot["snapshot_id"],
+        confirmation_id="alternate-retry",
+    )
+
+    assert recovered["status"] == "awaiting_user_decision"
+    assert len(recovered_execution.requests) == 1
+    attempts = tuple(
+        store.confirmation_executions.glob("*/start_attempts/*/attempt.json")
+    )
+    assert len(attempts) == 2
+    attempt_payloads = [
+        json.loads(path.read_text(encoding="utf-8")) for path in attempts
+    ]
+    assert len({
+        payload["attempt_id"] for payload in attempt_payloads
+    }) == 2
+    assert len({
+        payload["training_meaning_sha256"]
+        for payload in attempt_payloads
+    }) == 1
+    old_request = crashed.requests[0]
+    assert old_request.execution_start_permit is not None
+    with pytest.raises(
+        ValueError,
+        match="confirmation execution",
+    ):
+        old_request.execution_start_permit(crashed.handshake)
+
+
+def test_durable_permit_before_parent_exit_blocks_automatic_rerun(
+    tmp_path: Path,
+) -> None:
+    class _PermitThenCrash(_Execution):
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            _ack_execution_start(request)
+            raise SystemExit("injected parent exit after permit")
+
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    result = ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    )
+    crashed = _PermitThenCrash(result)
+    with pytest.raises(SystemExit, match="after permit"):
+        ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            crashed,
+            closeout_store=store,
+            integrity_validator=_Integrity(),
+        ).start(snapshot["snapshot_id"])
+
+    permit_path = next(
+        store.confirmation_executions.glob("*/execution_started.json")
+    )
+    retry_execution = _Execution(result)
+    retry_service = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        retry_execution,
+        closeout_store=LifecycleCloseoutStore(root),
+        integrity_validator=_Integrity(),
+    )
+    implicit = retry_service.start(snapshot["snapshot_id"])
+    alternate = retry_service.start(
+        snapshot["snapshot_id"],
+        confirmation_id="alternate-retry",
+    )
+
+    assert implicit == alternate
+    assert implicit["status"] == "confirmation_running"
+    assert retry_execution.requests == []
+    assert permit_path.exists()
+    assert repository.active is None
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("execution_key", "b" * 64),
+        ("attempt_id", "attempt-corrupt"),
+        ("protocol_version", "corrupt.protocol.v1"),
+    ),
+)
+def test_corrupt_durable_start_permit_fails_closed_without_rerun(
+    tmp_path: Path,
+    field: str,
+    value: str,
+) -> None:
+    class _PermitThenCrash(_Execution):
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            _ack_execution_start(request)
+            raise SystemExit("injected")
+
+    root = tmp_path / field
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    result = ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    )
+    with pytest.raises(SystemExit):
+        ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            _PermitThenCrash(result),
+            closeout_store=store,
+            integrity_validator=_Integrity(),
+        ).start(snapshot["snapshot_id"])
+    permit_path = next(
+        store.confirmation_executions.glob("*/execution_started.json")
+    )
+    permit = json.loads(permit_path.read_text(encoding="utf-8"))
+    permit[field] = value
+    permit_path.write_text(
+        json.dumps(permit, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    before = permit_path.read_bytes()
+    retry_execution = _Execution(result)
+
+    outcome = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        retry_execution,
+        closeout_store=LifecycleCloseoutStore(root),
+        integrity_validator=_Integrity(),
+    ).start(
+        snapshot["snapshot_id"],
+        confirmation_id="alternate-retry",
+    )
+
+    assert outcome["status"] == "blocked"
+    assert retry_execution.requests == []
+    assert permit_path.read_bytes() == before
+    assert repository.active is None
 
 
 @pytest.mark.parametrize("reason", (

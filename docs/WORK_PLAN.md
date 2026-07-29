@@ -43,9 +43,18 @@ finalization. The fourth independent audit failed at exact head
 `30375698091` succeeded but remains validation-only evidence. Its remaining
 blocker is repaired by separating a recoverable, exact running-transition
 preparation from durable Core-start acknowledgement and holding one
-execution-key owner lock through terminal handoff. The repair remains pending
-independent exact-head re-audit. No production confirmation/promotion,
-migration apply, deletion, or deployment mutation has been performed.
+execution-key owner lock through terminal handoff. The fifth independent audit
+failed at exact head
+`55141965c262bddd1fb1dd2b6692ed5bce99464d`; historical exact-head run
+`30413469249` succeeded but remains validation-only evidence. Its inter-process
+race is repaired by an optional confirmation-only child start handshake:
+the child blocks at the Core work boundary, the parent registers one exact
+launch attempt and durably publishes its identity-bound permit under the
+execution-key owner, and only that attempt may continue. Pre-permit parent
+failure remains recoverable with a new attempt; post-permit ambiguity never
+auto-reruns. The repair remains pending independent exact-head re-audit. No
+production confirmation/promotion, migration apply, deletion, or deployment
+mutation has been performed.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head

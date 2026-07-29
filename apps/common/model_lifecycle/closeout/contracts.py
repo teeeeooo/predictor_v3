@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .start_handshake import CONFIRMATION_START_PERMIT_VERSION
+
 SNAPSHOT_VERSION = "predictor_v3.confirmation_snapshot.v1"
 CONFIRMATION_VERSION = "predictor_v3.confirmation.v1"
 CONFIRMATION_EXECUTION_CLAIM_VERSION = (
@@ -14,7 +16,7 @@ CONFIRMATION_EXECUTION_START_VERSION = (
     "predictor_v3.confirmation_execution_start.v1"
 )
 CONFIRMATION_EXECUTION_STARTED_VERSION = (
-    "predictor_v3.confirmation_execution_started.v1"
+    CONFIRMATION_START_PERMIT_VERSION
 )
 FINAL_DECISION_VERSION = "predictor_v3.final_decision.v1"
 LOCKED_FINAL_TEST_VERSION = "predictor_v3.locked_final_test.v1"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from apps.common.model_lifecycle.closeout.canonical import (
     content_sha256,
@@ -14,6 +15,9 @@ from apps.common.model_lifecycle.closeout.contracts import (
     build_confirmation_record,
 )
 from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
+from apps.common.model_lifecycle.closeout.start_handshake import (
+    build_confirmation_start_handshake,
+)
 from apps.common.model_lifecycle.promotion import ModelPromotionService
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
 from apps.common.runtime_generation.repository import (
@@ -423,24 +427,63 @@ class ConfirmationApplicationService:
                     "locked final-test execution is unavailable"
                 )
             preflight(locked, snapshot)
+        attempt_id = (
+            f"attempt-{uuid4().hex}" if execution_key is not None else ""
+        )
+        def prepare_start(training_meaning_sha256: str) -> dict[str, Any]:
+            if execution_key is None:
+                raise ValueError(
+                    "confirmation execution key is unavailable"
+                )
+            handshake = build_confirmation_start_handshake(
+                confirmation_id=confirmation_id,
+                execution_key=execution_key,
+                attempt_id=attempt_id,
+                training_meaning_sha256=training_meaning_sha256,
+                permit_path=(
+                    self._store.confirmation_execution_start_permit_path(
+                        execution_key
+                    )
+                ),
+            )
+            self._store.register_confirmation_execution_start_attempt(
+                execution_key,
+                handshake=handshake,
+            )
+            return handshake
+
         return FrozenConfirmationRequest(
-            confirmation_id,
-            snapshot["snapshot_id"],
-            meaning["selected_candidate"]["candidate_id"],
-            meaning["resolved_specification"],
-            required,
-            parameters,
-            meaning["training_data"],
-            meaning["definition_runtime"],
-            meaning["evaluation_contract"],
-            locked,
-            lambda: self._validate_current_meaning(
+            confirmation_id=confirmation_id,
+            snapshot_id=snapshot["snapshot_id"],
+            selected_candidate_id=meaning["selected_candidate"]["candidate_id"],
+            resolved_specification=meaning["resolved_specification"],
+            production_required_targets=required,
+            selected_parameters=parameters,
+            training_data=meaning["training_data"],
+            definition_runtime=meaning["definition_runtime"],
+            evaluation_contract=meaning["evaluation_contract"],
+            execution_key=execution_key or "",
+            start_attempt_id=attempt_id,
+            start_permit_path=(
+                str(
+                    self._store.confirmation_execution_start_permit_path(
+                        execution_key
+                    )
+                )
+                if execution_key is not None
+                else ""
+            ),
+            locked_final_test=locked,
+            prepublication_integrity=lambda: self._validate_current_meaning(
                 self._store.read_snapshot(snapshot["snapshot_id"])["meaning"]
             ),
-            (
-                lambda: self._store.mark_confirmation_execution_started(
+            execution_start_prepare=(
+                prepare_start if execution_key is not None else None
+            ),
+            execution_start_permit=(
+                lambda handshake: self._store.mark_confirmation_execution_started(
                     execution_key,
-                    confirmation_id=confirmation_id,
+                    handshake=handshake,
                 )
                 if execution_key is not None
                 else None

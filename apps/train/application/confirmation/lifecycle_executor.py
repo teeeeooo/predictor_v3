@@ -14,6 +14,10 @@ from apps.common.runtime_generation.repository import (
 )
 from apps.train.application.experiments.contracts import ResolvedExperiment
 from apps.train.application.experiments.service import ExperimentApplicationService
+from apps.train.application.training_start_handshake import (
+    training_meaning_sha256,
+    with_confirmation_start_handshake,
+)
 
 from .execution_contracts import (
     ConfirmationExecutionResult,
@@ -49,7 +53,20 @@ class TrainingLifecycleConfirmationExecutor:
             request.resolved_specification,
             _specification_fingerprint(request.resolved_specification),
         )
-        run_id = f"confirmation-run-{request.confirmation_id}"
+        if (
+            not request.execution_key
+            or not request.start_attempt_id
+            or not request.start_permit_path
+            or request.execution_start_prepare is None
+            or request.execution_start_permit is None
+        ):
+            raise ValueError(
+                "confirmation execution start handshake is unavailable"
+            )
+        run_id = (
+            f"confirmation-run-{request.confirmation_id}-"
+            f"{request.start_attempt_id}"
+        )
         candidate_id = f"candidate-{request.confirmation_id}"
         blob_path = self._store.owned_materialization_path(
             request.training_data["materialized_identity"]
@@ -81,6 +98,12 @@ class TrainingLifecycleConfirmationExecutor:
             confirmation_fixed_features_json=json.dumps(
                 fixed_features, sort_keys=True
             ),
+        )
+        start_handshake = request.execution_start_prepare(
+            training_meaning_sha256(training)
+        )
+        training, start_handshake = with_confirmation_start_handshake(
+            training, handshake=start_handshake
         )
         locked_result: dict | None = None
 
@@ -121,10 +144,10 @@ class TrainingLifecycleConfirmationExecutor:
             resolved,
             training,
             callbacks={
-                "started_callback": (
-                    (lambda _request: request.execution_started())
-                    if request.execution_started is not None
-                    else None
+                "start_permit_callback": (
+                    lambda start_request: request.execution_start_permit(
+                        start_request.handshake
+                    )
                 ),
                 "candidate_prepublication_guard": guard,
             },

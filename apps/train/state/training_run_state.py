@@ -39,6 +39,15 @@ class TrainingRequest:
     publication_source: str = "training"
     confirmation_fixed_parameters_json: str = ""
     confirmation_fixed_features_json: str = ""
+    confirmation_start_handshake_json: str = ""
+
+
+@dataclass(frozen=True)
+class TrainingStartRequest:
+    """One child request for an exact durable confirmation start permit."""
+
+    run_id: str
+    handshake: dict
 
 
 @dataclass(frozen=True)

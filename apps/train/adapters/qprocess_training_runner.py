@@ -168,8 +168,25 @@ class QProcessTrainingRunner(QObject):
     def _handle_event_line(self, line: str) -> None:
         if self._request is None:
             return
-        event_type, payload = parse_training_event(line, self._request)
-        if event_type == "training_started":
+        try:
+            event_type, payload = parse_training_event(line, self._request)
+        except (TypeError, ValueError) as exc:
+            self._reject_protocol(str(exc).splitlines()[0])
+            return
+        if event_type == "training_start_requested":
+            if (
+                self._callbacks is None
+                or self._callbacks.start_requested is None
+            ):
+                self._reject_protocol(
+                    "Training start permit authority is unavailable."
+                )
+                return
+            try:
+                self._callbacks.start_requested(payload)
+            except Exception as exc:
+                self._reject_protocol(str(exc).splitlines()[0])
+        elif event_type == "training_started":
             self.training_started.emit(payload)
         elif event_type == "progress":
             self.progress.emit(payload)
@@ -259,3 +276,14 @@ class QProcessTrainingRunner(QObject):
     def _cleanup_temp_artifact(self) -> None:
         if self._temp_artifact_path is not None:
             self._temp_artifact_path.unlink(missing_ok=True)
+
+    def _reject_protocol(self, message: str) -> None:
+        if self._request is None or self._terminal_emitted:
+            return
+        self._pending_result = process_result(
+            self._request,
+            "error",
+            f"Training child protocol rejected: {message}",
+        )
+        if self._process is not None:
+            self._process.kill()

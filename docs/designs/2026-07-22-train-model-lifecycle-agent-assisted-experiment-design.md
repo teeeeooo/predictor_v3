@@ -1460,6 +1460,17 @@ keeps the same claim/store/executor owners, distinguishes recoverable start
 preparation from existing Core-start acknowledgement, and requires another
 independent exact-head re-audit.
 
+The fifth independent audit failed at exact head
+`55141965c262bddd1fb1dd2b6692ed5bce99464d`. Historical exact-head run
+`30413469249` succeeded, but it is validation evidence and not audit
+acceptance. Its remaining blocker was the process boundary after the child
+emitted Core-start intent: the child could begin training before the parent
+durably persisted `execution_started`. The repair extends the existing
+closeout store, confirmation application, TrainingExecutionPort adapters, and
+child job with one confirmation-only synchronous start handshake. It does not
+introduce a generic process framework and requires another independent
+exact-head re-audit.
+
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
 identities, lifecycle-root content-addressed training input, immutable
@@ -1539,16 +1550,33 @@ then persists a versioned preparation containing the exact expected
 execution started. One execution-key OS lock serializes live owners and is
 automatically released by process termination. A retry holding that lock may
 recover either `prepared + pending` by writing the exact running transition, or
-`prepared + running` when no actual-start evidence exists. The existing
-TrainingLifecycle Core-start acknowledgement publishes separate immutable
-`execution_started` evidence bound to the prepared running hash. Once that
-evidence exists, retry cannot execute again. Preparation, running history,
-claim, or acknowledgement mismatch fails closed. Implicit starts use the
-claim's deterministic confirmation ID; caller-selected IDs are compatibility
-labels and cannot create another execution. Pending, running, terminal,
-concurrent, reconstructed-process, and alternate-ID retries resolve to the same
-record without rerunning training, locked evaluation, or Candidate
-publication.
+`prepared + running` when no actual-start evidence exists.
+
+Confirmation process launch adds one versioned handshake bound to confirmation
+identity, canonical execution key, unique attempt identity, expected training
+meaning hash, and exact permit path. Before launch, the application registers
+that immutable attempt under the closeout writer. At the existing Core-start
+callback, the child emits `training_start_requested` and synchronously blocks;
+emitting the event is not start evidence. The parent validates the event
+against its frozen `TrainingRequest` and, while the execution-key owner is
+held, publishes the exact immutable `execution_started` permit. The child
+validates the complete permit before emitting `training_started` and returning
+to Core work. A confirmation child cannot cross that boundary without a valid
+permit; ordinary non-confirmation training has no handshake and preserves its
+existing behavior.
+
+Process failure before permit publication leaves no actual-start evidence, so
+a reconstructed service may register one new attempt. A stale waiting child
+cannot consume that replacement attempt's permit. Once any exact permit is
+durable, implicit, alternate-ID, and concurrent retry cannot acquire another
+training owner even when original child progress is unknown. That ambiguous
+post-permit state remains `confirmation_running` and recovery-required rather
+than being inferred safe to rerun. Attempt registration, handshake,
+confirmation, execution key, protocol, training meaning, running history,
+claim, or permit mismatch fails closed. Pending, running, terminal,
+concurrent, reconstructed-process, and alternate-ID retries resolve to the
+same confirmation identity without duplicating training, locked evaluation,
+or Candidate publication.
 
 The stored contract also recognizes terminal execution evidence named
 `succeeded`; the application immediately projects a valid succeeded execution

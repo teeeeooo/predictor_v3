@@ -10,8 +10,16 @@ import sys
 import time
 from pathlib import Path
 
+from apps.common.model_lifecycle.closeout.start_handshake import (
+    validate_confirmation_start_handshake,
+    validate_confirmation_start_permit,
+)
 from apps.train.state.training_run_state import TrainingRequest
 _CANCELLED = False
+
+
+class TrainingStartCancelled(RuntimeError):
+    """A waiting confirmation child was cancelled before actual work."""
 
 
 def _handle_signal(_signum, _frame) -> None:  # noqa: ANN001
@@ -34,6 +42,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--derived-evaluation-json", default="")
     parser.add_argument("--confirmation-fixed-parameters-json", default="")
     parser.add_argument("--confirmation-fixed-features-json", default="")
+    parser.add_argument("--confirmation-start-handshake-json", default="")
+    parser.add_argument("--start-permit-timeout-seconds", type=float, default=30.0)
+    parser.add_argument("--actual-work-marker-path", default="")
     return parser.parse_args()
 
 
@@ -65,8 +76,14 @@ def emit_progress(
     )
 
 
-def emit_training_started(run_id: str) -> None:
-    emit({"type": "training_started", "run_id": run_id})
+def emit_training_started(
+    run_id: str,
+    handshake: dict | None = None,
+) -> None:
+    event = {"type": "training_started", "run_id": run_id}
+    if handshake is not None:
+        event["handshake"] = handshake
+    emit(event)
 
 
 def emit_result(
@@ -118,6 +135,9 @@ def main() -> int:
             args.confirmation_fixed_parameters_json
         ),
         confirmation_fixed_features_json=args.confirmation_fixed_features_json,
+        confirmation_start_handshake_json=(
+            args.confirmation_start_handshake_json
+        ),
     )
     temp_model_path = Path(
         args.temp_model_output_path
@@ -201,6 +221,10 @@ def main() -> int:
             ),
         )
         return 0 if args.dev_fast or output.evidence.status == "complete" else 2
+    except TrainingStartCancelled:
+        cleanup_temp(temp_model_path)
+        emit_result(request, "cancelled", message="Training process cancelled.")
+        return 0
     except Exception as exc:
         cleanup_temp(temp_model_path)
         emit_log(request.run_id, str(exc).splitlines()[0], "error")
@@ -231,7 +255,9 @@ def run_production_training(
         derived_evaluation_snapshot=derived_evaluation_snapshot,
         confirmation_fixed_parameters=confirmation_fixed_parameters,
         confirmation_fixed_features=confirmation_fixed_features,
-        training_started_callback=lambda: emit_training_started(request.run_id),
+        training_started_callback=lambda: authorize_training_start(
+            request,
+        ),
     )
     evidence_path = Path(request.model_output_path).parent / "core_training_evidence.json"
     evidence_path.write_text(
@@ -315,7 +341,9 @@ def _run_dev_fast(request: TrainingRequest, temp_model_path: Path, args: argpars
         temp_request,
         log_callback=_emit_payload_log,
         progress_callback=_emit_payload_progress,
-        training_started_callback=lambda: emit_training_started(request.run_id),
+        training_started_callback=lambda: enter_training_work(
+            request, args
+        ),
     )
     if result.status != "complete":
         raise RuntimeError(result.message or "DEV fast training failed.")
@@ -337,6 +365,62 @@ def _emit_payload_progress(progress) -> None:  # noqa: ANN001
             "indeterminate": progress.indeterminate,
         }
     )
+
+
+def authorize_training_start(
+    request: TrainingRequest,
+    *,
+    timeout_seconds: float = 30.0,
+) -> None:
+    """Block Core until the exact confirmation attempt has a durable permit."""
+    if not request.confirmation_start_handshake_json:
+        emit_training_started(request.run_id)
+        return
+    if timeout_seconds <= 0:
+        raise ValueError("training start permit timeout must be positive")
+    handshake = validate_confirmation_start_handshake(
+        json.loads(request.confirmation_start_handshake_json)
+    )
+    emit({
+        "type": "training_start_requested",
+        "run_id": request.run_id,
+        "handshake": handshake,
+    })
+    deadline = time.monotonic() + timeout_seconds
+    permit_path = Path(handshake["permit_path"])
+    while True:
+        if _CANCELLED:
+            raise TrainingStartCancelled()
+        try:
+            permit = json.loads(permit_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            permit = None
+        except json.JSONDecodeError:
+            permit = None
+        if permit is not None:
+            validate_confirmation_start_permit(permit, handshake)
+            emit_training_started(request.run_id, handshake)
+            return
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                "durable confirmation start permit was not published"
+            )
+        time.sleep(0.02)
+
+
+def enter_training_work(
+    request: TrainingRequest,
+    args: argparse.Namespace,
+) -> None:
+    """Cross the test-observable work boundary only after authorization."""
+    authorize_training_start(
+        request,
+        timeout_seconds=args.start_permit_timeout_seconds,
+    )
+    if args.actual_work_marker_path:
+        marker = Path(args.actual_work_marker_path)
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(request.run_id + "\n", encoding="utf-8")
 
 
 def cleanup_temp(path: Path) -> None:

@@ -78,8 +78,26 @@ class SubprocessTrainingRunner:
                 continue
             if line is None:
                 continue
-            event_type, event = parse_training_event(line, request)
-            if event_type == "training_started":
+            try:
+                event_type, event = parse_training_event(line, request)
+            except (TypeError, ValueError) as exc:
+                self._abort_protocol(process)
+                raise RuntimeError(
+                    "Training child protocol rejected: "
+                    f"{str(exc).splitlines()[0]}"
+                ) from exc
+            if event_type == "training_start_requested":
+                if callbacks.start_requested is None:
+                    self._abort_protocol(process)
+                    raise RuntimeError(
+                        "Training start permit authority is unavailable."
+                    )
+                try:
+                    callbacks.start_requested(event)
+                except Exception:
+                    self._abort_protocol(process)
+                    raise
+            elif event_type == "training_started":
                 callbacks.started(request)
             elif event_type == "progress":
                 callbacks.progress(event)
@@ -130,6 +148,17 @@ class SubprocessTrainingRunner:
     def _cleanup_temporary(self) -> None:
         if self._temporary is not None:
             self._temporary.unlink(missing_ok=True)
+
+    def _abort_protocol(self, process: subprocess.Popen[str]) -> None:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=2)
+        self._process = None
+        self._cleanup_temporary()
 
 
 def _read_lines(
