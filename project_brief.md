@@ -36,10 +36,10 @@ fresh independent audit accepted exact head
 succeeded, and PR #35 was guarded squash-merged as
 `b20661ee6b400559fbac61a9f2669d50256247bc`. Train/Admin Phase 5 is therefore
 closed. Predict internal UI/UX is now the active product workstream. Findings
-#1–#4 are complete and merged; finding #4 closes user-facing validation-message
-repair. Finding #5's bounded no-usable-model execution gate is implemented on a
-feature branch and awaits exact-head review; guidance, navigation, and lifecycle
-wording redesign remain separate.
+#1–#5 are complete and merged. Finding #5's bounded no-usable-model execution
+gate was guarded squash-merged through PR #40 as
+`4181b6e29b9cfadf608b259c974744e428db788b`. Finding #6 viewport work is next;
+guidance, navigation, and lifecycle wording redesign remain separate.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -67,10 +67,11 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   validated dynamic Feature/Target snapshots and never starts automatically from
   Data Definition Save.
 - Predict consumes saved contract snapshots, mapping values, and a promoted
-  compatible active model. Findings #1–#4 repaired bounded presentation defects;
-  finding #5 adds the shared standalone/embedded execution gate for absent usable
-  loaded capability. Train navigation, standalone routing, guidance, and
-  Bootstrap/Retraining-required integration remain outside that bounded slice.
+  compatible active model. Findings #1–#5 repaired bounded presentation and
+  execution defects; finding #5 adds the shared standalone/embedded gate for
+  absent usable loaded capability. Finding #6 viewport behavior is the next
+  bounded slice. Train navigation, standalone routing, guidance, and Bootstrap /
+  Retraining-required integration remain separate.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
@@ -271,14 +272,15 @@ remain outside repository closeout.
 
 ### Current Workstream — Predict UI/UX Findings
 
-Predict findings #1–#4 are complete and merged: populated dropdown rendering,
-reset idle projection, running-state projection consistency, and user-facing
-validation/runtime/partial message semantics. Finding #5's no-usable-model
-execution gate is implemented on a feature branch and pending exact-head review.
-It disables only prediction execution when no usable loaded capability exists,
-using the same controller-owned rule in standalone and embedded Predict.
-Guidance, Train navigation, standalone routing, and Bootstrap /
-Retraining-required wording remain out of scope.
+Predict findings #1–#5 are complete and merged: populated dropdown rendering,
+reset idle projection, running-state projection consistency, user-facing
+validation/runtime/partial message semantics, and the no-usable-model execution
+gate. Finding #5 was guarded squash-merged through PR #40 as
+`4181b6e29b9cfadf608b259c974744e428db788b`; it disables only prediction
+execution when no usable loaded capability exists, using the same
+controller-owned rule in standalone and embedded Predict. Finding #6 viewport
+work is next and is not implemented by this closeout. Guidance, Train navigation,
+standalone routing, and Bootstrap / Retraining-required wording remain separate.
 
 ### Later — Production ML Readiness / Calculator Integration
 
