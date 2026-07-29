@@ -6,6 +6,8 @@ import pytest
 from PySide6.QtCore import QItemSelectionModel, Qt
 from PySide6.QtWidgets import QApplication
 
+from apps.predict.application.prediction_usecase import PredictionRunSummary
+from apps.predict.ports.prediction_execution_port import PredictionProgress
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_model import CaseTableModel
@@ -120,6 +122,89 @@ def test_cancelled_status_counts_and_renders_as_warning():
     assert session.summary_counts()["warnings"] == 1
     assert model.data(model.index(0, status_col), Qt.BackgroundRole).isValid()
     assert "취소 1건" in workspace.summary_label.text()
+
+
+def test_running_callbacks_keep_progress_summary_badge_and_terminal_projection_aligned(
+    monkeypatch,
+):
+    _app()
+    session = _session_with_rows(3)
+    workspace = PredictWorkspace(session=session)
+    first, second, invalid = session.case_order
+    callbacks = {}
+
+    def start_all(**received_callbacks):
+        callbacks.update(received_callbacks)
+        workspace.prediction_controller._is_running = True
+        for result in (
+            ResultRow(case_id=first, status="running"),
+            ResultRow(case_id=second, status="running"),
+            ResultRow(case_id=invalid, status="invalid", message="bad input"),
+        ):
+            session.set_result(result)
+            received_callbacks["result_callback"](result)
+        return PredictionRunSummary(
+            total=3,
+            complete=0,
+            error=0,
+            invalid=1,
+        )
+
+    monkeypatch.setattr(workspace.prediction_controller, "start_all", start_all)
+
+    workspace._run_prediction()
+
+    assert not workspace.command_bar.run_button.isEnabled()
+    assert workspace.command_bar.cancel_button.isEnabled()
+    assert "실행 중 2건" in workspace.summary_label.text()
+    assert "입력 확인 1건" in workspace.summary_label.text()
+    assert "실행 중 2건" in workspace.result_badge.text()
+    assert workspace.status_label.text() == "예측 실행 중..."
+
+    session.set_result(ResultRow(case_id=first, status="complete"))
+    callbacks["result_callback"](session.result_for_case(first))
+    callbacks["progress_callback"](
+        PredictionProgress(
+            run_id="run-projection",
+            completed=1,
+            total=2,
+            current_case_id=first,
+        )
+    )
+
+    assert "예측 완료 1건" in workspace.summary_label.text()
+    assert "실행 중 1건" in workspace.summary_label.text()
+    assert "실행 중 1건" in workspace.result_badge.text()
+    assert "1/2" in workspace.status_label.text()
+    assert session.result_for_case(invalid).status == "invalid"
+
+    session.set_result(ResultRow(case_id=second, status="error", message="row failed"))
+    callbacks["result_callback"](session.result_for_case(second))
+    callbacks["progress_callback"](
+        PredictionProgress(
+            run_id="run-projection",
+            completed=2,
+            total=2,
+            current_case_id=second,
+        )
+    )
+    workspace.prediction_controller._is_running = False
+    callbacks["finished_callback"](
+        PredictionRunSummary(
+            total=3,
+            complete=1,
+            error=1,
+            invalid=1,
+        )
+    )
+
+    counts = session.summary_counts()
+    assert (counts["completed"], counts["running"], counts["errors"]) == (1, 0, 1)
+    assert "실행 중 0건" in workspace.summary_label.text()
+    assert "오류 1건" in workspace.result_badge.text()
+    assert "완료 1건" in workspace.status_label.text()
+    assert workspace.command_bar.run_button.isEnabled()
+    assert not workspace.command_bar.cancel_button.isEnabled()
 
 
 def test_copy_includes_selected_result_status_values_and_mutation_is_blocked():
