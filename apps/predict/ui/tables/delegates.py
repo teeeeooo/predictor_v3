@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QStyle,
     QStyledItemDelegate,
     QStyleOptionComboBox,
+    QStyleOptionViewItem,
 )
 
 
@@ -32,17 +33,60 @@ class DropdownDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):  # noqa: ANN001
         """Paint default cell plus a dropdown arrow affordance."""
-        super().paint(painter, option, index)
         if index.column() not in self._items_by_column:
+            super().paint(painter, option, index)
             return
+        style = (
+            option.widget.style()
+            if option.widget is not None
+            else QApplication.style()
+        )
+        view_option = QStyleOptionViewItem(option)
+        self.initStyleOption(view_option, index)
         combo_option = QStyleOptionComboBox()
         combo_option.rect = option.rect
-        combo_option.state = option.state | QStyle.State_Enabled
+        combo_option.state = option.state
+        combo_option.direction = option.direction
+        combo_option.palette = option.palette
         combo_option.subControls = QStyle.SC_ComboBoxArrow
-        QApplication.style().drawComplexControl(
+        arrow_rect = style.subControlRect(
             QStyle.CC_ComboBox,
             combo_option,
+            QStyle.SC_ComboBoxArrow,
+            option.widget,
+        )
+
+        background_option = QStyleOptionViewItem(view_option)
+        background_option.text = ""
+        style.drawControl(
+            QStyle.CE_ItemViewItem,
+            background_option,
             painter,
+            option.widget,
+        )
+
+        text_rect = option.rect.adjusted(0, 0, 0, 0)
+        if option.direction == Qt.RightToLeft:
+            text_rect.setLeft(arrow_rect.right() + 1)
+        else:
+            text_rect.setRight(arrow_rect.left() - 1)
+        painter.save()
+        painter.setClipRect(text_rect)
+        style.drawControl(
+            QStyle.CE_ItemViewItem,
+            view_option,
+            painter,
+            option.widget,
+        )
+        painter.restore()
+
+        arrow_option = QStyleOptionComboBox(combo_option)
+        arrow_option.rect = arrow_rect
+        style.drawPrimitive(
+            QStyle.PE_IndicatorArrowDown,
+            arrow_option,
+            painter,
+            option.widget,
         )
 
     def createEditor(self, parent, option, index):  # noqa: ANN001

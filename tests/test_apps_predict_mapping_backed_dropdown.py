@@ -5,8 +5,17 @@ import os
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QComboBox, QStyleOptionViewItem
+import pytest
+from PySide6.QtCore import QRect, Qt
+from PySide6.QtGui import QImage, QPainter
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionComboBox,
+    QStyleOptionViewItem,
+)
 
 from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter, MappingResourceStatus
 from apps.predict.controllers.input_edit_controller import InputEditController
@@ -87,6 +96,49 @@ def _dispose_workspace(workspace: PredictWorkspace) -> None:
     workspace.close()
     workspace.deleteLater()
     QApplication.processEvents()
+
+
+def _render_delegate(workspace, index, delegate, state):  # noqa: ANN001
+    option = QStyleOptionViewItem()
+    option.initFrom(workspace.case_table.viewport())
+    option.rect = QRect(0, 0, 180, 34)
+    option.state = state
+    option.widget = workspace.case_table
+    image = QImage(
+        option.rect.size(),
+        QImage.Format_ARGB32_Premultiplied,
+    )
+    image.fill(Qt.transparent)
+    painter = QPainter(image)
+    delegate.paint(painter, option, index)
+    painter.end()
+    return image, option
+
+
+def _region_pixels(image: QImage, rect: QRect) -> tuple[int, ...]:
+    return tuple(
+        image.pixel(x, y)
+        for y in range(rect.top(), rect.bottom() + 1)
+        for x in range(rect.left(), rect.right() + 1)
+    )
+
+
+def _dropdown_regions(workspace, option):  # noqa: ANN001
+    combo_option = QStyleOptionComboBox()
+    combo_option.rect = option.rect
+    combo_option.state = option.state
+    combo_option.direction = option.direction
+    combo_option.palette = option.palette
+    combo_option.subControls = QStyle.SC_ComboBoxArrow
+    arrow_rect = workspace.case_table.style().subControlRect(
+        QStyle.CC_ComboBox,
+        combo_option,
+        QStyle.SC_ComboBoxArrow,
+        workspace.case_table,
+    )
+    text_rect = QRect(option.rect)
+    text_rect.setRight(arrow_rect.left() - 1)
+    return text_rect.adjusted(4, 1, -2, -1), arrow_rect
 
 
 def test_table_model_view_delegate_do_not_import_mapping_repository():
@@ -432,8 +484,11 @@ def test_dropdown_delegate_creates_editable_combobox_with_completer():
         mapping_repository=FakeMappingRepository(SAMPLE_MAPPING),
     )
     try:
+        case = workspace.session.case_store.get_case_at(0)
+        case.input_values["idu"] = "IDU-B"
         idu_index = workspace.case_model.index(0, _column_index(workspace, "idu"))
-        editor = workspace.case_table.itemDelegate().createEditor(
+        delegate = workspace.case_table.itemDelegate()
+        editor = delegate.createEditor(
             workspace.case_table,
             QStyleOptionViewItem(),
             idu_index,
@@ -443,6 +498,121 @@ def test_dropdown_delegate_creates_editable_combobox_with_completer():
         assert editor.isEditable()
         assert editor.completer() is not None
         assert editor.completer().caseSensitivity() == Qt.CaseInsensitive
+        delegate.setEditorData(editor, idu_index)
+        assert editor.currentText() == "IDU-B"
+        editor.setCurrentText("IDU-A")
+        delegate.setModelData(editor, workspace.case_model, idu_index)
+        assert idu_index.data(Qt.DisplayRole) == "IDU-A"
+    finally:
+        _dispose_workspace(workspace)
+
+
+@pytest.mark.parametrize(
+    "state",
+    (
+        QStyle.State_Enabled | QStyle.State_Active,
+        QStyle.State_Enabled | QStyle.State_Active | QStyle.State_Selected,
+        QStyle.State_Enabled | QStyle.State_Active | QStyle.State_HasFocus,
+        QStyle.State_Enabled | QStyle.State_Active | QStyle.State_MouseOver,
+        QStyle.State_None,
+    ),
+    ids=("ordinary", "selected", "focused", "hovered", "disabled"),
+)
+def test_populated_dropdown_render_keeps_text_and_arrow_visible(state):
+    _app()
+    workspace = PredictWorkspace(
+        session=_session_with_case(),
+        mapping_repository=FakeMappingRepository(SAMPLE_MAPPING),
+    )
+    try:
+        case = workspace.session.case_store.get_case_at(0)
+        case.input_values["odu"] = "ODU-A"
+        index = workspace.case_model.index(
+            0, _column_index(workspace, "odu")
+        )
+        assert index.data(Qt.DisplayRole) == "ODU-A"
+        populated, option = _render_delegate(
+            workspace,
+            index,
+            workspace.case_table.itemDelegate(),
+            state,
+        )
+        populated_base, _populated_base_option = _render_delegate(
+            workspace,
+            index,
+            QStyledItemDelegate(workspace.case_table),
+            state,
+        )
+        case.input_values["odu"] = ""
+        empty, _empty_option = _render_delegate(
+            workspace,
+            index,
+            workspace.case_table.itemDelegate(),
+            state,
+        )
+        base, _base_option = _render_delegate(
+            workspace,
+            index,
+            QStyledItemDelegate(workspace.case_table),
+            state,
+        )
+        text_rect, arrow_rect = _dropdown_regions(workspace, option)
+
+        assert _region_pixels(populated, text_rect) == _region_pixels(
+            populated_base, text_rect
+        )
+        assert _region_pixels(empty, text_rect) == _region_pixels(
+            base, text_rect
+        )
+        assert _region_pixels(populated, arrow_rect) != _region_pixels(
+            populated_base, arrow_rect
+        )
+        assert _region_pixels(empty, arrow_rect) != _region_pixels(
+            base, arrow_rect
+        )
+    finally:
+        _dispose_workspace(workspace)
+
+
+def test_representative_populated_predict_dropdown_values_render_text():
+    _app()
+    workspace = PredictWorkspace(
+        session=_session_with_case(),
+        mapping_repository=FakeMappingRepository(SAMPLE_MAPPING),
+    )
+    try:
+        case = workspace.session.case_store.get_case_at(0)
+        values = {
+            "odu": "ODU-A",
+            "idu": "IDU-B",
+            "fin_type": "F&T",
+            "pi": "9",
+            "row": "1",
+        }
+        state = QStyle.State_Enabled | QStyle.State_Active
+        for key, value in values.items():
+            case.input_values[key] = value
+            index = workspace.case_model.index(
+                0, _column_index(workspace, key)
+            )
+            assert index.data(Qt.DisplayRole) == value
+            populated, option = _render_delegate(
+                workspace,
+                index,
+                workspace.case_table.itemDelegate(),
+                state,
+            )
+            populated_base, _base_option = _render_delegate(
+                workspace,
+                index,
+                QStyledItemDelegate(workspace.case_table),
+                state,
+            )
+            text_rect, _arrow_rect = _dropdown_regions(workspace, option)
+
+            assert _region_pixels(populated, text_rect) == _region_pixels(
+                populated_base, text_rect
+            ), key
     finally:
         _dispose_workspace(workspace)
 
