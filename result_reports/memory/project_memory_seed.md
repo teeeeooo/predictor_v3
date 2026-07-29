@@ -641,6 +641,21 @@ entries:
     source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-ui-state-projection-audit-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-training-running-guidance-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-post-merge-closeout.md; result_reports/records/2026-07/2026-07-26-phase5e-deployment-export-predict-reload.md; result_reports/records/2026-07/2026-07-26-phase5e-reload-ordering-structured-failure-repair.md; result_reports/records/2026-07/2026-07-26-phase5e-refresh-ordering-ui-failure-boundary-repair.md; result_reports/records/2026-07/2026-07-26-phase5e-post-merge-closeout.md; result_reports/records/2026-07/2026-07-26-phase5f-core-ack-retry-compatibility-audit-repair.md; result_reports/records/2026-07/2026-07-26-phase5f-post-merge-closeout.md; result_reports/records/2026-07/2026-07-26-phase5g-agent-assisted-campaign-loop.md; result_reports/records/2026-07/2026-07-26-phase5g-post-merge-closeout.md; result_reports/records/2026-07/2026-07-28-phase5h-lifecycle-safety-audit-repair.md; result_reports/records/2026-07/2026-07-29-phase5h-transactional-finalization-recovery.md; result_reports/records/2026-07/2026-07-29-phase5h-durable-execution-start-recovery.md; docs/WORK_PLAN.md
 
   - type: decision
+    topic: Phase 5H atomic start-permit publication
+    content: The sixth Phase 5H independent audit failed at exact head `7175060236ede4596246f64f6acf0d1b932075ca`; successful run `30416243161` is validation-only evidence. A confirmation start permit is now written as canonical bytes to an attempt-private temporary artifact, flushed, file-fsynced, and byte-verified before an atomic exclusive final-path commit and containing-directory fsync. Pre-commit failure leaves no final permit, temporary residue is neither child-visible start evidence nor a retry blocker, and one replacement attempt may recover within the same confirmation identity. Once the complete permit is committed, automatic rerun remains prohibited. Exact concurrent publication may reuse only identical evidence; malformed, conflicting, or tampered final evidence is preserved and fails closed. Phase 5H stays on the same open Draft PR for independent exact-head re-audit, with no production confirmation/promotion, migration apply, retention/delete apply, merge, or Worker audit-PASS authority.
+    keywords:
+      - predictor_v3
+      - Phase 5H
+      - confirmation
+      - start permit
+      - atomic publication
+      - fsync
+      - no-clobber
+      - recovery
+    assertionStatus: verified
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-29-phase5h-atomic-permit-publication-recovery.md; docs/WORK_PLAN.md
+
+  - type: decision
     topic: Phase 5H confirmation process-boundary start permit
     content: The fifth Phase 5H independent audit failed at exact head `55141965c262bddd1fb1dd2b6692ed5bce99464d`; successful run `30413469249` is validation-only evidence. A confirmation child now blocks at the Core work boundary after an identity-bound start request until the closeout owner durably publishes the exact confirmation/execution/attempt/protocol/training-meaning permit. Parent exit before permit may recover with a new attempt, while permit presence is an irreversible at-most-once boundary: ambiguous post-permit state never auto-reruns, and stale children cannot consume replacement permits. Ordinary training remains outside the optional handshake. Phase 5H stays on the same open Draft PR for independent exact-head re-audit, with no production confirmation/promotion, migration apply, retention/delete apply, merge, or Worker audit-PASS authority.
     keywords:

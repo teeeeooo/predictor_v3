@@ -207,6 +207,63 @@ class LifecycleFilesystem:
                     "Active rename completed but directory durability failed"
                 ) from exc
 
+    def publish_file_exclusive(
+        self,
+        temporary: Path,
+        destination: Path,
+        *,
+        after_publish=None,  # noqa: ANN001
+    ) -> None:
+        """Atomically link one durable file into an absent final name."""
+        temporary_entry = self.require_regular_file(temporary)
+        if temporary.parent != destination.parent:
+            raise LifecycleFilesystemError(
+                "exclusive file publication requires one directory"
+            )
+        self.require_directory(temporary.parent)
+        with self._directory_fd(temporary.parent) as parent_fd:
+            current = os.stat(
+                temporary.name,
+                dir_fd=parent_fd,
+                follow_symlinks=False,
+            )
+            if (
+                not stat.S_ISREG(current.st_mode)
+                or (temporary_entry.st_dev, temporary_entry.st_ino)
+                != (current.st_dev, current.st_ino)
+            ):
+                raise LifecycleFilesystemError(
+                    "temporary lifecycle file changed before publication"
+                )
+            os.link(
+                temporary.name,
+                destination.name,
+                src_dir_fd=parent_fd,
+                dst_dir_fd=parent_fd,
+                follow_symlinks=False,
+            )
+            published = os.stat(
+                destination.name,
+                dir_fd=parent_fd,
+                follow_symlinks=False,
+            )
+            if (
+                not stat.S_ISREG(published.st_mode)
+                or (current.st_dev, current.st_ino)
+                != (published.st_dev, published.st_ino)
+            ):
+                raise LifecycleFilesystemError(
+                    "exclusive lifecycle publication identity mismatch"
+                )
+            try:
+                os.fsync(parent_fd)
+                if after_publish is not None:
+                    after_publish()
+            except Exception as exc:
+                raise PostRenameDurabilityError(
+                    "file publication committed but directory durability failed"
+                ) from exc
+
     def rollback_directory(self, final: Path, staging: Path) -> None:
         self.require_directory(final)
         self.require_directory(final.parent)

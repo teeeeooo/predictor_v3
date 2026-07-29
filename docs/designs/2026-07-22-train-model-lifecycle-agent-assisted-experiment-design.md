@@ -1471,6 +1471,16 @@ child job with one confirmation-only synchronous start handshake. It does not
 introduce a generic process framework and requires another independent
 exact-head re-audit.
 
+The sixth independent audit failed at exact head
+`7175060236ede4596246f64f6acf0d1b932075ca`. Historical exact-head run
+`30416243161` succeeded, but it is validation evidence and not audit
+acceptance. Its remaining blocker was incomplete final-path publication:
+creating the durable permit path before its bytes were complete could leave an
+empty or partial file that looked like irreversible actual-start evidence.
+The bounded correction stays in the closeout handshake/filesystem publication
+owner, exposes only a fully durable canonical permit through an atomic
+exclusive commit, and requires another independent exact-head re-audit.
+
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
 identities, lifecycle-root content-addressed training input, immutable
@@ -1559,16 +1569,26 @@ that immutable attempt under the closeout writer. At the existing Core-start
 callback, the child emits `training_start_requested` and synchronously blocks;
 emitting the event is not start evidence. The parent validates the event
 against its frozen `TrainingRequest` and, while the execution-key owner is
-held, publishes the exact immutable `execution_started` permit. The child
+held, publishes the exact immutable `execution_started` permit. Publication
+first writes canonical bytes to an attempt-private temporary artifact, flushes
+and fsyncs them, verifies the exact bytes, and only then atomically links them
+into the absent final path without clobbering. The containing directory is
+fsynced before publication returns. Concurrent losers may reuse only an exact
+complete permit; malformed, conflicting, or tampered final evidence fails
+closed and is never removed or overwritten. Temporary artifacts are not
+visible through the final permit namespace and neither the child nor retry
+treats their residue as actual-start evidence. The child
 validates the complete permit before emitting `training_started` and returning
 to Core work. A confirmation child cannot cross that boundary without a valid
 permit; ordinary non-confirmation training has no handshake and preserves its
 existing behavior.
 
-Process failure before permit publication leaves no actual-start evidence, so
+Process failure before the atomic final commit leaves no actual-start
+evidence, so
 a reconstructed service may register one new attempt. A stale waiting child
 cannot consume that replacement attempt's permit. Once any exact permit is
-durable, implicit, alternate-ID, and concurrent retry cannot acquire another
+atomically committed and durable, implicit, alternate-ID, and concurrent retry
+cannot acquire another
 training owner even when original child progress is unknown. That ambiguous
 post-permit state remains `confirmation_running` and recovery-required rather
 than being inferred safe to rerun. Attempt registration, handshake,

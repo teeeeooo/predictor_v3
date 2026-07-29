@@ -52,7 +52,17 @@ the child blocks at the Core work boundary, the parent registers one exact
 launch attempt and durably publishes its identity-bound permit under the
 execution-key owner, and only that attempt may continue. Pre-permit parent
 failure remains recoverable with a new attempt; post-permit ambiguity never
-auto-reruns. The repair remains pending independent exact-head re-audit. No
+auto-reruns. The sixth independent audit failed at exact head
+`7175060236ede4596246f64f6acf0d1b932075ca`; historical exact-head run
+`30416243161` succeeded but remains validation-only evidence. Its final
+durability blocker is repaired by preparing and fsyncing canonical permit
+bytes at an attempt-private temporary path, verifying those bytes, then
+atomically and exclusively publishing the complete file into the final
+namespace and durably syncing the containing directory. Pre-commit failure
+leaves no final permit and remains retryable; post-commit ambiguity remains
+at-most-once and never auto-reruns. Temporary residue is neither start evidence
+nor a retry blocker. The repair remains pending independent exact-head
+re-audit. No
 production confirmation/promotion, migration apply, deletion, or deployment
 mutation has been performed.
 

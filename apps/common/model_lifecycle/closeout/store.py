@@ -34,12 +34,18 @@ from .start_handshake import (
     validate_confirmation_start_handshake,
     validate_confirmation_start_permit,
 )
+from .start_permit_publication import publish_start_permit_atomic
 
 
 class LifecycleCloseoutStore:
     """Own closeout records without exposing delete or in-place migration APIs."""
 
-    def __init__(self, lifecycle_root: str | Path) -> None:
+    def __init__(
+        self,
+        lifecycle_root: str | Path,
+        *,
+        permit_publication_hook=None,  # noqa: ANN001
+    ) -> None:
         self._filesystem = LifecycleFilesystem(lifecycle_root)
         self.root = self._filesystem.root
         self.closeout_root = self.root / "closeout"
@@ -62,6 +68,9 @@ class LifecycleCloseoutStore:
         self._materializer = TrainingDataMaterializer(
             self._filesystem,
             self.blobs,
+        )
+        self._permit_publication_hook = (
+            permit_publication_hook or (lambda _stage: None)
         )
 
     def materialize_local_source(
@@ -304,7 +313,12 @@ class LifecycleCloseoutStore:
                         "confirmation execution-start evidence conflict"
                     ) from exc
                 return
-            self._filesystem.write_json_exclusive(path, evidence)
+            publish_start_permit_atomic(
+                self._filesystem,
+                path,
+                evidence,
+                failure_hook=self._permit_publication_hook,
+            )
 
     def confirmation_execution_start_permit_path(
         self,
