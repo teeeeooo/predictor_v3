@@ -29,6 +29,29 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-29 — Phase 5H and Train/Admin Phase 5 closeout
+
+### Decision
+
+- Accept fresh independent Lane C audit `PASS` for exact head
+  `45dd7544afc9546abf4ab450bf634f4c37fb1340`; preserve required exact-head run
+  `30433284479` as successful validation evidence.
+- Record PR #35 guarded squash merge to authoritative `main` as
+  `b20661ee6b400559fbac61a9f2669d50256247bc` and close Phase 5H and the complete
+  Train/Admin Phase 5 workstream.
+- Keep the accepted abandon-and-restart contract: live or uncertain children
+  block replacement; only proven-ended incomplete private attempts are
+  immutably abandoned; retries use new exact attempt identity and isolated
+  staging; stale evidence cannot cross Core work or Candidate publication; a
+  consumed locked seal without complete durable finalization abandons the whole
+  Confirmation; only complete terminal/Candidate pairs replay.
+- Preserve explicit trusted-user promotion and separate migration/retention
+  owners. This closeout performed no production confirmation/promotion,
+  migration apply, retention/delete apply, Active, deployment export, or Predict
+  runtime mutation.
+- Make a fresh populated-state/current-state audit the only next entry into
+  Predict internal UI/UX work; Phase 5 closeout does not authorize implementation.
+
 ## 2026-07-29 — Phase 5H abandon-and-restart recovery decision
 
 ### Decision

@@ -17,77 +17,20 @@
 
 ## Current Slice
 
-Phase 5H lifecycle closeout source is under final bounded repair on its Lane C
-Draft branch after the first independent audit failed at exact head
-`009e4d3d668df2fc3df13a06aa22a8991ec67299`. Historical run `30280886312`
-succeeded but did not make that audit a pass. The second independent audit also
-failed at repaired exact head
-`97914c0285c7155ecfbd6da1fb9fa1d7c60f24a7`; historical run `30286229720`
-succeeded but is likewise validation-only evidence. The same PR now adds immutable
-content-addressed confirmation snapshots, all-production-Target fixed
-confirmation, content-addressed single-use locked final-test seals with actual
-evaluation, trusted opaque interactive user capabilities and single-use
-decisions routed through the existing guarded promotion owner, strict
-historical dispositions, byte-invariant migration/retention previews, Predict
-loaded-model leases, and a complete fail-closed lifecycle reference inventory.
-The third independent audit failed at exact head
-`ae20c626a12c15906c5ffb9e4f159875418caed4`; historical exact-head run
-`30323789487` succeeded but remains validation-only evidence. Its two blockers
-are repaired by a versioned, hashed execution claim that can reconstruct the
-exact pending confirmation before one durable start, and one locked-test
-finalization integrity fence that revalidates snapshot, seal, dataset,
-membership, Target/split/evaluation policy, immutable result, and staged
-Candidate linkage inside the shared writer lock before atomic public
-finalization. The fourth independent audit failed at exact head
-`c58413cabfa005154c1a5b70d80f2a3a355431a6`; historical exact-head run
-`30375698091` succeeded but remains validation-only evidence. Its remaining
-blocker is repaired by separating a recoverable, exact running-transition
-preparation from durable Core-start acknowledgement and holding one
-execution-key owner lock through terminal handoff. The fifth independent audit
-failed at exact head
-`55141965c262bddd1fb1dd2b6692ed5bce99464d`; historical exact-head run
-`30413469249` succeeded but remains validation-only evidence. Its inter-process
-race is repaired by an optional confirmation-only child start handshake:
-the child blocks at the Core work boundary, the parent registers one exact
-launch attempt and durably publishes its identity-bound permit under the
-execution-key owner, and only that attempt may continue. Pre-permit parent
-failure remains recoverable with a new attempt. Its historical post-permit
-no-rerun direction is superseded by the seventh-audit abandon-and-restart
-contract below. The sixth independent audit failed at exact head
-`7175060236ede4596246f64f6acf0d1b932075ca`; historical exact-head run
-`30416243161` succeeded but remains validation-only evidence. Its final
-durability blocker is repaired by preparing and fsyncing canonical permit
-bytes at an attempt-private temporary path, verifying those bytes, then
-atomically and exclusively publishing the complete file into the final
-namespace and durably syncing the containing directory. Pre-commit failure
-leaves no final permit and remains retryable. Its historical post-commit
-no-rerun direction is likewise superseded; temporary residue remains neither
-start evidence nor a retry blocker. The seventh independent audit failed at
-exact head
-`ed20d081ded7621b145ff95faa0e56e96163e303`; historical exact-head run
-`30421708922` succeeded but remains validation-only evidence. The approved
-recovery direction supersedes actual-compute at-most-once and permanent
-permit-as-start-proof requirements: never replace a live or uncertain child,
-but once termination is proven, quarantine the incomplete private attempt and
-restart training from the beginning in a new private attempt under the same
-confirmation identity. No partial model, metric, manifest, or terminal evidence
-is resumed or mixed. If a locked seal was consumed without a complete durable
-result, abandon the whole Confirmation; another run requires a new seal and
-Confirmation. Quarantine is not deletion, completed terminal/Candidate pairs
-remain replay-only, and public Candidate/terminal finalization remain
-at-most-once. The bounded source implementation now gives every child attempt
-an exact process-lifetime lock acquired before its start request and held until
-process exit. A reconstructed owner nonblockingly probes that lock under the
-existing execution-key and lifecycle writers: live or uncertain attempts stay
-running, while a proven-ended attempt receives immutable abandonment evidence
-before one new attempt is registered. Attempt identity also binds the permit,
-post-durability grant, run identity, and private staging path, so stale
-callbacks cannot enter Core work or Candidate publication. Consumed-seal
-incomplete attempts instead transition the whole Confirmation to terminal
-`abandoned`. The source, direct process regressions, and adjacent lifecycle
-validation are complete and require a fresh independent exact-head audit. No
-production confirmation/promotion, migration apply, deletion, or deployment
-mutation has been performed.
+Phase 5H Final Confirmation and Retention is complete and merged, closing
+Train/Admin Phase 5. Fresh independent Lane C audit accepted exact head
+`45dd7544afc9546abf4ab450bf634f4c37fb1340`; required exact-head run
+`30433284479` succeeded, and PR #35 was guarded squash-merged to `main` as
+`b20661ee6b400559fbac61a9f2669d50256247bc`. The accepted recovery contract
+never replaces a live or uncertain child, immutably abandons only proven-ended
+incomplete private attempts, restarts with a new attempt and isolated staging,
+keeps stale attempts fenced from Core work and Candidate publication, replays
+only complete terminal/Candidate pairs, and terminally abandons a Confirmation
+when a consumed locked seal lacks complete durable finalization. Active,
+deployment export, Predict, production confirmation/promotion, migration apply,
+and retention/delete apply were not mutated during audit or closeout. The next
+product workstream is Predict internal UI/UX, but it begins only through a fresh
+populated-state/current-state audit and explicit authorization.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
@@ -172,11 +115,11 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Complete Worker validation and provide the new exact head for one independent
-exact-head re-audit of the Phase 5H Draft PR. Do not merge
-or claim Phase 5 completion until that audit and required CI evidence accept the
-same head. Keep real-user confirmation/promotion and migration/delete apply as
-separately authorized controlled operations.
+Begin no implementation automatically. When explicitly authorized, perform a
+fresh populated-state/current-state audit for the Predict internal UI/UX
+workstream and define its owner boundary before planning changes. Keep real-user
+confirmation/promotion, migration apply, and retention/delete apply as separate
+controlled operations.
 
 ## Active Blockers
 
@@ -237,9 +180,9 @@ separately authorized controlled operations.
 
 ## Deferred / Hold
 
-- Phase 5G agent-assisted selection/ranking/recommendation is complete and
-  merged. Phase 5H source is pending independent audit and must not grant
-  autonomous production/delete authority or bypass explicit final confirmation.
+- Train/Admin Phase 5 is complete and merged. Real production confirmation,
+  promotion, migration apply, and retention/delete apply remain separately
+  authorized controlled operations; repository closeout grants none of them.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh

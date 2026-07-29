@@ -30,8 +30,13 @@ Phase 5G is complete and merged: final accepted head
 PR #34 squash merge `cb9183353dd6492dff07012c4276e4beb2b582b8`. Its earlier audit `FAIL`
 heads `029fefdd783c21f380f6d43c6bd6efe403a52b28` and
 `a58f4584344fce921341bddc25091aef79403485`, with runs `30199916760` and
-`30201667033`, remain historical evidence. Phase 5H is next and remains
-unstarted.
+`30201667033`, remain historical evidence. Phase 5H is complete and merged:
+fresh independent audit accepted exact head
+`45dd7544afc9546abf4ab450bf634f4c37fb1340`, required run `30433284479`
+succeeded, and PR #35 was guarded squash-merged as
+`b20661ee6b400559fbac61a9f2669d50256247bc`. Train/Admin Phase 5 is therefore
+closed. Predict internal UI/UX is the next product workstream, gated by a fresh
+populated-state/current-state audit and explicit authorization.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -90,6 +95,12 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   and keeps deterministic campaign incumbent/recommendation separate from Active.
   Budget extension remains operator-only and every recommendation remains
   approval- and Phase 5H-confirmation-required.
+- Phase 5H freezes the selected resolved specification, runs all required
+  Targets without search mutation, binds every Confirmation attempt to exact
+  child liveness and durable permit/grant evidence, isolates abandoned attempts,
+  replays only complete terminal/Candidate pairs, and keeps locked-seal failure,
+  final trusted-user decision, migration, retention, Active, export, and Predict
+  authority fail-closed and separately owned.
 - Train and Predict remain separate PySide6 applications under `apps/train/` and
   `apps/predict/`; the calculator shell and Tkinter path stay separate.
 - Canonical calculator launch remains `app_calculator.py` →
@@ -234,19 +245,29 @@ activation, and Predict internal redesign is not part of Phase 4.
 Phase 4 is complete for repository-automated scope. Its owner and compatibility
 boundaries remain the baseline for Phase 5.
 
-### Next Workstream — Train/Admin Phase 5H Final Confirmation and Retention
+### Closed — Train/Admin Phase 5H Final Confirmation and Retention
 
-Phases 5B through 5G are complete and merged. Phase 5H remains unstarted and is
-the next workstream. It must begin with a fresh current-state/design gate before
-any implementation.
+Phase 5H and Train/Admin Phase 5 are complete and merged through PR #35. The
+final independent Lane C audit accepted exact head
+`45dd7544afc9546abf4ab450bf634f4c37fb1340`; exact-head run `30433284479`
+succeeded, and guarded squash merge produced
+`b20661ee6b400559fbac61a9f2669d50256247bc` on `main`.
 
-The Phase 5H boundary is to freeze the selected resolved specification, retrain
-all production-required Targets without further search mutation, perform an
-independent confirmation evaluation and optional locked final test, preserve
-versioned history, define migration and retention/delete authority, and require
-explicit final user confirmation before promotion. This closeout does not add
-snapshot, migration, retention, deletion, promotion, or final-confirmation
-behavior.
+The closeout freezes immutable Confirmation meaning, executes all
+production-required Targets without further search mutation, isolates each
+private attempt, blocks replacement while child liveness is live or uncertain,
+immutably abandons only proven-ended incomplete attempts, fences stale work,
+uses single-use locked final-test disposition, replays only complete linked
+terminal/Candidate results, and requires explicit trusted-user final decision
+before guarded promotion. Migration apply, retention/delete apply, production
+confirmation/promotion, Active, deployment export, and Predict runtime mutation
+remain outside repository closeout.
+
+### Next Workstream — Predict UI/UX Current-State Audit
+
+Predict internal redesign may begin only after a fresh populated-state/current-
+state audit fixes its current owner and compatibility boundary. No implementation
+starts automatically from Phase 5 closeout.
 
 ### Later — Predict UI/UX Overhaul
 
@@ -263,9 +284,9 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ## Deferred / Hold
 
-- Phase 5F and Phase 5G are complete and merged. Phase 5H snapshot/history,
-  retention/delete, migration, and final confirmation are next and remain
-  unstarted.
+- Train/Admin Phase 5 is complete and merged. Production confirmation,
+  promotion, migration apply, and retention/delete apply remain separate
+  controlled operations rather than follow-on repository implementation.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.
