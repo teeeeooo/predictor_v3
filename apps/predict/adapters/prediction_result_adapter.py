@@ -73,11 +73,13 @@ class PredictionResultAdapter:
             for target, result_key in self._target_to_result_key.items()
         }
         status = "partial" if missing_targets else "complete"
-        message = (
-            f"Missing prediction target(s): {', '.join(missing_targets)}"
-            if missing_targets
-            else result.message
-        )
+        if missing_targets:
+            logger.warning(
+                "Predict partial result for %s; missing target(s): %s",
+                result.case_id,
+                ", ".join(missing_targets),
+            )
+        message = _PARTIAL_RESULT_MESSAGE if missing_targets else result.message
         return ResultRow(
             case_id=result.case_id,
             status=status,
@@ -176,7 +178,10 @@ def apply_prediction_result(result: PredictionServiceResult) -> ResultRow:
 
 
 _RUNTIME_FAILURE_MESSAGE = (
-    "예측 실행 중 오류가 발생했습니다. 입력을 확인한 뒤 다시 시도해 주세요."
+    "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
+)
+_PARTIAL_RESULT_MESSAGE = (
+    "일부 예측 결과를 생성하지 못했습니다. 생성된 결과를 확인해 주세요."
 )
 
 

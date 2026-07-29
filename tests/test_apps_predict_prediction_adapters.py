@@ -181,7 +181,7 @@ def test_prediction_result_adapter_maps_core_targets_to_result_keys():
     assert row.result_values["ref_qty"] == "1.2346"
 
 
-def test_prediction_result_adapter_handles_missing_targets_as_partial():
+def test_prediction_result_adapter_handles_missing_targets_as_safe_partial(caplog):
     row = PredictionResultAdapter().from_service_result(
         PredictionServiceResult(
             case_id="case-0001",
@@ -191,7 +191,13 @@ def test_prediction_result_adapter_handles_missing_targets_as_partial():
     )
 
     assert row.status == "partial"
-    assert "Missing prediction target" in row.message
+    assert row.result_values["cooling_power"] == "1200"
+    assert row.message == (
+        "일부 예측 결과를 생성하지 못했습니다. 생성된 결과를 확인해 주세요."
+    )
+    assert "Missing prediction target" not in row.message
+    assert "Heating Power" not in row.message
+    assert "Heating Power" in caplog.text
 
 
 def test_runtime_error_is_not_translated_as_input_validation_or_exposed(caplog):
@@ -205,8 +211,9 @@ def test_runtime_error_is_not_translated_as_input_validation_or_exposed(caplog):
 
     assert row.status == "error"
     assert row.message == (
-        "예측 실행 중 오류가 발생했습니다. 입력을 확인한 뒤 다시 시도해 주세요."
+        "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
     )
+    assert "입력" not in row.message
     assert "ValueError" not in row.message
     assert "/tmp/model.pkl" not in row.message
     assert "secret model path" in caplog.text

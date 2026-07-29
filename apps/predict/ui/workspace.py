@@ -353,7 +353,7 @@ class PredictWorkspace(QWidget):
             logger.exception("Predict start failed")
             self._set_running_state(False)
             self.status_label.setText(
-                "예측 실행 중 오류가 발생했습니다. 입력을 확인한 뒤 다시 시도해 주세요."
+                "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
             )
             return
 

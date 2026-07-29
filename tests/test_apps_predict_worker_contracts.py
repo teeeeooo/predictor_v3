@@ -56,8 +56,9 @@ def test_result_adapter_builds_running_invalid_cancelled_and_failure_rows():
     assert cancelled.message == "Prediction cancelled."
     assert failed.status == "error"
     assert failed.message == (
-        "예측 실행 중 오류가 발생했습니다. 입력을 확인한 뒤 다시 시도해 주세요."
+        "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
     )
+    assert "입력" not in failed.message
 
 
 def test_service_adapter_contract_modules_do_not_import_pyside():
