@@ -49,9 +49,14 @@ class PredictCommandBar(QFrame):
         layout.addWidget(self.reload_model_button)
         layout.addStretch(1)
 
-    def set_running(self, running: bool) -> None:
+    def set_running(
+        self,
+        running: bool,
+        *,
+        prediction_eligible: bool = True,
+    ) -> None:
         """Update command availability for a running prediction job."""
-        self.run_button.setEnabled(not running)
+        self.run_button.setEnabled(not running and prediction_eligible)
         self.cancel_button.setEnabled(running)
         self.reset_button.setEnabled(not running)
         self.add_row_button.setEnabled(not running)

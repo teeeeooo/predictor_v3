@@ -186,6 +186,29 @@ def test_train_embedded_predict_workspace_hides_duplicate_title_and_status_strip
     assert workspace.status_strip.parent() is None
 
 
+def test_standalone_and_embedded_predict_share_no_model_execution_gate():
+    _app()
+    standalone_shell = PredictShell()
+    embedded_shell = _train_shell()
+    standalone = standalone_shell.workspace
+    embedded = embedded_shell.predict_workspace
+
+    assert not standalone.command_bar.run_button.isEnabled()
+    assert not embedded.command_bar.run_button.isEnabled()
+    for workspace in (standalone, embedded):
+        assert not workspace.prediction_controller.can_start_prediction
+        assert all(
+            "Train" not in button.text()
+            for button in workspace.command_bar.findChildren(QPushButton)
+        )
+
+    predict_source = Path("apps/predict").resolve()
+    assert "apps.train" not in (
+        (predict_source / "ui" / "workspace.py").read_text(encoding="utf-8")
+        + (predict_source / "app.py").read_text(encoding="utf-8")
+    )
+
+
 def test_train_model_panel_initial_state_with_and_without_data(tmp_path):
     _app()
     panel = TrainModelPanel(controller=FakeTrainController())

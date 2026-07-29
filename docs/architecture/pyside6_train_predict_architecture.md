@@ -1328,6 +1328,13 @@ While prediction is running, row mutation commands should initially be disabled
 unless a later explicit design protects running case IDs with equivalent
 coverage.
 
+Idle prediction execution is enabled only when `PredictionController` reports
+that the current process has a usable loaded prediction service. Lifecycle
+labels such as reload-required, reload-failed, or Active-unavailable are not
+execution blockers when the prior loaded model remains usable. The workspace
+projects this controller-owned capability without inspecting Active references,
+model paths, or Train UI.
+
 ## 14. Implementation Slices
 
 ### Slice 1: Docs alignment

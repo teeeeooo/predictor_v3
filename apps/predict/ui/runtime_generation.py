@@ -23,3 +23,4 @@ def apply_runtime_composition(workspace, composition: PredictWorkspaceCompositio
     workspace.case_table.setModel(workspace.case_model)
     workspace._configure_tables()
     workspace._refresh()
+    workspace._refresh_prediction_command_state()

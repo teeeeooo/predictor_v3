@@ -338,8 +338,14 @@ class PredictWorkspace(QWidget):
             self.status_label.setText("예측이 이미 실행 중입니다.")
             return
         self.model_lifecycle_ui.refresh()
+        if not self.prediction_controller.can_start_prediction:
+            self._refresh_prediction_command_state()
+            return
         if self._generation_refresh is not None and not self._generation_refresh():
             self.show_generation_status()
+            return
+        if not self.prediction_controller.can_start_prediction:
+            self._refresh_prediction_command_state()
             return
         self._set_running_state(True)
         self.status_label.setText("예측 실행 중...")
@@ -446,7 +452,13 @@ class PredictWorkspace(QWidget):
         self.case_model.end_reset_model()
 
     def _set_running_state(self, running: bool) -> None:
-        self.command_bar.set_running(running)
+        self.command_bar.set_running(
+            running,
+            prediction_eligible=self.prediction_controller.has_usable_prediction_service,
+        )
+
+    def _refresh_prediction_command_state(self) -> None:
+        self._set_running_state(self.prediction_controller.is_running)
 
     def _can_mutate_rows(self) -> bool:
         if self.prediction_controller.is_running:

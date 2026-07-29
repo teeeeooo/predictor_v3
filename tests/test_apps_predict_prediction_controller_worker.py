@@ -5,7 +5,11 @@ from PySide6.QtCore import QCoreApplication, QEventLoop, QObject, QTimer, Signal
 
 from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
-from apps.predict.application.models import PredictionServiceResult
+from apps.predict.application.model_lifecycle import LoadedModelIdentity
+from apps.predict.application.models import (
+    PredictionModelStatus,
+    PredictionServiceResult,
+)
 from apps.predict.application.prediction_usecase import PredictionUseCase
 from apps.predict.controllers.prediction_controller import PredictionController
 from apps.predict.ports.prediction_execution_port import (
@@ -57,6 +61,9 @@ class FakePredictionService:
         self.statuses = statuses
         self.calls: list[str] = []
 
+    def model_status(self):
+        return PredictionModelStatus("fake", "loaded")
+
     def predict_one(self, request):
         self.calls.append(request.case_id)
         status = self.statuses[min(len(self.calls) - 1, len(self.statuses) - 1)]
@@ -74,6 +81,9 @@ class FakePredictionService:
 
 
 class MissingModelService(FakePredictionService):
+    def model_status(self):
+        return PredictionModelStatus("missing", "missing")
+
     def predict_one(self, request):
         self.calls.append(request.case_id)
         return PredictionServiceResult(
@@ -176,7 +186,13 @@ class FakePredictionRunner(QObject):
         self.disposed = True
 
 
-def _controller(session, service, *, auto_finish: bool = True):  # noqa: ANN001
+def _controller(
+    session,
+    service,
+    *,
+    auto_finish: bool = True,
+    model_lifecycle=None,
+):  # noqa: ANN001
     runners = []
 
     def _factory(factory_service):  # noqa: ANN001
@@ -194,6 +210,7 @@ def _controller(session, service, *, auto_finish: bool = True):  # noqa: ANN001
         usecase=usecase,
         service=service,
         runner_factory=_factory,
+        model_lifecycle=model_lifecycle,
     ), runners
 
 
@@ -290,23 +307,74 @@ def test_controller_worker_error_result_continues_to_summary():
     assert summaries[0].complete == 1
 
 
-def test_controller_model_missing_becomes_controlled_row_errors():
+def test_controller_model_missing_blocks_before_worker_and_preserves_rows():
     _app()
     session = _session_with_cases("3500", "3600")
     service = MissingModelService()
-    controller, _runners = _controller(session, service)
+    controller, runners = _controller(session, service)
     summaries = []
+    before = tuple(session.result_for_case(case_id) for case_id in session.case_order)
 
-    controller.start_all(finished_callback=summaries.append)
-    _wait_until(lambda: summaries and controller._runner is None)
+    assert not controller.can_start_prediction
+    with pytest.raises(RuntimeError, match="No usable prediction service"):
+        controller.start_all(finished_callback=summaries.append)
 
-    assert summaries[0].error == 2
-    for case_id in session.case_order:
-        assert session.result_for_case(case_id).status == "error"
-        assert session.result_for_case(case_id).message == (
-            "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
-        )
-        assert "입력" not in session.result_for_case(case_id).message
+    assert runners == []
+    assert summaries == []
+    assert service.calls == []
+    assert tuple(
+        session.result_for_case(case_id) for case_id in session.case_order
+    ) == before
+
+
+@pytest.mark.parametrize(
+    "lifecycle_status",
+    ("current", "reload-required", "reload-failed", "active-unavailable"),
+)
+def test_preserved_loaded_identity_keeps_prediction_eligible(lifecycle_status):
+    session = _session_with_cases("3500")
+    lifecycle = type(
+        "LifecycleStub",
+        (),
+        {
+            "loaded": LoadedModelIdentity("candidate-a", 1, "generation-1"),
+            "status_name": lifecycle_status,
+        },
+    )()
+    controller, _runners = _controller(
+        session,
+        FakePredictionService(),
+        model_lifecycle=lifecycle,
+    )
+
+    assert controller.has_usable_prediction_service
+    assert controller.can_start_prediction
+
+    controller._is_running = True
+    assert not controller.can_start_prediction
+
+
+def test_lifecycle_without_loaded_identity_blocks_even_if_service_artifact_exists():
+    session = _session_with_cases("3500")
+    service = FakePredictionService()
+    service.model_status = lambda: PredictionModelStatus("fake", "exists")
+    lifecycle = type(
+        "LifecycleStub",
+        (),
+        {"loaded": LoadedModelIdentity(), "status_name": "startup-failed"},
+    )()
+    controller, runners = _controller(
+        session,
+        service,
+        model_lifecycle=lifecycle,
+    )
+
+    assert not controller.has_usable_prediction_service
+    with pytest.raises(RuntimeError, match="No usable prediction service"):
+        controller.start_all()
+
+    assert runners == []
+    assert session.result_for_case(session.case_order[0]).status == "pending"
 
 
 def test_controller_runner_failure_preserves_terminal_rows_and_summarizes_session():

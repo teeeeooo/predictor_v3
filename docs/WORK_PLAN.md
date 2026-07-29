@@ -31,10 +31,10 @@ deployment export, Predict, production confirmation/promotion, migration apply,
 and retention/delete apply were not mutated during audit or closeout. Predict
 internal UI/UX findings #1–#4 are now complete and merged. Finding #4 closes the
 user-facing validation-message repair at the existing Predict presentation
-boundary. The next candidate is finding #5: no-Active actionable guidance and
-its execution gate. Disable behavior, Train navigation UI, a standalone
-entrypoint, and Bootstrap/Retraining-required integration remain undecided and
-require a bounded read-only architecture/product decision before source work.
+boundary. Finding #5's bounded no-usable-model execution gate is implemented on
+a feature branch and awaits exact-head review. It uses controller-owned loaded
+prediction capability in both standalone and embedded Predict; it does not add
+Train navigation, guidance UI, or Bootstrap/Retraining-required redesign.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
@@ -119,13 +119,11 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Begin no finding #5 implementation automatically. When explicitly authorized,
-perform a bounded read-only architecture/product decision for no-Active
-actionable guidance and its execution gate. Decide whether and how Predict is
-disabled, whether guidance navigates to Train, whether standalone Predict needs
-an entrypoint-specific route, and how Bootstrap and Retraining-required states
-relate before assigning a source Worker. Keep real-user confirmation/promotion,
-migration apply, and retention/delete apply as separate controlled operations.
+Perform the Orchestrator's fresh Lane B exact-head review of the finding #5
+execution-gate Draft PR. Do not mark Ready, merge, or begin finding #6 during
+this worker closeout. Keep no-Active guidance, Train navigation, Bootstrap /
+Retraining-required wording, real-user confirmation/promotion, migration apply,
+and retention/delete apply as separate controlled work.
 
 ## Active Blockers
 
@@ -191,8 +189,9 @@ migration apply, and retention/delete apply as separate controlled operations.
   authorized controlled operations; repository closeout grants none of them.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
-- Predict findings #1–#4 are complete. Finding #5 source implementation remains
-  on hold until the no-Active product/owner decision and execution gate are fixed.
+- Predict findings #1–#4 are complete. Finding #5's execution gate is pending
+  fresh exact-head review; guidance/navigation and lifecycle wording redesign
+  remain outside this slice.
 - Real mapping values, training data, model quality, and production-readiness
   validation remain company-local.
 

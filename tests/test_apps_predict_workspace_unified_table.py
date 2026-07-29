@@ -8,6 +8,8 @@ from PySide6.QtCore import QItemSelectionModel, Qt
 from PySide6.QtWidgets import QApplication, QFrame
 
 from apps.common.ui.tables.clipboard import format_tsv, parse_tsv
+from apps.predict.application.models import PredictionModelStatus
+from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
 from apps.predict.controllers.table_edit_controller import TableEditController
 from apps.predict.controllers.prediction_controller import PredictionRunSummary
@@ -40,6 +42,72 @@ def _column_index(workspace: PredictWorkspace, key: str) -> int:
     return next(
         index for index, column in enumerate(workspace.case_model.columns) if column.key == key
     )
+
+
+class _LoadedPredictionService:
+    def model_status(self):
+        return PredictionModelStatus("fake", "loaded")
+
+
+class _MutablePredictionService:
+    def __init__(self, status: str) -> None:
+        self.status = status
+
+    def model_status(self):
+        return PredictionModelStatus("fake", self.status)
+
+
+def _loaded_workspace(*, session: PredictSession | None = None) -> PredictWorkspace:
+    return PredictWorkspace(
+        composition=build_predict_workspace_composition(
+            session=session,
+            prediction_service=_LoadedPredictionService(),
+        )
+    )
+
+
+def test_no_usable_model_disables_run_and_preserves_worker_and_rows(monkeypatch):
+    _app()
+    service = _MutablePredictionService("missing")
+    workspace = PredictWorkspace(
+        composition=build_predict_workspace_composition(
+            prediction_service=service,
+        )
+    )
+    starts = []
+    before = tuple(
+        workspace.session.result_for_case(case_id)
+        for case_id in workspace.session.case_order
+    )
+    monkeypatch.setattr(
+        workspace.prediction_controller,
+        "start_all",
+        lambda **_callbacks: starts.append("started"),
+    )
+
+    assert not workspace.command_bar.run_button.isEnabled()
+    workspace.command_bar.run_button.click()
+    workspace._run_prediction()
+
+    assert starts == []
+    assert tuple(
+        workspace.session.result_for_case(case_id)
+        for case_id in workspace.session.case_order
+    ) == before
+
+    service.status = "loaded"
+    workspace._refresh_prediction_command_state()
+    assert workspace.command_bar.run_button.isEnabled()
+
+    service.status = "missing"
+    workspace._refresh_prediction_command_state()
+    workspace._handle_prediction_finished(
+        PredictionRunSummary(total=3, complete=0, error=0, invalid=0)
+    )
+    assert not workspace.command_bar.run_button.isEnabled()
+
+    workspace._reset_rows()
+    assert not workspace.command_bar.run_button.isEnabled()
 
 
 def test_workspace_uses_one_unified_case_table_without_split_sync():
@@ -191,7 +259,7 @@ def test_workspace_reset_reprojects_terminal_session_as_idle(
     terminal_text: str,
 ):
     _app()
-    workspace = PredictWorkspace()
+    workspace = _loaded_workspace()
     model_status = workspace.model_badge.text()
     case_id = workspace.session.case_order[0]
     workspace.session.set_result(
@@ -241,7 +309,7 @@ def test_workspace_reset_reprojects_terminal_session_as_idle(
 
 def test_workspace_reset_allows_new_input_and_next_prediction(monkeypatch):
     _app()
-    workspace = PredictWorkspace()
+    workspace = _loaded_workspace()
     case_id = workspace.session.case_order[0]
     workspace.session.set_result(ResultRow(case_id=case_id, status="complete"))
     workspace._handle_prediction_finished(
@@ -281,7 +349,7 @@ def test_workspace_start_failure_hides_technical_detail_and_allows_retry(
     caplog,
 ):
     _app()
-    workspace = PredictWorkspace()
+    workspace = _loaded_workspace()
     calls = []
 
     def fail_start(**_callbacks):
@@ -305,7 +373,7 @@ def test_workspace_start_failure_hides_technical_detail_and_allows_retry(
 
 def test_workspace_command_bar_running_state_disables_row_mutation():
     _app()
-    workspace = PredictWorkspace()
+    workspace = _loaded_workspace()
 
     workspace._set_running_state(True)
 
@@ -339,7 +407,7 @@ def test_workspace_row_mutation_commands_are_guarded_while_controller_running():
 
 def test_workspace_progress_and_finished_callbacks_update_status():
     _app()
-    workspace = PredictWorkspace()
+    workspace = _loaded_workspace()
     workspace._set_running_state(True)
 
     workspace._handle_prediction_progress(
