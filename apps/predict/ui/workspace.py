@@ -313,7 +313,9 @@ class PredictWorkspace(QWidget):
         self.status_label.setText("대기 중")
 
     def _refresh_result_badge(self, counts: dict[str, int]) -> None:
-        if counts["errors"]:
+        if counts["running"]:
+            self.result_badge.set_status(f"실행 중 {counts['running']}건", "running")
+        elif counts["errors"]:
             self.result_badge.set_status(f"오류 {counts['errors']}건", "error")
         elif counts["invalid"]:
             self.result_badge.set_status(f"입력 확인 {counts['invalid']}건", "warning")
@@ -321,8 +323,6 @@ class PredictWorkspace(QWidget):
             self.result_badge.set_status(f"취소 {counts['cancelled']}건", "warning")
         elif counts["warnings"]:
             self.result_badge.set_status(f"경고 {counts['warnings']}건", "warning")
-        elif counts["running"]:
-            self.result_badge.set_status(f"실행 중 {counts['running']}건", "running")
         elif counts["completed"]:
             self.result_badge.set_status(f"완료 {counts['completed']}건", "ready")
         else:
@@ -379,6 +379,7 @@ class PredictWorkspace(QWidget):
 
     def _refresh_result_row(self, result: ResultRow) -> None:
         self.case_model.refresh_case_id(result.case_id)
+        self._refresh_after_row_change()
 
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
         self.input_edit_controller.handle_cell_edited(case_id, changed_key)
