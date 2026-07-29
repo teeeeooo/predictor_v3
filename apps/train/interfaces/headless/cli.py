@@ -39,6 +39,7 @@ from .command_contract import (
     run_exit,
 )
 from .agent_commands import dispatch_agent_mutation, dispatch_agent_read
+from .closeout_commands import dispatch_closeout
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -48,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     except ExperimentContractError as exc:
         emit(args.command, "validation_failure", str(exc), {"code": exc.code})
         return EXIT_VALIDATION
-    except (FileNotFoundError, ValueError) as exc:
+    except (FileNotFoundError, PermissionError, ValueError) as exc:
         emit(
             args.command,
             "validation_failure",
@@ -68,6 +69,9 @@ def main(argv: list[str] | None = None) -> int:
 
 def _dispatch(args: argparse.Namespace) -> int:
     lifecycle_root = default_model_lifecycle_root()
+    closeout = dispatch_closeout(args, lifecycle_root)
+    if closeout is not None:
+        return closeout
     agent_read = dispatch_agent_read(args, lifecycle_root)
     if agent_read is not None:
         return agent_read

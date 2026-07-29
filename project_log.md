@@ -29,6 +29,140 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-29 — Phase 5H abandon-and-restart recovery decision
+
+### Decision
+
+- Preserve the seventh independent audit `FAIL` at exact head
+  `ed20d081ded7621b145ff95faa0e56e96163e303` and historical successful run
+  `30421708922`; neither grants acceptance.
+- Supersede actual-compute at-most-once and permanent permit-as-start-proof as
+  recovery requirements. Never replace a live or uncertain child; after proven
+  termination, quarantine its incomplete private attempt and retrain from the
+  beginning in a new private attempt under the same confirmation identity.
+- Never resume or mix partial model, metric, manifest, staged Candidate,
+  locked result, or terminal evidence. Quarantine is not deletion and remains
+  subject to existing retention policy.
+- Before locked-seal consumption, use normal abandon-and-restart. After seal
+  consumption without complete durable result/finalization, abandon the whole
+  Confirmation and require a new seal and new Confirmation.
+- Preserve replay of complete durable terminal/Candidate pairs, one live
+  Confirmation compute, at-most-once public/terminal finalization, explicit
+  trusted-user promotion, and all existing no-production/no-delete boundaries.
+- The bounded source implementation now uses an attempt-specific
+  process-lifetime lock acquired by the child before its start request. Under
+  the existing execution-key/lifecycle writers, recovery keeps live or
+  uncertain attempts running and atomically abandons only proven-ended
+  attempts before registering one isolated replacement.
+- Exact permit plus post-durability grant authorization, attempt-bound run and
+  private staging identity, stale-attempt prepublication rejection, terminal
+  Candidate-pair replay validation, and whole-Confirmation abandonment after
+  consumed-seal failure are source complete. Fresh independent exact-head
+  audit remains required.
+
+## 2026-07-29 — Phase 5H atomic permit publication recovery
+
+### Decision
+
+- Preserve the sixth independent audit `FAIL` at exact head
+  `7175060236ede4596246f64f6acf0d1b932075ca` and historical successful run
+  `30416243161`; neither grants acceptance.
+- Make the final permit path observable only through an atomic, exclusive
+  commit of already canonicalized, flushed, fsynced, and byte-verified content,
+  followed by containing-directory durability.
+- Treat every pre-commit failure and private temporary residue as no durable
+  start evidence and therefore recoverable. Treat complete post-commit
+  evidence as the irreversible at-most-once boundary; malformed or conflicting
+  final evidence remains preserved and fails closed.
+- Keep the Draft PR open and unmerged and require a new independent exact-head
+  re-audit. No production confirmation/promotion, migration apply,
+  retention/delete apply, deployment mutation, or audit-PASS authority is
+  added.
+
+## 2026-07-29 — Phase 5H process-boundary start handshake recovery
+
+### Decision
+
+- Preserve the fifth independent audit `FAIL` at exact head
+  `55141965c262bddd1fb1dd2b6692ed5bce99464d` and historical successful run
+  `30413469249`; neither grants acceptance.
+- Treat a child stdout start request as intent only. Confirmation children
+  block at the Core work boundary until the closeout owner durably publishes
+  an exact confirmation/execution/attempt/protocol/training-meaning permit.
+- Permit absence remains recoverable with a new attempt after parent exit;
+  permit presence is an irreversible at-most-once boundary. Stale attempts
+  cannot consume replacement permits, and ambiguous post-permit state does not
+  auto-rerun.
+- Keep the Draft PR open and unmerged and require a new independent exact-head
+  re-audit. No production confirmation/promotion, migration apply,
+  retention/delete apply, deployment mutation, or audit-PASS authority is
+  added.
+
+## 2026-07-29 — Phase 5H durable execution-start recovery
+
+### Decision
+
+- Preserve the fourth independent audit `FAIL` at exact head
+  `c58413cabfa005154c1a5b70d80f2a3a355431a6` and historical successful run
+  `30375698091`; neither grants acceptance.
+- Treat the exact running-transition marker as recoverable preparation, not
+  proof of actual execution. Bind it to claim, confirmation, execution key, and
+  running-record hash.
+- Reuse the existing TrainingLifecycle Core-start callback for separate durable
+  actual-start evidence. Hold one execution-key OS lock across execution and
+  terminal handoff so process reconstruction can recover pre-start failure
+  while concurrent retry cannot duplicate training or Candidate publication.
+- Keep the Draft PR open and unmerged and require a new independent exact-head
+  re-audit. No production confirmation/promotion, migration apply,
+  retention/delete apply, deployment mutation, or audit-PASS authority is
+  added.
+
+## 2026-07-29 — Phase 5H transactional finalization recovery
+
+### Decision
+
+- Preserve the third independent audit `FAIL` at exact head
+  `ae20c626a12c15906c5ffb9e4f159875418caed4` and historical successful run
+  `30323789487`; neither grants acceptance or supersedes earlier audit history.
+- Bind each execution claim to one versioned, hashed pending confirmation and
+  recover its exact initial record under the lifecycle writer lock before one
+  durable execution-start marker. Corrupt claim/record identity or bytes fail
+  closed without another confirmation or execution.
+- Treat snapshot, locked seal/dataset/membership/Target/split/evaluation
+  contract, immutable locked result, and staged Candidate linkage as one final
+  integrity fence inside the shared Candidate writer. Fence failure leaves the
+  seal consumed and evidence immutable but exposes no public Candidate.
+- Keep the Draft PR open and unmerged and require a new independent exact-head
+  re-audit. No production confirmation/promotion, migration apply, retention or
+  delete apply, deployment mutation, or Worker audit-PASS authority is added.
+
+## 2026-07-28 — Phase 5H lifecycle safety audit repair
+
+### Decision
+
+- Preserve the first independent audit `FAIL` at exact head
+  `009e4d3d668df2fc3df13a06aa22a8991ec67299` and historical successful run
+  `30280886312`; neither is acceptance.
+- Bind snapshot materialization and confirmation revalidation to selected-run
+  bytes and complete captured artifacts; make locked-test seals
+  content-addressed and execute sealed data only after confirmation Candidate
+  publication.
+- Require trusted opaque user capability, one terminal decision per
+  confirmation, exact confirmation-Candidate linkage, terminal replay
+  invariance, and byte-invariant migration/retention previews.
+- Complete the read-only retention inventory and true source references while
+  keeping missing export/lease state fail-closed. Do not add production
+  confirmation, promotion, migration apply, deletion, merge, or audit-PASS
+  authority; require a new independent exact-head re-audit.
+- Preserve the second independent audit `FAIL` at repaired exact head
+  `97914c0285c7155ecfbd6da1fb9fa1d7c60f24a7` and historical successful run
+  `30286229720`; neither supersedes the first failure or grants acceptance.
+- Derive one durable execution claim from immutable confirmation meaning so
+  implicit, alternate-ID, concurrent, and reconstructed retries cannot rerun.
+  Remove process time from retention inventory identity, and perform locked
+  evaluation plus full snapshot integrity validation against private staged
+  Candidate evidence inside the shared writer lock before public finalization.
+
 ## 2026-07-26 — Phase 5G post-merge closeout
 
 ### Decision

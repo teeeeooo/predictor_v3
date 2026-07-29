@@ -30,6 +30,7 @@ from apps.train.controllers.train_controller import TrainController
 from apps.train.state.training_run_state import TrainingLogEvent, TrainingProgress, TrainingRequest, TrainingResult
 from apps.train.ui.models.static_table_model import StaticTableModel
 from apps.train.ui.model_management_panel import ModelManagementPanel
+from apps.train.ui.confirmation_panel import ConfirmationPanel
 from apps.train.ui.experiments.status_text import campaign_summary_text
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
@@ -88,6 +89,11 @@ class TrainModelPanel(QWidget):
             on_snapshot_changed=self._model_snapshot_changed,
         )
         tabs.addTab(self.model_management_panel, "모델 관리")
+        self.confirmation_panel = ConfirmationPanel(
+            self.training_controller,
+            tabs,
+        )
+        tabs.addTab(self.confirmation_panel, "최종 확인")
         self.workflow_tabs = tabs
         layout.addWidget(tabs, 1)
         self._update_control_state()

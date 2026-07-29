@@ -13,7 +13,10 @@ from apps.train.adapters.qprocess_command import (
     training_process_arguments,
 )
 from apps.train.adapters.qprocess_terminal import process_result
-from apps.train.adapters.training_process_events import parse_training_event
+from apps.train.adapters.training_process_events import (
+    parse_training_event,
+    serialize_training_start_grant,
+)
 from apps.train.ports.training_execution_port import TrainingExecutionCallbacks
 from apps.train.state.training_run_state import TrainingRequest, TrainingResult
 
@@ -57,6 +60,7 @@ class SubprocessTrainingRunner:
             [self._python, *arguments],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE,
             text=True,
             encoding="utf-8",
             errors="replace",
@@ -78,8 +82,34 @@ class SubprocessTrainingRunner:
                 continue
             if line is None:
                 continue
-            event_type, event = parse_training_event(line, request)
-            if event_type == "training_started":
+            try:
+                event_type, event = parse_training_event(line, request)
+            except (TypeError, ValueError) as exc:
+                self._abort_protocol(process)
+                raise RuntimeError(
+                    "Training child protocol rejected: "
+                    f"{str(exc).splitlines()[0]}"
+                ) from exc
+            if event_type == "training_start_requested":
+                if callbacks.start_requested is None:
+                    self._abort_protocol(process)
+                    raise RuntimeError(
+                        "Training start permit authority is unavailable."
+                    )
+                try:
+                    grant = callbacks.start_requested(event)
+                    if process.stdin is None:
+                        raise RuntimeError(
+                            "Training start grant transport is unavailable."
+                        )
+                    process.stdin.write(
+                        serialize_training_start_grant(request, grant)
+                    )
+                    process.stdin.flush()
+                except Exception:
+                    self._abort_protocol(process)
+                    raise
+            elif event_type == "training_started":
                 callbacks.started(request)
             elif event_type == "progress":
                 callbacks.progress(event)
@@ -130,6 +160,17 @@ class SubprocessTrainingRunner:
     def _cleanup_temporary(self) -> None:
         if self._temporary is not None:
             self._temporary.unlink(missing_ok=True)
+
+    def _abort_protocol(self, process: subprocess.Popen[str]) -> None:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=2)
+        self._process = None
+        self._cleanup_temporary()
 
 
 def _read_lines(

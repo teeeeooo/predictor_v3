@@ -47,6 +47,8 @@ def train_all_models_with_analysis(
     *, registry_snapshot: ModelRegistrySnapshot | None = None,
     optimization_config: TrainingOptimizationConfig | None = None,
     derived_evaluation_snapshot=None,  # noqa: ANN001
+    confirmation_fixed_parameters=None,  # noqa: ANN001
+    confirmation_fixed_features=None,  # noqa: ANN001
     training_started_callback: Callable[[], None] | None = None,
 ):
     if not model_output_path:
@@ -123,6 +125,20 @@ def train_all_models_with_analysis(
             # --- [핵심 추가] 피처 격리 (Data Leakage 차단) 로직 ---
             selected_columns = apply_target_policy(X_full.columns, target_definition)
             X_target = X_full.loc[:, list(selected_columns)].copy()
+            fixed_parameters = (
+                confirmation_fixed_parameters.get(target_definition.identity)
+                if confirmation_fixed_parameters is not None
+                else None
+            )
+            fixed_features = (
+                confirmation_fixed_features.get(target_definition.identity)
+                if confirmation_fixed_features is not None
+                else None
+            )
+            if (fixed_parameters is None) != (fixed_features is None):
+                raise ValueError(
+                    f"confirmation fixed contract is incomplete: {target}"
+                )
             custom_log(
                 f"       {'⚪ 화이트리스트 적용' if target_definition.policy_mode == 'allowed' else '🚫 제외 정책 적용'}: "
                 f"{X_target.shape[1]}개 학습 피처"
@@ -142,6 +158,8 @@ def train_all_models_with_analysis(
                         use_rfe,
                         log_callback=log_callback,
                         optimization_config=optimization_config,
+                        fixed_parameters=fixed_parameters,
+                        fixed_features=fixed_features,
                         training_started_callback=acknowledge_training_started,
                     )
                 )

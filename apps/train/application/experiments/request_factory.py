@@ -43,9 +43,10 @@ def build_training_request(
     execution_owner: str,
     campaign_id: str,
     derived_snapshot_provider=None,  # noqa: ANN001
+    data_path_override: str | None = None,
 ) -> TrainingRequest:
     payload = resolved.payload
-    source = Path(payload["data"]["source_path"])
+    source = Path(data_path_override or payload["data"]["source_path"])
     if not source.exists() or not source.is_file():
         raise ExperimentContractError(
             "training_data_invalid", f"Training data is not a file: {source}"

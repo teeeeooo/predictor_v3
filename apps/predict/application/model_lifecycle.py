@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from threading import Lock
 import traceback
+from datetime import datetime, timedelta, timezone
+import os
 from typing import Callable
 
 from apps.common.model_lifecycle import ActiveModelResolver, ModelLifecycleRepository
@@ -21,6 +23,10 @@ from apps.predict.application.model_reload_preparation import (
 )
 from apps.predict.application.runtime_snapshot import PredictRuntimeSnapshot
 from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
+from apps.common.model_lifecycle.closeout.loaded_model_lease import (
+    loaded_model_lease,
+)
+from apps.common.model_lifecycle.closeout.store import LifecycleCloseoutStore
 
 
 class PredictModelLifecycleService:
@@ -43,6 +49,8 @@ class PredictModelLifecycleService:
             self._loaded,
             message="사용할 수 있는 모델이 아직 로드되지 않았습니다.",
         )
+        self._closeout_store = LifecycleCloseoutStore(repository.root)
+        self._loaded_lease_id = f"predict-{os.getpid()}"
 
     @property
     def loaded(self) -> LoadedModelIdentity:
@@ -75,6 +83,7 @@ class PredictModelLifecycleService:
                 active_revision,
                 self._runtime_snapshot.generation_id,
             )
+        self._record_loaded_lease()
         self.refresh()
 
     def record_startup_failure(self, message: str) -> None:
@@ -92,6 +101,7 @@ class PredictModelLifecycleService:
         operation_id = self._begin_status_operation()
         observed = self._observe_status(operation_id=operation_id)
         self._publish_status(observed, operation_id=operation_id)
+        self._record_loaded_lease()
         return observed
 
     def _observe_status(self, *, operation_id: int) -> PredictModelLifecycleStatus:
@@ -151,6 +161,7 @@ class PredictModelLifecycleService:
                         resolution.revision,
                         self._runtime_snapshot.generation_id,
                     )
+            self._record_loaded_lease()
         except StaleActiveRevisionError as exc:
             return self._reload_failure(
                 "failed",
@@ -186,6 +197,25 @@ class PredictModelLifecycleService:
             operation_id=operation_id,
             applied_to_shared_state=applied,
         )
+
+    def _record_loaded_lease(self) -> None:
+        loaded = self.loaded
+        if not loaded.candidate_id:
+            return
+        observed = datetime.now(timezone.utc)
+        try:
+            self._closeout_store.write_loaded_model_lease(loaded_model_lease(
+                lease_id=self._loaded_lease_id,
+                candidate_id=loaded.candidate_id,
+                active_revision=loaded.active_revision,
+                process_id=os.getpid(),
+                observed_at=observed.isoformat(),
+                expires_at=(observed + timedelta(minutes=5)).isoformat(),
+            ))
+        except (OSError, TypeError, ValueError):
+            # Prediction availability is independent from retention bookkeeping.
+            # Missing/unknown leases make retention fail closed.
+            return
 
     def _begin_status_operation(self) -> int:
         with self._operation_lock:

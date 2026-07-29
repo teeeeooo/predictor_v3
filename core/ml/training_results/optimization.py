@@ -44,6 +44,8 @@ def optimize_and_train(
     log_callback=None,
     *,
     optimization_config: TrainingOptimizationConfig | None = None,
+    fixed_parameters: dict | None = None,
+    fixed_features: list | tuple | None = None,
     training_started_callback: Callable[[], None] | None = None,
 ):
     """Run target-local selection, tuning, evaluation, and final training."""
@@ -59,9 +61,23 @@ def optimize_and_train(
     original_cols = list(X.columns)
     selected_cols = list(original_cols)
     rfecv_result = _not_used_rfecv(original_cols, config.cv_folds)
+    confirmation_fixed = fixed_parameters is not None or fixed_features is not None
+    if confirmation_fixed:
+        if (
+            not isinstance(fixed_parameters, dict)
+            or not fixed_parameters
+            or not isinstance(fixed_features, (list, tuple))
+            or not fixed_features
+            or len(fixed_features) != len(set(fixed_features))
+            or any(feature not in original_cols for feature in fixed_features)
+        ):
+            raise ValueError("confirmation fixed training contract is invalid")
+        selected_cols = list(fixed_features)
+        X = X.loc[:, selected_cols]
+        rfecv_result = _fixed_rfecv(original_cols, selected_cols, config.cv_folds)
     if training_started_callback is not None:
         training_started_callback()
-    if use_rfe:
+    if use_rfe and not confirmation_fixed:
         custom_log("       🔍 [RFE] 최적의 피처 개수와 조합 탐색 중...")
         rfecv = RFECV(
             estimator=XGBRegressor(
@@ -92,12 +108,23 @@ def optimize_and_train(
         )
         X = X[selected_cols]
 
-    study = _optimize(X, y, custom_log, config)
-    best_params = {
-        **study.best_params,
-        "random_state": 42,
-        "n_jobs": config.n_jobs,
-    }
+    if confirmation_fixed:
+        best_params = dict(fixed_parameters)
+        optuna_result = {
+            "status": "confirmation_fixed",
+            "direction": "not_searched",
+            "score_context": f"mean {config.cv_folds}-fold CV RMSE",
+            "selected_parameters": dict(best_params),
+            "trials": [],
+        }
+    else:
+        study = _optimize(X, y, custom_log, config)
+        best_params = {
+            **study.best_params,
+            "random_state": 42,
+            "n_jobs": config.n_jobs,
+        }
+        optuna_result = _optuna_result(study, best_params, config.cv_folds)
     folds = _evaluate_folds(X, y, best_params, config.cv_folds)
     metrics = summarize_fold_metrics(
         folds, sample_count=len(y), cv_folds=config.cv_folds
@@ -118,7 +145,7 @@ def optimize_and_train(
         "metrics": metrics,
         "rfecv": rfecv_result,
         "feature_importance": importance,
-        "optuna": _optuna_result(study, best_params, config.cv_folds),
+        "optuna": optuna_result,
     }
 
 
@@ -301,4 +328,13 @@ def _used_rfecv(original, selected, ranking, cv_folds):
             }
             for feature, rank in zip(original, ranking)
         ],
+    }
+
+
+def _fixed_rfecv(original, selected, cv_folds):
+    return {
+        **_not_used_rfecv(selected, cv_folds),
+        "status": "confirmation_fixed",
+        "feature_count_before": len(original),
+        "feature_count_after": len(selected),
     }

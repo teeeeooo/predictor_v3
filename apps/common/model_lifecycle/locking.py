@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import stat
 import sys
+from errno import EACCES, EAGAIN, EDEADLK
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -14,6 +15,26 @@ from .filesystem import LifecycleFilesystem
 
 @contextmanager
 def lifecycle_lock(path: Path, *, filesystem: LifecycleFilesystem):
+    with _lifecycle_lock(path, filesystem=filesystem, blocking=True) as acquired:
+        if not acquired:
+            raise LifecycleFilesystemError("blocking lifecycle lock was unavailable")
+        yield
+
+
+@contextmanager
+def try_lifecycle_lock(path: Path, *, filesystem: LifecycleFilesystem):
+    """Yield whether one process-lifetime lock could be acquired immediately."""
+    with _lifecycle_lock(path, filesystem=filesystem, blocking=False) as acquired:
+        yield acquired
+
+
+@contextmanager
+def _lifecycle_lock(
+    path: Path,
+    *,
+    filesystem: LifecycleFilesystem,
+    blocking: bool,
+):
     absolute_root = filesystem.root
     absolute_path = Path(os.path.abspath(path))
     try:
@@ -54,9 +75,15 @@ def lifecycle_lock(path: Path, *, filesystem: LifecycleFilesystem):
             os.write(descriptor, b"\0")
             os.fsync(descriptor)
         os.lseek(descriptor, 0, os.SEEK_SET)
-        _lock(descriptor)
-        locked = True
-        yield
+        try:
+            _lock(descriptor, blocking=blocking)
+        except OSError as exc:
+            if blocking or exc.errno not in {EACCES, EAGAIN, EDEADLK}:
+                raise
+            yield False
+        else:
+            locked = True
+            yield True
     finally:
         if locked:
             os.lseek(descriptor, 0, os.SEEK_SET)
@@ -79,15 +106,19 @@ def _open_windows_lock(path: Path, flags: int) -> int:
     return os.open(path, flags, 0o600)
 
 
-def _lock(descriptor: int) -> None:
+def _lock(descriptor: int, *, blocking: bool) -> None:
     if os.name == "nt":
         import msvcrt
 
-        msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
+        mode = msvcrt.LK_LOCK if blocking else msvcrt.LK_NBLCK
+        msvcrt.locking(descriptor, mode, 1)
     else:
         import fcntl
 
-        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        flags = fcntl.LOCK_EX
+        if not blocking:
+            flags |= fcntl.LOCK_NB
+        fcntl.flock(descriptor, flags)
 
 
 def _unlock(descriptor: int) -> None:

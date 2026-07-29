@@ -1416,7 +1416,381 @@ Purpose:
 - schema-version compatibility
 - full lifecycle acceptance and documentation closeout
 
-The worker may split a slice further when repository change gates require smaller changes.
+#### Implemented source boundary
+
+Phase 5H is implemented as one owner-aligned lifecycle closeout boundary. It
+adds source contracts, application services, shared GUI/headless projections,
+and deterministic fixture coverage. It does not execute a real-user
+confirmation, promote a production Candidate, migrate historical bytes, or
+delete an artifact.
+
+The first independent audit failed at exact head
+`009e4d3d668df2fc3df13a06aa22a8991ec67299`. Historical exact-head run
+`30280886312` succeeded, but that run is validation evidence rather than audit
+acceptance. The ten blocking findings are repaired on the same Draft PR and
+require a new independent exact-head re-audit; the Worker does not declare
+`PASS`.
+
+The second independent audit failed at repaired exact head
+`97914c0285c7155ecfbd6da1fb9fa1d7c60f24a7`. Historical exact-head run
+`30286229720` succeeded, but it is not audit acceptance. Its three reproduced
+blockers were duplicate implicit confirmation execution, process-time-derived
+retention preview identity, and public Candidate publication before the final
+snapshot-integrity gate. They are repaired in the same owners and require
+another independent exact-head re-audit.
+
+The third independent audit failed at exact head
+`ae20c626a12c15906c5ffb9e4f159875418caed4`. Historical exact-head run
+`30323789487` succeeded, but it is validation evidence and not audit
+acceptance. The remaining blockers were a durable execution claim whose
+pending confirmation publication could fail without a recoverable service
+path, and a locked final-test path that did not revalidate all locked evidence
+after immutable result publication and immediately before public Candidate
+finalization. The bounded transactional repair stays in the existing
+closeout-store, confirmation executor, locked evaluator, and shared Candidate
+writer owners and requires another independent exact-head re-audit.
+
+The fourth independent audit failed at exact head
+`c58413cabfa005154c1a5b70d80f2a3a355431a6`. Historical exact-head run
+`30375698091` succeeded, but it is validation evidence and not audit
+acceptance. Its remaining blocker was a single start marker written before the
+`confirmation_running` transition: failure of that transition left a pending
+confirmation that could not safely recover ownership. The bounded correction
+keeps the same claim/store/executor owners, distinguishes recoverable start
+preparation from existing Core-start acknowledgement, and requires another
+independent exact-head re-audit.
+
+The fifth independent audit failed at exact head
+`55141965c262bddd1fb1dd2b6692ed5bce99464d`. Historical exact-head run
+`30413469249` succeeded, but it is validation evidence and not audit
+acceptance. Its remaining blocker was the process boundary after the child
+emitted Core-start intent: the child could begin training before the parent
+durably persisted `execution_started`. The repair extends the existing
+closeout store, confirmation application, TrainingExecutionPort adapters, and
+child job with one confirmation-only synchronous start handshake. It does not
+introduce a generic process framework and requires another independent
+exact-head re-audit.
+
+The sixth independent audit failed at exact head
+`7175060236ede4596246f64f6acf0d1b932075ca`. Historical exact-head run
+`30416243161` succeeded, but it is validation evidence and not audit
+acceptance. Its remaining blocker was incomplete final-path publication:
+creating the durable permit path before its bytes were complete could leave an
+empty or partial file that looked like irreversible actual-start evidence.
+The bounded correction stays in the closeout handshake/filesystem publication
+owner, exposes only a fully durable canonical permit through an atomic
+exclusive commit, and requires another independent exact-head re-audit.
+
+The seventh independent audit failed at exact head
+`ed20d081ded7621b145ff95faa0e56e96163e303`. Historical exact-head run
+`30421708922` succeeded, but it is validation evidence and not audit
+acceptance. Its process-boundary blocker showed that a visible final permit
+cannot by itself prove containing-directory durability or actual Core work.
+The approved product decision does not add a generic supervisor, child
+adoption, or cross-process transactional coordinator. It replaces the earlier
+actual-compute at-most-once/permanent-permit recovery direction with the
+abandon-and-restart contract below. The bounded Lane C source implementation
+is now complete on the same Draft PR and requires a fresh independent
+exact-head re-audit; source completion does not grant audit acceptance.
+
+The persisted owner is
+`apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
+identities, lifecycle-root content-addressed training input, immutable
+snapshot/confirmation/decision/final-test evidence, compatibility
+dispositions, migration previews, Predict loaded-model leases, and retention
+previews. `apps/train/application/confirmation/` owns orchestration and reuses
+the existing Candidate publisher, Experiment Specification execution owner,
+promotion revision guard, Definition generation repository, and campaign
+evidence store. GUI and headless adapters call these application owners; they
+do not contain confirmation, promotion, or retention policy.
+
+#### Snapshot and confirmation state
+
+Snapshot transitions are:
+
+`creating -> frozen | failed | blocked_incomplete`
+
+Only `frozen` is executable. Snapshot identity is the SHA-256 of the canonical
+versioned meaning payload; creation time and actor are audit metadata and do
+not change that identity. A frozen record binds recommendation, campaign,
+selected Candidate/source run, required Candidate and Definition artifacts,
+fully resolved specification and fingerprint, target roles, ordered feature
+and preprocessing semantics, evaluation/split/fold/seed policy, selected
+training parameters, baseline/Active revision, build/training-semantic
+identity, and a materialized training-input identity.
+
+Local training input is copied byte-for-byte, or as a provably lossless
+training projection, into lifecycle-owned SHA-256 storage. A verified external
+reference is contract-valid only with an immutable object version, hashes,
+shape and ordered membership, preserved filtering/preprocessing input meaning,
+bounded retrievability proof, and access-time hash verification. A movable
+path or hash alone is insufficient. If privacy or size policy prevents a
+lossless owned representation and no verified retrievable reference exists,
+freeze fails without changing Candidate, campaign, recommendation, or Active.
+
+Materialization rechecks the selected run's persisted byte hash and exact
+data-request/filtering identity at copy time, derives shape and ordered row-set
+identity from those same bytes, and publishes no partial blob or frozen
+snapshot on disagreement. Confirmation preflight and pre-publication success
+validation rehash the complete captured Candidate artifact map, Definition
+bundle, run/campaign/recommendation evidence, resolved specification,
+materialized blob, and build/training semantics.
+
+Any change to recommendation/Candidate, resolved specification, data bytes or
+row selection/order, target roles, feature order/mapping/derived semantics,
+preprocessing, evaluation/threshold/tolerance/split/seed, Definition/runtime
+generation, selected parameters, baseline, training-semantic build identity,
+or required artifact content requires a new snapshot. A UI-only build change
+is reusable only when the same training-semantic identity is independently
+proven.
+
+Confirmation transitions are:
+
+`confirmation_pending -> confirmation_running ->`
+`awaiting_user_decision | failed | blocked | cancelled | abandoned`
+
+Final decision/promotion adds terminal `approved`, `rejected`, `promoted`, and
+`promotion-blocked` evidence. Replaying any terminal confirmation returns its
+existing immutable record without execution, Candidate publication, or a new
+transition. A `source=confirmation` Candidate is non-promotable unless its
+manifest hash is linked to a complete confirmation and exact approved decision;
+an orphan left by terminal-record publication failure remains preserved and
+fail-closed.
+
+Every start derives a canonical execution key from the frozen snapshot,
+confirmation contract, CV-only/locked mode, seal, production Target set,
+evaluation/execution policy, and training-semantic identity. The key has one
+versioned durable writer-locked claim containing the exact pending record and
+its canonical hash. The claim owns confirmation identity and execution
+meaning. If claim publication succeeds but the initial record is absent,
+including an empty partial identity directory, a reconstructed service
+validates and exclusive-creates the exact embedded pending record. Claim
+version/hash/identity, initial-record bytes, or immutable execution-field
+disagreement fails closed without another identity or execution. Start handoff
+then persists a versioned preparation containing the exact expected
+`confirmation_running` record and hash. Preparation alone does not mean
+execution started. One execution-key OS lock serializes live owners and is
+automatically released by process termination. A retry holding that lock may
+recover either `prepared + pending` by writing the exact running transition, or
+`prepared + running` when no actual-start evidence exists.
+
+Confirmation process launch adds one versioned handshake bound to confirmation
+identity, canonical execution key, unique attempt identity, expected training
+meaning hash, and exact permit path. Before launch, the application registers
+that immutable attempt under the closeout writer. At the existing Core-start
+callback, the child emits `training_start_requested` and synchronously blocks;
+emitting the event is not start evidence. The parent validates the event
+against its frozen `TrainingRequest` and, while the execution-key owner is
+held, publishes the exact immutable `execution_started` permit. Publication
+first writes canonical bytes to an attempt-private temporary artifact, flushes
+and fsyncs them, verifies the exact bytes, and only then atomically links them
+into the absent final path without clobbering. The containing directory is
+fsynced before publication returns. Concurrent losers may reuse only an exact
+complete permit; malformed, conflicting, or tampered final evidence fails
+closed and is never removed or overwritten. Temporary artifacts are not
+visible through the final permit namespace and neither the child nor retry
+treats their residue as actual-start evidence. The approved target protocol
+treats that permit as necessary durable attempt evidence but not sufficient
+child authorization. Only after file and containing-directory durability
+succeed may the parent send an exact attempt-bound start grant; the child must
+validate both the permit and that post-durability grant before emitting
+`training_started` and returning to Core work. The subprocess and QProcess
+adapters now transport that exact grant over the existing child input channel;
+ordinary non-confirmation training has no confirmation handshake and preserves
+its existing behavior.
+
+Permit publication remains attempt-bound evidence, but its final-path
+existence is neither sufficient child authorization nor permanent proof that
+Core work occurred. A replacement never starts while the prior child is alive
+or liveness is uncertain. Before emitting its exact start request, a
+confirmation child acquires an attempt-specific cross-platform lifecycle lock
+and holds it through process exit. Recovery remains serialized by the
+execution-key owner and probes that lock nonblockingly under the lifecycle
+writer. Failure to acquire is live-or-unknown and returns the existing running
+record without replacement. Successful acquisition is held through immutable
+abandonment publication, closing the stale-child race; only then may one new
+attempt be registered. Once that child is proven terminated and no complete
+official finalization exists, the incomplete attempt is quarantined and
+abandoned. A new private attempt under the same confirmation identity uses a
+new attempt-bound run, permit, grant, liveness lock, and private staging
+directory and retrains from the beginning; it does not resume, append to, or
+combine the prior attempt's model, metric, manifest, staged Candidate, or
+terminal evidence. Stale callbacks must still match the current exact attempt
+before pre-publication validation and cannot consume a replacement attempt's
+authority. Abnormal attempt artifacts remain non-official and
+non-discoverable until ordinary retention policy addresses them; quarantine
+does not authorize immediate deletion or destructive cleanup.
+
+This recovery contract guarantees at most one simultaneously live
+Confirmation compute, not actual-compute at-most-once across sequential
+abandon-and-restart attempts. Each attempt owns isolated private staging.
+Public Candidate finalization and terminal confirmation linkage remain
+at-most-once. A success-like terminal replay also revalidates that its exact
+public confirmation Candidate and manifest hash remain complete; missing or
+conflicting pair evidence fails closed without retraining. Attempt
+registration, handshake, confirmation, execution key,
+protocol, training meaning, history, claim, permit, or abandonment mismatch
+fails closed without a replacement or evidence rewrite. Implicit,
+alternate-ID, and concurrent requests still converge on the canonical
+confirmation identity. Generic process supervision, external daemons, child
+adoption, and partial execution recovery remain excluded.
+
+The stored contract also recognizes terminal execution evidence named
+`succeeded`; the application immediately projects a valid succeeded execution
+to `awaiting_user_decision`. Confirmation accepts one exact frozen snapshot,
+uses its selected parameters and seed/split policy, disables proposal, Optuna,
+RFECV feature search and search-space mutation, and executes every
+production-required Target. Missing, partial, failed, non-finite, corrupted,
+stale, unpublished-feature, or lifecycle-incompatible evidence cannot reach
+user decision. A successful retraining publishes a new immutable
+`source=confirmation` Candidate through the existing publisher. Before public
+finalization, the Candidate remains in private staging while configured locked
+evaluation and immutable result publication complete. One finalization
+integrity fence then revalidates complete captured snapshot evidence, initial
+and consumed seal identity/version/payload, locked dataset bytes and ordered
+membership, Target/split/evaluation policy, immutable locked result bytes/hash,
+staged Candidate model/manifest hashes, and exact result-to-Candidate linkage
+under the shared lifecycle writer lock. Only after that fence succeeds may the
+existing atomic Candidate finalization run. Integrity failure preserves
+immutable non-discoverable terminal evidence and publishes no Candidate or
+success link. It is retained in confirmation history and is never inserted
+into the campaign leaderboard.
+No confirmation state changes Active, recommendation, incumbent, or prior
+evidence.
+
+#### Locked final-test leakage boundary
+
+A locked final-test seal is `sealed -> consumed`. Its computed content address
+binds contract version, data hash, ordered membership, Target set, split policy,
+schema/evaluation contract, and required snapshot source hashes; a caller
+supplied identity is accepted only when it equals that address. It also records
+creation identity and proof that it predated selection or is genuinely unseen
+external data. Labels, aggregate metrics, and results are not inputs to
+proposal, ranking, or recommendation.
+
+Preflight verifies sealed bytes, ordered membership, Target order,
+schema/evaluation policy, contract version, and every required source hash
+against the snapshot. Confirmation trains its exact Candidate in private
+staging without using sealed data, then consumes the seal immediately before
+shared Core prediction and locked metric evaluation against that staged model.
+The immutable final-test result binds seal, confirmation, Candidate manifest,
+data, membership, Target metrics, and pass/fail. After it is published, the
+single finalization fence rechecks the complete snapshot and all locked/staged
+evidence together; dataset, membership, split, Target, seal, result, or staged
+Candidate drift blocks public Candidate visibility. Once evaluation starts the
+seal remains consumed even when evaluation, result publication, the final
+fence, or Candidate finalization fails; it cannot be retried. Failure evidence
+remains immutable, while Candidate inventory, Active, source Candidate,
+campaign, recommendation, and leaderboard remain unchanged. Re-execution
+before seal consumption follows the normal abandon-and-restart training
+contract. If the seal was consumed but no complete durable locked result and
+official finalization exist, the whole Confirmation becomes `abandoned`.
+Neither the incomplete locked result nor its model, metrics, manifest, or
+staging may be resumed, restored, reevaluated, appended to, or mixed with
+another attempt. The consumed seal is never reused; another evaluation
+requires a new seal and a new Confirmation. Parameter or feature changes
+after observing the result end the confirmation and require a new campaign.
+CV-only confirmation remains valid without a seal but cannot claim
+`independent_final_test_passed`.
+
+#### Final decision and promotion
+
+Final decision history is immutable `approved | rejected | stale` evidence.
+It binds snapshot ID, confirmation ID, confirmation Candidate ID and manifest
+hash, and the Active revision observed during review. Approval requires a
+non-serializable process-local opaque capability issued by the shared trusted
+GUI/headless interaction boundary; caller-constructed public fields, external
+agent and unattended headless contexts fail closed. One confirmation accepts
+one terminal approved or rejected decision. Identical replay returns or resumes
+that immutable decision, conflicting replay is blocked, and promotion resume
+recognizes an already-written exact Active revision without promoting twice.
+Any changed identity/hash/revision creates a stale attempt and does not replace
+an accepted decision.
+
+An approved application command calls the existing guarded
+`ModelPromotionService.promote()` with the exact expected Active revision. It
+does not create another Active writer. Confirmation success alone never
+changes Active, export, or the Predict loaded model. Recommendation-selected
+and confirmation Candidates cannot use generic promotion to bypass their
+required evidence, while ordinary Candidates outside recommendation workflow
+retain backward-compatible explicit promotion. Rollback remains
+re-promotion.
+
+#### Compatibility and migration matrix
+
+| Contract | Current writer | Historical read | Executable rule |
+| --- | --- | --- | --- |
+| Candidate manifest/result/analysis | existing v2/current writers | legacy Candidate v1 and legacy `model.pkl` continuity retained | legacy or ambiguous meaning is historical-only until current revalidation |
+| Active reference | existing current writer | current strict reader | malformed or unknown version blocks |
+| Experiment Specification/run | existing Phase 5F v1 writers | complete resolved v1 is readable | missing resolved meaning or execution identity is historical-only |
+| Phase 5F/5G campaign, proposal, attempt | existing v1 writers | strict versioned projection | resume requires complete persisted identity and nested evidence |
+| gate/leaderboard/recommendation | existing Phase 5G v1 writers | strict nested read | invalid gate, authority flags, or referenced evidence blocks reuse |
+| snapshot/confirmation/final decision | Phase 5H v1 writers | exact v1 read | only frozen/eligible current states execute |
+
+Every reader returns one of `current_and_executable`,
+`current_but_blocked`, `readable_historical_only`,
+`unsupported_future_version`, or `corrupt_or_incomplete`. Unknown future
+versions and ambiguous missing fields fail closed. Persisted resolved
+specifications never receive new defaults. Read adapters and migration
+previews do not change source bytes.
+
+Migration source owns eligibility, source/payload hashes, proposed output
+identity, original-preservation and no-in-place requirements, and blocked
+reason. It deliberately exposes no apply command. An immutable artifact that
+is migrated later must receive a new identity and receipt while preserving the
+original and rollback evidence. Migration apply remains a separately
+authorized operation.
+
+Migration and retention previews derive `created_at` from their content address
+rather than the wall clock. The store serializes duplicate publication and
+reuses the exact existing record, so reconstruction with the same immutable
+inputs returns byte-identical payloads rather than only matching IDs.
+Retention inventory nodes additionally use only persisted timestamps or the
+explicit stable value `unknown`; synthetic placeholders, age eligibility, and
+lease projection do not consume the process clock. Without an immutable
+policy-as-of value age eligibility stays conservatively blocked.
+
+#### Retention and delete-authority matrix
+
+| Artifact/reference | Protection reason |
+| --- | --- |
+| current Active and Active history Candidate | `current_active`, `active_history` |
+| process-loaded Predict Candidate | `loaded_predict_model`; missing, expired, or unknown lease fails closed |
+| current deployment export/source | `deployment_export`; absent export index makes the graph incomplete |
+| active/resumable campaign, incumbent, recommendation | campaign/recommendation reason codes |
+| snapshot, confirmation Candidate, final decision | confirmation/final-decision reason codes |
+| unresolved migration | `unresolved_migration` |
+| user pin or audit/legal/manual hold | corresponding immutable reason |
+| unknown/unsupported contract | `unknown_version`, `unsupported_version` |
+
+Retention preview returns exact artifact identity/class, size/age/count policy
+result, true source-artifact identity, incoming/outgoing references,
+preservation reasons, disposition, and reference completeness. Its inventory
+represents Candidate, Active/history, deployment-index state, Predict leases,
+run/campaign/proposal/attempt/gate/leaderboard/incumbent/recommendation,
+snapshot/materialized blob, confirmation/Candidate, seal/result,
+decision/promotion linkage, migration source/preview, and available pin/hold
+evidence. Migration previews reference their actual source hash node rather
+than themselves. Unknown targets, incomplete graphs, and missing/expired/unknown
+Predict leases are protected, never inferred eligible. Existing deployment
+exports do not yet have a complete lifecycle-root index, so the application
+preview remains intentionally fail-closed.
+
+No delete command exists in Phase 5H source. A future delete apply is Lane D
+and requires an exact preview, explicit user authorization, same-target
+reference/protection revalidation, bounded apply, same-session postcheck,
+immutable deletion receipt, and residual-state confirmation. Automatic
+cleanup, training-success cleanup, agent deletion, and incomplete-reference
+deletion remain prohibited.
+
+#### Remaining controlled operations
+
+Real user-data snapshot/confirmation/final-test execution, production
+promotion or deployment replacement, historical migration apply, and
+retention/delete apply are not Phase 5H source acceptance. Each requires its
+own explicit authority and operational evidence. The Phase 5H Draft PR
+requires independent exact-head audit before merge; Worker validation is not
+audit acceptance.
 
 ---
 

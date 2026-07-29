@@ -82,6 +82,11 @@ def main() -> int:
             raise RuntimeError(f"Train control is disabled: {text}")
     if train_buttons["중지"].isEnabled():
         raise RuntimeError("Train stop control should be disabled while idle")
+    for text in ("최종 확인 거절", "확인 후 이 모델 사용"):
+        if train_buttons[text].isEnabled():
+            raise RuntimeError(
+                f"Final decision control requires exact confirmation: {text}"
+            )
     expected_train_controls = {
         "학습 데이터 선택",
         "학습 실행",
@@ -90,6 +95,8 @@ def main() -> int:
         "고급 정보 보기",
         "이 모델 사용",
         "현재 모델 Export",
+        "최종 확인 거절",
+        "확인 후 이 모델 사용",
     }
     if set(train_buttons) != expected_train_controls:
         raise RuntimeError(f"unexpected Train controls: {sorted(train_buttons)}")

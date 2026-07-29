@@ -42,6 +42,7 @@ from apps.train.state.training_run_state import (
     TrainingRequest,
     TrainingResourceStatus,
     TrainingResult,
+    TrainingStartRequest,
 )
 from core.data_definition.target_registry.runtime import ModelRegistrySnapshot
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
@@ -231,17 +232,43 @@ class TrainingLifecycleService:
                 finished=lambda result: self._finish("finished", result),
                 failed=lambda result: self._finish("failed", result),
                 cancelled=lambda result: self._finish("cancelled", result),
+                start_requested=self._handle_training_start_requested,
             ))
         except Exception as exc:
             result = _error_result(request, str(exc).splitlines()[0])
             self._finish("failed", result)
             return result
         return None
+
     def _handle_training_started(self, request: TrainingRequest) -> None:
         if self._active_request is None or request.run_id != self._active_request.run_id:
             raise RuntimeError("Training-start acknowledgement mismatch.")
         self._update_execution_stage("training")
         _notify(self._callbacks.get("started_callback"), request)
+
+    def _handle_training_start_requested(
+        self,
+        start_request: TrainingStartRequest,
+    ) -> dict:
+        if (
+            self._active_request is None
+            or start_request.run_id != self._active_request.run_id
+            or not self._active_request.confirmation_start_handshake_json
+        ):
+            raise RuntimeError("Training start-request identity mismatch.")
+        expected = json.loads(
+            self._active_request.confirmation_start_handshake_json
+        )
+        if start_request.handshake != expected:
+            raise RuntimeError("Training start-request handshake mismatch.")
+        callback = self._callbacks.get("start_permit_callback")
+        if callback is None:
+            raise RuntimeError("Training start permit authority is unavailable.")
+        grant = callback(start_request)
+        if not isinstance(grant, dict):
+            raise RuntimeError("Training start grant was not returned.")
+        return grant
+
     def _handle_progress(self, progress: TrainingProgress) -> None:
         self._update_execution_stage("training")
         _notify(self._callbacks.get("progress_callback"), progress)
@@ -263,7 +290,20 @@ class TrainingLifecycleService:
             self._update_execution_stage("candidate_publication")
             try:
                 assert self._publisher is not None and self._staging is not None
-                result = self._publisher.publish(request, result, self._staging)
+                publication_guard = self._callbacks.get(
+                    "candidate_prepublication_guard"
+                )
+                if publication_guard is None:
+                    result = self._publisher.publish(
+                        request, result, self._staging
+                    )
+                else:
+                    result = self._publisher.publish(
+                        request,
+                        result,
+                        self._staging,
+                        prepublication_guard=publication_guard,
+                    )
                 self._staging = None
             except CandidateArtifactGenerationError as exc:
                 terminal = "failed"

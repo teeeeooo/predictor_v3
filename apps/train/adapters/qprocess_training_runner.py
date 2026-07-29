@@ -12,7 +12,10 @@ from apps.train.adapters.qprocess_command import (
     training_process_arguments,
 )
 from apps.train.adapters.qprocess_terminal import process_result
-from apps.train.adapters.training_process_events import parse_training_event
+from apps.train.adapters.training_process_events import (
+    parse_training_event,
+    serialize_training_start_grant,
+)
 from apps.train.ports.training_execution_port import TrainingExecutionCallbacks
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
@@ -168,8 +171,40 @@ class QProcessTrainingRunner(QObject):
     def _handle_event_line(self, line: str) -> None:
         if self._request is None:
             return
-        event_type, payload = parse_training_event(line, self._request)
-        if event_type == "training_started":
+        try:
+            event_type, payload = parse_training_event(line, self._request)
+        except (TypeError, ValueError) as exc:
+            self._reject_protocol(str(exc).splitlines()[0])
+            return
+        if event_type == "training_start_requested":
+            if (
+                self._callbacks is None
+                or self._callbacks.start_requested is None
+            ):
+                self._reject_protocol(
+                    "Training start permit authority is unavailable."
+                )
+                return
+            try:
+                grant = self._callbacks.start_requested(payload)
+                if self._process is None:
+                    raise RuntimeError(
+                        "Training start grant transport is unavailable."
+                    )
+                encoded = serialize_training_start_grant(
+                    self._request, grant
+                ).encode("utf-8")
+                if self._process.write(encoded) != len(encoded):
+                    raise RuntimeError(
+                        "Training start grant transport write failed."
+                    )
+                if not self._process.waitForBytesWritten(1000):
+                    raise RuntimeError(
+                        "Training start grant transport was not flushed."
+                    )
+            except Exception as exc:
+                self._reject_protocol(str(exc).splitlines()[0])
+        elif event_type == "training_started":
             self.training_started.emit(payload)
         elif event_type == "progress":
             self.progress.emit(payload)
@@ -259,3 +294,14 @@ class QProcessTrainingRunner(QObject):
     def _cleanup_temp_artifact(self) -> None:
         if self._temp_artifact_path is not None:
             self._temp_artifact_path.unlink(missing_ok=True)
+
+    def _reject_protocol(self, message: str) -> None:
+        if self._request is None or self._terminal_emitted:
+            return
+        self._pending_result = process_result(
+            self._request,
+            "error",
+            f"Training child protocol rejected: {message}",
+        )
+        if self._process is not None:
+            self._process.kill()

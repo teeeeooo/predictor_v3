@@ -9,6 +9,9 @@ from apps.train.application.training_lifecycle import TrainingLifecycleService
 from apps.train.application.experiments.execution_lock import execution_lock_is_held
 from apps.train.application.model_management import ModelManagementService
 from apps.common.model_lifecycle.promotion import ModelPromotionService
+from apps.train.application.confirmation.promotion_policy import (
+    RecommendationPromotionAuthorization,
+)
 from apps.train.services.training_service import TrainingService
 from apps.train.state.training_run_state import TrainingRequest
 
@@ -27,6 +30,9 @@ class TrainController:
         lifecycle_service: TrainingLifecycleService | None = None,
         model_management_service: ModelManagementService | None = None,
         experiment_service=None,  # noqa: ANN001
+        closeout_store=None,  # noqa: ANN001
+        final_decision_service=None,  # noqa: ANN001
+        user_authority_issuer=None,  # noqa: ANN001
     ) -> None:
         self._lifecycle = lifecycle_service or TrainingLifecycleService(
             validation=service,
@@ -38,15 +44,25 @@ class TrainController:
         )
         self._validation = service or TrainingService()
         self._experiments = experiment_service
+        self._closeout_store = closeout_store
+        self._final_decisions = final_decision_service
+        self._user_authority_issuer = user_authority_issuer
         self._model_management = model_management_service
         if (
             self._model_management is None
             and lifecycle_repository is not None
             and registry_provider is not None
         ):
+            authorization = RecommendationPromotionAuthorization(
+                lifecycle_repository.root
+            )
             self._model_management = ModelManagementService(
                 lifecycle_repository,
-                ModelPromotionService(lifecycle_repository, registry_provider),
+                ModelPromotionService(
+                    lifecycle_repository,
+                    registry_provider,
+                    authorization_review=authorization.review,
+                ),
                 training_running=lambda: (
                     self._lifecycle.is_running
                     or execution_lock_is_held(
@@ -149,3 +165,81 @@ class TrainController:
             )
         except Exception as exc:
             return unexpected_deployment_export_failure(exc)
+
+    def inspect_lifecycle_closeout(self):  # noqa: ANN201
+        if self._closeout_store is None:
+            return None
+        try:
+            snapshots = self._closeout_store.list_records(
+                self._closeout_store.snapshots, "snapshot.json"
+            )
+            confirmations = self._closeout_store.list_records(
+                self._closeout_store.confirmations, "confirmation.json"
+            )
+        except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
+            return {
+                "snapshot": None,
+                "confirmation": None,
+                "blocked_reason": str(exc).splitlines()[0],
+            }
+        blocked_reason = ""
+        latest_snapshot = None
+        if snapshots:
+            initial = max(
+                snapshots,
+                key=lambda item: (
+                    str(item.get("created_at", "")),
+                    str(item.get("snapshot_id", "")),
+                ),
+            )
+            try:
+                latest_snapshot = self._closeout_store.read_snapshot(
+                    initial["snapshot_id"]
+                )
+            except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
+                blocked_reason = str(exc).splitlines()[0]
+        latest_confirmation = None
+        if confirmations:
+            try:
+                current = [
+                    self._closeout_store.read_confirmation(
+                        item["confirmation_id"]
+                    )
+                    for item in confirmations
+                ]
+                latest_confirmation = max(
+                    current,
+                    key=lambda item: (
+                        str(item.get("updated_at", "")),
+                        str(item.get("confirmation_id", "")),
+                    ),
+                )
+            except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
+                blocked_reason = str(exc).splitlines()[0]
+        return {
+            "snapshot": latest_snapshot,
+            "confirmation": latest_confirmation,
+            "blocked_reason": blocked_reason,
+        }
+
+    def decide_final_confirmation(
+        self,
+        confirmation_id: str,
+        *,
+        approve: bool,
+        expected_active_revision: int,
+        reason: str = "",
+    ):  # noqa: ANN201
+        if self._final_decisions is None:
+            raise RuntimeError("Final confirmation decision is unavailable.")
+        if self._user_authority_issuer is None:
+            raise RuntimeError("Trusted user interaction boundary is unavailable.")
+        return self._final_decisions.decide(
+            confirmation_id,
+            approve=approve,
+            authority=self._user_authority_issuer.issue(
+                "train-gui-explicit-decision"
+            ),
+            expected_active_revision=expected_active_revision,
+            reason=reason,
+        )
