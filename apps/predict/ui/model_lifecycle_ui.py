@@ -17,6 +17,7 @@ class PredictModelLifecycleUi:
         status = controller.refresh_model_lifecycle()
         if status is None:
             self._workspace.command_bar.reload_model_button.setVisible(False)
+            self._workspace._refresh_prediction_command_state()
             return
         if not controller.is_model_lifecycle_operation_current(status.operation_id):
             status = controller.current_model_lifecycle_status()
@@ -52,6 +53,7 @@ class PredictModelLifecycleUi:
             workspace.model_badge.set_status("Active 모델 로드 실패", "error")
         workspace.status_label.setText(status.message)
         workspace.model_lifecycle_diagnostics = diagnostics or status
+        workspace._refresh_prediction_command_state()
 
     def reload_active(self) -> None:
         workspace = self._workspace
@@ -68,6 +70,7 @@ class PredictModelLifecycleUi:
             )
             workspace.model_lifecycle_unexpected_traceback = traceback.format_exc()
             button.setEnabled(True)
+            workspace._refresh_prediction_command_state()
             return
         if not controller.is_model_lifecycle_operation_current(outcome.operation_id):
             status = controller.current_model_lifecycle_status()
@@ -76,3 +79,4 @@ class PredictModelLifecycleUi:
         elif outcome.applied_to_shared_state:
             self.render(outcome.model_status, diagnostics=outcome)
         button.setEnabled(not controller.is_running)
+        workspace._refresh_prediction_command_state()

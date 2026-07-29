@@ -14,6 +14,9 @@ from PySide6.QtWidgets import (
     QTextEdit,
 )
 
+from apps.predict.application.models import PredictionModelStatus
+from apps.predict.composition import build_predict_workspace_composition
+from apps.predict.services.prediction_service import PredictionService
 from apps.predict.ui.shell import PredictShell
 from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.controllers.data_definition_controller import DataDefinitionController
@@ -41,10 +44,22 @@ def _app() -> QApplication:
     return QApplication.instance() or QApplication([])
 
 
-def _train_shell() -> TrainShell:
+def _train_shell(*, predict_composition=None) -> TrainShell:  # noqa: ANN001
     service = DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
     return TrainShell(
-        data_definition_controller=DataDefinitionController(service)
+        data_definition_controller=DataDefinitionController(service),
+        predict_composition=predict_composition,
+    )
+
+
+class UnavailablePredictionService:
+    def model_status(self):
+        return PredictionModelStatus("unavailable", "missing")
+
+
+def _unavailable_predict_composition():
+    return build_predict_workspace_composition(
+        prediction_service=UnavailablePredictionService()
     )
 
 
@@ -184,6 +199,36 @@ def test_train_embedded_predict_workspace_hides_duplicate_title_and_status_strip
     assert isinstance(workspace, PredictWorkspace)
     assert workspace.findChild(QLabel, "PredictWorkspaceTitle") is None
     assert workspace.status_strip.parent() is None
+
+
+def test_standalone_and_embedded_predict_share_no_model_execution_gate(monkeypatch):
+    _app()
+    monkeypatch.setattr(
+        PredictionService,
+        "model_status",
+        lambda _self: pytest.fail("default local model service must not be consulted"),
+    )
+    standalone_shell = PredictShell(composition=_unavailable_predict_composition())
+    embedded_shell = _train_shell(
+        predict_composition=_unavailable_predict_composition()
+    )
+    standalone = standalone_shell.workspace
+    embedded = embedded_shell.predict_workspace
+
+    assert not standalone.command_bar.run_button.isEnabled()
+    assert not embedded.command_bar.run_button.isEnabled()
+    for workspace in (standalone, embedded):
+        assert not workspace.prediction_controller.can_start_prediction
+        assert all(
+            "Train" not in button.text()
+            for button in workspace.command_bar.findChildren(QPushButton)
+        )
+
+    predict_source = Path("apps/predict").resolve()
+    assert "apps.train" not in (
+        (predict_source / "ui" / "workspace.py").read_text(encoding="utf-8")
+        + (predict_source / "app.py").read_text(encoding="utf-8")
+    )
 
 
 def test_train_model_panel_initial_state_with_and_without_data(tmp_path):

@@ -32,6 +32,10 @@ class FakeController:
         self.refresh_calls = 0
         self.outcome = None
 
+    @property
+    def can_start_prediction(self):
+        return not self.is_running and bool(self.status.loaded.candidate_id)
+
     def refresh_model_lifecycle(self):
         self.refresh_calls += 1
         return self.status
@@ -57,12 +61,68 @@ class FakeController:
 
 def _workspace(status):
     _app()
-    return SimpleNamespace(
-        prediction_controller=FakeController(status),
-        command_bar=SimpleNamespace(reload_model_button=QPushButton()),
+    controller = FakeController(status)
+    run_button = QPushButton()
+    workspace = SimpleNamespace(
+        prediction_controller=controller,
+        command_bar=SimpleNamespace(
+            reload_model_button=QPushButton(),
+            run_button=run_button,
+        ),
         model_badge=StatusBadge("모델 상태", "준비"),
         status_label=QLabel(),
     )
+    workspace._refresh_prediction_command_state = (
+        lambda: run_button.setEnabled(controller.can_start_prediction)
+    )
+    return workspace
+
+
+@pytest.mark.parametrize(
+    "status_name",
+    ("current", "reload-required", "reload-failed", "active-unavailable"),
+)
+def test_loaded_model_keeps_run_enabled_across_lifecycle_statuses(status_name):
+    status = PredictModelLifecycleStatus(
+        status_name,
+        LoadedModelIdentity("candidate-a", 1, "generation-1"),
+        "candidate-b" if status_name != "current" else "candidate-a",
+        2 if status_name != "current" else 1,
+        "status",
+    )
+    workspace = _workspace(status)
+    adapter = PredictModelLifecycleUi(workspace)
+
+    adapter.refresh()
+
+    assert workspace.command_bar.run_button.isEnabled()
+
+
+def test_lifecycle_refresh_projects_unusable_and_usable_command_state():
+    unavailable = PredictModelLifecycleStatus(
+        "startup-failed",
+        LoadedModelIdentity(),
+        message="no model",
+    )
+    workspace = _workspace(unavailable)
+    adapter = PredictModelLifecycleUi(workspace)
+
+    adapter.refresh()
+    assert not workspace.command_bar.run_button.isEnabled()
+
+    workspace.prediction_controller.status = PredictModelLifecycleStatus(
+        "current",
+        LoadedModelIdentity("candidate-a", 1, "generation-1"),
+        "candidate-a",
+        1,
+        "ready",
+    )
+    adapter.refresh()
+    assert workspace.command_bar.run_button.isEnabled()
+
+    workspace.prediction_controller.status = unavailable
+    adapter.refresh()
+    assert not workspace.command_bar.run_button.isEnabled()
 
 
 def test_reload_required_shows_old_loaded_model_and_explicit_action():

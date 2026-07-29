@@ -7,6 +7,7 @@ from PySide6.QtCore import QItemSelectionModel, Qt
 from PySide6.QtWidgets import QApplication
 
 from apps.predict.application.prediction_usecase import PredictionRunSummary
+from apps.predict.application.models import PredictionModelStatus
 from apps.predict.ports.prediction_execution_port import PredictionProgress
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
@@ -130,6 +131,10 @@ def test_running_callbacks_keep_progress_summary_badge_and_terminal_projection_a
     _app()
     session = _session_with_rows(3)
     workspace = PredictWorkspace(session=session)
+    workspace.prediction_controller._service.model_status = (
+        lambda: PredictionModelStatus("fake", "loaded")
+    )
+    workspace._refresh_prediction_command_state()
     first, second, invalid = session.case_order
     callbacks = {}
 

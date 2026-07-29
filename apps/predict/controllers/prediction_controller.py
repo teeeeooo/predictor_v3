@@ -59,6 +59,21 @@ class PredictionController:
         """Return whether a prediction run is active."""
         return self._is_running
 
+    @property
+    def has_usable_prediction_service(self) -> bool:
+        """Return whether the current process can execute predictions."""
+        service_status = self._service.model_status().status
+        if service_status not in {"loaded", "exists"}:
+            return False
+        if self._model_lifecycle is None:
+            return True
+        return bool(self._model_lifecycle.loaded.candidate_id)
+
+    @property
+    def can_start_prediction(self) -> bool:
+        """Return current command eligibility for starting prediction."""
+        return not self._is_running and self.has_usable_prediction_service
+
     def model_status(self) -> PredictionModelStatus:
         """Return Qt-free model status through the service boundary."""
         return self._service.model_status()
@@ -126,6 +141,8 @@ class PredictionController:
         """Start worker-backed prediction for selected case ids."""
         if self._is_running:
             raise RuntimeError("Prediction run already in progress.")
+        if not self.has_usable_prediction_service:
+            raise RuntimeError("No usable prediction service is loaded.")
 
         total = len(case_ids)
         self._notify(status_callback, f"Starting prediction for {total} rows.")
@@ -171,6 +188,8 @@ class PredictionController:
         result_callback: ResultCallback | None = None,
     ) -> PredictionRunSummary:
         """Run prediction for selected case ids."""
+        if not self.has_usable_prediction_service:
+            raise RuntimeError("No usable prediction service is loaded.")
         total = len(case_ids)
         self._notify(status_callback, f"Starting prediction for {total} rows.")
 

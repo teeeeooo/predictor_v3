@@ -37,8 +37,9 @@ succeeded, and PR #35 was guarded squash-merged as
 `b20661ee6b400559fbac61a9f2669d50256247bc`. Train/Admin Phase 5 is therefore
 closed. Predict internal UI/UX is now the active product workstream. Findings
 #1–#4 are complete and merged; finding #4 closes user-facing validation-message
-repair. Finding #5, no-Active actionable guidance and its execution gate, remains
-a product/owner decision before source implementation.
+repair. Finding #5's bounded no-usable-model execution gate is implemented on a
+feature branch and awaits exact-head review; guidance, navigation, and lifecycle
+wording redesign remain separate.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -67,8 +68,9 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   Data Definition Save.
 - Predict consumes saved contract snapshots, mapping values, and a promoted
   compatible active model. Findings #1–#4 repaired bounded presentation defects;
-  no-Active guidance, disable behavior, Train navigation, standalone routing, and
-  Bootstrap/Retraining-required integration remain undecided for finding #5.
+  finding #5 adds the shared standalone/embedded execution gate for absent usable
+  loaded capability. Train navigation, standalone routing, guidance, and
+  Bootstrap/Retraining-required integration remain outside that bounded slice.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
@@ -271,11 +273,12 @@ remain outside repository closeout.
 
 Predict findings #1–#4 are complete and merged: populated dropdown rendering,
 reset idle projection, running-state projection consistency, and user-facing
-validation/runtime/partial message semantics. The next candidate is finding #5,
-no-Active actionable guidance and its execution gate. Whether Predict is
-disabled, whether guidance navigates to Train, how standalone Predict routes the
-action, and how Bootstrap and Retraining-required states integrate are not yet
-decided. A bounded read-only architecture/product decision precedes source work.
+validation/runtime/partial message semantics. Finding #5's no-usable-model
+execution gate is implemented on a feature branch and pending exact-head review.
+It disables only prediction execution when no usable loaded capability exists,
+using the same controller-owned rule in standalone and embedded Predict.
+Guidance, Train navigation, standalone routing, and Bootstrap /
+Retraining-required wording remain out of scope.
 
 ### Later — Production ML Readiness / Calculator Integration
 
