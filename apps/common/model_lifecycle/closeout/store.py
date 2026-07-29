@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,7 @@ from .canonical import (
 )
 from .contracts import (
     CONFIRMATION_EXECUTION_CLAIM_VERSION,
+    CONFIRMATION_EXECUTION_STARTED_VERSION,
     CONFIRMATION_EXECUTION_START_VERSION,
     MIGRATION_PREVIEW_VERSION,
     RETENTION_PREVIEW_VERSION,
@@ -215,13 +217,14 @@ class LifecycleCloseoutStore:
                 return recovered, True
             return existing, False
 
-    def begin_confirmation_execution(
+    @contextmanager
+    def confirmation_execution_owner(
         self,
         execution_key: str,
         *,
         running: dict[str, Any],
-    ) -> tuple[dict[str, Any], bool]:
-        """Claim the single execution start after pending publication."""
+    ):
+        """Hold one recoverable owner until Core acknowledges actual start."""
         require_sha256(execution_key, "confirmation execution_key")
         running_value = validate_confirmation_record(running)
         if (
@@ -229,43 +232,198 @@ class LifecycleCloseoutStore:
             or running_value["status"] != "confirmation_running"
         ):
             raise ValueError("confirmation execution start metadata mismatch")
+        owner_lock = self.root / f".confirmation-{execution_key}.lock"
+        with lifecycle_lock(owner_lock, filesystem=self._filesystem):
+            with lifecycle_lock(
+                self.root / ".lifecycle-write.lock",
+                filesystem=self._filesystem,
+            ):
+                record, owns_execution = self._prepare_confirmation_execution(
+                    execution_key,
+                    running_value,
+                )
+            yield record, owns_execution
+
+    def mark_confirmation_execution_started(
+        self,
+        execution_key: str,
+        *,
+        confirmation_id: str,
+    ) -> None:
+        """Persist the existing Core-start acknowledgement exactly once."""
+        require_sha256(execution_key, "confirmation execution_key")
+        require_safe_identity(confirmation_id, "confirmation_id")
         with lifecycle_lock(
             self.root / ".lifecycle-write.lock",
             filesystem=self._filesystem,
         ):
             claim = self._read_confirmation_execution_claim(execution_key)
+            prepared = self._read_confirmation_execution_start(
+                execution_key, claim
+            )
             current = self._read_claimed_confirmation(claim)
-            if current["status"] != "confirmation_pending":
-                return current, False
-            if any(
-                running_value[name] != current[name]
-                for name in (
-                    "confirmation_id",
-                    "snapshot_id",
-                    "selected_candidate_id",
-                    "created_at",
-                    "production_required_targets",
-                    "execution_key",
-                )
+            if (
+                confirmation_id != claim["confirmation_id"]
+                or current != prepared["running_record"]
+                or current["status"] != "confirmation_running"
             ):
                 raise ValueError(
-                    "confirmation execution start identity conflict"
+                    "confirmation execution acknowledgement mismatch"
                 )
-            claim_directory = self.confirmation_executions / execution_key
-            start_path = claim_directory / "started.json"
-            if self._filesystem.entry_exists(start_path):
-                return current, False
-            self._filesystem.write_json_exclusive(start_path, {
+            directory = self.confirmation_executions / execution_key
+            path = directory / "execution_started.json"
+            evidence = {
+                "schema_version": CONFIRMATION_EXECUTION_STARTED_VERSION,
+                "execution_key": execution_key,
+                "confirmation_id": confirmation_id,
+                "running_record_sha256": prepared[
+                    "running_record_sha256"
+                ],
+            }
+            if self._filesystem.entry_exists(path):
+                if self._filesystem.read_json(path) != evidence:
+                    raise ValueError(
+                        "confirmation execution-start evidence conflict"
+                    )
+                return
+            self._filesystem.write_json_exclusive(path, evidence)
+
+    def require_confirmation_execution_started(
+        self,
+        execution_key: str,
+    ) -> None:
+        require_sha256(execution_key, "confirmation execution_key")
+        with lifecycle_lock(
+            self.root / ".lifecycle-write.lock",
+            filesystem=self._filesystem,
+        ):
+            claim = self._read_confirmation_execution_claim(execution_key)
+            prepared = self._read_confirmation_execution_start(
+                execution_key, claim
+            )
+            current = self._read_claimed_confirmation(claim)
+            if current != prepared["running_record"]:
+                raise ValueError(
+                    "confirmation running evidence changed before completion"
+                )
+            self._validate_confirmation_execution_started(
+                self.confirmation_executions
+                / execution_key
+                / "execution_started.json",
+                prepared,
+            )
+
+    def _prepare_confirmation_execution(
+        self,
+        execution_key: str,
+        proposed_running: dict[str, Any],
+    ) -> tuple[dict[str, Any], bool]:
+        claim = self._read_confirmation_execution_claim(execution_key)
+        current = self._read_claimed_confirmation(claim)
+        if current["status"] not in {
+            "confirmation_pending",
+            "confirmation_running",
+        }:
+            return current, False
+        directory = self.confirmation_executions / execution_key
+        prepared_path = directory / "start_prepared.json"
+        if self._filesystem.entry_exists(prepared_path):
+            prepared = self._read_confirmation_execution_start(
+                execution_key, claim
+            )
+        else:
+            self._validate_running_transition(
+                claim["pending_record"], proposed_running
+            )
+            prepared = {
                 "schema_version": CONFIRMATION_EXECUTION_START_VERSION,
                 "execution_key": execution_key,
                 "confirmation_id": claim["confirmation_id"],
                 "pending_record_sha256": claim["pending_record_sha256"],
-            })
+                "running_record_sha256": content_sha256(proposed_running),
+                "running_record": proposed_running,
+            }
+            self._filesystem.write_json_exclusive(prepared_path, prepared)
+        running = prepared["running_record"]
+        started_path = directory / "execution_started.json"
+        if self._filesystem.entry_exists(started_path):
+            self._validate_confirmation_execution_started(
+                started_path, prepared
+            )
+            if current != running:
+                raise ValueError(
+                    "execution-start evidence/running record conflict"
+                )
+            return current, False
+        if current["status"] == "confirmation_pending":
             self.append_confirmation(
-                running_value,
+                running,
                 expected_status="confirmation_pending",
             )
-            return running_value, True
+        elif current != running:
+            raise ValueError(
+                "prepared execution/running record identity conflict"
+            )
+        return running, True
+
+    def _read_confirmation_execution_start(
+        self,
+        execution_key: str,
+        claim: dict[str, Any],
+    ) -> dict[str, Any]:
+        path = (
+            self.confirmation_executions
+            / execution_key
+            / "start_prepared.json"
+        )
+        value = canonical_payload(self._filesystem.read_json(path))
+        if (
+            value.get("schema_version")
+            != CONFIRMATION_EXECUTION_START_VERSION
+            or value.get("execution_key") != execution_key
+            or value.get("confirmation_id") != claim["confirmation_id"]
+            or value.get("pending_record_sha256")
+            != claim["pending_record_sha256"]
+        ):
+            raise ValueError("confirmation execution preparation is corrupt")
+        running = validate_confirmation_record(value.get("running_record"))
+        if (
+            content_sha256(running) != value.get("running_record_sha256")
+        ):
+            raise ValueError(
+                "confirmation execution preparation hash mismatch"
+            )
+        self._validate_running_transition(claim["pending_record"], running)
+        return {**value, "running_record": running}
+
+    @staticmethod
+    def _validate_running_transition(
+        pending: dict[str, Any],
+        running: dict[str, Any],
+    ) -> None:
+        expected = {
+            **pending,
+            "status": "confirmation_running",
+            "updated_at": running["updated_at"],
+        }
+        if running != validate_confirmation_record(expected):
+            raise ValueError(
+                "confirmation running transition identity conflict"
+            )
+
+    def _validate_confirmation_execution_started(
+        self,
+        path: Path,
+        prepared: dict[str, Any],
+    ) -> None:
+        value = canonical_payload(self._filesystem.read_json(path))
+        if value != {
+            "schema_version": CONFIRMATION_EXECUTION_STARTED_VERSION,
+            "execution_key": prepared["execution_key"],
+            "confirmation_id": prepared["confirmation_id"],
+            "running_record_sha256": prepared["running_record_sha256"],
+        }:
+            raise ValueError("confirmation execution-start evidence is corrupt")
 
     def _recover_confirmation_from_claim(
         self, pending: dict[str, Any]

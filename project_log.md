@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-29 — Phase 5H durable execution-start recovery
+
+### Decision
+
+- Preserve the fourth independent audit `FAIL` at exact head
+  `c58413cabfa005154c1a5b70d80f2a3a355431a6` and historical successful run
+  `30375698091`; neither grants acceptance.
+- Treat the exact running-transition marker as recoverable preparation, not
+  proof of actual execution. Bind it to claim, confirmation, execution key, and
+  running-record hash.
+- Reuse the existing TrainingLifecycle Core-start callback for separate durable
+  actual-start evidence. Hold one execution-key OS lock across execution and
+  terminal handoff so process reconstruction can recover pre-start failure
+  while concurrent retry cannot duplicate training or Candidate publication.
+- Keep the Draft PR open and unmerged and require a new independent exact-head
+  re-audit. No production confirmation/promotion, migration apply,
+  retention/delete apply, deployment mutation, or audit-PASS authority is
+  added.
+
 ## 2026-07-29 — Phase 5H transactional finalization recovery
 
 ### Decision

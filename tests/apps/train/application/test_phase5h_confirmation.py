@@ -79,6 +79,8 @@ class _Execution:
 
     def execute(self, request):
         self.requests.append(request)
+        if request.execution_started is not None:
+            request.execution_started()
         return self.result
 
 
@@ -101,6 +103,8 @@ class _DriftingIntegrity:
 class _GuardedExecution(_Execution):
     def execute(self, request):
         self.requests.append(request)
+        if request.execution_started is not None:
+            request.execution_started()
         assert request.prepublication_integrity is not None
         request.prepublication_integrity()
         return self.result
@@ -300,6 +304,8 @@ def test_concurrent_duplicate_start_has_one_durable_owner(
 
         def execute(self, request):  # noqa: ANN001
             self.requests.append(request)
+            if request.execution_started is not None:
+                request.execution_started()
             self.started.set()
             assert self.release.wait(timeout=5)
             return self.result
@@ -331,11 +337,12 @@ def test_concurrent_duplicate_start_has_one_durable_owner(
     with ThreadPoolExecutor(max_workers=2) as pool:
         first_future = pool.submit(service().start, snapshot["snapshot_id"])
         assert execution.started.wait(timeout=5)
-        duplicate = pool.submit(
+        duplicate_future = pool.submit(
             service().start, snapshot["snapshot_id"]
-        ).result(timeout=5)
+        )
         execution.release.set()
         first = first_future.result(timeout=5)
+        duplicate = duplicate_future.result(timeout=5)
 
     assert duplicate["confirmation_id"] == first["confirmation_id"]
     assert duplicate["status"] in {
@@ -594,6 +601,8 @@ def test_concurrent_partial_execution_claim_recovery_has_one_owner(
 
         def execute(self, request):  # noqa: ANN001
             self.requests.append(request)
+            if request.execution_started is not None:
+                request.execution_started()
             self.started.set()
             assert self.release.wait(timeout=5)
             return self.result
@@ -638,13 +647,236 @@ def test_concurrent_partial_execution_claim_recovery_has_one_owner(
     with ThreadPoolExecutor(max_workers=2) as pool:
         first_future = pool.submit(retry, "alternate-a")
         assert execution.started.wait(timeout=5)
-        duplicate = pool.submit(retry, "alternate-b").result(timeout=5)
+        duplicate_future = pool.submit(retry, "alternate-b")
         execution.release.set()
         first = first_future.result(timeout=5)
+        duplicate = duplicate_future.result(timeout=5)
 
     assert first["confirmation_id"] == duplicate["confirmation_id"]
     assert len(execution.requests) == 1
     assert len(tuple(store.confirmations.iterdir())) == 1
+
+
+@pytest.mark.parametrize("retry_id", (None, "alternate-retry-id"))
+def test_prepared_start_recovers_after_running_transition_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    retry_id: str | None,
+) -> None:
+    root = tmp_path / str(retry_id or "implicit")
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    execution = _Execution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+    append_confirmation = store.append_confirmation
+
+    def fail_running(payload, *, expected_status):  # noqa: ANN001
+        if payload["status"] == "confirmation_running":
+            assert tuple(
+                store.confirmation_executions.glob(
+                    "*/start_prepared.json"
+                )
+            )
+            raise OSError("injected running transition failure")
+        return append_confirmation(
+            payload, expected_status=expected_status
+        )
+
+    monkeypatch.setattr(store, "append_confirmation", fail_running)
+    first = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        execution,
+        closeout_store=store,
+        integrity_validator=_Integrity(),
+    ).start(snapshot["snapshot_id"])
+
+    assert first["status"] == "blocked"
+    assert execution.requests == []
+    pending = next(store.confirmations.glob("*/confirmation.json"))
+    confirmation_id = pending.parent.name
+
+    recovered_service = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        execution,
+        closeout_store=LifecycleCloseoutStore(root),
+        integrity_validator=_Integrity(),
+    )
+    kwargs = {"confirmation_id": retry_id} if retry_id else {}
+    recovered = recovered_service.start(snapshot["snapshot_id"], **kwargs)
+    replay = recovered_service.start(
+        snapshot["snapshot_id"],
+        confirmation_id="later-alternate-id",
+    )
+
+    assert recovered["confirmation_id"] == confirmation_id
+    assert replay == recovered
+    assert len(execution.requests) == 1
+    assert execution.requests[0].confirmation_id == confirmation_id
+    history = tuple(
+        (store.confirmations / confirmation_id / "history").glob("*.json")
+    )
+    assert sum("confirmation_running" in path.name for path in history) == 1
+    assert tuple(
+        store.confirmation_executions.glob("*/execution_started.json")
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("confirmation_id", "corrupt-confirmation"),
+        ("execution_key", "b" * 64),
+        ("running_record_sha256", "b" * 64),
+    ),
+)
+def test_corrupt_prepared_start_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: str,
+) -> None:
+    root = tmp_path / field
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    execution = _Execution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+    monkeypatch.setattr(
+        store,
+        "append_confirmation",
+        lambda *_args, **_kwargs: (
+            (_ for _ in ()).throw(OSError("injected"))
+        ),
+    )
+    ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        execution,
+        closeout_store=store,
+        integrity_validator=_Integrity(),
+    ).start(snapshot["snapshot_id"])
+    prepared_path = next(
+        store.confirmation_executions.glob("*/start_prepared.json")
+    )
+    prepared = json.loads(prepared_path.read_text(encoding="utf-8"))
+    prepared[field] = value
+    prepared_path.write_text(
+        json.dumps(prepared, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    before = prepared_path.read_bytes()
+
+    outcome = ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        execution,
+        closeout_store=LifecycleCloseoutStore(root),
+        integrity_validator=_Integrity(),
+    ).start(
+        snapshot["snapshot_id"],
+        confirmation_id="alternate-id",
+    )
+
+    assert outcome["status"] == "blocked"
+    assert execution.requests == []
+    assert prepared_path.read_bytes() == before
+    assert len(tuple(store.confirmations.iterdir())) == 1
+    assert repository.active is None
+
+
+def test_concurrent_prepared_start_recovery_has_one_execution_owner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _RecoveringExecution(_Execution):
+        def __init__(self, result) -> None:  # noqa: ANN001
+            super().__init__(result)
+            self.started = Event()
+            self.release = Event()
+
+        def execute(self, request):  # noqa: ANN001
+            self.requests.append(request)
+            if request.execution_started is not None:
+                request.execution_started()
+            self.started.set()
+            assert self.release.wait(timeout=5)
+            return self.result
+
+    root = tmp_path / "lifecycle"
+    selected = _candidate(root, "selected-1", "training")
+    confirmed = _candidate(root, "confirmed-1", "confirmation")
+    repository = _Repository(
+        root, {"selected-1": selected, "confirmed-1": confirmed}
+    )
+    store = LifecycleCloseoutStore(root)
+    snapshot = _snapshot(store, selected)
+    execution = _RecoveringExecution(ConfirmationExecutionResult(
+        status="succeeded",
+        target_results=_target_results(),
+        confirmation_candidate_id="confirmed-1",
+    ))
+    monkeypatch.setattr(
+        store,
+        "append_confirmation",
+        lambda *_args, **_kwargs: (
+            (_ for _ in ()).throw(OSError("injected"))
+        ),
+    )
+    ConfirmationApplicationService(
+        repository,
+        _Generations(),
+        _Promotion(),
+        execution,
+        closeout_store=store,
+        integrity_validator=_Integrity(),
+    ).start(snapshot["snapshot_id"])
+
+    def retry(identity: str) -> dict:
+        return ConfirmationApplicationService(
+            repository,
+            _Generations(),
+            _Promotion(),
+            execution,
+            closeout_store=LifecycleCloseoutStore(root),
+            integrity_validator=_Integrity(),
+        ).start(snapshot["snapshot_id"], confirmation_id=identity)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first_future = pool.submit(retry, "alternate-a")
+        assert execution.started.wait(timeout=5)
+        second_future = pool.submit(retry, "alternate-b")
+        execution.release.set()
+        first = first_future.result(timeout=5)
+        second = second_future.result(timeout=5)
+
+    assert first == second
+    assert len(execution.requests) == 1
+    confirmation_id = first["confirmation_id"]
+    history = tuple(
+        (store.confirmations / confirmation_id / "history").glob("*.json")
+    )
+    assert sum("confirmation_running" in path.name for path in history) == 1
 
 
 @pytest.mark.parametrize("reason", (

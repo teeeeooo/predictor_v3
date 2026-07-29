@@ -20,6 +20,7 @@ class FrozenConfirmationRequest:
     evaluation_contract: dict[str, Any]
     locked_final_test: dict[str, Any] | None = None
     prepublication_integrity: Callable[[], None] | None = None
+    execution_started: Callable[[], None] | None = None
 
 
 @dataclass(frozen=True)

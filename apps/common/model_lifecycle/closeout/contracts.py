@@ -13,6 +13,9 @@ CONFIRMATION_EXECUTION_CLAIM_VERSION = (
 CONFIRMATION_EXECUTION_START_VERSION = (
     "predictor_v3.confirmation_execution_start.v1"
 )
+CONFIRMATION_EXECUTION_STARTED_VERSION = (
+    "predictor_v3.confirmation_execution_started.v1"
+)
 FINAL_DECISION_VERSION = "predictor_v3.final_decision.v1"
 LOCKED_FINAL_TEST_VERSION = "predictor_v3.locked_final_test.v1"
 LOCKED_FINAL_TEST_RESULT_VERSION = "predictor_v3.locked_final_test_result.v1"
@@ -70,6 +73,7 @@ __all__ = [
     "CONFIRMATION_VERSION",
     "CONFIRMATION_EXECUTION_CLAIM_VERSION",
     "CONFIRMATION_EXECUTION_START_VERSION",
+    "CONFIRMATION_EXECUTION_STARTED_VERSION",
     "FINAL_DECISION_VERSION",
     "LOADED_MODEL_LEASE_VERSION",
     "LOCKED_FINAL_TEST_VERSION",

@@ -1450,6 +1450,16 @@ finalization. The bounded transactional repair stays in the existing
 closeout-store, confirmation executor, locked evaluator, and shared Candidate
 writer owners and requires another independent exact-head re-audit.
 
+The fourth independent audit failed at exact head
+`c58413cabfa005154c1a5b70d80f2a3a355431a6`. Historical exact-head run
+`30375698091` succeeded, but it is validation evidence and not audit
+acceptance. Its remaining blocker was a single start marker written before the
+`confirmation_running` transition: failure of that transition left a pending
+confirmation that could not safely recover ownership. The bounded correction
+keeps the same claim/store/executor owners, distinguishes recoverable start
+preparation from existing Core-start acknowledgement, and requires another
+independent exact-head re-audit.
+
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
 identities, lifecycle-root content-addressed training input, immutable
@@ -1523,10 +1533,17 @@ meaning. If claim publication succeeds but the initial record is absent,
 including an empty partial identity directory, a reconstructed service
 validates and exclusive-creates the exact embedded pending record. Claim
 version/hash/identity, initial-record bytes, or immutable execution-field
-disagreement fails closed without another identity or execution. A separate
-durable single-start marker is acquired under the same writer lock only after
-pending publication, so ambiguous record-publication failure and concurrent
-recovery still allow exactly one execution owner. Implicit starts use the
+disagreement fails closed without another identity or execution. Start handoff
+then persists a versioned preparation containing the exact expected
+`confirmation_running` record and hash. Preparation alone does not mean
+execution started. One execution-key OS lock serializes live owners and is
+automatically released by process termination. A retry holding that lock may
+recover either `prepared + pending` by writing the exact running transition, or
+`prepared + running` when no actual-start evidence exists. The existing
+TrainingLifecycle Core-start acknowledgement publishes separate immutable
+`execution_started` evidence bound to the prepared running hash. Once that
+evidence exists, retry cannot execute again. Preparation, running history,
+claim, or acknowledgement mismatch fails closed. Implicit starts use the
 claim's deterministic confirmation ID; caller-selected IDs are compatibility
 labels and cannot create another execution. Pending, running, terminal,
 concurrent, reconstructed-process, and alternate-ID retries resolve to the same

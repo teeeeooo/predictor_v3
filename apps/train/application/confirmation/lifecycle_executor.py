@@ -120,7 +120,14 @@ class TrainingLifecycleConfirmationExecutor:
         immediate = self._experiments.run_resolved_request(
             resolved,
             training,
-            callbacks={"candidate_prepublication_guard": guard},
+            callbacks={
+                "started_callback": (
+                    (lambda _request: request.execution_started())
+                    if request.execution_started is not None
+                    else None
+                ),
+                "candidate_prepublication_guard": guard,
+            },
         )
         record = self._experiments.inspect_run(run_id)
         if record["status"] != "success":

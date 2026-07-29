@@ -131,10 +131,14 @@ class ConfirmationApplicationService:
                         "confirmation_identity_conflict",
                         "Confirmation identity belongs to another execution.",
                     )
-                claimed = self._store.find_confirmation_by_execution_key(
-                    execution_key
-                )
-                return claimed if claimed is not None else identity_record
+                if identity_record["status"] not in {
+                    "confirmation_pending",
+                    "confirmation_running",
+                }:
+                    claimed = self._store.find_confirmation_by_execution_key(
+                        execution_key
+                    )
+                    return claimed if claimed is not None else identity_record
             self._validate_current_meaning(snapshot["meaning"])
             identity = confirmation_id or (
                 f"confirmation-{execution_key}"
@@ -143,6 +147,7 @@ class ConfirmationApplicationService:
                 snapshot,
                 confirmation_id=identity,
                 locked_final_test_seal_id=locked_final_test_seal_id,
+                execution_key=execution_key,
             )
             now = self._clock().isoformat()
             pending = build_confirmation_record(
@@ -167,6 +172,14 @@ class ConfirmationApplicationService:
                     pending=pending,
                 )
             )
+            identity = pending["confirmation_id"]
+            if request.confirmation_id != pending["confirmation_id"]:
+                request = self._request(
+                    snapshot,
+                    confirmation_id=pending["confirmation_id"],
+                    locked_final_test_seal_id=locked_final_test_seal_id,
+                    execution_key=execution_key,
+                )
             running = build_confirmation_record(
                 **{
                     **record_arguments(pending),
@@ -174,14 +187,18 @@ class ConfirmationApplicationService:
                     "updated_at": self._clock().isoformat(),
                 }
             )
-            running, owns_execution = self._store.begin_confirmation_execution(
+            with self._store.confirmation_execution_owner(
                 execution_key,
                 running=running,
-            )
-            if not owns_execution:
-                return running
-            result = self._execution.execute(request)
-            return self._finish(running, request, result)
+            ) as (running, owns_execution):
+                if not owns_execution:
+                    return running
+                result = self._execution.execute(request)
+                if result.status == "succeeded":
+                    self._store.require_confirmation_execution_started(
+                        execution_key
+                    )
+                return self._finish(running, request, result)
         except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
             if identity is None or not owns_execution:
                 return blocked_outcome(
@@ -365,6 +382,7 @@ class ConfirmationApplicationService:
         *,
         confirmation_id: str,
         locked_final_test_seal_id: str | None,
+        execution_key: str | None = None,
     ) -> FrozenConfirmationRequest:
         meaning = snapshot["meaning"]
         roles = meaning["target_roles"]
@@ -418,6 +436,14 @@ class ConfirmationApplicationService:
             locked,
             lambda: self._validate_current_meaning(
                 self._store.read_snapshot(snapshot["snapshot_id"])["meaning"]
+            ),
+            (
+                lambda: self._store.mark_confirmation_execution_started(
+                    execution_key,
+                    confirmation_id=confirmation_id,
+                )
+                if execution_key is not None
+                else None
             ),
         )
 

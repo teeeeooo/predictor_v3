@@ -38,9 +38,14 @@ exact pending confirmation before one durable start, and one locked-test
 finalization integrity fence that revalidates snapshot, seal, dataset,
 membership, Target/split/evaluation policy, immutable result, and staged
 Candidate linkage inside the shared writer lock before atomic public
-finalization. The repair remains pending independent exact-head re-audit. No
-production confirmation/promotion, migration apply, deletion, or deployment
-mutation has been performed.
+finalization. The fourth independent audit failed at exact head
+`c58413cabfa005154c1a5b70d80f2a3a355431a6`; historical exact-head run
+`30375698091` succeeded but remains validation-only evidence. Its remaining
+blocker is repaired by separating a recoverable, exact running-transition
+preparation from durable Core-start acknowledgement and holding one
+execution-key owner lock through terminal handoff. The repair remains pending
+independent exact-head re-audit. No production confirmation/promotion,
+migration apply, deletion, or deployment mutation has been performed.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
