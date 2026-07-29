@@ -61,8 +61,21 @@ atomically and exclusively publishing the complete file into the final
 namespace and durably syncing the containing directory. Pre-commit failure
 leaves no final permit and remains retryable; post-commit ambiguity remains
 at-most-once and never auto-reruns. Temporary residue is neither start evidence
-nor a retry blocker. The repair remains pending independent exact-head
-re-audit. No
+nor a retry blocker. The seventh independent audit failed at exact head
+`ed20d081ded7621b145ff95faa0e56e96163e303`; historical exact-head run
+`30421708922` succeeded but remains validation-only evidence. The approved
+recovery direction supersedes actual-compute at-most-once and permanent
+permit-as-start-proof requirements: never replace a live or uncertain child,
+but once termination is proven, quarantine the incomplete private attempt and
+restart training from the beginning in a new private attempt under the same
+confirmation identity. No partial model, metric, manifest, or terminal evidence
+is resumed or mixed. If a locked seal was consumed without a complete durable
+result, abandon the whole Confirmation; another run requires a new seal and
+Confirmation. Quarantine is not deletion, completed terminal/Candidate pairs
+remain replay-only, and public Candidate/terminal finalization remain
+at-most-once. This is a documentation decision pending a bounded Lane C source
+implementation; only after that implementation may a fresh independent
+exact-head audit begin. No
 production confirmation/promotion, migration apply, deletion, or deployment
 mutation has been performed.
 

@@ -1481,6 +1481,18 @@ The bounded correction stays in the closeout handshake/filesystem publication
 owner, exposes only a fully durable canonical permit through an atomic
 exclusive commit, and requires another independent exact-head re-audit.
 
+The seventh independent audit failed at exact head
+`ed20d081ded7621b145ff95faa0e56e96163e303`. Historical exact-head run
+`30421708922` succeeded, but it is validation evidence and not audit
+acceptance. Its process-boundary blocker showed that a visible final permit
+cannot by itself prove containing-directory durability or actual Core work.
+The approved product decision does not add a generic supervisor, child
+adoption, or cross-process transactional coordinator. It replaces the earlier
+actual-compute at-most-once/permanent-permit recovery direction with the
+abandon-and-restart contract below. This decision is documentation-only until
+the bounded Lane C source implementation is complete, after which a fresh
+independent exact-head re-audit is required.
+
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
 identities, lifecycle-root content-addressed training input, immutable
@@ -1535,7 +1547,7 @@ proven.
 Confirmation transitions are:
 
 `confirmation_pending -> confirmation_running ->`
-`awaiting_user_decision | failed | blocked | cancelled`
+`awaiting_user_decision | failed | blocked | cancelled | abandoned`
 
 Final decision/promotion adds terminal `approved`, `rejected`, `promoted`, and
 `promotion-blocked` evidence. Replaying any terminal confirmation returns its
@@ -1577,26 +1589,38 @@ fsynced before publication returns. Concurrent losers may reuse only an exact
 complete permit; malformed, conflicting, or tampered final evidence fails
 closed and is never removed or overwritten. Temporary artifacts are not
 visible through the final permit namespace and neither the child nor retry
-treats their residue as actual-start evidence. The child
-validates the complete permit before emitting `training_started` and returning
-to Core work. A confirmation child cannot cross that boundary without a valid
-permit; ordinary non-confirmation training has no handshake and preserves its
-existing behavior.
+treats their residue as actual-start evidence. The approved target protocol
+treats that permit as necessary durable attempt evidence but not sufficient
+child authorization. Only after file and containing-directory durability
+succeed may the parent send an exact attempt-bound start grant; the child must
+validate both the permit and that post-durability grant before emitting
+`training_started` and returning to Core work. The current source does not yet
+implement that grant boundary. Ordinary non-confirmation training has no
+confirmation handshake and preserves its existing behavior.
 
-Process failure before the atomic final commit leaves no actual-start
-evidence, so
-a reconstructed service may register one new attempt. A stale waiting child
-cannot consume that replacement attempt's permit. Once any exact permit is
-atomically committed and durable, implicit, alternate-ID, and concurrent retry
-cannot acquire another
-training owner even when original child progress is unknown. That ambiguous
-post-permit state remains `confirmation_running` and recovery-required rather
-than being inferred safe to rerun. Attempt registration, handshake,
-confirmation, execution key, protocol, training meaning, running history,
-claim, or permit mismatch fails closed. Pending, running, terminal,
-concurrent, reconstructed-process, and alternate-ID retries resolve to the
-same confirmation identity without duplicating training, locked evaluation,
-or Candidate publication.
+Permit publication remains attempt-bound evidence, but its final-path
+existence is neither sufficient child authorization nor permanent proof that
+Core work occurred. A replacement never starts while the prior child is alive
+or liveness is uncertain. Once that child is proven terminated and no complete
+official finalization exists, the incomplete attempt is quarantined and
+abandoned. A new private attempt under the same confirmation identity retrains
+from the beginning; it does not resume, append to, or combine the prior
+attempt's model, metric, manifest, staged Candidate, or terminal evidence.
+Stale children cannot consume a replacement attempt's authority. Abnormal
+attempt artifacts remain non-official and non-discoverable until ordinary
+retention policy addresses them; quarantine does not authorize immediate
+deletion or destructive cleanup.
+
+This recovery contract guarantees at most one simultaneously live
+Confirmation compute, not actual-compute at-most-once across sequential
+abandon-and-restart attempts. Each attempt owns isolated private staging.
+Public Candidate finalization and terminal confirmation linkage remain
+at-most-once. Attempt registration, handshake, confirmation, execution key,
+protocol, training meaning, history, claim, permit, or abandonment mismatch
+fails closed without a replacement or evidence rewrite. Implicit,
+alternate-ID, and concurrent requests still converge on the canonical
+confirmation identity. Generic process supervision, external daemons, child
+adoption, and partial execution recovery remain excluded.
 
 The stored contract also recognizes terminal execution evidence named
 `succeeded`; the application immediately projects a valid succeeded execution
@@ -1645,7 +1669,13 @@ seal remains consumed even when evaluation, result publication, the final
 fence, or Candidate finalization fails; it cannot be retried. Failure evidence
 remains immutable, while Candidate inventory, Active, source Candidate,
 campaign, recommendation, and leaderboard remain unchanged. Re-execution
-requires a new seal, snapshot, and confirmation. Parameter or feature changes
+before seal consumption follows the normal abandon-and-restart training
+contract. If the seal was consumed but no complete durable locked result and
+official finalization exist, the whole Confirmation becomes `abandoned`.
+Neither the incomplete locked result nor its model, metrics, manifest, or
+staging may be resumed, restored, reevaluated, appended to, or mixed with
+another attempt. The consumed seal is never reused; another evaluation
+requires a new seal and a new Confirmation. Parameter or feature changes
 after observing the result end the confirmation and require a new campaign.
 CV-only confirmation remains valid without a seal but cannot claim
 `independent_final_test_passed`.

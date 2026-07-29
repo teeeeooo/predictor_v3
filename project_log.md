@@ -29,6 +29,29 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-29 — Phase 5H abandon-and-restart recovery decision
+
+### Decision
+
+- Preserve the seventh independent audit `FAIL` at exact head
+  `ed20d081ded7621b145ff95faa0e56e96163e303` and historical successful run
+  `30421708922`; neither grants acceptance.
+- Supersede actual-compute at-most-once and permanent permit-as-start-proof as
+  recovery requirements. Never replace a live or uncertain child; after proven
+  termination, quarantine its incomplete private attempt and retrain from the
+  beginning in a new private attempt under the same confirmation identity.
+- Never resume or mix partial model, metric, manifest, staged Candidate,
+  locked result, or terminal evidence. Quarantine is not deletion and remains
+  subject to existing retention policy.
+- Before locked-seal consumption, use normal abandon-and-restart. After seal
+  consumption without complete durable result/finalization, abandon the whole
+  Confirmation and require a new seal and new Confirmation.
+- Preserve replay of complete durable terminal/Candidate pairs, one live
+  Confirmation compute, at-most-once public/terminal finalization, explicit
+  trusted-user promotion, and all existing no-production/no-delete boundaries.
+  This is documentation-only; bounded source implementation and then fresh
+  independent exact-head audit remain required.
+
 ## 2026-07-29 — Phase 5H atomic permit publication recovery
 
 ### Decision
