@@ -28,9 +28,13 @@ keeps stale attempts fenced from Core work and Candidate publication, replays
 only complete terminal/Candidate pairs, and terminally abandons a Confirmation
 when a consumed locked seal lacks complete durable finalization. Active,
 deployment export, Predict, production confirmation/promotion, migration apply,
-and retention/delete apply were not mutated during audit or closeout. The next
-product workstream is Predict internal UI/UX, but it begins only through a fresh
-populated-state/current-state audit and explicit authorization.
+and retention/delete apply were not mutated during audit or closeout. Predict
+internal UI/UX findings #1–#4 are now complete and merged. Finding #4 closes the
+user-facing validation-message repair at the existing Predict presentation
+boundary. The next candidate is finding #5: no-Active actionable guidance and
+its execution gate. Disable behavior, Train navigation UI, a standalone
+entrypoint, and Bootstrap/Retraining-required integration remain undecided and
+require a bounded read-only architecture/product decision before source work.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
@@ -115,11 +119,13 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Begin no implementation automatically. When explicitly authorized, perform a
-fresh populated-state/current-state audit for the Predict internal UI/UX
-workstream and define its owner boundary before planning changes. Keep real-user
-confirmation/promotion, migration apply, and retention/delete apply as separate
-controlled operations.
+Begin no finding #5 implementation automatically. When explicitly authorized,
+perform a bounded read-only architecture/product decision for no-Active
+actionable guidance and its execution gate. Decide whether and how Predict is
+disabled, whether guidance navigates to Train, whether standalone Predict needs
+an entrypoint-specific route, and how Bootstrap and Retraining-required states
+relate before assigning a source Worker. Keep real-user confirmation/promotion,
+migration apply, and retention/delete apply as separate controlled operations.
 
 ## Active Blockers
 
@@ -185,8 +191,8 @@ controlled operations.
   authorized controlled operations; repository closeout grants none of them.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
-- Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh
-  populated-state audit.
+- Predict findings #1–#4 are complete. Finding #5 source implementation remains
+  on hold until the no-Active product/owner decision and execution gate are fixed.
 - Real mapping values, training data, model quality, and production-readiness
   validation remain company-local.
 

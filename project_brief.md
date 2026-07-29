@@ -35,8 +35,10 @@ fresh independent audit accepted exact head
 `45dd7544afc9546abf4ab450bf634f4c37fb1340`, required run `30433284479`
 succeeded, and PR #35 was guarded squash-merged as
 `b20661ee6b400559fbac61a9f2669d50256247bc`. Train/Admin Phase 5 is therefore
-closed. Predict internal UI/UX is the next product workstream, gated by a fresh
-populated-state/current-state audit and explicit authorization.
+closed. Predict internal UI/UX is now the active product workstream. Findings
+#1–#4 are complete and merged; finding #4 closes user-facing validation-message
+repair. Finding #5, no-Active actionable guidance and its execution gate, remains
+a product/owner decision before source implementation.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -64,7 +66,9 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   validated dynamic Feature/Target snapshots and never starts automatically from
   Data Definition Save.
 - Predict consumes saved contract snapshots, mapping values, and a promoted
-  compatible active model; its internal UI redesign remains deferred.
+  compatible active model. Findings #1–#4 repaired bounded presentation defects;
+  no-Active guidance, disable behavior, Train navigation, standalone routing, and
+  Bootstrap/Retraining-required integration remain undecided for finding #5.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
@@ -263,15 +267,15 @@ before guarded promotion. Migration apply, retention/delete apply, production
 confirmation/promotion, Active, deployment export, and Predict runtime mutation
 remain outside repository closeout.
 
-### Next Workstream — Predict UI/UX Current-State Audit
+### Current Workstream — Predict UI/UX Findings
 
-Predict internal redesign may begin only after a fresh populated-state/current-
-state audit fixes its current owner and compatibility boundary. No implementation
-starts automatically from Phase 5 closeout.
-
-### Later — Predict UI/UX Overhaul
-
-Predict internal redesign follows Phase 5 and a fresh populated-state audit.
+Predict findings #1–#4 are complete and merged: populated dropdown rendering,
+reset idle projection, running-state projection consistency, and user-facing
+validation/runtime/partial message semantics. The next candidate is finding #5,
+no-Active actionable guidance and its execution gate. Whether Predict is
+disabled, whether guidance navigates to Train, how standalone Predict routes the
+action, and how Bootstrap and Retraining-required states integrate are not yet
+decided. A bounded read-only architecture/product decision precedes source work.
 
 ### Later — Production ML Readiness / Calculator Integration
 
