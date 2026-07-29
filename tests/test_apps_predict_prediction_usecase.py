@@ -41,6 +41,31 @@ def test_prediction_usecase_prepares_invalid_and_valid_rows_without_qt():
     assert [result.status for result in results] == ["running", "invalid"]
 
 
+def test_prediction_usecase_keeps_multiple_row_errors_distinct_and_retries_after_edit():
+    session = _session_with_cases("bad", "")
+    usecase = _usecase(session)
+    first, second = session.case_order
+
+    initial = usecase.prepare_run([first, second])
+
+    assert initial.job is None
+    assert initial.summary.invalid == 2
+    assert session.result_for_case(first).message == "냉방능력: 숫자로 입력해 주세요."
+    assert session.result_for_case(second).message == "냉방능력: 필수 입력값입니다."
+    assert "cooling_capa" not in session.result_for_case(first).message
+    assert "cooling_capa" not in session.result_for_case(second).message
+
+    session.case_store.get_case(first).set_input_value("cooling_capa", "3500")
+    session.case_store.get_case(second).set_input_value("cooling_capa", "3600")
+    retried = usecase.prepare_run([first, second])
+
+    assert retried.job is not None
+    assert retried.summary.invalid == 0
+    assert len(retried.job.requests) == 2
+    assert session.result_for_case(first).status == "running"
+    assert session.result_for_case(second).status == "running"
+
+
 def test_prediction_usecase_fake_runner_e2e_without_pyside():
     session = _session_with_cases("3500", "3600")
     usecase = _usecase(session)

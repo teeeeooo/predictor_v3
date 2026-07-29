@@ -276,6 +276,33 @@ def test_workspace_reset_allows_new_input_and_next_prediction(monkeypatch):
     assert not workspace.command_bar.cancel_button.isEnabled()
 
 
+def test_workspace_start_failure_hides_technical_detail_and_allows_retry(
+    monkeypatch,
+    caplog,
+):
+    _app()
+    workspace = PredictWorkspace()
+    calls = []
+
+    def fail_start(**_callbacks):
+        calls.append("failed")
+        raise RuntimeError("internal worker path /tmp/worker.py\ntraceback")
+
+    monkeypatch.setattr(workspace.prediction_controller, "start_all", fail_start)
+
+    workspace._run_prediction()
+
+    assert calls == ["failed"]
+    assert workspace.status_label.text() == (
+        "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
+    )
+    assert "입력" not in workspace.status_label.text()
+    assert "/tmp/worker.py" not in workspace.status_label.text()
+    assert "/tmp/worker.py" in caplog.text
+    assert workspace.command_bar.run_button.isEnabled()
+    assert not workspace.command_bar.cancel_button.isEnabled()
+
+
 def test_workspace_command_bar_running_state_disables_row_mutation():
     _app()
     workspace = PredictWorkspace()

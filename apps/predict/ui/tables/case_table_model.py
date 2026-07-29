@@ -211,7 +211,7 @@ class CaseTableModel(QAbstractTableModel):
 
     def _tooltip_for_cell(self, row: int, col: int) -> str:
         if self.is_invalid(row, col):
-            return f"{self._columns[col].header} must be numeric."
+            return f"{self._columns[col].header}: 숫자로 입력해 주세요."
         case_id = self._session.case_order[row]
         result = self._session.result_for_case(case_id)
         return result.message

@@ -303,7 +303,10 @@ def test_controller_model_missing_becomes_controlled_row_errors():
     assert summaries[0].error == 2
     for case_id in session.case_order:
         assert session.result_for_case(case_id).status == "error"
-        assert "모델 파일" in session.result_for_case(case_id).message
+        assert session.result_for_case(case_id).message == (
+            "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
+        )
+        assert "입력" not in session.result_for_case(case_id).message
 
 
 def test_controller_runner_failure_preserves_terminal_rows_and_summarizes_session():
@@ -325,7 +328,9 @@ def test_controller_runner_failure_preserves_terminal_rows_and_summarizes_sessio
     assert session.result_for_case(first).status == "complete"
     assert session.result_for_case(invalid).status == "invalid"
     assert session.result_for_case(remaining).status == "error"
-    assert "execution adapter exploded" in session.result_for_case(remaining).message
+    assert "execution adapter exploded" not in session.result_for_case(remaining).message
+    assert "다시 실행" in session.result_for_case(remaining).message
+    assert "입력" not in session.result_for_case(remaining).message
     assert (summaries[0].total, summaries[0].complete) == (3, 1)
     assert (summaries[0].error, summaries[0].invalid) == (1, 1)
     assert not controller.is_running
