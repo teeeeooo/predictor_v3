@@ -38,8 +38,10 @@ succeeded, and PR #35 was guarded squash-merged as
 closed. Predict internal UI/UX is now the active product workstream. Findings
 #1–#5 are complete and merged. Finding #5's bounded no-usable-model execution
 gate was guarded squash-merged through PR #40 as
-`4181b6e29b9cfadf608b259c974744e428db788b`. Finding #6 viewport work is next;
-guidance, navigation, and lifecycle wording redesign remain separate.
+`4181b6e29b9cfadf608b259c974744e428db788b`. Finding #6's bounded runtime
+group-header synchronization repair awaits fresh Lane B exact-head review on
+its feature branch and remains unmerged; guidance, navigation, and lifecycle
+wording redesign remain separate.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -279,8 +281,10 @@ gate. Finding #5 was guarded squash-merged through PR #40 as
 `4181b6e29b9cfadf608b259c974744e428db788b`; it disables only prediction
 execution when no usable loaded capability exists, using the same
 controller-owned rule in standalone and embedded Predict. Finding #6 viewport
-work is next and is not implemented by this closeout. Guidance, Train navigation,
-standalone routing, and Bootstrap / Retraining-required wording remain separate.
+repair synchronizes the table-linked group header after runtime projection
+changes and now awaits fresh Lane B exact-head review; it is not complete or
+merged. Guidance, Train navigation, standalone routing, and Bootstrap /
+Retraining-required wording remain separate.
 
 ### Later — Production ML Readiness / Calculator Integration
 

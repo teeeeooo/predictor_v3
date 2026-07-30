@@ -9,6 +9,8 @@ from apps.predict.ui.tables.case_table_model import CaseTableModel
 def apply_runtime_composition(workspace, composition: PredictWorkspaceComposition) -> None:  # noqa: ANN001
     if composition.session is not workspace.session:
         raise ValueError("runtime composition must retain the Predict session")
+    horizontal_scroll = workspace.case_table.horizontalScrollBar()
+    scroll_value = horizontal_scroll.value()
     workspace.table_edit_controller = composition.table_edit_controller
     workspace.input_edit_controller = composition.input_edit_controller
     workspace.prediction_controller = composition.prediction_controller
@@ -21,6 +23,9 @@ def apply_runtime_composition(workspace, composition: PredictWorkspaceCompositio
         edit_callback=workspace._handle_input_cell_edited,
     )
     workspace.case_table.setModel(workspace.case_model)
+    workspace.group_header.rebind(composition.columns)
     workspace._configure_tables()
     workspace._refresh()
+    workspace.case_table.updateGeometries()
+    horizontal_scroll.setValue(min(scroll_value, horizontal_scroll.maximum()))
     workspace._refresh_prediction_command_state()

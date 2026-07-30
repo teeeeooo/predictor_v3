@@ -32,12 +32,19 @@ class TableLinkedGroupHeader(QFrame):
         self.setObjectName("TableLinkedGroupHeader")
         self.setFixedHeight(24)
         self._table = table
-        self._columns = tuple(columns)
-        self._labels = {
-            group: self._label_for(group)
-            for group in self._ordered_groups()
-        }
+        self._columns: tuple[UnifiedCaseColumn, ...] = ()
+        self._labels: dict[str, QLabel] = {}
+        self._model = None
         self._connect_table()
+        self.rebind(columns)
+
+    def rebind(self, columns: Sequence[UnifiedCaseColumn]) -> None:
+        """Bind label geometry and model signals to the current table projection."""
+        self._disconnect_model()
+        self._columns = tuple(columns)
+        self._sync_labels()
+        self._model = self._table.model()
+        self._connect_model()
         self.update_geometry()
 
     def group_rects(self) -> dict[str, QRect]:
@@ -89,17 +96,41 @@ class TableLinkedGroupHeader(QFrame):
 
     def _connect_table(self) -> None:
         header = self._table.horizontalHeader()
-        header.sectionResized.connect(lambda *_args: self.update_geometry())
-        header.sectionMoved.connect(lambda *_args: self.update_geometry())
+        header.sectionResized.connect(self._update_from_signal)
+        header.sectionMoved.connect(self._update_from_signal)
         header.geometriesChanged.connect(self.update_geometry)
-        self._table.horizontalScrollBar().valueChanged.connect(
-            lambda _value: self.update_geometry()
-        )
-        model = self._table.model()
-        if model is not None:
-            model.modelReset.connect(self.update_geometry)
-            model.columnsInserted.connect(lambda *_args: self.update_geometry())
-            model.columnsRemoved.connect(lambda *_args: self.update_geometry())
+        self._table.horizontalScrollBar().valueChanged.connect(self._update_from_signal)
+
+    def _connect_model(self) -> None:
+        if self._model is None:
+            return
+        self._model.modelReset.connect(self._update_from_signal)
+        self._model.columnsInserted.connect(self._update_from_signal)
+        self._model.columnsRemoved.connect(self._update_from_signal)
+
+    def _disconnect_model(self) -> None:
+        if self._model is None:
+            return
+        self._model.modelReset.disconnect(self._update_from_signal)
+        self._model.columnsInserted.disconnect(self._update_from_signal)
+        self._model.columnsRemoved.disconnect(self._update_from_signal)
+        self._model = None
+
+    def _update_from_signal(self, *_args) -> None:
+        self.update_geometry()
+
+    def _sync_labels(self) -> None:
+        groups = self._ordered_groups()
+        for group in tuple(self._labels):
+            if group in groups:
+                continue
+            label = self._labels.pop(group)
+            label.hide()
+            label.deleteLater()
+        self._labels = {
+            group: self._labels.get(group) or self._label_for(group)
+            for group in groups
+        }
 
     def _ordered_groups(self) -> tuple[str, ...]:
         groups: list[str] = []
