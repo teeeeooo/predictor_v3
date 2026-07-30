@@ -36,12 +36,13 @@ fresh independent audit accepted exact head
 succeeded, and PR #35 was guarded squash-merged as
 `b20661ee6b400559fbac61a9f2669d50256247bc`. Train/Admin Phase 5 is therefore
 closed. Predict internal UI/UX is now the active product workstream. Findings
-#1–#5 are complete and merged. Finding #5's bounded no-usable-model execution
-gate was guarded squash-merged through PR #40 as
-`4181b6e29b9cfadf608b259c974744e428db788b`. Finding #6's bounded runtime
-group-header synchronization repair awaits fresh Lane B exact-head review on
-its feature branch and remains unmerged; guidance, navigation, and lifecycle
-wording redesign remain separate.
+#1–#6 are complete and merged. Finding #6's runtime group-header synchronization
+repair was guarded squash-merged through PR #41 as
+`1c8c786750c78f538ea7c8ba1395592939dab550`. It rebinds the shared
+standalone/embedded header to the current runtime model and columns while
+preserving scroll alignment and signal ownership. Finding #7 model/Target display
+improvement is next; guidance, navigation, and lifecycle wording redesign remain
+separate.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -69,11 +70,13 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   validated dynamic Feature/Target snapshots and never starts automatically from
   Data Definition Save.
 - Predict consumes saved contract snapshots, mapping values, and a promoted
-  compatible active model. Findings #1–#5 repaired bounded presentation and
-  execution defects; finding #5 adds the shared standalone/embedded gate for
-  absent usable loaded capability. Finding #6 viewport behavior is the next
-  bounded slice. Train navigation, standalone routing, guidance, and Bootstrap /
-  Retraining-required integration remain separate.
+  compatible active model. Findings #1–#6 repaired bounded presentation,
+  execution, and runtime group-header synchronization defects. Finding #6 keeps
+  the shared standalone/embedded header bound to the current model and columns
+  without changing root viewport or column-width policy. Finding #7 model/Target
+  display improvement is the next bounded slice; Train navigation, standalone
+  routing, guidance, and Bootstrap / Retraining-required integration remain
+  separate.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
@@ -274,17 +277,19 @@ remain outside repository closeout.
 
 ### Current Workstream — Predict UI/UX Findings
 
-Predict findings #1–#5 are complete and merged: populated dropdown rendering,
+Predict findings #1–#6 are complete and merged: populated dropdown rendering,
 reset idle projection, running-state projection consistency, user-facing
-validation/runtime/partial message semantics, and the no-usable-model execution
-gate. Finding #5 was guarded squash-merged through PR #40 as
-`4181b6e29b9cfadf608b259c974744e428db788b`; it disables only prediction
-execution when no usable loaded capability exists, using the same
-controller-owned rule in standalone and embedded Predict. Finding #6 viewport
-repair synchronizes the table-linked group header after runtime projection
-changes and now awaits fresh Lane B exact-head review; it is not complete or
-merged. Guidance, Train navigation, standalone routing, and Bootstrap /
-Retraining-required wording remain separate.
+validation/runtime/partial message semantics, the no-usable-model execution
+gate, and runtime group-header synchronization. Finding #6 was guarded
+squash-merged through PR #41 as
+`1c8c786750c78f538ea7c8ba1395592939dab550`. Runtime projection changes now
+rebind the shared standalone/embedded header to the current model and columns,
+disconnect stale model signals, avoid duplicate persistent table signals, and
+preserve valid horizontal scroll/group geometry after column changes. Root
+viewport, column-width policy, lifecycle, execution gating, and other Predict
+behavior remain unchanged. Finding #7 model/Target display improvement is next
+and is not implemented by this closeout; guidance and Train navigation remain
+separate.
 
 ### Later — Production ML Readiness / Calculator Integration
 
