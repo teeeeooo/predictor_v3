@@ -32,9 +32,11 @@ and retention/delete apply were not mutated during audit or closeout. Predict
 internal UI/UX findings #1–#5 are now complete and merged. Finding #5's bounded
 no-usable-model execution gate was guarded squash-merged through PR #40 as
 `4181b6e29b9cfadf608b259c974744e428db788b`. It uses controller-owned loaded
-prediction capability in both standalone and embedded Predict. Finding #6 is
-the next bounded viewport slice; Train navigation, guidance UI, and Bootstrap /
-Retraining-required redesign remain separate.
+prediction capability in both standalone and embedded Predict. Finding #6's
+bounded runtime group-header synchronization repair is implemented on a feature
+branch and awaits fresh Lane B exact-head review; it is not complete or merged.
+Train navigation, guidance UI, and Bootstrap / Retraining-required redesign
+remain separate.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
@@ -119,11 +121,11 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Start finding #6 as the next bounded Predict viewport slice. Recover the current
-viewport owner and applicable UI policy before selecting the minimal repair. Do
-not reopen finding #5 or combine guidance, Train navigation, Bootstrap /
-Retraining-required wording, real-user confirmation/promotion, migration apply,
-or retention/delete apply with this next slice.
+Run a fresh Lane B exact-head review of the Finding #6 Draft PR. Do not mark it
+Ready, merge it, close Finding #6, reopen finding #5, or combine guidance, Train
+navigation, Bootstrap / Retraining-required wording, real-user
+confirmation/promotion, migration apply, or retention/delete apply with this
+review.
 
 ## Active Blockers
 
@@ -189,9 +191,9 @@ or retention/delete apply with this next slice.
   authorized controlled operations; repository closeout grants none of them.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
-- Predict findings #1–#5 are complete and merged. Finding #6 viewport work is
-  the next bounded slice; guidance/navigation and lifecycle wording redesign
-  remain outside it.
+- Predict findings #1–#5 are complete and merged. Finding #6's bounded source
+  repair awaits fresh Lane B exact-head review and remains unmerged;
+  guidance/navigation and lifecycle wording redesign remain outside it.
 - Real mapping values, training data, model quality, and production-readiness
   validation remain company-local.
 
