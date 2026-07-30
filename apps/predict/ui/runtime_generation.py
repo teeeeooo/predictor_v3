@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from apps.predict.composition import PredictWorkspaceComposition
+from apps.predict.ui.status_widgets import render_target_badge
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 
 
@@ -24,8 +25,14 @@ def apply_runtime_composition(workspace, composition: PredictWorkspaceCompositio
     )
     workspace.case_table.setModel(workspace.case_model)
     workspace.group_header.rebind(composition.columns)
+    render_target_badge(
+        workspace.target_badge,
+        composition.runtime_snapshot,
+        composition.columns,
+    )
     workspace._configure_tables()
     workspace._refresh()
     workspace.case_table.updateGeometries()
     horizontal_scroll.setValue(min(scroll_value, horizontal_scroll.maximum()))
+    workspace.model_lifecycle_ui.render_current()
     workspace._refresh_prediction_command_state()

@@ -10,6 +10,9 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 from apps.common.ui import style
 
 
+_TARGET_BADGE_LABEL_LIMIT = 24
+
+
 class StatusBadge(QLabel):
     """Non-clickable status badge using semantic visual roles."""
 
@@ -65,12 +68,57 @@ class StatusStrip(QFrame):
 def model_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
     """Return badge text/kind for PredictionModelStatus-like objects."""
     if status.status == "loaded":
-        return "model.pkl 로드됨", "ready"
+        return "로드됨", "ready"
     if status.status == "exists":
-        return "model.pkl 사용 가능", "ready"
+        return "사용 가능", "ready"
     if status.status == "load-error":
         return "모델 로드 오류", "error"
-    return "model.pkl 없음", "missing"
+    return "없음", "missing"
+
+
+def target_status_badge_state(
+    active_targets,
+    target_result_keys,
+    columns,
+) -> tuple[str, str, str]:  # noqa: ANN001
+    """Return concise text, kind, and full ordered Target tooltip."""
+    result_key_by_target = dict(target_result_keys)
+    label_by_result_key = {
+        column.key: column.header
+        for column in columns
+        if column.group == "result"
+    }
+    labels = tuple(
+        label_by_result_key.get(result_key_by_target.get(target, ""), target)
+        for target in active_targets
+    )
+    if not labels:
+        return "없음", "missing", "현재 활성 예측 Target이 없습니다."
+    first_label = _compact_target_label(labels[0])
+    value = (
+        first_label
+        if len(labels) == 1
+        else f"{first_label} 외 {len(labels) - 1}개"
+    )
+    tooltip = f"현재 예측 Target ({len(labels)}): {', '.join(labels)}"
+    return value, "ready", tooltip
+
+
+def render_target_badge(badge, runtime_snapshot, columns) -> None:  # noqa: ANN001
+    """Render committed runtime Targets without querying registry infrastructure."""
+    value, kind, tooltip = target_status_badge_state(
+        runtime_snapshot.active_targets,
+        runtime_snapshot.target_result_keys,
+        columns,
+    )
+    badge.set_status(value, kind)
+    badge.setToolTip(tooltip)
+
+
+def _compact_target_label(label: str) -> str:
+    if len(label) <= _TARGET_BADGE_LABEL_LIMIT:
+        return label
+    return f"{label[:_TARGET_BADGE_LABEL_LIMIT - 1]}…"
 
 
 def mapping_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
