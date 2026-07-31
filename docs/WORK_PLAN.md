@@ -23,23 +23,22 @@
 - The approved direction is a shared Layout B full-surface Input/Result switch,
   one `사양 요약` review column, and a Predict-owned identity/result/state seam
   over the existing Feature, Mapping, lifecycle, execution, and Calculate owners.
-- Slice 1 implements a Predict-owned immutable identity-bearing runtime column
-  descriptor on a Draft branch. It preserves the public/generated projection
-  shape and projects the same active-generation identity metadata through
-  standalone and embedded composition. It is not merged or audit-approved.
+- Slice 1 — Stable Identity Seam is independently audited, merged, and closed.
+  Predict now carries canonical Feature identity through one immutable,
+  generation-bound runtime descriptor into standalone and embedded presentation
+  adapters without changing the public/generated projection or persisted Feature
+  Definition shape.
 
 ## Next Action
 
-The next owner is a fresh independent Auditor. It must review the complete
-**Slice 1 — Stable Identity Seam** Draft PR and materially adjacent generation
-projection/migration owners at the exact base/head, then run focused validation.
-Only `AUDIT: PASS` may authorize guarded squash merge and subsequent main/checkout
-sync. Slice 2 does not start during this gate.
+The next gate is **Slice 2 — Typed Result and Execution Context**. The
+Orchestrator and user must confirm the exact typed target outcome, execution
+provenance, stale-result rejection, reload/cutover compatibility, and preserved
+row-execution boundary before a separate Lane C Worker handoff is written.
+Slice 2 source implementation does not start until that gate is fixed.
 
 ## Active Blockers
 
-- Authoritative `main` still loses canonical Feature identity at the Predict
-  presentation descriptor until Slice 1 passes independent audit and is merged.
 - The current result contract lacks raw target outcomes and run, generation,
   session, and input-revision provenance; Slice 2 is the highest compatibility
   risk and must reject stale-context results.

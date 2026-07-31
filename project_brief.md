@@ -7,13 +7,14 @@ Near-term execution belongs to `docs/WORK_PLAN.md`; history belongs to
 ## Current Phase
 
 Train/Admin Phase 5 and Predict Findings #1–#7 are complete and merged. The
-active product workstream is **Predict input workflow broad overhaul**. Detailed
-design and source implementation have not started; the entry gate is a fresh
-current-state Predict workspace audit followed by an explicit product/owner
-boundary and Lane C Build handoff.
+active product workstream is **Predict input workflow broad overhaul**. Its
+product and integration boundary is approved, and Slice 1 — Stable Identity Seam
+is independently audited, merged, and closed. The next implementation gate is
+Slice 2 — Typed Result and Execution Context.
 
-`docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` remains an
-input to that design work. It does not fix the detailed design or source plan.
+`docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
+authoritative product, owner, compatibility, and independent-slice boundary for
+this workstream.
 
 ## Owner Map
 
@@ -81,15 +82,17 @@ records, and Git.
 
 ### Active — Predict Input Workflow Broad Overhaul
 
-The next product milestone is a unified one-row-per-case input workflow that must
-be audited before design. Expected audit areas include row operations;
-spreadsheet selection/editing; manual, mapping-backed, calculated, result, and
-status cell roles; mapping cascade discoverability; issue placement; and
-table-owned width, scrolling, frozen identity, and responsive viewport behavior.
+The approved direction is one canonical case session with shared standalone and
+embedded Layout B Input/Result workspaces. Result Review will use a Predict-owned
+projection, one stable-identity `사양 요약`, typed result capability, and later
+row-local EER/COP enrichment while existing Feature, Mapping, lifecycle,
+execution, and Calculator owners remain authoritative.
 
-Because the shared public case-table behavior crosses several owners, source work
-requires a Lane C Build handoff after the Orchestrator fixes detailed scope,
-acceptance, preserved behavior, and exclusions.
+Slice 1 closed the canonical Feature identity propagation seam without changing
+the public/generated projection or persisted Feature Definition shape. Slice 2
+must separately define typed target outcomes, execution provenance, stale-result
+rejection, reload/cutover compatibility, and preserved row isolation before a
+Lane C Build handoff.
 
 ### Later — Production ML Readiness / Calculator Integration
 

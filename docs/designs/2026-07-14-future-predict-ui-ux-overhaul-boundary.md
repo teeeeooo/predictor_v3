@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; production implementation not started
+Status: approved product and owner boundary; Slice 1 merged, Slice 2 next
 Created: 2026-07-14
 Updated: 2026-07-31
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
@@ -10,7 +10,8 @@ Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 This record is the authoritative product and integration boundary for the
 **Predict input workflow broad overhaul**. It absorbs the completed disposable
 layout comparison and existing-application owner audit into a production-facing
-design direction without authorizing source implementation.
+design direction. Slice 1 is closed; every remaining source slice still requires
+its own Lane C authorization.
 
 This record distinguishes:
 
@@ -346,13 +347,15 @@ the operating-point and standard-request contracts are separately defined.
 
 ## 7. Implementation Slice Boundary
 
-No slice in this section is implemented by this documentation change.
+Slice 1 is merged and closed. Remaining slices are not authorized by this
+bounded documentation close and retain their independent Lane C gates.
 
 ### Slice 1 — Stable Identity Seam
 
-Carry canonical feature identity into Predict application and presentation
-through an immutable runtime descriptor. Preserve generation rename, order,
-visibility, add/hide, migration, and standalone/embedded parity.
+**Status: merged and closed.** Canonical Feature identity is carried into Predict
+application and presentation through an immutable generation-bound runtime
+descriptor. Generation rename, order, visibility, add/hide, migration, and
+standalone/embedded parity remain preserved.
 
 ### Slice 2 — Typed Result and Execution Context
 
@@ -456,8 +459,13 @@ current Feature Manager, Data Mapping, Train/model lifecycle, prediction
 execution, and Calculate owners are reusable while the Predict
 application/presentation seams in this record are missing.
 
-That baseline is navigation evidence, not validation of unimplemented slices.
+That baseline remains navigation evidence for the broader overhaul. Slice 1 was
+subsequently implemented, independently audited at its exact PR head, and merged
+without changing the public/generated Predict projection or persisted Feature
+Definition shape.
 
-The next resume point is an Orchestrator exact-head review of this documentation
-boundary followed by a decision on the Slice 1 Lane C handoff. No production
-Worker handoff or Build starts before that gate.
+The next resume point is **Slice 2 — Typed Result and Execution Context**. The
+Orchestrator and user must first fix the typed target outcome, execution
+provenance, stale-result rejection, reload/cutover compatibility, and preserved
+row-execution boundary. No Slice 2 Worker handoff or Build starts before that
+gate.
