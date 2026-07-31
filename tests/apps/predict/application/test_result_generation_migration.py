@@ -112,7 +112,7 @@ def test_result_and_target_rename_moves_existing_value_to_committed_table_model(
     tmp_path,
 ):
     QApplication.instance() or QApplication([])
-    active, candidate, _identity = _renamed_result_pair()
+    active, candidate, identity = _renamed_result_pair()
     composition, participant, transition = _participant(
         active, candidate, tmp_path
     )
@@ -130,6 +130,7 @@ def test_result_and_target_rename_moves_existing_value_to_committed_table_model(
         for index, column in enumerate(workspace.case_model.columns)
         if column.key == "cooling_power"
     )
+    assert workspace.case_model.columns[old_column].feature_identity == identity
 
     prepared = participant.prepare(transition)
     assert workspace.case_model.cell_value(0, old_column) == "123"
@@ -143,6 +144,7 @@ def test_result_and_target_rename_moves_existing_value_to_committed_table_model(
         for index, column in enumerate(workspace.case_model.columns)
         if column.key == "cooling_power_v2"
     )
+    assert workspace.case_model.columns[new_column].feature_identity == identity
     assert workspace.case_model.cell_value(0, new_column) == "123"
     assert migrated.result_values == {"cooling_power_v2": "123"}
     assert migrated.status == "complete"
@@ -258,6 +260,18 @@ def test_added_removed_hidden_and_unchanged_results_follow_canonical_identity(
     assert added_key not in migrated.result_values
     assert hidden_key not in {
         column.key for column in participant.composition.columns
+    }
+    descriptors = {
+        item.feature_identity: item
+        for item in participant.composition.runtime_snapshot.column_descriptors
+    }
+    assert descriptors[hidden_target.feature_identity].visible is False
+    assert descriptors[added_feature_id].active is True
+    assert hidden_target.feature_identity not in {
+        column.feature_identity for column in participant.composition.columns
+    }
+    assert added_feature_id in {
+        column.feature_identity for column in participant.composition.columns
     }
     assert migrated.status == "complete"
     assert migrated.message == "keep status and message"

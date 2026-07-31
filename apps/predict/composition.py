@@ -86,6 +86,14 @@ def build_predict_workspace_composition(
 
     resolved_repository = mapping_repository or PredictMappingRepository()
     runtime = runtime_snapshot or compatibility_predict_runtime_snapshot()
+    if (
+        predict_projection is not None
+        and predict_projection != runtime.predict_projection
+    ):
+        raise ValueError(
+            "predict_projection cannot establish canonical Feature identity; "
+            "provide a complete runtime_snapshot"
+        )
     if one_hot_snapshot is not None or predict_projection is not None:
         runtime = replace(
             runtime,
@@ -97,8 +105,8 @@ def build_predict_workspace_composition(
             predict_projection=predict_projection or runtime.predict_projection,
         )
     resolved_one_hot_snapshot = runtime.one_hot
-    predict_projection = runtime.predict_projection
-    predict_columns = build_predict_column_schema(predict_projection)
+    column_descriptors = runtime.column_descriptors
+    predict_columns = build_predict_column_schema(column_descriptors)
     input_edit_controller = InputEditController(
         resolved_session,
         mapping_repository=resolved_repository,
@@ -109,7 +117,7 @@ def build_predict_workspace_composition(
         one_hot_snapshot=resolved_one_hot_snapshot
     )
     resolved_result_mapper = result_mapper or PredictionResultAdapter(
-        build_result_column_schema(predict_projection),
+        build_result_column_schema(column_descriptors),
         input_columns=tuple(
             item for item in predict_columns if item.group in {"input", "auto"}
         ),
@@ -154,7 +162,7 @@ def build_predict_workspace_composition(
         runner_factory=runner_factory or _build_pyside_runner,
         model_lifecycle=lifecycle,
     )
-    columns = build_case_table_column_schema(predict_projection)
+    columns = build_case_table_column_schema(column_descriptors)
     dropdown_option_adapter = DropdownOptionAdapter(
         resolved_repository, columns, one_hot_snapshot=resolved_one_hot_snapshot
     )

@@ -88,6 +88,12 @@ def _runtime(base, generation_id, targets):  # noqa: ANN001, ANN202
         base,
         generation_id=generation_id,
         predict_projection=projection,
+        column_descriptors=tuple(
+            replace(item, label=label_by_key[item.key])
+            if item.key in label_by_key
+            else item
+            for item in base.column_descriptors
+        ),
         active_targets=tuple(target for target, _key, _label in targets),
         target_result_keys=tuple(
             (target, result_key) for target, result_key, _label in targets

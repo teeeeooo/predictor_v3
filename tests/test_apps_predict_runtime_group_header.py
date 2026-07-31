@@ -63,6 +63,20 @@ def _runtime_pair() -> tuple[PredictRuntimeSnapshot, PredictRuntimeSnapshot]:
         full,
         generation_id="group-header-reduced",
         predict_projection=tuple(reduced_rows),
+        column_descriptors=tuple(
+            replace(
+                item,
+                visible=False,
+            )
+            if item.key == full.predict_projection[removed].column_key
+            or (
+                item.active
+                and item.visible
+                and item.role == "auto"
+            )
+            else item
+            for item in full.column_descriptors
+        ),
     )
     full = replace(full, generation_id="group-header-full")
     return reduced, full
