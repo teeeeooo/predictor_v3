@@ -36,14 +36,14 @@ fresh independent audit accepted exact head
 succeeded, and PR #35 was guarded squash-merged as
 `b20661ee6b400559fbac61a9f2669d50256247bc`. Train/Admin Phase 5 is therefore
 closed. Predict internal UI/UX is now the active product workstream. Findings
-#1–#6 are complete and merged. Finding #6's runtime group-header synchronization
-repair was guarded squash-merged through PR #41 as
-`1c8c786750c78f538ea7c8ba1395592939dab550`. It rebinds the shared
-standalone/embedded header to the current runtime model and columns while
-preserving scroll alignment and signal ownership. Finding #7's bounded shared
-model/Target presentation is implemented on a feature branch and awaits fresh
-Lane B exact-head review; it remains unmerged, and no later finding is active.
-Guidance, navigation, and lifecycle wording redesign remain separate.
+#1–#7 are complete and merged. Finding #7's bounded shared model/Target
+presentation was guarded squash-merged through PR #42 as
+`9704beabb8217099a76c59a8c18c9f80d702e51a`. It presents application-owned
+model state and ordered committed-runtime Target labels in the shared standalone
+and embedded Predict workspace while preserving lifecycle, Target registry,
+result mapping, execution gating, root viewport, and column-width ownership. No
+later finding is active. Guidance, navigation, and lifecycle wording redesign
+remain separate.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -71,13 +71,13 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   validated dynamic Feature/Target snapshots and never starts automatically from
   Data Definition Save.
 - Predict consumes saved contract snapshots, mapping values, and a promoted
-  compatible active model. Findings #1–#6 repaired bounded presentation,
-  execution, and runtime group-header synchronization defects. Finding #6 keeps
-  the shared standalone/embedded header bound to the current model and columns
-  without changing root viewport or column-width policy. Finding #7 model/Target
-  display improvement is the next bounded slice; Train navigation, standalone
-  routing, guidance, and Bootstrap / Retraining-required integration remain
-  separate.
+  compatible active model. Findings #1–#7 repaired bounded presentation,
+  execution, runtime group-header synchronization, and model/Target status
+  defects. Finding #7 keeps one shared standalone/embedded strip bound to the
+  current application-owned model state and committed-runtime Target labels
+  without changing lifecycle, root viewport, or column-width policy. Train
+  navigation, standalone routing, guidance, and Bootstrap /
+  Retraining-required integration remain separate.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
@@ -278,22 +278,18 @@ remain outside repository closeout.
 
 ### Current Workstream — Predict UI/UX Findings
 
-Predict findings #1–#6 are complete and merged: populated dropdown rendering,
+Predict findings #1–#7 are complete and merged: populated dropdown rendering,
 reset idle projection, running-state projection consistency, user-facing
 validation/runtime/partial message semantics, the no-usable-model execution
-gate, and runtime group-header synchronization. Finding #6 was guarded
-squash-merged through PR #41 as
-`1c8c786750c78f538ea7c8ba1395592939dab550`. Runtime projection changes now
-rebind the shared standalone/embedded header to the current model and columns,
-disconnect stale model signals, avoid duplicate persistent table signals, and
-preserve valid horizontal scroll/group geometry after column changes. Root
-viewport, column-width policy, lifecycle, execution gating, and other Predict
-behavior remain unchanged. Finding #7 now presents application-owned model state
-with ordered committed-runtime Target labels through the shared Predict
-workspace and awaits fresh Lane B exact-head review; it is not complete or
-merged. Existing lifecycle, Target registry, result mapping, and Findings #1–#6
-remain unchanged. No later finding is active; guidance and Train navigation
-remain separate.
+gate, runtime group-header synchronization, and shared model/Target status
+presentation. Finding #7 was guarded squash-merged through PR #42 as
+`9704beabb8217099a76c59a8c18c9f80d702e51a`. The shared standalone/embedded
+strip presents application-owned model state and ordered committed-runtime
+Target labels, re-renders the current runtime composition after replacement,
+and avoids duplicate badges or lifecycle observations. Existing lifecycle,
+Target registry, result mapping, execution gating, root viewport, and
+column-width policy remain unchanged. No later finding is active; guidance and
+Train navigation require a separate bounded product/owner decision.
 
 ### Later — Production ML Readiness / Calculator Integration
 

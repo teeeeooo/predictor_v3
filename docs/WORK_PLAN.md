@@ -29,16 +29,15 @@ only complete terminal/Candidate pairs, and terminally abandons a Confirmation
 when a consumed locked seal lacks complete durable finalization. Active,
 deployment export, Predict, production confirmation/promotion, migration apply,
 and retention/delete apply were not mutated during audit or closeout. Predict
-internal UI/UX findings #1–#6 are now complete and merged. Finding #6's
-runtime group-header synchronization repair was guarded squash-merged through
-PR #41 as `1c8c786750c78f538ea7c8ba1395592939dab550`. Runtime projection changes
-now rebind the shared standalone/embedded group header to the current model and
-columns, remove stale model signals, retain single persistent table signals, and
-preserve valid horizontal scroll alignment without changing root viewport or
-column-width policy. Finding #7's bounded shared model/Target presentation is
-implemented on a feature branch and awaits fresh Lane B exact-head review; it
-is not complete or merged. Existing lifecycle, Target registry, result mapping,
-and Findings #1–#6 remain unchanged. No later finding is active.
+internal UI/UX findings #1–#7 are now complete and merged. Finding #7's bounded
+shared model/Target presentation was guarded squash-merged through PR #42 as
+`9704beabb8217099a76c59a8c18c9f80d702e51a`. The always-visible shared strip
+presents application-owned model state and ordered committed-runtime Target
+labels in standalone and embedded Predict, and runtime replacement re-renders the
+current composition without starting another lifecycle observation or creating
+duplicate badges. Existing lifecycle, Target registry, result mapping, execution
+gating, root viewport, and column-width policy remain unchanged. No later
+finding is active.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
@@ -123,11 +122,12 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Run a fresh Lane B exact-head review of the Finding #7 Draft PR. Do not mark it
-Ready, merge it, close Finding #7, activate a later finding, reopen Finding #6,
-or combine Train navigation, guidance, lifecycle wording, root viewport,
+Run a bounded read-only product/owner decision for the next Predict internal
+UI/UX finding. Fix the exact user-visible symptom, current owner, acceptance,
+and lane before starting source work; do not assume a later finding number or
+combine Train navigation, guidance, lifecycle wording, root viewport,
 column-width policy, real-user confirmation/promotion, migration apply, or
-retention/delete apply with this review.
+retention/delete apply without that decision.
 
 ## Active Blockers
 
@@ -193,10 +193,10 @@ retention/delete apply with this review.
   authorized controlled operations; repository closeout grants none of them.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
-- Predict findings #1–#6 are complete and merged. Finding #7's bounded source
-  repair awaits fresh Lane B exact-head review and remains unmerged. No later
-  finding is active; guidance/navigation, lifecycle wording, root viewport, and
-  column-width policy remain outside it.
+- Predict findings #1–#7 are complete and merged. Finding #7's shared
+  model/Target presentation is closed through PR #42. No later finding is
+  active; guidance/navigation, lifecycle wording, root viewport, and column-width
+  policy require a separate bounded product/owner decision.
 - Real mapping values, training data, model quality, and production-readiness
   validation remain company-local.
 
