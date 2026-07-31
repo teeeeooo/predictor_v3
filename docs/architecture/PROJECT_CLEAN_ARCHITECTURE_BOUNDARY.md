@@ -89,9 +89,13 @@ Examples:
 - Predict execution: `PredictionExecutionPort` -> PySide/QThread runner or
   another runtime runner.
 - Predict result attachment: the Qt-free application/session boundary pins one
-  immutable execution context per case request and accepts a worker result only
-  when session, case, run, case-input revision, runtime semantics, and loaded
-  model identity still match. A worker or Qt view never owns reconciliation.
+  immutable execution context and runtime-owned expected-target projection per
+  case request. It accepts an executed result only when session, case, run,
+  case-input revision, runtime semantics, loaded model identity, target
+  identities/metadata, and aggregate status all match. Cancellation and
+  infrastructure failure carry the same context through this gate. User-facing
+  progress and summaries count canonical accepted dispositions, not worker
+  transport progress. A worker or Qt view never owns reconciliation.
 - Calculator execution: `CalculatorUseCase` -> core calculator dispatcher
   adapter, not direct orchestration inside UI sections.
 

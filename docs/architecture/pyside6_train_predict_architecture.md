@@ -729,6 +729,8 @@ Recommended fields:
 - `results_by_case_id`
 - one immutable session identity
 - case-scoped input revisions and currently allowed execution context per case
+- the immutable runtime-owned expected-target descriptor projection pinned with
+  each allowed execution
 - bounded stale-result rejection diagnostics
 - `selected_case_ids`
 - `model_status`
@@ -741,7 +743,14 @@ No direct PySide6 widget ownership.
 `PredictSession` is the application-owned result acceptance gate. An executed
 result attaches only if the active session, existing `case_id`, allowed run,
 request input revision, pinned execution semantics, and pinned loaded model all
-match. Rejection does not mutate input, result, row status, progress, or counts.
+match. The same canonical gate also requires exactly one outcome for each pinned
+Target identity, matching result Feature identity/key/unit/source metadata, and
+an aggregate status consistent with the available/unavailable/failed set.
+Target-derived errors carry the complete expected set; row-wide errors and
+cancelled requests carry no synthetic target outcomes but retain immutable
+execution context. Executed terminal rows cannot use the legacy direct result
+setter. Rejection does not mutate input, result, row status, accepted progress,
+or counts.
 Editing another case is unrelated; editing the same case increments only that
 case revision, makes an existing typed result stale (or a running row pending),
 and causes the old request result to fail closed.
@@ -1237,6 +1246,13 @@ Responsibility:
 - apply result updates to `PredictSession` on the UI thread
 - ignore late row/progress/terminal events whose run identity is not active;
   executed rows still pass the session-owned acceptance gate
+- treat worker progress and terminal summaries as transport evidence: advance
+  user-facing progress once per canonically accepted case and calculate the
+  final application summary from accepted complete/partial/error/cancelled
+  dispositions plus pre-run invalid rows; expose unresolved rows when accepted
+  dispositions do not cover the requested total
+- send cooperative cancellation and infrastructure failure through the same
+  context-preserving canonical acceptance path before revoking run authority
 - request table model refresh through callbacks or signals
 - expose model/run status to the workspace without making the workspace inspect
   raw model artifact paths

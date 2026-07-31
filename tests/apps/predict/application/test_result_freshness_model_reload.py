@@ -41,28 +41,34 @@ def _composition(repository):  # noqa: ANN001
 def _install_result(composition):  # noqa: ANN001
     case_id = composition.session.case_order[0]
     semantics, model = composition.prediction_controller.execution_environment
-    descriptor = composition.runtime_snapshot.target_descriptors[0]
+    descriptors = composition.runtime_snapshot.target_descriptors
+    context = PredictionExecutionContext(
+        composition.session.session_id,
+        case_id,
+        "accepted-run",
+        0,
+        semantics,
+        model,
+    )
     result = ResultRow(
         case_id,
         "complete",
-        target_outcomes=(TargetOutcome(
-            descriptor.target_identity,
-            descriptor.result_feature_identity,
-            descriptor.result_key,
-            descriptor.canonical_unit,
-            "available",
-            raw_value=42.123456789,
-        ),),
-        execution_context=PredictionExecutionContext(
-            composition.session.session_id,
-            case_id,
-            "accepted-run",
-            0,
-            semantics,
-            model,
+        target_outcomes=tuple(
+            TargetOutcome(
+                descriptor.target_identity,
+                descriptor.result_feature_identity,
+                descriptor.result_key,
+                descriptor.canonical_unit,
+                "available",
+                value_source=descriptor.value_source,
+                raw_value=42.123456789,
+            )
+            for descriptor in descriptors
         ),
+        execution_context=context,
     )
-    composition.session.set_result(result)
+    composition.session.allow_result(context, descriptors)
+    assert composition.session.accept_result(result, semantics, model).accepted
     return result
 
 

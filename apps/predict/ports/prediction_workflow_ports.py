@@ -10,6 +10,8 @@ from apps.predict.application.models import (
     PredictionModelStatus,
     PredictionServiceResult,
 )
+from apps.predict.application.result_contract import PredictionExecutionContext
+from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.case_row import CaseRow
 from apps.predict.state.result_row import ResultRow
 
@@ -24,6 +26,10 @@ class PredictionInputMapper(Protocol):
 class PredictionResultMapper(Protocol):
     """Convert workflow outcomes into application result-row state."""
 
+    @property
+    def target_descriptors(self) -> tuple[PredictionTargetDescriptor, ...]:
+        """Return the immutable runtime target projection used for mapping."""
+
     def from_service_result(self, result: PredictionServiceResult) -> ResultRow:
         """Convert one service result."""
 
@@ -37,10 +43,18 @@ class PredictionResultMapper(Protocol):
         self,
         case_id: str,
         message: str = "Prediction cancelled.",
+        *,
+        context: PredictionExecutionContext,
     ) -> ResultRow:
         """Build a cancelled row."""
 
-    def infrastructure_failure_result(self, case_id: str, message: str) -> ResultRow:
+    def infrastructure_failure_result(
+        self,
+        case_id: str,
+        message: str,
+        *,
+        context: PredictionExecutionContext,
+    ) -> ResultRow:
         """Build an error row for a runner/infrastructure failure."""
 
 

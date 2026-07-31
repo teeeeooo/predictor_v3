@@ -135,7 +135,7 @@ def mapping_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
 def prediction_summary_text(summary) -> str:  # noqa: ANN001
     """Return final prediction status text for workspace display."""
     if summary.cancelled:
-        return (
+        text = (
             "예측 취소: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | "
             "입력 확인 {invalid}건 | 취소 {cancelled}건"
         ).format(
@@ -145,12 +145,18 @@ def prediction_summary_text(summary) -> str:  # noqa: ANN001
             invalid=summary.invalid,
             cancelled=summary.cancelled,
         )
-    return (
-        "예측 완료: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | "
-        "입력 확인 {invalid}건"
-    ).format(
-        total=summary.total,
-        complete=summary.complete,
-        error=summary.error,
-        invalid=summary.invalid,
-    )
+    else:
+        text = (
+            "예측 완료: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | "
+            "입력 확인 {invalid}건"
+        ).format(
+            total=summary.total,
+            complete=summary.complete,
+            error=summary.error,
+            invalid=summary.invalid,
+        )
+    if summary.partial:
+        text += f" | 일부 결과 {summary.partial}건"
+    if summary.unresolved:
+        text += f" | 미반영 {summary.unresolved}건"
+    return text

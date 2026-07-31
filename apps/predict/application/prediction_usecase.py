@@ -41,6 +41,7 @@ class PredictionRunSummary:
     invalid: int
     cancelled: int = 0
     partial: int = 0
+    unresolved: int = 0
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,9 @@ class PredictionUseCase:
         self._model_identity = model_identity or PredictionModelIdentity(
             "unmanaged", 0, "legacy"
         )
+        self._target_descriptors = tuple(result_mapper.target_descriptors)
+        if not self._target_descriptors:
+            raise ValueError("Predict result mapper has no target descriptors")
 
     def update_execution_environment(
         self,
@@ -119,7 +123,7 @@ class PredictionUseCase:
                 model=self._model_identity,
             )
             request = replace(outcome.request, context=context)
-            self._session.allow_result(context)
+            self._session.allow_result(context, self._target_descriptors)
             self._record_result(
                 self._result_mapper.running_result(case_id),
                 result_callback,
@@ -150,7 +154,9 @@ class PredictionUseCase:
     ) -> bool:
         """Apply one service result to session state."""
         result = self._result_mapper.from_service_result(service_result)
-        acceptance = self._session.accept_result(result)
+        acceptance = self._session.accept_result(
+            result, self._execution_semantics, self._model_identity
+        )
         if acceptance.accepted and result_callback is not None:
             result_callback(result)
         return acceptance.accepted
@@ -161,20 +167,24 @@ class PredictionUseCase:
         result_callback: ResultCallback | None = None,
         *,
         run_id: str = "",
-    ) -> None:
+    ) -> tuple[ResultRow, ...]:
         """Apply cancelled row state for requests not run by the runner."""
         effective_run_ids: set[str] = set()
+        accepted: list[ResultRow] = []
         for case_id in case_ids:
             effective_run_id = run_id or self._run_id_for_case(case_id)
-            if not self._session.is_allowed_context_current(case_id, effective_run_id):
+            context = self._session.allowed_context_for_case(case_id)
+            if context is None or context.run_id != effective_run_id:
                 continue
             effective_run_ids.add(effective_run_id)
-            self._record_result(
-                self._result_mapper.cancelled_result(case_id),
-                result_callback,
+            result = self._result_mapper.cancelled_result(
+                case_id, context=context
             )
+            if self._accept_executed_result(result, result_callback):
+                accepted.append(result)
         for effective_run_id in effective_run_ids:
             self._session.revoke_run(effective_run_id)
+        return tuple(accepted)
 
     def apply_infrastructure_failure(
         self,
@@ -188,15 +198,14 @@ class PredictionUseCase:
         effective_run_ids: set[str] = set()
         for case_id in case_ids:
             effective_run_id = run_id or self._run_id_for_case(case_id)
-            if not self._session.is_allowed_context_current(case_id, effective_run_id):
+            context = self._session.allowed_context_for_case(case_id)
+            if context is None or context.run_id != effective_run_id:
                 continue
             effective_run_ids.add(effective_run_id)
-            if self._session.result_for_case(case_id).status != "running":
-                continue
-            self._record_result(
-                self._result_mapper.infrastructure_failure_result(case_id, message),
-                result_callback,
+            result = self._result_mapper.infrastructure_failure_result(
+                case_id, message, context=context
             )
+            self._accept_executed_result(result, result_callback)
         for effective_run_id in effective_run_ids:
             self._session.revoke_run(effective_run_id)
         return self.summary_from_case_ids(case_ids)
@@ -211,6 +220,10 @@ class PredictionUseCase:
     ) -> PredictionRunSummary:
         """Summarize the actual session states for one active run."""
         statuses = [self._session.result_for_case(case_id).status for case_id in case_ids]
+        resolved = sum(
+            status in {"complete", "partial", "error", "invalid", "cancelled"}
+            for status in statuses
+        )
         return PredictionRunSummary(
             total=len(case_ids),
             complete=statuses.count("complete"),
@@ -218,6 +231,7 @@ class PredictionUseCase:
             invalid=statuses.count("invalid"),
             cancelled=statuses.count("cancelled"),
             partial=statuses.count("partial"),
+            unresolved=len(case_ids) - resolved,
         )
 
     def summary_from_worker(
@@ -242,3 +256,15 @@ class PredictionUseCase:
         self._session.set_result(result)
         if result_callback is not None:
             result_callback(result)
+
+    def _accept_executed_result(
+        self,
+        result: ResultRow,
+        result_callback: ResultCallback | None,
+    ) -> bool:
+        acceptance = self._session.accept_result(
+            result, self._execution_semantics, self._model_identity
+        )
+        if acceptance.accepted and result_callback is not None:
+            result_callback(result)
+        return acceptance.accepted

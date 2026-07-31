@@ -5,6 +5,7 @@ from math import isfinite
 import re
 
 from apps.predict.application.models import PredictionServiceResult
+from apps.predict.application.result_contract import PredictionExecutionContext
 from apps.predict.application.target_outcome import (
     PredictionTargetDescriptor,
     TargetOutcome,
@@ -66,6 +67,11 @@ class PredictionResultAdapter:
     @property
     def active_targets(self) -> tuple[str, ...]:
         return self._active_targets
+
+    @property
+    def target_descriptors(self) -> tuple[PredictionTargetDescriptor, ...]:
+        """Expose the immutable runtime projection used by this adapter."""
+        return self._target_descriptors
 
     def from_service_result(self, result: PredictionServiceResult) -> ResultRow:
         """Convert one service result into a ResultRow."""
@@ -131,21 +137,31 @@ class PredictionResultAdapter:
         self,
         case_id: str,
         message: str = "Prediction cancelled.",
+        *,
+        context: PredictionExecutionContext,
     ) -> ResultRow:
         """Build a row-level cancelled result."""
         return ResultRow(
             case_id=case_id,
             status="cancelled",
             message=self._clean_message(message),
+            execution_context=context,
         )
 
-    def infrastructure_failure_result(self, case_id: str, message: str) -> ResultRow:
+    def infrastructure_failure_result(
+        self,
+        case_id: str,
+        message: str,
+        *,
+        context: PredictionExecutionContext,
+    ) -> ResultRow:
         """Build an error row for a runner/infrastructure failure."""
         self._log_runtime_failure(case_id, message)
         return ResultRow(
             case_id=case_id,
             status="error",
             message=_RUNTIME_FAILURE_MESSAGE,
+            execution_context=context,
         )
 
     def _validation_message(self, case_id: str, message: str) -> str:

@@ -226,3 +226,38 @@ def test_event_with_changed_semantics_or_model_is_rejected_without_mutation():
     )
     assert session.result_for_case(case.case_id) == original
     assert session.acceptance_diagnostics[-1].reason_code == "loaded_model_changed"
+
+
+def test_input_edit_rejects_context_preserving_infrastructure_error():
+    session = PredictSession()
+    case = session.case_store.append_empty_rows(1)[0]
+    usecase = _usecase(session)
+    request = usecase.prepare_run([case.case_id]).job.requests[0]
+    case.set_input_value("cooling_capa", 3600)
+
+    usecase.apply_infrastructure_failure(
+        (case.case_id,), "worker failed", run_id=request.context.run_id
+    )
+
+    assert session.result_for_case(case.case_id).status == "pending"
+    assert session.acceptance_diagnostics[-1].reason_code == "input_revision_changed"
+
+
+def test_semantic_change_rejects_context_preserving_infrastructure_error():
+    session = PredictSession()
+    case = session.case_store.append_empty_rows(1)[0]
+    usecase = _usecase(session)
+    request = usecase.prepare_run([case.case_id]).job.requests[0]
+    semantics, model = usecase.execution_environment
+    usecase.update_execution_environment(
+        replace(semantics, derived_fingerprint="changed"), model
+    )
+
+    usecase.apply_infrastructure_failure(
+        (case.case_id,), "worker failed", run_id=request.context.run_id
+    )
+
+    assert session.result_for_case(case.case_id).status == "running"
+    assert session.acceptance_diagnostics[-1].reason_code == (
+        "execution_semantics_changed"
+    )

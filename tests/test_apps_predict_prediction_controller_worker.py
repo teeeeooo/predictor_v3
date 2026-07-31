@@ -1,5 +1,7 @@
 """PredictionController worker orchestration tests."""
 
+from dataclasses import replace
+
 import pytest
 from PySide6.QtCore import QCoreApplication, QEventLoop, QObject, QTimer, Signal
 
@@ -263,14 +265,22 @@ def test_late_terminal_event_for_another_run_cannot_finish_active_run():
         session, FakePredictionService(), auto_finish=False
     )
     summaries = []
-    controller.start_all(finished_callback=summaries.append)
+    progress = []
+    controller.start_all(
+        progress_callback=progress.append,
+        finished_callback=summaries.append,
+    )
 
+    runners[0].progress.emit(
+        PredictionProgress("superseded-run", 1, 1, "case", "1 / 1")
+    )
     runners[0].finished.emit(PredictionWorkerSummary("superseded-run", total=1))
     _app().processEvents()
 
     assert controller.is_running
     assert controller._runner is runners[0]
     assert summaries == []
+    assert progress == []
     runners[0].complete()
     _wait_until(lambda: summaries and controller._runner is None)
 
@@ -298,8 +308,13 @@ def test_controller_cancel_requests_worker_cancel():
     service = FakePredictionService()
     controller, runners = _controller(session, service, auto_finish=False)
     summaries = []
+    progress = []
 
-    controller.start_all(finished_callback=summaries.append)
+    controller.start_all(
+        progress_callback=progress.append,
+        finished_callback=summaries.append,
+    )
+    cancelled_context = runners[0].job.requests[1].context
     assert runners[0].is_running
     controller.cancel()
     _wait_until(lambda: summaries and controller._runner is None)
@@ -308,8 +323,13 @@ def test_controller_cancel_requests_worker_cancel():
     assert runners[0].disposed
     assert summaries[0].complete == 1
     assert summaries[0].cancelled == 1
+    assert [item.completed for item in progress] == [1, 2]
     assert service.calls == [session.case_order[0]]
     assert session.result_for_case(session.case_order[1]).status == "cancelled"
+    assert (
+        session.result_for_case(session.case_order[1]).execution_context
+        == cancelled_context
+    )
 
 
 def test_controller_worker_error_result_continues_to_summary():
@@ -421,11 +441,145 @@ def test_controller_runner_failure_preserves_terminal_rows_and_summarizes_sessio
     assert "execution adapter exploded" not in session.result_for_case(remaining).message
     assert "다시 실행" in session.result_for_case(remaining).message
     assert "입력" not in session.result_for_case(remaining).message
+    assert (
+        session.result_for_case(remaining).execution_context
+        == runners[0].job.requests[1].context
+    )
     assert (summaries[0].total, summaries[0].complete) == (3, 1)
     assert (summaries[0].error, summaries[0].invalid) == (1, 1)
     assert not controller.is_running
     assert runners[0].disposed
     assert results[-1].case_id == remaining
+
+
+def test_rejected_same_row_event_does_not_advance_progress_or_summary_counts():
+    _app()
+    session = _session_with_cases("3500")
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
+    progress = []
+    summaries = []
+    controller.start_all(
+        progress_callback=progress.append,
+        finished_callback=summaries.append,
+    )
+    request = runners[0].job.requests[0]
+    session.case_store.get_case(request.case_id).set_input_value("cooling_capa", "3600")
+
+    runners[0].row_result.emit(service.predict_one(request))
+    runners[0].progress.emit(
+        PredictionProgress(runners[0].job.run_id, 1, 1, request.case_id, "1 / 1")
+    )
+    runners[0].finished.emit(
+        PredictionWorkerSummary(runners[0].job.run_id, total=1, complete=1)
+    )
+    _wait_until(lambda: summaries and controller._runner is None)
+
+    assert session.result_for_case(request.case_id).status == "pending"
+    assert progress == []
+    assert len(summaries) == 1
+    assert (
+        summaries[0].complete,
+        summaries[0].partial,
+        summaries[0].error,
+    ) == (0, 0, 0)
+    assert summaries[0].unresolved == 1
+    assert runners[0].disposed
+
+
+def test_duplicate_accepted_event_does_not_double_progress_or_counts():
+    _app()
+    session = _session_with_cases("3500")
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
+    progress = []
+    summaries = []
+    controller.start_all(
+        progress_callback=progress.append,
+        finished_callback=summaries.append,
+    )
+    request = runners[0].job.requests[0]
+    result = service.predict_one(request)
+
+    runners[0].row_result.emit(result)
+    runners[0].row_result.emit(result)
+    runners[0].progress.emit(
+        PredictionProgress(runners[0].job.run_id, 2, 1, request.case_id, "2 / 1")
+    )
+    runners[0].finished.emit(
+        PredictionWorkerSummary(runners[0].job.run_id, total=1, complete=2)
+    )
+    _wait_until(lambda: summaries and controller._runner is None)
+
+    assert [item.completed for item in progress] == [1]
+    assert summaries[0].complete == 1
+    assert summaries[0].unresolved == 0
+    assert session.acceptance_diagnostics[-1].reason_code == "run_not_active"
+
+
+def test_edited_cancelled_request_is_rejected_and_left_unresolved():
+    _app()
+    session = _session_with_cases("3500", "3600")
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
+    progress = []
+    summaries = []
+    controller.start_all(
+        progress_callback=progress.append,
+        finished_callback=summaries.append,
+    )
+    edited_case = session.case_order[1]
+    session.case_store.get_case(edited_case).set_input_value("cooling_capa", "3700")
+
+    controller.cancel()
+    _wait_until(lambda: summaries and controller._runner is None)
+
+    assert session.result_for_case(edited_case).status == "pending"
+    assert session.acceptance_diagnostics[-1].reason_code == "input_revision_changed"
+    assert [item.completed for item in progress] == [1]
+    assert (summaries[0].complete, summaries[0].cancelled) == (1, 0)
+    assert summaries[0].unresolved == 1
+
+
+def test_stale_model_infrastructure_failure_is_rejected_with_context_diagnostic():
+    _app()
+    session = _session_with_cases("3500")
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
+    summaries = []
+    controller.start_all(finished_callback=summaries.append)
+    semantics, model = controller.execution_environment
+    controller._usecase.update_execution_environment(
+        semantics, replace(model, candidate_id="replacement")
+    )
+
+    runners[0].fail(message="stale infrastructure failure")
+    _wait_until(lambda: summaries and controller._runner is None)
+
+    case_id = session.case_order[0]
+    assert session.result_for_case(case_id).status == "running"
+    assert session.acceptance_diagnostics[-1].reason_code == "loaded_model_changed"
+    assert summaries[0].error == 0
+    assert summaries[0].unresolved == 1
+
+
+def test_late_infrastructure_failure_does_not_overwrite_accepted_complete_row():
+    _app()
+    session = _session_with_cases("3500")
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
+    summaries = []
+    controller.start_all(finished_callback=summaries.append)
+    request = runners[0].job.requests[0]
+    runners[0].row_result.emit(service.predict_one(request))
+    accepted = session.result_for_case(request.case_id)
+
+    runners[0].fail(message="late failure")
+    _wait_until(lambda: summaries and controller._runner is None)
+
+    assert session.result_for_case(request.case_id) == accepted
+    assert summaries[0].complete == 1
+    assert summaries[0].error == 0
 
 
 def test_controller_immediate_runner_failure_errors_all_rows_and_allows_retry():

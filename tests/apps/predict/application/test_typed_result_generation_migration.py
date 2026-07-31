@@ -58,7 +58,7 @@ def _setup(active, candidate, tmp_path):  # noqa: ANN001
 
 def _install_typed_result(composition, model_file):  # noqa: ANN001
     case_id = composition.session.case_order[0]
-    descriptor = composition.runtime_snapshot.target_descriptors[0]
+    descriptors = composition.runtime_snapshot.target_descriptors
     context = PredictionExecutionContext(
         composition.session.session_id,
         case_id,
@@ -73,17 +73,23 @@ def _install_typed_result(composition, model_file):  # noqa: ANN001
         case_id,
         "complete",
         message="accepted",
-        target_outcomes=(TargetOutcome(
-            descriptor.target_identity,
-            descriptor.result_feature_identity,
-            descriptor.result_key,
-            descriptor.canonical_unit,
-            "available",
-            raw_value=123.456789,
-        ),),
+        target_outcomes=tuple(
+            TargetOutcome(
+                descriptor.target_identity,
+                descriptor.result_feature_identity,
+                descriptor.result_key,
+                descriptor.canonical_unit,
+                "available",
+                value_source=descriptor.value_source,
+                raw_value=123.456789,
+            )
+            for descriptor in descriptors
+        ),
         execution_context=context,
     )
-    composition.session.set_result(result)
+    composition.session.allow_result(context, descriptors)
+    semantics, model = composition.prediction_controller.execution_environment
+    assert composition.session.accept_result(result, semantics, model).accepted
     return result
 
 

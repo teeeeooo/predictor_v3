@@ -10,6 +10,8 @@ from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     ResultAcceptance,
 )
+from apps.predict.application.result_validation import canonical_result_rejection_reason
+from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.case_store import CaseStore
 from apps.predict.state.result_row import ResultRow
 
@@ -21,6 +23,12 @@ class PredictSessionProjection:
     results: tuple[ResultRow, ...]
 
 
+@dataclass(frozen=True)
+class _AllowedExecution:
+    context: PredictionExecutionContext
+    expected_targets: tuple[PredictionTargetDescriptor, ...]
+
+
 class PredictSession:
     """Own cases, typed results, and the stale-result acceptance gate."""
 
@@ -30,7 +38,7 @@ class PredictSession:
         self.case_store = case_store or CaseStore()
         self.case_store.bind_mutation_callback(self._touch)
         self.results_by_case_id: dict[str, ResultRow] = {}
-        self._allowed_contexts: dict[str, PredictionExecutionContext] = {}
+        self._allowed_executions: dict[str, _AllowedExecution] = {}
         self._acceptance_diagnostics: deque[ResultAcceptance] = deque(maxlen=32)
 
     @property
@@ -71,6 +79,11 @@ class PredictSession:
 
     def set_result(self, result: ResultRow) -> None:
         """Attach non-executed/legacy state; executed results use accept_result."""
+        if result.execution_context is not None or result.target_outcomes:
+            raise ValueError("executed result requires canonical acceptance")
+        self._store_result(result)
+
+    def _store_result(self, result: ResultRow) -> None:
         self.case_store.get_case(result.case_id)
         if self.results_by_case_id.get(result.case_id) != result:
             self.results_by_case_id[result.case_id] = result
@@ -80,44 +93,70 @@ class PredictSession:
         for result in results:
             self.set_result(result)
 
-    def allow_result(self, context: PredictionExecutionContext) -> None:
+    def allow_result(
+        self,
+        context: PredictionExecutionContext,
+        expected_targets: tuple[PredictionTargetDescriptor, ...],
+    ) -> None:
         case = self.case_store.get_case(context.case_id)
         if context.session_id != self._session_id:
             raise ValueError("execution context session identity mismatch")
         if context.case_input_revision != case.input_revision:
             raise ValueError("execution context input revision is stale")
-        self._allowed_contexts[context.case_id] = context
+        identities = tuple(item.target_identity for item in expected_targets)
+        if not identities or len(identities) != len(set(identities)):
+            raise ValueError("expected target contract is invalid")
+        self._allowed_executions[context.case_id] = _AllowedExecution(
+            context, tuple(expected_targets)
+        )
 
-    def accept_result(self, result: ResultRow) -> ResultAcceptance:
+    def accept_result(
+        self,
+        result: ResultRow,
+        current_semantics: PredictionExecutionSemantics,
+        current_model: PredictionModelIdentity,
+    ) -> ResultAcceptance:
         context = result.execution_context
-        reason = self._acceptance_reason(result.case_id, context)
+        reason = self._acceptance_reason(
+            result.case_id, context, current_semantics, current_model
+        )
+        allowed = self._allowed_executions.get(result.case_id)
+        if not reason and allowed is not None:
+            reason = canonical_result_rejection_reason(
+                result, allowed.expected_targets
+            )
         acceptance = ResultAcceptance(
             not reason, reason, result.case_id, context.run_id if context else ""
         )
         if reason:
             self._acceptance_diagnostics.append(acceptance)
             return acceptance
-        self.set_result(result)
-        self._allowed_contexts.pop(result.case_id, None)
+        self._store_result(result)
+        self._allowed_executions.pop(result.case_id, None)
         return acceptance
 
     def revoke_run(self, run_id: str) -> None:
-        self._allowed_contexts = {
-            case_id: context for case_id, context in self._allowed_contexts.items()
-            if context.run_id != run_id
+        self._allowed_executions = {
+            case_id: allowed
+            for case_id, allowed in self._allowed_executions.items()
+            if allowed.context.run_id != run_id
         }
 
     def allowed_context_for_case(
         self, case_id: str
     ) -> PredictionExecutionContext | None:
-        return self._allowed_contexts.get(case_id)
+        allowed = self._allowed_executions.get(case_id)
+        return allowed.context if allowed is not None else None
 
     def is_allowed_context_current(self, case_id: str, run_id: str) -> bool:
-        context = self._allowed_contexts.get(case_id)
-        if context is None or context.run_id != run_id:
+        allowed = self._allowed_executions.get(case_id)
+        if allowed is None or allowed.context.run_id != run_id:
             return False
         try:
-            return context.case_input_revision == self.case_store.get_case(case_id).input_revision
+            return (
+                allowed.context.case_input_revision
+                == self.case_store.get_case(case_id).input_revision
+            )
         except KeyError:
             return False
 
@@ -166,7 +205,7 @@ class PredictSession:
         self.results_by_case_id = {
             result.case_id: _copy_result(result) for result in projection.results
         }
-        self._allowed_contexts.clear()
+        self._allowed_executions.clear()
         self._touch()
 
     def restore_runtime_projection(self, projection: PredictSessionProjection) -> None:
@@ -199,7 +238,13 @@ class PredictSession:
         elif existing is not None:
             self.results_by_case_id[case_id] = existing.marked_stale(reason)
 
-    def _acceptance_reason(self, case_id: str, context: PredictionExecutionContext | None) -> str:
+    def _acceptance_reason(
+        self,
+        case_id: str,
+        context: PredictionExecutionContext | None,
+        current_semantics: PredictionExecutionSemantics,
+        current_model: PredictionModelIdentity,
+    ) -> str:
         if context is None:
             return "missing_execution_context"
         if context.session_id != self._session_id:
@@ -210,7 +255,8 @@ class PredictSession:
             return "case_removed"
         if context.case_id != case_id:
             return "case_mismatch"
-        allowed = self._allowed_contexts.get(case_id)
+        allowed_execution = self._allowed_executions.get(case_id)
+        allowed = allowed_execution.context if allowed_execution is not None else None
         if allowed is None:
             return "run_not_active"
         if context.run_id != allowed.run_id:
@@ -220,6 +266,10 @@ class PredictSession:
         if context.semantics != allowed.semantics:
             return "execution_semantics_changed"
         if context.model != allowed.model:
+            return "loaded_model_changed"
+        if allowed.semantics.currentness_key != current_semantics.currentness_key:
+            return "execution_semantics_changed"
+        if allowed.model != current_model:
             return "loaded_model_changed"
         return ""
 

@@ -47,9 +47,6 @@ class ResultRow:
             raise ValueError("stale result requires a reason")
         if status in {"invalid", "cancelled"} and target_outcomes:
             raise ValueError(f"{status} result cannot contain target outcomes")
-        identities = tuple(item.target_identity for item in target_outcomes)
-        if len(identities) != len(set(identities)):
-            raise ValueError("result contains duplicate target identity")
         object.__setattr__(self, "case_id", case_id)
         object.__setattr__(self, "status", status)
         object.__setattr__(self, "target_outcomes", tuple(target_outcomes))

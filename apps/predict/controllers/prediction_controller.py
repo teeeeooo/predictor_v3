@@ -56,6 +56,10 @@ class PredictionController:
         self._is_running = False
         self._active_case_ids: tuple[str, ...] = ()
         self._active_run_id = ""
+        self._active_total = 0
+        self._active_invalid = 0
+        self._active_request_total = 0
+        self._accepted_status_by_case: dict[str, str] = {}
 
     @property
     def is_running(self) -> bool:
@@ -176,6 +180,7 @@ class PredictionController:
         self._start_worker(
             plan.job,
             case_ids=tuple(case_ids),
+            invalid_count=plan.summary.invalid,
             status_callback=status_callback,
             result_callback=result_callback,
             progress_callback=progress_callback,
@@ -213,6 +218,7 @@ class PredictionController:
         self._notify(status_callback, f"Starting prediction for {total} rows.")
 
         valid_requests = []
+        run_ids: set[str] = set()
         counts = {"complete": 0, "partial": 0, "error": 0, "invalid": 0}
         for case_id in case_ids:
             plan = self._usecase.prepare_run([case_id], result_callback)
@@ -220,12 +226,17 @@ class PredictionController:
                 counts["invalid"] += 1
                 continue
             valid_requests.extend(plan.job.requests)
+            run_ids.add(plan.job.run_id)
 
         service_results = self._service.predict_many(
             [request for request in valid_requests if request is not None]
         )
         for service_result in service_results:
-            self._usecase.apply_service_result(service_result, result_callback)
+            accepted = self._usecase.apply_service_result(
+                service_result, result_callback
+            )
+            if not accepted:
+                continue
             result = self._session.result_for_case(service_result.case_id)
             if result.status == "complete":
                 counts["complete"] += 1
@@ -234,6 +245,9 @@ class PredictionController:
             elif result.status == "error":
                 counts["error"] += 1
 
+        for run_id in run_ids:
+            self._session.revoke_run(run_id)
+
         self._notify(status_callback, "Prediction run finished.")
         return PredictionRunSummary(
             total=total,
@@ -241,6 +255,7 @@ class PredictionController:
             error=counts["error"],
             invalid=counts["invalid"],
             partial=counts["partial"],
+            unresolved=total - sum(counts.values()),
         )
 
     def _notify(self, callback: StatusCallback | None, message: str) -> None:
@@ -256,6 +271,7 @@ class PredictionController:
         self,
         job,
         case_ids: tuple[str, ...],
+        invalid_count: int,
         status_callback: StatusCallback | None,
         result_callback: ResultCallback | None,
         progress_callback: ProgressCallback | None,
@@ -264,6 +280,10 @@ class PredictionController:
         self._is_running = True
         self._active_case_ids = case_ids
         self._active_run_id = job.run_id
+        self._active_total = len(case_ids)
+        self._active_invalid = invalid_count
+        self._active_request_total = job.total
+        self._accepted_status_by_case = {}
         runner = self._runner
         if runner is None:
             if self._runner_factory is None:
@@ -274,15 +294,11 @@ class PredictionController:
             lambda service_result: self._handle_worker_row_result(
                 service_result,
                 result_callback,
-            )
-        )
-        runner.progress.connect(
-            lambda progress: self._handle_worker_progress(
-                progress,
                 status_callback,
                 progress_callback,
             )
         )
+        runner.progress.connect(self._handle_worker_progress)
         runner.finished.connect(
             lambda summary: self._handle_worker_finished(
                 summary,
@@ -295,6 +311,7 @@ class PredictionController:
                 summary,
                 status_callback,
                 result_callback,
+                progress_callback,
                 finished_callback,
             )
         )
@@ -304,6 +321,7 @@ class PredictionController:
                 job.run_id,
                 status_callback,
                 result_callback,
+                progress_callback,
                 finished_callback,
             )
         )
@@ -316,23 +334,25 @@ class PredictionController:
         self,
         service_result: PredictionServiceResult,
         result_callback: ResultCallback | None,
+        status_callback: StatusCallback | None,
+        progress_callback: ProgressCallback | None,
     ) -> None:
         context = service_result.context
         if context is None or context.run_id != self._active_run_id:
             return
-        self._usecase.apply_service_result(service_result, result_callback)
+        if self._usecase.apply_service_result(service_result, result_callback):
+            self._record_accepted_disposition(
+                service_result.case_id, status_callback, progress_callback
+            )
 
     def _handle_worker_progress(
         self,
         progress: PredictionProgress,
-        status_callback: StatusCallback | None,
-        progress_callback: ProgressCallback | None,
     ) -> None:
         if progress.run_id != self._active_run_id:
             return
-        if progress_callback is not None:
-            progress_callback(progress)
-        self._notify(status_callback, progress.message)
+        # Transport progress is cleanup/diagnostic evidence only. Canonical
+        # acceptance emits the user-facing progress contract.
 
     def _handle_worker_finished(
         self,
@@ -342,7 +362,7 @@ class PredictionController:
     ) -> None:
         if summary.run_id != self._active_run_id:
             return
-        run_summary = self._usecase.summary_from_case_ids(self._active_case_ids)
+        run_summary = self._accepted_run_summary()
         self._session.revoke_run(summary.run_id)
         self._is_running = False
         self._notify(status_callback, "Prediction run finished.")
@@ -354,14 +374,19 @@ class PredictionController:
         summary: PredictionWorkerSummary,
         status_callback: StatusCallback | None,
         result_callback: ResultCallback | None,
+        progress_callback: ProgressCallback | None,
         finished_callback: SummaryCallback | None,
     ) -> None:
         if summary.run_id != self._active_run_id:
             return
-        self._usecase.apply_cancelled_rows(
+        accepted = self._usecase.apply_cancelled_rows(
             summary.cancelled_case_ids, result_callback, run_id=summary.run_id
         )
-        run_summary = self._usecase.summary_from_case_ids(self._active_case_ids)
+        for result in accepted:
+            self._record_accepted_disposition(
+                result.case_id, status_callback, progress_callback
+            )
+        run_summary = self._accepted_run_summary()
         self._is_running = False
         self._notify(status_callback, "Prediction run cancelled.")
         if finished_callback is not None:
@@ -373,17 +398,30 @@ class PredictionController:
         run_id: str,
         status_callback: StatusCallback | None,
         result_callback: ResultCallback | None,
+        progress_callback: ProgressCallback | None,
         finished_callback: SummaryCallback | None,
     ) -> None:
         if run_id != self._active_run_id:
             return
         failure_message = f"Prediction worker failed: {str(exc).splitlines()[0]}"
-        summary = self._usecase.apply_infrastructure_failure(
+        accepted: list[ResultRow] = []
+
+        def _record(result: ResultRow) -> None:
+            accepted.append(result)
+            if result_callback is not None:
+                result_callback(result)
+
+        self._usecase.apply_infrastructure_failure(
             self._active_case_ids,
             failure_message,
-            result_callback,
+            _record,
             run_id=run_id,
         )
+        for result in accepted:
+            self._record_accepted_disposition(
+                result.case_id, status_callback, progress_callback
+            )
+        summary = self._accepted_run_summary()
         self._is_running = False
         self._notify(status_callback, failure_message)
         if finished_callback is not None:
@@ -396,5 +434,49 @@ class PredictionController:
         self._runner = None
         self._active_case_ids = ()
         self._active_run_id = ""
+        self._active_total = 0
+        self._active_invalid = 0
+        self._active_request_total = 0
+        self._accepted_status_by_case = {}
         if runner is not None:
             runner.dispose()
+
+    def _record_accepted_disposition(
+        self,
+        case_id: str,
+        status_callback: StatusCallback | None,
+        progress_callback: ProgressCallback | None,
+    ) -> None:
+        if case_id in self._accepted_status_by_case:
+            return
+        result = self._session.result_for_case(case_id)
+        context = result.execution_context
+        if context is None or context.run_id != self._active_run_id:
+            return
+        if result.status not in {"complete", "partial", "error", "cancelled"}:
+            return
+        self._accepted_status_by_case[case_id] = result.status
+        completed = len(self._accepted_status_by_case)
+        progress = PredictionProgress(
+            run_id=self._active_run_id,
+            completed=completed,
+            total=self._active_request_total,
+            current_case_id=case_id,
+            message=f"{completed} / {self._active_request_total}",
+        )
+        if progress_callback is not None:
+            progress_callback(progress)
+        self._notify(status_callback, progress.message)
+
+    def _accepted_run_summary(self) -> PredictionRunSummary:
+        statuses = tuple(self._accepted_status_by_case.values())
+        resolved = self._active_invalid + len(statuses)
+        return PredictionRunSummary(
+            total=self._active_total,
+            complete=statuses.count("complete"),
+            partial=statuses.count("partial"),
+            error=statuses.count("error"),
+            invalid=self._active_invalid,
+            cancelled=statuses.count("cancelled"),
+            unresolved=max(self._active_total - resolved, 0),
+        )

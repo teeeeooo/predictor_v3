@@ -7,6 +7,11 @@ import pytest
 
 from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
 from apps.predict.application.models import PredictionInputRequest
+from apps.predict.application.result_contract import (
+    PredictionExecutionContext,
+    PredictionExecutionSemantics,
+    PredictionModelIdentity,
+)
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.ports.prediction_execution_port import (
     PredictionJob,
@@ -40,13 +45,24 @@ def test_prediction_job_progress_and_summary_are_frozen_payloads():
 
 def test_result_adapter_builds_running_invalid_cancelled_and_failure_rows():
     adapter = PredictionResultAdapter()
+    semantics = PredictionExecutionSemantics(
+        "generation", "ordered", "preprocessing", "derived", "one-hot", "targets"
+    )
+    model = PredictionModelIdentity("candidate", 1, "generation")
+    cancelled_context = PredictionExecutionContext(
+        "session", "case-0003", "run", 0, semantics, model
+    )
+    failed_context = PredictionExecutionContext(
+        "session", "case-0004", "run", 0, semantics, model
+    )
 
     running = adapter.running_result("case-0001")
     invalid = adapter.invalid_result("case-0002", "bad\nsecond line")
-    cancelled = adapter.cancelled_result("case-0003")
+    cancelled = adapter.cancelled_result("case-0003", context=cancelled_context)
     failed = adapter.infrastructure_failure_result(
         "case-0004",
         "Prediction worker failed: adapter exploded\ntrace detail",
+        context=failed_context,
     )
 
     assert running.status == "running"
@@ -54,11 +70,13 @@ def test_result_adapter_builds_running_invalid_cancelled_and_failure_rows():
     assert invalid.message == "입력값을 확인해 주세요."
     assert cancelled.status == "cancelled"
     assert cancelled.message == "Prediction cancelled."
+    assert cancelled.execution_context == cancelled_context
     assert failed.status == "error"
     assert failed.message == (
         "예측 실행 중 문제가 발생했습니다. 잠시 후 다시 실행해 주세요."
     )
     assert "입력" not in failed.message
+    assert failed.execution_context == failed_context
 
 
 def test_service_adapter_contract_modules_do_not_import_pyside():

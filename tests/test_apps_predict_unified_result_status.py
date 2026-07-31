@@ -13,12 +13,29 @@ from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
+from apps.predict.ui.status_widgets import prediction_summary_text
 from apps.predict.ui.workspace import PredictWorkspace
 
 
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+def test_terminal_summary_exposes_partial_and_unresolved_dispositions():
+    text = prediction_summary_text(
+        PredictionRunSummary(
+            total=3,
+            complete=1,
+            partial=1,
+            error=0,
+            invalid=0,
+            unresolved=1,
+        )
+    )
+
+    assert "일부 결과 1건" in text
+    assert "미반영 1건" in text
 
 
 @pytest.fixture(autouse=True)
