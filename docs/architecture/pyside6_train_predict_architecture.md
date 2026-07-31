@@ -345,6 +345,15 @@ only through stable active Result Feature identity. Commit validates revision an
 case structure before installing that projection; rollback restores the complete
 prior projection.
 
+The generation-bound Predict runtime snapshot also owns an immutable
+`PredictRuntimeColumnDescriptor` tuple. Each descriptor binds canonical
+`FeatureDefinition.identity` to the current generation key, label, role,
+visibility, Predict display order, value-source, Mapping, editor, and ML
+metadata. The runtime builds identity association from the manifest and its
+identity ordering, then fail-fast cross-checks the existing identity-free
+generated Predict projection. Key, label, and position are never identity
+fallbacks. Standalone and embedded composition consume this same tuple.
+
 Train Target presentation consumes `TrainController.registry_snapshot()`. When
 idle, list, order, count, waiting metrics, and Summary rows refresh together. A
 running request keeps its frozen Target presentation; a newer process registry is
@@ -798,17 +807,19 @@ File:
 
 Responsibility:
 
-- build app-side unified table display schema from
-  `core.predictor_schema.columns.COLUMNS`
-- preserve core schema order for input/auto/result columns
+- consume the generation-bound Predict application column descriptors
+- preserve canonical Feature identity together with the current key, label,
+  role, visibility, display order, value-source, Mapping, and adapter metadata
+- preserve active-generation order for input/auto/result columns
 - add app-side virtual status/message columns
 - classify columns into input, auto-fill/calculated, prediction result, and
-  status/warning groups
+  app-virtual status/warning groups; app-virtual columns have no Feature identity
 - expose editability, copyability, dropdown capability, width, and rendering
   role metadata
 
 Must not:
 
+- create identity or reconcile Features by key, label, or column position
 - mutate `core.predictor_schema.columns.COLUMNS`
 - add core schema keys for app-only status columns
 - encode ML or calculator behavior

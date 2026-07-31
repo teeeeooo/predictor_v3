@@ -6,7 +6,7 @@ from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_predict_column_schema,
 )
-from core.predictor_schema.catalog_v2 import PredictSchemaV2Row
+from apps.predict.application.runtime_columns import PredictRuntimeColumnDescriptor
 
 
 @dataclass(frozen=True)
@@ -14,12 +14,29 @@ class UnifiedCaseColumn:
     """Display column descriptor for the unified Predict case table."""
 
     index: int
+    feature_identity: str | None
+    display_order: int | None
     key: str
     header: str
+    role: str
     group: str
+    classification: str
+    visible: bool
+    active: bool
     width: int
     editable: bool
     dropdown: bool
+    editor: str
+    data_type: str
+    required: bool
+    readonly: bool
+    value_source: str
+    mapping_entity: str
+    mapping_attribute: str
+    trigger_column: str
+    rule_id: str
+    model_input_enabled: bool
+    one_hot_group: str
     core_key: bool
     virtual: bool
     read_only: bool
@@ -77,12 +94,12 @@ STATUS_COLUMNS = (
 
 
 def build_case_table_column_schema(
-    rows: tuple[PredictSchemaV2Row, ...] | None = None,
+    descriptors: tuple[PredictRuntimeColumnDescriptor, ...] | None = None,
 ) -> tuple[UnifiedCaseColumn, ...]:
     """Return unified case-table columns in display order."""
     columns = [
         _from_predict_column(index, column)
-        for index, column in enumerate(build_predict_column_schema(rows))
+        for index, column in enumerate(build_predict_column_schema(descriptors))
     ]
     start = len(columns)
     columns.extend(
@@ -135,12 +152,29 @@ def _from_predict_column(index: int, column: PredictColumn) -> UnifiedCaseColumn
     read_only = not editable
     return UnifiedCaseColumn(
         index=index,
+        feature_identity=column.feature_identity,
+        display_order=column.display_order,
         key=column.key,
         header=column.header,
+        role=column.role,
         group=column.group,
+        classification=column.classification,
+        visible=column.visible,
+        active=column.active,
         width=column.width,
         editable=editable,
         dropdown=column.dropdown,
+        editor=column.editor,
+        data_type=column.data_type,
+        required=column.required,
+        readonly=column.readonly,
+        value_source=column.value_source,
+        mapping_entity=column.mapping_entity,
+        mapping_attribute=column.mapping_attribute,
+        trigger_column=column.trigger_column,
+        rule_id=column.rule_id,
+        model_input_enabled=column.model_input_enabled,
+        one_hot_group=column.one_hot_group,
         core_key=True,
         virtual=False,
         read_only=read_only,
@@ -161,12 +195,29 @@ def _virtual_status_column(
 ) -> UnifiedCaseColumn:
     return UnifiedCaseColumn(
         index=index,
+        feature_identity=None,
+        display_order=None,
         key=str(metadata["key"]),
         header=str(metadata["header"]),
+        role=GROUP_STATUS,
         group=GROUP_STATUS,
+        classification="app_virtual",
+        visible=True,
+        active=True,
         width=int(metadata["width"]),
         editable=False,
         dropdown=False,
+        editor="status",
+        data_type="status",
+        required=False,
+        readonly=True,
+        value_source="status",
+        mapping_entity="",
+        mapping_attribute="",
+        trigger_column="",
+        rule_id="",
+        model_input_enabled=False,
+        one_hot_group="",
         core_key=False,
         virtual=True,
         read_only=True,

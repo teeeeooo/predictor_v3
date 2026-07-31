@@ -23,21 +23,23 @@
 - The approved direction is a shared Layout B full-surface Input/Result switch,
   one `사양 요약` review column, and a Predict-owned identity/result/state seam
   over the existing Feature, Mapping, lifecycle, execution, and Calculate owners.
-- This documentation slice records that approved boundary. No production source,
-  schema, result-contract, or UI implementation has started.
+- Slice 1 implements a Predict-owned immutable identity-bearing runtime column
+  descriptor on a Draft branch. It preserves the public/generated projection
+  shape and projects the same active-generation identity metadata through
+  standalone and embedded composition. It is not merged or audit-approved.
 
 ## Next Action
 
-The next owner is the Orchestrator. It must review this documentation at its
-exact committed head and decide whether to prepare the **Slice 1 — Stable
-Identity Seam** Lane C handoff. No production Worker starts during this
-documentation gate.
+The next owner is a fresh independent Auditor. It must review the complete
+**Slice 1 — Stable Identity Seam** Draft PR and materially adjacent generation
+projection/migration owners at the exact base/head, then run focused validation.
+Only `AUDIT: PASS` may authorize guarded squash merge and subsequent main/checkout
+sync. Slice 2 does not start during this gate.
 
 ## Active Blockers
 
-- The current Predict presentation descriptor loses canonical feature identity;
-  Slice 1 must restore an identity-bearing application/presentation seam before
-  Result Review projection.
+- Authoritative `main` still loses canonical Feature identity at the Predict
+  presentation descriptor until Slice 1 passes independent audit and is merged.
 - The current result contract lacks raw target outcomes and run, generation,
   session, and input-revision provenance; Slice 2 is the highest compatibility
   risk and must reject stale-context results.

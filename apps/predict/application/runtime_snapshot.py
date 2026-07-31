@@ -6,6 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from apps.common.runtime_generation import GenerationSnapshot
+from apps.predict.application.runtime_columns import (
+    PredictRuntimeColumnDescriptor,
+    build_runtime_column_descriptors,
+)
+from core.data_definition.contract import (
+    bootstrap_manifest,
+    generate_projections,
+    scoped_fingerprints,
+)
 from core.data_definition.derived.evaluator import (
     DerivedEvaluationSnapshot,
     evaluation_snapshot,
@@ -13,11 +22,6 @@ from core.data_definition.derived.evaluator import (
 from core.data_definition.one_hot import OneHotRuntimeSnapshot
 from core.data_definition.target_registry.runtime import model_registry_snapshot
 from core.predictor_schema.catalog_v2 import PredictSchemaV2Row
-from core.data_definition.contract import (
-    bootstrap_manifest,
-    generate_projections,
-    scoped_fingerprints,
-)
 
 
 @dataclass(frozen=True)
@@ -27,6 +31,7 @@ class PredictRuntimeSnapshot:
     generation_id: str
     preprocessing_version: str
     predict_projection: tuple[PredictSchemaV2Row, ...]
+    column_descriptors: tuple[PredictRuntimeColumnDescriptor, ...]
     ordered_input_ml_names: tuple[str, ...]
     derived: DerivedEvaluationSnapshot
     one_hot: OneHotRuntimeSnapshot
@@ -59,6 +64,11 @@ def build_predict_runtime_snapshot(
 ) -> PredictRuntimeSnapshot:
     """Project one already validated repository snapshot without external reads."""
     manifest = generation.manifest
+    column_descriptors = build_runtime_column_descriptors(
+        manifest.features,
+        manifest.ordering.predict,
+        generation.projections.predict,
+    )
     registry = model_registry_snapshot(manifest)
     target_by_id = {item.identity: item for item in manifest.targets if item.active}
     feature_by_id = {item.identity: item for item in manifest.features}
@@ -81,6 +91,7 @@ def build_predict_runtime_snapshot(
         generation_id=manifest.generation.generation_id,
         preprocessing_version=manifest.preprocessing_version,
         predict_projection=generation.projections.predict,
+        column_descriptors=column_descriptors,
         ordered_input_ml_names=registry.input_ml_names,
         derived=evaluation_snapshot(manifest),
         one_hot=generation.projections.one_hot_runtime,
