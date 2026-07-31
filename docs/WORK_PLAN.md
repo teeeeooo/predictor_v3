@@ -19,23 +19,30 @@
 - Train/Admin Phase 5 is complete and merged.
 - Predict Findings #1–#7 are complete and merged.
 - The active product workstream is **Predict input workflow broad overhaul**.
-- No detailed design or source implementation for the overhaul has started.
+- The current step records confirmed product direction and the disposable mock
+  evaluation baseline. Final layout and context presentation remain open.
+- No prototype or production source implementation has started.
 
 ## Next Action
 
 The next owner is the Orchestrator, which must:
 
-1. run a fresh current-state audit of the populated Predict workspace;
-2. fix the detailed product boundary, owner boundary, acceptance, and exclusions;
-3. prepare a Lane C Build handoff before any source implementation.
+1. prepare and run a disposable PySide6 comparison of the open layout candidates
+   under `/tmp`;
+2. present common-fixture evidence for the user's layout, context, and Result
+   Review reveal decision;
+3. fix the implementation boundary and owner gaps; and
+4. prepare a Lane C Build handoff before production source implementation.
 
 ## Active Blockers
 
-- Detailed design is blocked on fresh evidence from the current standalone and
-  embedded Predict workspace across populated, warning, error, and batch states.
+- Final layout, Compact versus Full Context behavior, preference persistence,
+  and Result Review reveal behavior are blocked on comparable standalone and
+  embedded mock evidence.
 - The public case-table workflow crosses shared workspace, schema/mapping,
   calculation, execution, result, status, and viewport owners; it cannot enter
-  source implementation without an explicit Lane C boundary and acceptance.
+  production source implementation without the user decision, explicit Lane C
+  boundary, and acceptance.
 - A model-incompatible saved Definition generation continues to block Predict
   with Retraining required until compatibility is proven; the overhaul does not
   auto-replace or auto-promote a model.
@@ -71,7 +78,7 @@ The next owner is the Orchestrator, which must:
 
 ## Minimal Anchors
 
-- Current boundary input:
+- Authoritative product exploration and mock baseline:
   `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md`
 - Product and owner map: `project_brief.md`
 - UI/UX owner root: `docs/ui_ux/00_UI_UX_SYSTEM.md`

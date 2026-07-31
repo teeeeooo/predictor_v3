@@ -33,6 +33,28 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-31 — Predict overhaul product direction and mock baseline
+
+### Decision
+
+- Preserve expected input usage as approximately 70% Excel paste and 30%
+  on-screen dropdown authoring, with both paths first-class and the initial paste
+  contract limited to headerless value-only TSV in active Predict input order.
+- Treat bulk paste as one staged transaction with final-combination cascade,
+  validation, bounded refresh, and compound undo. Keep single-edit local feedback
+  separate from aggregate bulk feedback.
+- Reject the fixed six-column Result Review proposal because it cannot preserve
+  case-configuration distinguishability across Evap index, FIN/PI/ROW, and
+  expansion-device differences.
+- Derive Result Review from the Feature Manager / Data Definition active
+  generation while keeping Predict-specific compact review preference a Predict
+  presentation concern unless a later owner decision changes that boundary.
+- Keep Compact and Full Context, Result Review reveal behavior, and layout
+  candidates open until comparable disposable PySide6 mock evidence exists.
+- Sequence the work as documentation → mock comparison → user decision → explicit
+  implementation boundary and Lane C Build handoff. This decision starts no
+  prototype or production source implementation.
+
 ## 2026-07-31 — Predict input workflow broad overhaul activation
 
 ### Decision
