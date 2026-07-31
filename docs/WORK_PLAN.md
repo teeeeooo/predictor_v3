@@ -35,9 +35,10 @@ PR #41 as `1c8c786750c78f538ea7c8ba1395592939dab550`. Runtime projection changes
 now rebind the shared standalone/embedded group header to the current model and
 columns, remove stale model signals, retain single persistent table signals, and
 preserve valid horizontal scroll alignment without changing root viewport or
-column-width policy. Finding #7 model/Target display improvement is next; Train
-navigation, guidance UI, and Bootstrap / Retraining-required redesign remain
-separate.
+column-width policy. Finding #7's bounded shared model/Target presentation is
+implemented on a feature branch and awaits fresh Lane B exact-head review; it
+is not complete or merged. Existing lifecycle, Target registry, result mapping,
+and Findings #1–#6 remain unchanged. No later finding is active.
 
 Phase 5G Agent-assisted Campaign Loop is complete and merged. The final
 independent re-audit accepted exact head
@@ -122,12 +123,11 @@ retention, and executable packaging remain later slices.
 
 ## Next Action
 
-Start Finding #7 as the next bounded Predict model/Target display slice. Recover
-the current presentation owner and existing Target/result projection contract
-before selecting the minimal repair. Do not reopen Finding #6 or combine Train
-navigation, guidance, lifecycle wording, root viewport, column-width policy,
-real-user confirmation/promotion, migration apply, or retention/delete apply
-with this next slice.
+Run a fresh Lane B exact-head review of the Finding #7 Draft PR. Do not mark it
+Ready, merge it, close Finding #7, activate a later finding, reopen Finding #6,
+or combine Train navigation, guidance, lifecycle wording, root viewport,
+column-width policy, real-user confirmation/promotion, migration apply, or
+retention/delete apply with this review.
 
 ## Active Blockers
 
@@ -193,9 +193,10 @@ with this next slice.
   authorized controlled operations; repository closeout grants none of them.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 5B.
-- Predict findings #1–#6 are complete and merged. Finding #7 model/Target
-  display improvement is the next bounded slice; guidance/navigation, lifecycle
-  wording, root viewport, and column-width policy remain outside it.
+- Predict findings #1–#6 are complete and merged. Finding #7's bounded source
+  repair awaits fresh Lane B exact-head review and remains unmerged. No later
+  finding is active; guidance/navigation, lifecycle wording, root viewport, and
+  column-width policy remain outside it.
 - Real mapping values, training data, model quality, and production-readiness
   validation remain company-local.
 

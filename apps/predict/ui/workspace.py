@@ -31,6 +31,7 @@ from apps.predict.ui.status_widgets import (
     mapping_status_badge_state,
     model_status_badge_state,
     prediction_summary_text,
+    render_target_badge,
 )
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
@@ -108,8 +109,23 @@ class PredictWorkspace(QWidget):
         )
         self.preprocess_badge = StatusBadge("전처리", "v1.0", "ready")
         self.schema_badge = StatusBadge("입력 스키마", "준비됨", "ready")
+        self.target_badge = StatusBadge("예측 Target", "확인 중", "neutral")
+        render_target_badge(
+            self.target_badge,
+            resolved.runtime_snapshot,
+            resolved.columns,
+        )
+        self.model_target_strip = StatusStrip(
+            (self.model_badge, self.target_badge),
+            self,
+        )
+        self.model_target_strip.setObjectName("PredictModelTargetStrip")
         self.status_strip = StatusStrip(
-            (self.model_badge, self.mapping_badge, self.preprocess_badge, self.schema_badge),
+            (
+                self.mapping_badge,
+                self.preprocess_badge,
+                self.schema_badge,
+            ),
             self,
         )
 
@@ -156,6 +172,7 @@ class PredictWorkspace(QWidget):
             layout.addLayout(title_layout)
         else:
             self.title_label = None
+        layout.addWidget(self.model_target_strip)
         if show_status_strip:
             layout.addWidget(self.status_strip)
         else:

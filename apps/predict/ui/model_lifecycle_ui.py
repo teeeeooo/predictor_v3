@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import traceback
 
+from apps.predict.ui.status_widgets import model_status_badge_state
+
 
 class PredictModelLifecycleUi:
     """Render lifecycle status and forward the explicit reload command."""
@@ -16,14 +18,27 @@ class PredictModelLifecycleUi:
         controller = self._workspace.prediction_controller
         status = controller.refresh_model_lifecycle()
         if status is None:
-            self._workspace.command_bar.reload_model_button.setVisible(False)
-            self._workspace._refresh_prediction_command_state()
+            self.render_current()
             return
         if not controller.is_model_lifecycle_operation_current(status.operation_id):
             status = controller.current_model_lifecycle_status()
             if status is None:
                 return
         self.render(status)
+
+    def render_current(self) -> None:
+        """Render the current controller without starting a new lifecycle observation."""
+        workspace = self._workspace
+        status = workspace.prediction_controller.current_model_lifecycle_status()
+        if status is not None:
+            self.render(status)
+            return
+        text, kind = model_status_badge_state(
+            workspace.prediction_controller.model_status()
+        )
+        workspace.model_badge.set_status(text, kind)
+        workspace.command_bar.reload_model_button.setVisible(False)
+        workspace._refresh_prediction_command_state()
 
     def render(self, status, *, diagnostics=None) -> None:  # noqa: ANN001
         workspace = self._workspace

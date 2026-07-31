@@ -40,9 +40,10 @@ closed. Predict internal UI/UX is now the active product workstream. Findings
 repair was guarded squash-merged through PR #41 as
 `1c8c786750c78f538ea7c8ba1395592939dab550`. It rebinds the shared
 standalone/embedded header to the current runtime model and columns while
-preserving scroll alignment and signal ownership. Finding #7 model/Target display
-improvement is next; guidance, navigation, and lifecycle wording redesign remain
-separate.
+preserving scroll alignment and signal ownership. Finding #7's bounded shared
+model/Target presentation is implemented on a feature branch and awaits fresh
+Lane B exact-head review; it remains unmerged, and no later finding is active.
+Guidance, navigation, and lifecycle wording redesign remain separate.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -287,9 +288,12 @@ rebind the shared standalone/embedded header to the current model and columns,
 disconnect stale model signals, avoid duplicate persistent table signals, and
 preserve valid horizontal scroll/group geometry after column changes. Root
 viewport, column-width policy, lifecycle, execution gating, and other Predict
-behavior remain unchanged. Finding #7 model/Target display improvement is next
-and is not implemented by this closeout; guidance and Train navigation remain
-separate.
+behavior remain unchanged. Finding #7 now presents application-owned model state
+with ordered committed-runtime Target labels through the shared Predict
+workspace and awaits fresh Lane B exact-head review; it is not complete or
+merged. Existing lifecycle, Target registry, result mapping, and Findings #1–#6
+remain unchanged. No later finding is active; guidance and Train navigation
+remain separate.
 
 ### Later — Production ML Readiness / Calculator Integration
 
