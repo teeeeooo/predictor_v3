@@ -10,6 +10,7 @@ from apps.predict.application.runtime_columns import (
     PredictRuntimeColumnDescriptor,
     build_runtime_column_descriptors,
 )
+from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from core.data_definition.contract import (
     bootstrap_manifest,
     generate_projections,
@@ -37,6 +38,7 @@ class PredictRuntimeSnapshot:
     one_hot: OneHotRuntimeSnapshot
     active_targets: tuple[str, ...]
     target_result_keys: tuple[tuple[str, str], ...]
+    target_descriptors: tuple[PredictionTargetDescriptor, ...]
     zero_fill_policies: tuple[tuple[str, str], ...]
     predict_fingerprint: str
     ordered_ml_fingerprint: str
@@ -81,6 +83,27 @@ def build_predict_runtime_snapshot(
         (target.ml_name, feature_by_id[target.feature_identity].column_key)
         for target in ordered_targets
     )
+    runtime_target_by_id = {
+        target.identity: target
+        for group in registry.groups
+        for target in group.targets
+    }
+    target_descriptors = tuple(
+        PredictionTargetDescriptor(
+            target_identity=target.identity,
+            result_feature_identity=target.feature_identity,
+            ml_name=target.ml_name,
+            result_key=feature_by_id[target.feature_identity].column_key,
+            canonical_unit=_canonical_target_unit(target.identity),
+        )
+        for target in ordered_targets
+        if target.identity in runtime_target_by_id
+    )
+    if len(target_descriptors) != len(ordered_targets):
+        raise ValueError("Predict target descriptor projection is incomplete")
+    target_identities = tuple(item.target_identity for item in target_descriptors)
+    if len(target_identities) != len(set(target_identities)):
+        raise ValueError("Predict target descriptor identity is duplicated")
     zero_fill = tuple(
         (item.ml_name, item.zero_fill_policy)
         for item in generation.projections.ml
@@ -97,6 +120,7 @@ def build_predict_runtime_snapshot(
         one_hot=generation.projections.one_hot_runtime,
         active_targets=registry.active_target_names,
         target_result_keys=target_result_keys,
+        target_descriptors=target_descriptors,
         zero_fill_policies=zero_fill,
         predict_fingerprint=fingerprints.predict,
         ordered_ml_fingerprint=fingerprints.ordered_ml,
@@ -116,3 +140,22 @@ def compatibility_predict_runtime_snapshot() -> PredictRuntimeSnapshot:
         scoped_fingerprints(manifest),
         Path("."),
     ))
+
+
+_TARGET_UNIT_BY_ID = {
+    "ufm_target_df11df5180785a149e85f5f228aaa7e1": "W",
+    "ufm_target_78b4bbb97725586a97e41ae0ad04c561": "W",
+    "ufm_target_330e4539dc7e5bb583132943914a5df5": "kg",
+    "ufm_target_4e8d07df9558577a94701a10cdeabf71": "Hz",
+    "ufm_target_e73ce9f258985ccf8ce1d3774cc108ce": "Hz",
+}
+
+
+def _canonical_target_unit(target_identity: str) -> str:
+    try:
+        return _TARGET_UNIT_BY_ID[target_identity]
+    except KeyError as exc:
+        raise ValueError(
+            "Predict canonical unit is missing for active Target identity "
+            f"{target_identity}"
+        ) from exc

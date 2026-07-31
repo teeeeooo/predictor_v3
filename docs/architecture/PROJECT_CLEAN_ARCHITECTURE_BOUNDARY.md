@@ -88,6 +88,10 @@ Examples:
   such as `QProcessTrainingRunner`.
 - Predict execution: `PredictionExecutionPort` -> PySide/QThread runner or
   another runtime runner.
+- Predict result attachment: the Qt-free application/session boundary pins one
+  immutable execution context per case request and accepts a worker result only
+  when session, case, run, case-input revision, runtime semantics, and loaded
+  model identity still match. A worker or Qt view never owns reconciliation.
 - Calculator execution: `CalculatorUseCase` -> core calculator dispatcher
   adapter, not direct orchestration inside UI sections.
 

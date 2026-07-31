@@ -31,19 +31,15 @@
 
 ## Next Action
 
-The next gate is **Slice 2 — Typed Result and Execution Context**. The
-Orchestrator and user must confirm the exact typed target outcome, execution
-provenance, stale-result rejection, reload/cutover compatibility, and preserved
-row-execution boundary before a separate Lane C Worker handoff is written.
-Slice 2 source implementation does not start until that gate is fixed.
+**Slice 2 — Typed Result and Execution Context** is implemented on its dedicated
+Lane C Worker Draft branch and remains open pending fresh independent exact-head
+audit. The Auditor owns complete adjacent-owner review, focused validation, and
+only then guarded merge/closeout. Slice 3 does not start from this Worker branch.
 
 ## Active Blockers
 
-- The current result contract lacks raw target outcomes and run, generation,
-  session, and input-revision provenance; Slice 2 is the highest compatibility
-  risk and must reject stale-context results.
-- Exact versus partial-target Active models, reload/cutover result policy,
-  EER/COP display precision, `사양 요약` truncation, hidden-source copy/export,
+- Partial-target Active model support, EER/COP display precision,
+  `사양 요약` truncation, hidden-source copy/export,
   and narrow-viewport pinning remain open gates.
 - A model-incompatible saved Definition generation continues to block Predict
   with Retraining required until compatibility is proven; the overhaul does not

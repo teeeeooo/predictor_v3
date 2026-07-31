@@ -78,6 +78,7 @@ def test_prediction_usecase_fake_runner_e2e_without_pyside():
                 case_id=request.case_id,
                 status="complete",
                 predictions={target: 1200.0 for target in TARGETS},
+                context=request.context,
             )
         )
     summary = usecase.summary_from_worker(
@@ -106,6 +107,7 @@ def test_prediction_usecase_terminalizes_only_running_rows_after_infrastructure_
             case_id=first,
             status="complete",
             predictions={target: 1200.0 for target in TARGETS},
+            context=plan.job.requests[0].context,
         )
     )
     results = []

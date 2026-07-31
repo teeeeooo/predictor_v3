@@ -72,11 +72,13 @@ class FakePredictionService:
                 case_id=request.case_id,
                 status="error",
                 message="row failed",
+                context=request.context,
             )
         return PredictionServiceResult(
             case_id=request.case_id,
             status="complete",
             predictions={target: 1200.0 for target in TARGETS},
+            context=request.context,
         )
 
 
@@ -90,6 +92,7 @@ class MissingModelService(FakePredictionService):
             case_id=request.case_id,
             status="error",
             message="모델 파일을 찾을 수 없습니다",
+            context=request.context,
         )
 
 
@@ -249,6 +252,25 @@ def test_controller_rejects_double_start_while_running():
     with pytest.raises(RuntimeError, match="already in progress"):
         controller.start_all()
 
+    runners[0].complete()
+    _wait_until(lambda: summaries and controller._runner is None)
+
+
+def test_late_terminal_event_for_another_run_cannot_finish_active_run():
+    _app()
+    session = _session_with_cases("3500")
+    controller, runners = _controller(
+        session, FakePredictionService(), auto_finish=False
+    )
+    summaries = []
+    controller.start_all(finished_callback=summaries.append)
+
+    runners[0].finished.emit(PredictionWorkerSummary("superseded-run", total=1))
+    _app().processEvents()
+
+    assert controller.is_running
+    assert controller._runner is runners[0]
+    assert summaries == []
     runners[0].complete()
     _wait_until(lambda: summaries and controller._runner is None)
 

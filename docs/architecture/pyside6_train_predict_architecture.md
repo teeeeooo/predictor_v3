@@ -663,26 +663,38 @@ Represents one input case.
 Recommended fields:
 
 - `case_id: str`
-- `values: dict[str, object]`
+- `input_values: dict[str, object]`
+- `autofill_values: dict[str, object]`
 - `dirty: bool`
-- `errors: list[str]`
-- `warnings: list[str]`
+- `input_revision: int` for prediction-relevant row-local mutation evidence
 
 No PySide6 dependency.
 
 ### 8.2 `ResultRow`
 
-Represents one prediction result.
+Represents one accepted prediction result. The application contract stores raw
+target outcomes; `result_values` is only the existing table-formatting facade.
 
 Recommended fields:
 
 - `case_id: str`
-- `status: pending | running | success | warning | error`
-- `values: dict[str, object]`
-- `error_message: str | None`
-- `warning_messages: list[str]`
+- `status: pending | running | complete | partial | error | invalid | cancelled`
+- immutable `target_outcomes`, each identified by stable Target identity and
+  result Feature identity with current result key, canonical unit, value source,
+  and either finite raw numeric value or bounded unavailable/failed reason
+- immutable execution context with session/case/run identity, case input
+  revision, runtime generation trace, existing scoped semantic fingerprints,
+  loaded Candidate identity, Active revision, and loaded-model generation
+- `freshness: current | stale` plus a bounded stale reason, independent from
+  the row execution status
 
 No PySide6 dependency.
+
+The current canonical unit catalog is a closed Predict application mapping for
+the five validated stable Target identities (`W`, `Hz`, and `kg`). An unknown
+active Target identity fails runtime composition rather than inventing a unit.
+Adding unit authoring to Feature Definition is a separately approved schema
+change and is not implied by this contract.
 
 ### 8.3 `CaseStore`
 
@@ -715,6 +727,9 @@ Recommended fields:
 
 - `case_store`
 - `results_by_case_id`
+- one immutable session identity
+- case-scoped input revisions and currently allowed execution context per case
+- bounded stale-result rejection diagnostics
 - `selected_case_ids`
 - `model_status`
 - `mapping_status`
@@ -722,6 +737,22 @@ Recommended fields:
 - `last_prediction_timestamp`
 
 No direct PySide6 widget ownership.
+
+`PredictSession` is the application-owned result acceptance gate. An executed
+result attaches only if the active session, existing `case_id`, allowed run,
+request input revision, pinned execution semantics, and pinned loaded model all
+match. Rejection does not mutate input, result, row status, progress, or counts.
+Editing another case is unrelated; editing the same case increments only that
+case revision, makes an existing typed result stale (or a running row pending),
+and causes the old request result to fail closed.
+
+Generation and model transitions preserve typed outcomes and provenance. A
+presentation-only generation change may update current keys by Feature identity
+while remaining current because generation ID is trace-only for freshness.
+Changes to ordered ML input, preprocessing, Derived, One-hot, Target registry,
+Candidate identity, or Active revision mark the preserved result stale. Failed
+reload and generation rollback restore/preserve the old usable environment and
+must not change currentness.
 
 ## 9. Table Model Specification
 
@@ -1204,6 +1235,8 @@ Responsibility:
 - start execution through `PredictionExecutionPort`
 - receive worker row/progress/finish/cancel/failure events on the UI thread
 - apply result updates to `PredictSession` on the UI thread
+- ignore late row/progress/terminal events whose run identity is not active;
+  executed rows still pass the session-owned acceptance gate
 - request table model refresh through callbacks or signals
 - expose model/run status to the workspace without making the workspace inspect
   raw model artifact paths

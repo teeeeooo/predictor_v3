@@ -76,6 +76,7 @@ class PredictionService:
                     case_id=request.case_id,
                     status="error",
                     message=self._load_error,
+                    context=request.context,
                 )
                 for request in requests
             ]
@@ -89,6 +90,7 @@ class PredictionService:
                 case_id=request.case_id,
                 status="error",
                 message=self._load_error,
+                context=request.context,
             )
         try:
             runtime = self._runtime_snapshot
@@ -109,11 +111,13 @@ class PredictionService:
                 case_id=request.case_id,
                 status="error",
                 message=str(exc),
+                context=request.context,
             )
         return PredictionServiceResult(
             case_id=request.case_id,
             status="complete",
             predictions=predictions,
+            context=request.context,
         )
 
     def _load_model_data(self) -> Any | None:

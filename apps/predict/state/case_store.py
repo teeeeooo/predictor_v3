@@ -8,13 +8,13 @@ from apps.predict.state.case_row import CaseRow
 class CaseStore:
     """Own ordered prediction cases without assuming a fixed row count."""
 
-    def __init__(self, mutation_callback: Callable[[], None] | None = None) -> None:
+    def __init__(self, mutation_callback: Callable[[str], None] | None = None) -> None:
         self._cases_by_id: dict[str, CaseRow] = {}
         self._case_order: list[str] = []
         self._next_case_number = 1
-        self._mutation_callback = mutation_callback or (lambda: None)
+        self._mutation_callback = mutation_callback or (lambda _case_id="": None)
 
-    def bind_mutation_callback(self, callback: Callable[[], None]) -> None:
+    def bind_mutation_callback(self, callback: Callable[[str], None]) -> None:
         self._mutation_callback = callback
         for case in self._cases_by_id.values():
             case.bind_mutation_callback(callback)
@@ -33,7 +33,7 @@ class CaseStore:
             raise ValueError("count must be non-negative")
         rows = [self._append_case() for _ in range(count)]
         if rows:
-            self._mutation_callback()
+            self._mutation_callback("")
         return rows
 
     def insert_empty_rows(self, index: int, count: int = 1) -> list[CaseRow]:
@@ -46,7 +46,7 @@ class CaseStore:
             self._cases_by_id[row.case_id] = row
             self._case_order.insert(insert_at + offset, row.case_id)
         if rows:
-            self._mutation_callback()
+            self._mutation_callback("")
         return rows
 
     def remove_rows(self, case_ids: Iterable[str]) -> list[str]:
@@ -62,7 +62,7 @@ class CaseStore:
                 kept_order.append(case_id)
         self._case_order = kept_order
         if removed:
-            self._mutation_callback()
+            self._mutation_callback("")
         return removed
 
     def remove_row_indexes(self, indexes: Iterable[int]) -> list[str]:

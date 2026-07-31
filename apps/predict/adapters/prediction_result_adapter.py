@@ -3,9 +3,12 @@
 import logging
 from math import isfinite
 import re
-from typing import Any
 
 from apps.predict.application.models import PredictionServiceResult
+from apps.predict.application.target_outcome import (
+    PredictionTargetDescriptor,
+    TargetOutcome,
+)
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_input_column_schema,
@@ -27,6 +30,7 @@ class PredictionResultAdapter:
         input_columns: tuple[PredictColumn, ...] | None = None,
         active_targets: tuple[str, ...] | None = None,
         target_result_keys: tuple[tuple[str, str], ...] | None = None,
+        target_descriptors: tuple[PredictionTargetDescriptor, ...] | None = None,
         generation_id: str = "legacy",
     ) -> None:
         self._columns = columns or build_result_column_schema()
@@ -40,6 +44,19 @@ class PredictionResultAdapter:
         self._active_targets = (
             active_targets if active_targets is not None else tuple(self._target_to_result_key)
         )
+        self._target_descriptors = target_descriptors or tuple(
+            PredictionTargetDescriptor(
+                target_identity=f"legacy-target:{column.ml_target}",
+                result_feature_identity=column.feature_identity,
+                ml_name=column.ml_target,
+                result_key=column.key,
+                canonical_unit=_canonical_legacy_unit(column.key),
+            )
+            for column in self._columns
+            if column.ml_target
+        )
+        if tuple(item.ml_name for item in self._target_descriptors) != self._active_targets:
+            raise ValueError("Predict target descriptor projection is incomplete")
         self._generation_id = generation_id
 
     @property
@@ -61,30 +78,41 @@ class PredictionResultAdapter:
                 case_id=result.case_id,
                 status=result.status,
                 message=self._clean_message(message),
+                execution_context=result.context,
             )
 
-        missing_targets = [
-            target
-            for target in self._active_targets
-            if target in self._target_to_result_key and target not in result.predictions
-        ]
-        values = {
-            result_key: self._format_number(result.predictions.get(target))
-            for target, result_key in self._target_to_result_key.items()
-        }
-        status = "partial" if missing_targets else "complete"
-        if missing_targets:
+        outcomes = tuple(
+            self._target_outcome(descriptor, result.predictions)
+            for descriptor in self._target_descriptors
+        )
+        available = sum(item.status == "available" for item in outcomes)
+        status = (
+            "complete" if available == len(outcomes)
+            else "partial" if available
+            else "error"
+        )
+        missing_targets = tuple(
+            item.ml_name
+            for item in self._target_descriptors
+            if item.ml_name not in result.predictions
+        )
+        if status != "complete":
             logger.warning(
-                "Predict partial result for %s; missing target(s): %s",
+                "Predict non-complete target result for %s; missing target(s): %s",
                 result.case_id,
                 ", ".join(missing_targets),
             )
-        message = _PARTIAL_RESULT_MESSAGE if missing_targets else result.message
+        message = (
+            _PARTIAL_RESULT_MESSAGE if status == "partial"
+            else _RUNTIME_FAILURE_MESSAGE if status == "error"
+            else result.message
+        )
         return ResultRow(
             case_id=result.case_id,
             status=status,
-            result_values=values,
             message=self._clean_message(message),
+            target_outcomes=outcomes,
+            execution_context=result.context,
         )
 
     def invalid_result(self, case_id: str, message: str) -> ResultRow:
@@ -151,17 +179,42 @@ class PredictionResultAdapter:
     def _log_runtime_failure(self, case_id: str, message: str) -> None:
         logger.error("Predict runtime failure for %s: %s", case_id, message)
 
-    def _format_number(self, value: Any) -> str:
-        if value is None:
-            return ""
+    def _target_outcome(
+        self,
+        descriptor: PredictionTargetDescriptor,
+        predictions,
+    ) -> TargetOutcome:  # noqa: ANN001
+        common = dict(
+            target_identity=descriptor.target_identity,
+            result_feature_identity=descriptor.result_feature_identity,
+            result_key=descriptor.result_key,
+            canonical_unit=descriptor.canonical_unit,
+            value_source=descriptor.value_source,
+        )
+        if descriptor.ml_name not in predictions:
+            return TargetOutcome(
+                **common,
+                status="unavailable",
+                reason_code="missing_service_output",
+                message="Expected target output was not provided.",
+            )
         try:
-            number = float(value)
+            number = float(predictions[descriptor.ml_name])
         except (TypeError, ValueError):
-            return str(value)
+            return TargetOutcome(
+                **common,
+                status="failed",
+                reason_code="invalid_numeric_output",
+                message="Target output is not numeric.",
+            )
         if not isfinite(number):
-            return ""
-        text = f"{number:.4f}".rstrip("0").rstrip(".")
-        return text if text != "-0" else "0"
+            return TargetOutcome(
+                **common,
+                status="failed",
+                reason_code="non_finite_output",
+                message="Target output is not finite.",
+            )
+        return TargetOutcome(**common, status="available", raw_value=number)
 
     def _clean_message(self, message: str) -> str:
         if not message:
@@ -183,6 +236,22 @@ _RUNTIME_FAILURE_MESSAGE = (
 _PARTIAL_RESULT_MESSAGE = (
     "일부 예측 결과를 생성하지 못했습니다. 생성된 결과를 확인해 주세요."
 )
+_UNIT_BY_RESULT_KEY = {
+    "cooling_power": "W",
+    "heating_power": "W",
+    "ref_qty": "kg",
+    "cooling_hz": "Hz",
+    "heating_hz": "Hz",
+}
+
+
+def _canonical_legacy_unit(result_key: str) -> str:
+    try:
+        return _UNIT_BY_RESULT_KEY[result_key]
+    except KeyError as exc:
+        raise ValueError(
+            f"Predict canonical unit is missing for result key {result_key}"
+        ) from exc
 
 
 def _required_message(label: str, _values: dict[str, str]) -> str:

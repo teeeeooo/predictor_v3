@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any
+
+from apps.predict.application.result_contract import PredictionExecutionContext
 
 
 @dataclass(frozen=True)
@@ -12,6 +15,12 @@ class PredictionInputRequest:
 
     case_id: str
     row_input: dict[str, Any]
+    context: PredictionExecutionContext | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "row_input", MappingProxyType(dict(self.row_input)))
+        if self.context is not None and self.context.case_id != self.case_id:
+            raise ValueError("prediction request context case_id mismatch")
 
 
 @dataclass(frozen=True)
@@ -38,6 +47,12 @@ class PredictionServiceResult:
     status: str
     predictions: dict[str, float] = field(default_factory=dict)
     message: str = ""
+    context: PredictionExecutionContext | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "predictions", MappingProxyType(dict(self.predictions)))
+        if self.context is not None and self.context.case_id != self.case_id:
+            raise ValueError("prediction result context case_id mismatch")
 
 
 @dataclass(frozen=True)

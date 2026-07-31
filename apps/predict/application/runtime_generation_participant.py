@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
 
@@ -94,6 +94,7 @@ class PredictRuntimeParticipant:
         )
         controller = self._composition.prediction_controller
         _prediction_service, runner_factory = controller.runtime_dependencies()
+        _semantics, model_identity = controller.execution_environment
         runtime = build_predict_runtime_snapshot(candidate.snapshot)
         composition = build_predict_workspace_composition(
             session=self._composition.session,
@@ -103,6 +104,7 @@ class PredictRuntimeParticipant:
             runtime_snapshot=runtime,
             model_file=self._model_file,
             model_lifecycle=controller.model_lifecycle,
+            model_identity=model_identity,
         )
         payload = _PredictPrepared(
             candidate.snapshot,
@@ -161,6 +163,7 @@ class PredictRuntimeParticipant:
         lifecycle = self._composition.prediction_controller.model_lifecycle
         if lifecycle is not None:
             lifecycle.set_runtime_snapshot(payload.composition.runtime_snapshot)
+        self._composition.prediction_controller.reconcile_session_currentness()
         return prior
 
     def rollback(self, prior_state: object) -> None:
@@ -180,10 +183,11 @@ def _migrated_case_rows(
     session: PredictSession,
     active,
     candidate,
-) -> tuple[tuple[str, dict, dict, set], ...]:  # noqa: ANN001
+) -> tuple[tuple[str, dict, dict, set, int], ...]:  # noqa: ANN001
     old_by_id = {item.identity: item for item in active.manifest.features}
     new_by_id = {item.identity: item for item in candidate.manifest.features}
     migrated = []
+    input_semantics_changed = _case_input_semantics_changed(active, candidate)
     for case_id in session.case_order:
         case = session.case_store.get_case(case_id)
         inputs, autofill, dirty = {}, {}, set()
@@ -209,7 +213,13 @@ def _migrated_case_rows(
                 target[after.column_key] = value
                 if before.column_key in case.dirty_fields:
                     dirty.add(after.column_key)
-        migrated.append((case_id, inputs, autofill, dirty))
+        migrated.append((
+            case_id,
+            inputs,
+            autofill,
+            dirty,
+            case.input_revision + int(input_semantics_changed),
+        ))
     return tuple(migrated)
 
 
@@ -231,13 +241,37 @@ def _migrated_result_rows(
             for identity in shared_identities
             if active_keys[identity] in existing.result_values
         }
+        outcomes = tuple(
+            replace(outcome, result_key=candidate_keys[outcome.result_feature_identity])
+            for outcome in existing.target_outcomes
+            if outcome.result_feature_identity in candidate_keys
+        )
         migrated.append(ResultRow(
             case_id=case_id,
             status=existing.status,
             result_values=values,
             message=existing.message,
+            target_outcomes=outcomes,
+            execution_context=existing.execution_context,
+            freshness=existing.freshness,
+            stale_reason=existing.stale_reason,
         ))
     return tuple(migrated)
+
+
+def _case_input_semantics_changed(active, candidate) -> bool:  # noqa: ANN001
+    before, after = active.fingerprints, candidate.fingerprints
+    return (
+        before.ordered_ml,
+        before.preprocessing,
+        before.derived_semantics,
+        before.one_hot,
+    ) != (
+        after.ordered_ml,
+        after.preprocessing,
+        after.derived_semantics,
+        after.one_hot,
+    )
 
 
 def _active_result_keys_by_identity(snapshot) -> dict[str, str]:  # noqa: ANN001

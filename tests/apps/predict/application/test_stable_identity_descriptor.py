@@ -232,6 +232,12 @@ def test_standalone_and_embedded_composition_share_descriptor_projection():
     assert standalone.runtime_snapshot.column_descriptors == (
         embedded.runtime_snapshot.column_descriptors
     )
+    assert standalone.runtime_snapshot.target_descriptors == (
+        embedded.runtime_snapshot.target_descriptors
+    )
+    assert standalone.prediction_controller.execution_environment == (
+        embedded.prediction_controller.execution_environment
+    )
     assert {
         item.feature_identity
         for item in standalone.columns
@@ -261,9 +267,31 @@ def test_runtime_descriptor_is_qt_free_and_does_not_change_serialized_shapes():
         "import compatibility_predict_runtime_snapshot; "
         "from apps.predict.schema.case_table_schema_adapter "
         "import build_case_table_column_schema; "
+        "from apps.predict.application.result_contract "
+        "import PredictionExecutionContext; "
+        "from apps.predict.application.target_outcome import TargetOutcome; "
+        "from apps.predict.state.result_row import ResultRow; "
         "runtime = compatibility_predict_runtime_snapshot(); "
         "assert runtime.column_descriptors; "
+        "assert runtime.target_descriptors; "
         "assert build_case_table_column_schema(runtime.column_descriptors); "
         "assert 'PySide6' not in sys.modules"
     )
     subprocess.run([sys.executable, "-B", "-c", code], check=True)
+
+
+def test_unknown_active_target_identity_fails_without_inventing_a_unit():
+    manifest = bootstrap_manifest()
+    target = manifest.targets[0]
+    unknown = replace(target, identity="unknown-active-target")
+    candidate = replace(
+        manifest,
+        targets=(unknown, *manifest.targets[1:]),
+        ordering=replace(
+            manifest.ordering,
+            targets=(unknown.identity, *manifest.ordering.targets[1:]),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="canonical unit is missing"):
+        build_predict_runtime_snapshot(_snapshot(candidate))
