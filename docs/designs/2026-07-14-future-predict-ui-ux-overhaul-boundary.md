@@ -1,107 +1,62 @@
-# Predict Input Workflow Overhaul — Product Direction and Mock Baseline
+# Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: active product exploration; final layout and implementation boundary open
+Status: approved product and owner boundary; production implementation not started
 Created: 2026-07-14
 Updated: 2026-07-31
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 
-## 1. Purpose
+## 1. Purpose and Authority
 
-Preserve the confirmed product direction and the evaluation baseline for the
-**Predict input workflow broad overhaul** before disposable mock comparison or
-production source implementation begins.
+This record is the authoritative product and integration boundary for the
+**Predict input workflow broad overhaul**. It absorbs the completed disposable
+layout comparison and existing-application owner audit into a production-facing
+design direction without authorizing source implementation.
 
-This record is not a final UI design. It deliberately separates:
+This record distinguishes:
 
-- **confirmed product direction**, which every layout candidate must preserve;
-- **open design decisions**, which require comparable mock evidence and a user
-  decision; and
-- **implementation gates**, which remain closed until the evidence and decision
-  exist.
+- **approved product direction**, which later implementation must preserve;
+- **existing owners**, which later slices must reuse rather than duplicate;
+- **missing Predict seams**, which must be introduced behind explicit Lane C
+  boundaries; and
+- **open compatibility gates**, which remain undecided until their implementation
+  audit or user decision.
 
-No source, schema, public API, model, mapping data, or runtime behavior changes
-are authorized by this record.
+No source, test, schema, public result type, model, mapping data, Calculator
+formula, or runtime behavior changes are made by this documentation decision.
 
 ## 2. Preserved Contracts
 
-The exploration preserves:
+The overhaul preserves:
 
-- one logical prediction case per row and stable `case_id` result association;
-- one canonical case/result ownership for each Predict session;
-- standalone and embedded Predict using the shared workspace behavior;
-- active-generation-driven Predict presentation;
-- existing mapping dropdown, cascade, and autofill semantics;
-- existing prediction execution, cancellation, partial-result, and row-isolation
-  behavior;
-- existing runtime generation, preprocessing, inference, result mapping, model
-  lifecycle, reload, Active observation, and no-hot-swap contracts;
-- Data Definition, Data Mapping, Train, Predict, and Calculator owner directions;
-- read-only result/status ownership; and
-- no production model or data mutation authority.
+- one logical prediction case per visible row;
+- stable `case_id` association for canonical case and result ownership;
+- one canonical `PredictSession` per workspace;
+- standalone and Train-embedded Predict using the same workspace implementation,
+  generation-derived presentation, and runtime coordination;
+- Feature Manager / Data Definition, Data Mapping, Train/model lifecycle,
+  prediction execution, and Calculate as their existing authoritative owners;
+- current mapping dropdown, cascade, and autofill semantics;
+- row isolation, progressive and partial results, cancellation, validation, and
+  the no-usable-model execution gate;
+- Active observation, atomic reload, reload-failure fallback, and no-hot-swap
+  behavior; and
+- production model and data mutation as separately authorized operations.
 
-A later split presentation may change visible arrangement, but it must not split
-logical case ownership or introduce a hidden joined copy.
+The historical split-table implementation and its synchronization owner are not
+restored. Input and Result Review read the same canonical session; neither owns a
+mutable joined copy of cases or results.
 
-## 3. Confirmed Product Direction
+## 3. Approved Input Authoring
 
-### 3.1 Input Methods and Paste Scope
+Expected usage remains approximately 70% Excel paste and 30% on-screen dropdown
+authoring. Both are first-class workflows.
 
-- Expected usage is approximately 70% Excel paste and 30% on-screen dropdown
-  authoring.
-- Both paths are first-class workflows. Paste is not an import afterthought, and
-  dropdown authoring is not a fallback-only path.
-- The first-overhaul paste contract is headerless **value-only TSV**.
-- Values are interpreted in the defined order of the active Predict input
-  columns.
-- Header recognition, arbitrary column matching, and an import wizard are outside
-  the first scope.
-- When pasted rows exceed the current row count, Predict creates every required
-  row. It must not silently discard overflow rows.
+The first paste format is headerless value-only TSV interpreted in active Predict
+input-column order. Paste creates every required overflow row rather than
+discarding values. Header recognition, arbitrary column matching, and an import
+wizard remain outside the first scope.
 
-### 3.2 Bulk Paste Transaction
-
-Paste involving tens or hundreds of rows is one bulk transaction, not a series
-of independent cell-edit callbacks. The required order is:
-
-1. parse the complete TSV payload;
-2. create all required rows as one bounded operation;
-3. stage raw input values per row;
-4. construct each row's final input combination;
-5. reuse the loaded mapping data;
-6. run each row's cascade and autofill against that final combination;
-7. run validation and invalidate stale results;
-8. perform a bounded UI refresh; and
-9. record one compound undo operation.
-
-If ODU, FIN, PI, and ROW arrive together for one row, intermediate edit order
-must not erase dependent values. Validation and cascade operate on the final
-staged combination.
-
-An explicitly pasted invalid combination is preserved. Predict must not silently
-clear or correct it; the affected cell or row remains in an actionable invalid or
-warning state.
-
-### 3.3 Single-Edit and Bulk Feedback
-
-A direct single-dropdown edit may provide local feedback such as:
-
-- refreshed dropdown options;
-- cleared dependent values;
-- recalculated autofill values;
-- a short state explanation; and
-- a bounded highlight on the changed cell when useful.
-
-A large paste must not produce hundreds of cell highlights or sequential
-messages. It provides one aggregate completion summary, for example:
-
-> 320개 케이스 붙여넣기 완료 · 새 행 317개 · Auto 값 2,184개 갱신 · 조합 확인 7개
-
-Normal cells receive no persistent per-cell emphasis after a bulk operation.
-Only cells or rows that require action retain invalid or warning presentation.
-
-### 3.4 Row Lifecycle
-
-The broad overhaul direction includes:
+The row lifecycle includes:
 
 - append an empty row;
 - insert at the selected position;
@@ -110,260 +65,399 @@ The broad overhaul direction includes:
 - reset all rows; and
 - expand rows automatically during paste.
 
-The current fallback that deletes the last row when no row is selected is not an
-accepted final behavior.
+Deleting the last row when no row is selected is not accepted as the final
+fallback. Duplication copies the input configuration into a new stable
+`case_id`, recalculates mapping-backed Auto values, and does not copy prediction
+results or terminal status.
+
+A single dropdown edit may provide bounded local feedback for changed options,
+cleared stale dependents, recalculated Auto values, and an actionable issue.
+Large paste provides one aggregate completion summary and keeps persistent
+emphasis only on rows or cells that require user action.
+
+## 4. Approved Shared Workspace
+
+### 4.1 Layout B — Full-Surface Switch
+
+Input Authoring and Result Review each use the full Predict workspace. This
+Layout B direction is approved and is not an open layout candidate.
+
+- Standalone and embedded Predict use the same composition and canonical session.
+- Both surfaces share the same stable `case_id` and selected-case state.
+- Each surface keeps its own table interaction, focus, cell selection, and
+  horizontal scrolling behavior.
+- No persistent selected-case detail panel is added.
+- Full Context is not added as a separate screen or mode.
+- The visible `Case` value is a simple row number. Stable `case_id` remains the
+  underlying association identity and is not replaced by that ordinal.
+
+### 4.2 Workspace-State Owner
+
+A Predict-owned workspace-state controller is required and is shared by both
+shell compositions. It owns:
+
+- the current Input or Result surface;
+- the selected stable case identity;
+- the surface visible when a run starts;
+- whether the user explicitly changed surface during that run; and
+- whether terminal completion may reveal Result Review.
+
+Initial behavior:
+
+- validation-blocked execution remains on Input;
+- terminal completion with at least one complete or partial result may switch to
+  Result Review;
+- if the user explicitly selects Input during execution, completion does not
+  force a Result Review switch;
+- standalone and embedded shells do not create separate Predict sessions,
+  lifecycle controllers, or view-state policies; and
+- process-restart persistence is not part of the first implementation.
+
+## 5. Result Review Contract
+
+### 5.1 Review Order
+
+The default Result Review follows the user's review sequence:
+
+```text
+Case
+→ 상태
+→ 냉방능력
+→ 난방능력
+→ 사양 요약
+→ EER
+→ COP
+→ 냉방 주파수
+→ 난방 주파수
+→ 냉매량
+```
+
+The user first locates the row and its state, confirms the requested cooling and
+heating capacities, verifies the entered hardware configuration, and then
+compares its predicted results. `사양 요약` is therefore case-identifying
+information, not optional decoration, and remains before the result metrics.
+
+Status and issue presentation must be discoverable through text and accessible
+detail or tooltip behavior. Color-only row tint is supplemental.
+
+### 5.2 사양 요약
+
+The default review has one user-facing `사양 요약` column. It must distinguish:
+
+- IDU / Evap index;
+- ODU / FIN / PI / ROW;
+- Compressor; and
+- Refrigerant / Expansion device.
+
+The semantic display order is:
+
+```text
+IDU / Evap
+· ODU / FIN / PI / ROW
+· Compressor
+· Refrigerant / Expansion
+```
+
+Summary composition follows three separate concerns:
+
+- authoritative value selection uses stable feature identity;
+- visible labels and values come from the active generation; and
+- grouping, formatting, and display order belong to Predict presentation.
+
+Mutable labels, current column positions, and arbitrary string keys are not
+authoritative identity. Predict-specific summary grouping, width, and Result
+priority are not added to the Feature Definition semantic schema.
+
+### 5.3 Current Result Metrics
+
+The default Result Review exposes:
+
+- EER;
+- COP;
+- cooling frequency;
+- heating frequency; and
+- refrigerant quantity.
+
+Cooling and heating power remain in the canonical result contract as prediction
+outcomes and as the source values for EER/COP. They are not priority columns in
+the default review, but diagnostics and a future full-row copy/export projection
+must retain access to their raw values and provenance.
+
+EER and COP are not ML targets:
+
+```text
+EER = cooling capacity W ÷ cooling power W
+COP = heating capacity W ÷ heating power W
+```
+
+Their calculation owner is a Qt-free Predict application result-enrichment
+boundary. It consumes raw typed inputs and target outcomes, preserves raw numeric
+precision and unit/source provenance, and returns deterministic W/W metrics or an
+explicit unavailable reason. The Qt projection performs display formatting and
+rounding only.
+
+Missing, failed, non-finite, zero, or negative required inputs do not become
+silent numeric values. Cooling and heating derived metrics remain independently
+available under partial target success. Display precision remains an open
+implementation gate.
+
+### 5.4 CSPF and HSPF2 Capability
+
+A single current Predict row does not provide the multiple operating points and
+standard-specific inputs required to calculate CSPF or HSPF2. Neither metric is
+shown in Result Review until a real runtime calculation capability exists.
+
+Calculate remains the authoritative standard-formula and Calculator result
+contract owner. Predict does not copy its formulas. A future application seam may
+collect several pinned, provenance-bearing operating-point predictions, assemble
+a standard request, and call the Calculate application boundary.
+
+Multi-point orchestration, standard input contracts, unit adapters, incomplete
+point handling, and seasonal calculation integration are a separate future
+workstream. Existing mock or formula-placeholder columns are not implemented
+Predict capabilities.
+
+## 6. Existing Owner and Dependency Boundaries
+
+```text
+Feature Manager / Data Definition
+  stable identity, meaning, role, visibility, active generation,
+  Predict ordering, ML ordering
+             │
+             ▼
+Predict application/runtime seams
+  identity descriptor, typed results and execution context,
+  derived metrics, Result Review projection, workspace state,
+  bulk transaction
+       ├────────► Data Mapping: dropdown/cascade/autofill rules
+       ├────────► Train/model lifecycle: Candidate/Active/reload
+       ├────────► Prediction execution: row requests/results/cancellation
+       └────────► Calculate: future standard capability/formula execution
+             │
+             ▼
+Shared standalone/embedded Predict presentation
+```
+
+Qt views depend on Predict application contracts. Predict application seams
+reuse the existing semantic, mapping, lifecycle, execution, and Calculate owners.
+Feature semantics and Calculator formulas do not depend on Predict layout
+preferences.
+
+### 6.1 Feature Manager / Data Definition
+
+Feature Manager / Data Definition owns:
+
+- stable feature identity and feature meaning;
+- role and visibility;
+- active generation;
+- Predict ordering; and
+- ML ordering.
+
+Predict reuses those semantics and separately owns Result Review priority,
+`사양 요약`, and workspace view state.
+
+The current presentation descriptors lose canonical identity before the final
+Predict application/presentation boundary. Implementation therefore requires a
+Predict-owned, immutable, identity-bearing runtime descriptor seam. It must
+preserve identity alongside the existing generation-derived label, role,
+visibility, order, mapping, and value-source metadata without adding
+Predict-specific review fields to Feature Definition.
+
+### 6.2 Data Mapping and Bulk Paste
+
+The existing single-cell owners remain authoritative:
+
+- IDU drives Evap options and indoor Auto values;
+- ODU drives FIN → PI → ROW and condenser Auto values;
+- Compressor drives compressor-derived Auto values; and
+- Refrigerant and Expansion remain mapping-backed selectors.
+
+The first bulk-paste contract remains headerless value-only TSV in active Predict
+input order. Header recognition, arbitrary column matching, and an import wizard
+are outside the first scope.
+
+Bulk paste is not implemented as repeated cell edits. A separate Predict
+application transaction slice must own:
+
+1. complete TSV parse and required row expansion;
+2. raw value staging and preservation of each final pasted combination;
+3. reuse of loaded mapping data;
+4. final-combination cascade and autofill;
+5. clearing only stale dependent values that were not explicitly pasted;
+6. retention of invalid pasted combinations with exact cell/row issues;
+7. validation and canonical result invalidation;
+8. one bounded batch refresh;
+9. rollback on transaction failure; and
+10. one compound undo operation.
+
+Large-paste feedback remains aggregate; single-dropdown edits may retain bounded
+local feedback. Layout B composition and bulk paste are separate Lane C slices
+and must not be bundled in one PR.
+
+### 6.3 Train and Model Lifecycle
+
+Existing ownership remains:
+
+- Train `ModelManagementService` and the promotion repository own Candidate and
+  Active lifecycle;
+- Predict lifecycle service observes the Active revision, performs explicit
+  atomic reload, and preserves the previous usable model when reload fails; and
+- the shared runtime participant coordinates standalone/embedded generation
+  cutover.
+
+Predict workspace and Result Review do not duplicate Train lifecycle or
+promotion authority.
+
+Current results lack enough run, model/runtime generation, session, and input
+revision provenance to prevent stale attachment after edits or cutover. A typed
+execution-context seam and acceptance gate are required before Result Review
+implementation.
+
+### 6.4 Prediction Result Contract
+
+The existing row-isolated, progressive, partial, cancellation, validation, and
+no-usable-model behaviors remain.
 
-Duplicate copies the input configuration and creates a new stable case identity.
-Autofill is recalculated from the copied inputs. Prediction results and terminal
-status are not copied.
+A future typed contract distinguishes target outcome from aggregate row outcome:
 
-## 4. Feature Manager and Predict Relationship
+- target available;
+- target unavailable;
+- target failed;
+- row invalid;
+- row error;
+- row cancelled;
+- row partial; and
+- row complete.
+
+It preserves raw numeric value, unit, stable source identity, run ID,
+model/runtime generation, session identity, case identity, and input revision.
+Before a result mutates the canonical session, the acceptance gate rejects any
+outcome whose run, generation, session, case, or input revision no longer matches
+the active execution context.
+
+### 6.5 Calculate
 
-Result Review columns and context must not become an independent hard-coded list
-of feature keys or labels.
-
-The owner direction is:
-
-- Feature Manager / Data Definition owns stable feature identity, label, role,
-  Predict visibility, Predict ordering, mapping relationship, and the active
-  generation.
-- Predict projects input, auto, and result presentation columns from the active
-  generation.
-- Standalone and embedded Predict use the same generation-derived projection.
-- Result Review is also projected from that active generation.
-- Label, visibility, ordering, and generation changes must reconcile safely into
-  Result Review.
-- A compact Result Review column preference is a Predict presentation concern,
-  not ML or schema meaning.
-
-The first implementation is not pre-authorized to add a `review_context` field or
-similar presentation preference to the Feature Definition contract. If Predict
-owns a review profile, stable feature identity—not a mutable label or raw key—is
-the preferred reconciliation basis.
-
-The implementation audit must determine whether the current presentation adapter
-carries stable feature identity through the complete projection. If it does not,
-that is an owner gap to resolve in the later implementation boundary. This
-documentation step changes no schema or public API.
-
-## 5. Result Review Case Distinguishability
-
-The earlier proposal to show only these six raw inputs in Result Review is
-rejected:
-
-- 냉방능력;
-- 난방능력;
-- 실내기;
-- 실외기;
-- 압축기; and
-- 냉매종류.
-
-Those values cannot distinguish:
-
-- the same indoor unit with different Evap indices;
-- the same outdoor unit with different FIN, PI, or ROW values; or
-- the same refrigerant with different expansion devices.
-
-Result Review must preserve the meaning of the current 11-input configuration.
-Two context directions remain under evaluation.
-
-### 5.1 Compact Context Candidate
-
-- 냉방능력
-- 난방능력
-- Indoor configuration: 실내기 + Evap index
-- Outdoor configuration: 실외기 + FIN + PI + ROW
-- Compressor: 압축기
-- Cycle configuration: 냉매종류 + 팽창장치
-
-This composite context is a product candidate, not a final column contract.
-
-### 5.2 Full Context Candidate
-
-Full Context shows every visible input feature from the active generation as raw
-columns.
-
-The roles of Compact and Full Context, the switching mechanism, and preference
-persistence remain open until mock evidence exists.
-
-## 6. Result Review Visibility
-
-Confirmed direction:
-
-- Result Review is hidden by default while inputs are being prepared.
-- Prediction completion makes result availability clearly discoverable.
-- The user can hide or reopen Result Review.
-
-Open decisions:
-
-- whether completion automatically changes the visible surface or steals focus;
-- whether completion only reveals a badge, affordance, or panel;
-- whether a Result Review manually closed by the user is reopened after every
-  subsequent run.
-
-No candidate may treat forced context switching as already approved.
-
-## 7. Unified Ownership and Split Presentation
-
-The historical split-table module will not be restored.
-
-Current unified case ownership and stable `case_id` remain authoritative.
-Whether one or multiple visible table widgets provide the best experience is
-open. A split or multi-view candidate must use:
-
-- one `PredictSession`;
-- one canonical case/result data owner;
-- presentation projections derived from the active generation;
-- the same case identity in Input and Result Review;
-- no hidden joined-copy behavior;
-- independent horizontal scrolling and cell selection per view; and
-- only row selection and vertical-position synchronization when required.
-
-The existing unified table is not preselected as the only possible visible
-widget. A projection-based split presentation remains eligible when it produces
-a meaningful UX improvement and its synchronization risk is demonstrably
-controlled.
-
-## 8. Open Layout Candidates
-
-No candidate in this section is the final layout.
-
-### Candidate A — Collapsible Top/Bottom
-
-- Input and Result Review each use full width.
-- Closing Result Review maximizes Input space.
-- Opening it may reduce visible row count.
-- Row selection and vertical-scroll synchronization are required.
-
-### Candidate B — Full-Surface Switch
-
-- Input and Result Review each use the full window.
-- Focus and keyboard interaction are comparatively simple.
-- The two surfaces cannot be viewed simultaneously.
-- Automatic switching after completion remains a separate decision.
-
-### Candidate C — Left/Right Compact Context
-
-- Context and result can be compared at the same row height.
-- Wide standalone windows may benefit.
-- The design depends on a viable compact-context projection.
-- Small windows and embedded Predict may not provide sufficient width.
-
-### Candidate D — Full-Width Review with Selected-Case Detail
-
-- Batch result comparison receives the largest area.
-- A separate detail region shows the selected case's complete input/auto
-  configuration.
-- Comparing detailed configurations across several cases may be difficult.
-
-## 9. Disposable PySide6 Mock Evaluation Baseline
-
-Mock comparison is the next step. It has not been created or run.
-
-### 9.1 Prototype Method
-
-- Use a disposable harness below `/tmp`.
-- Reuse current PySide6 widgets, styles, `PredictSession`, active-generation
-  projection, and fixtures where practical.
-- Do not modify production source, schema, models, or mapping data.
-- Build interactive prototypes with real Qt geometry and behavior rather than
-  image-only wireframes.
-- Treat every prototype output as design evidence, not production
-  implementation.
-
-### 9.2 Common Fixture
-
-Every layout candidate uses the same data:
-
-- 30 populated cases;
-- normal, warning, invalid, and runtime-error states;
-- the same IDU with different Evap-index combinations;
-- the same ODU with different FIN, PI, and ROW combinations;
-- different compressor, refrigerant, and expansion-device combinations; and
-- a separate 300-row density state.
-
-### 9.3 Required Screen Conditions
-
-- standalone at 1440×820;
-- embedded at 1440×820;
-- standalone at 1000×640; and
-- embedded at 1000×640.
-
-### 9.4 Evaluation Areas
-
-- Input authoring space;
-- result comparability;
-- case-configuration distinguishability;
-- 30-row and 300-row density;
-- small-window degradation;
-- embedded Predict suitability;
-- keyboard focus;
-- dropdown editing;
-- row-selection and scroll relationships;
-- case correspondence after insert, delete, and reset;
-- runtime-generation refresh;
-- Result Review reveal behavior; and
-- implementation complexity and regression risk.
-
-### 9.5 Feature Manager Variation
-
-Use in-memory generation variations, not real schema changes, to evaluate:
-
-- label changes;
-- Predict ordering changes;
-- addition of a visible input;
-- a context feature becoming hidden or unavailable;
-- standalone/embedded projection consistency after runtime refresh;
-- stable-identity reconciliation of a compact review profile; and
-- generation-derived Full Context refresh.
-
-### 9.6 Expected Evidence
-
-- screenshots captured under identical conditions;
-- a layout contact sheet;
-- candidate-specific advantages, disadvantages, and observable failures;
-- interaction findings; and
-- a comparison that lets the user select the final direction.
-
-## 10. Decision and Delivery Sequence
-
-The required sequence is:
-
-1. preserve product direction and mock baseline in documentation;
-2. prepare and run the disposable layout comparison;
-3. present comparable evidence and obtain the user's layout/context decision;
-4. fix the implementation boundary, acceptance, and owner gaps; and
-5. prepare the Lane C Build handoff.
-
-Production source implementation and Worker Build handoff remain blocked until
-steps 2–4 are complete.
-
-## 11. Current Exclusions
-
-This exploration does not perform or decide:
-
-- production source implementation;
-- mock prototype creation or execution in this documentation slice;
-- final layout selection;
-- Worker or Lane C Build handoff;
-- a Feature Definition schema field;
-- Result Review preference persistence;
-- header-aware import or a CSV import wizard;
-- graph, export, or Advanced surfaces;
-- ML feature, model artifact, or Calculator formula changes;
-- restoration of the legacy split-table module;
-- broad architecture refactoring; or
-- production data/model mutation, packaging, or deployment.
-
-## 12. Exploration Exit Criteria
-
-The exploration may advance to a Lane C implementation handoff only when:
-
-- all candidates were compared with the common fixture and screen conditions;
-- the evidence distinguishes confirmed contracts from candidate behavior;
-- the user selected the layout, Result Review reveal behavior, and context
-  direction;
-- stable-identity and generation-projection owner gaps are understood;
-- bulk-paste transaction, single/bulk feedback, row lifecycle, and case identity
-  acceptance are explicit; and
-- preserved runtime, model, mapping, and result/status contracts remain intact.
+Calculate owns standard formulas, capability execution, and Calculator result
+contracts. Predict never reproduces those formulas.
+
+Future integration may let Predict assemble a provenance-bearing multi-point
+request and call a Calculate application boundary. That work begins only after
+the operating-point and standard-request contracts are separately defined.
+
+## 7. Implementation Slice Boundary
+
+No slice in this section is implemented by this documentation change.
+
+### Slice 1 — Stable Identity Seam
+
+Carry canonical feature identity into Predict application and presentation
+through an immutable runtime descriptor. Preserve generation rename, order,
+visibility, add/hide, migration, and standalone/embedded parity.
+
+### Slice 2 — Typed Result and Execution Context
+
+Introduce raw target outcomes, explicit target availability/failure, run ID,
+model/runtime generation, session and input revision, plus stale-result
+rejection. Preserve all existing prediction execution behaviors. This is the
+highest compatibility-risk foundation slice.
+
+### Slice 3 — EER/COP Enrichment
+
+Use Slice 1 identities and Slice 2 raw outcomes to calculate deterministic W/W
+metrics in a Qt-free Predict application owner. Do not change Feature formula
+schema, ML targets, or Calculator formulas.
+
+### Slice 4 — Result Review Projection
+
+Provide a read-only projection over the canonical session with:
+
+- Case ordinal;
+- textual status and issue access;
+- cooling and heating capacity;
+- one `사양 요약`;
+- EER and COP;
+- cooling and heating frequency;
+- refrigerant quantity;
+- target and calculation capability gating; and
+- a full-row copy/export boundary that retains hidden source results and
+  provenance.
+
+Do not create mutable result-row copies, hidden joined tables, a persistent
+detail panel, or a separate Full Context surface.
+
+### Slice 5 — Shared Layout B Composition
+
+Compose Slice 4 with the Input/Result full-surface switch once for standalone and
+embedded Predict. Add the shared workspace-state controller while preserving
+shell-specific title, global status, Train navigation, session, and lifecycle
+ownership.
+
+### Slice 6 — Bulk Paste Transaction
+
+Implement the bounded transaction described in §6.2 as a separate Lane C slice.
+It may use Slice 1 identity and must integrate Slice 2 result invalidation and
+execution provenance. It is not part of the Layout B PR.
+
+### Future — Calculate Integration
+
+After a multi-point prediction and standard-request contract exists, add a
+separate Predict-to-Calculate application integration workstream.
+
+Dependency direction:
+
+```text
+Slice 1 ───────────────┐
+                       ├─► Slice 4 ─► Slice 5
+Slice 2 ─► Slice 3 ────┘
+   └──────────────► Slice 6
+
+Future multi-point contract ─► Calculate integration
+```
+
+## 8. Open Compatibility Gates
+
+These decisions are not changed into approved behavior by this record:
+
+1. whether Active models continue to require the exact active target set or may
+   expose explicit partial-target capability;
+2. whether results are cleared, marked stale, or retained as historical after a
+   model reload or generation change;
+3. EER/COP display precision;
+4. the exact abbreviations, separators, wrapping, and truncation rules for
+   `사양 요약`;
+5. the user interaction for full-row copy/export of hidden source results;
+6. how far fixed or pinned columns extend in a narrow embedded viewport.
+
+The default Result Review order and Layout B full-surface direction are approved
+and must not be reopened as compatibility gates.
+
+## 9. Current Exclusions
+
+This documentation slice does not perform:
+
+- production source or test changes;
+- public schema or result-type changes;
+- Layout B or Result Review implementation;
+- EER/COP or bulk-paste implementation;
+- CSPF/HSPF2 implementation;
+- model-lifecycle or Feature Definition generation changes;
+- Calculator formula changes;
+- a persistent detail panel, Full Context screen, or legacy split-table restore;
+- graph, Advanced surface, export redesign, packaging, or deployment;
+- branch, PR, Auditor, or Lane C Worker handoff creation;
+- deletion of `/tmp` audit/mock evidence; or
+- detached validation worktree cleanup.
+
+## 10. Evidence Baseline and Next Gate
+
+The existing-application owner audit completed without repository mutation and
+reported **218 focused tests passed in 30.46s**. The audit established that the
+current Feature Manager, Data Mapping, Train/model lifecycle, prediction
+execution, and Calculate owners are reusable while the Predict
+application/presentation seams in this record are missing.
+
+That baseline is navigation evidence, not validation of unimplemented slices.
+
+The next resume point is an Orchestrator exact-head review of this documentation
+boundary followed by a decision on the Slice 1 Lane C handoff. No production
+Worker handoff or Build starts before that gate.

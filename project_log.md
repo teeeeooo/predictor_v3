@@ -33,6 +33,35 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-31 — Predict overhaul product and integration boundary approval
+
+### Decision
+
+- Approve Layout B: Input Authoring and Result Review each use the full shared
+  workspace while reading one canonical session and stable `case_id` selection
+  in standalone and embedded Predict. Do not restore the legacy split table,
+  add a persistent detail panel, or create a separate Full Context surface.
+- Approve the default review sequence as Case → 상태 → 냉방능력 → 난방능력 →
+  `사양 요약` → EER → COP → 냉방 주파수 → 난방 주파수 → 냉매량. Compose the
+  single summary column by stable feature identity and active-generation
+  labels/values; keep its grouping and presentation under Predict.
+- Keep cooling/heating power as canonical hidden source results. Calculate
+  EER/COP in a Qt-free Predict enrichment seam, not as ML targets or generic
+  Feature formulas. Do not expose CSPF/HSPF2 until a future multi-point
+  Predict-to-Calculate contract provides real capability.
+- Reuse the existing Feature Manager, Data Mapping, Train/model lifecycle,
+  prediction execution, and Calculate owners. Add separate Predict seams for
+  stable identity, typed result/execution context, enrichment, Result Review
+  projection, shared workspace state, and bulk input transaction.
+- Sequence implementation as identity → typed result/context → EER/COP →
+  Result Review → shared Layout B, with bulk paste as a separate slice and
+  Calculate integration as a future workstream. Preserve target-set, stale-result,
+  precision, summary formatting, hidden-source copy/export, and narrow-viewport
+  pinning choices as open compatibility gates.
+- This decision records an implementation boundary only. No source, schema,
+  result-contract, UI, formula, or Lane C Build work starts in this documentation
+  commit.
+
 ## 2026-07-31 — Predict overhaul product direction and mock baseline
 
 ### Decision
