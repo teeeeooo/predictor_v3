@@ -10,7 +10,10 @@ from apps.predict.application.models import (
 )
 from core.ml.artifacts import MODEL_FILE
 from core.ml.inference import load_model, predict_row
-from apps.predict.application.runtime_snapshot import PredictRuntimeSnapshot
+from apps.predict.application.runtime_snapshot import (
+    PredictRuntimeSnapshot,
+    validate_runtime_target_contract,
+)
 
 
 class PredictionService:
@@ -22,6 +25,8 @@ class PredictionService:
         *,
         runtime_snapshot: PredictRuntimeSnapshot | None = None,
     ) -> None:
+        if runtime_snapshot is not None:
+            validate_runtime_target_contract(runtime_snapshot)
         self._model_file = model_file
         self._runtime_snapshot = runtime_snapshot
         self._model_data: Any | None = None

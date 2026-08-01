@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication
 from apps.predict.application.models import PredictionModelStatus
 from apps.predict.application.runtime_snapshot import (
     PredictRuntimeSnapshot,
+    build_predict_runtime_snapshot,
     compatibility_predict_runtime_snapshot,
 )
 from apps.predict.composition import build_predict_workspace_composition
@@ -21,7 +22,9 @@ from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.shell import TrainShell
+from core.data_definition.contract import bootstrap_manifest
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
+from tests.helpers.generation_authority import repository_issued_generation
 
 
 class _ModelService:
@@ -59,7 +62,6 @@ def _runtime_pair() -> tuple[PredictRuntimeSnapshot, PredictRuntimeSnapshot]:
     ]
     first, second, third = results[:3]
     runtime_a = _runtime(
-        base,
         "target-a",
         (
             ("internal-alpha", first.column_key, "알파 표시 Target"),
@@ -67,7 +69,6 @@ def _runtime_pair() -> tuple[PredictRuntimeSnapshot, PredictRuntimeSnapshot]:
         ),
     )
     runtime_b = _runtime(
-        base,
         "target-b",
         (
             ("internal-beta", second.column_key, "베타 새 이름"),
@@ -77,49 +78,46 @@ def _runtime_pair() -> tuple[PredictRuntimeSnapshot, PredictRuntimeSnapshot]:
     return runtime_a, runtime_b
 
 
-def _runtime(base, generation_id, targets):  # noqa: ANN001, ANN202
-    label_by_key = {result_key: label for _target, result_key, label in targets}
-    projection = tuple(
-        replace(row, label=label_by_key[row.column_key])
-        if row.column_key in label_by_key
-        else row
-        for row in base.predict_projection
-    )
-    descriptors_by_key = {
-        item.result_key: item for item in base.target_descriptors
+def _runtime(generation_id, targets):  # noqa: ANN001, ANN202
+    manifest = bootstrap_manifest()
+    target_by_feature = {item.feature_identity: item for item in manifest.targets}
+    feature_by_key = {item.column_key: item for item in manifest.features}
+    selected = {
+        feature_by_key[result_key].identity: (ml_name, label)
+        for ml_name, result_key, label in targets
     }
-    target_descriptors = tuple(
-        replace(descriptors_by_key[result_key], ml_name=target)
-        for target, result_key, _label in targets
-    )
-    registry_target_by_id = {
-        item.identity: item for item in base.target_registry_targets
-    }
-    target_registry_targets = tuple(
-        replace(
-            registry_target_by_id[descriptor.target_identity],
-            ml_name=descriptor.ml_name,
-        )
-        for descriptor in target_descriptors
-    )
-    return replace(
-        base,
-        generation_id=generation_id,
-        predict_projection=projection,
-        column_descriptors=tuple(
-            replace(item, label=label_by_key[item.key])
-            if item.key in label_by_key
-            else item
-            for item in base.column_descriptors
+    target_feature_ids = set(target_by_feature)
+    manifest = replace(
+        manifest,
+        generation=replace(manifest.generation, generation_id=generation_id),
+        features=tuple(
+            replace(
+                item,
+                active=item.identity in selected,
+                ml_name=(selected[item.identity][0] if item.identity in selected else item.ml_name),
+                label=(selected[item.identity][1] if item.identity in selected else item.label),
+            )
+            if item.identity in target_feature_ids else item
+            for item in manifest.features
         ),
-        active_targets=tuple(target for target, _key, _label in targets),
-        target_registry_targets=target_registry_targets,
-        target_result_keys=tuple(
-            (target, result_key) for target, result_key, _label in targets
+        targets=tuple(
+            replace(
+                item,
+                active=item.feature_identity in selected,
+                ml_name=(selected[item.feature_identity][0]
+                         if item.feature_identity in selected else item.ml_name),
+            )
+            for item in manifest.targets
         ),
-        target_descriptors=target_descriptors,
-        target_registry_fingerprint=f"fixture-targets:{generation_id}",
+        ordering=replace(
+            manifest.ordering,
+            ml=tuple(
+                identity for identity in manifest.ordering.ml
+                if identity not in target_feature_ids or identity in selected
+            ),
+        ),
     )
+    return build_predict_runtime_snapshot(repository_issued_generation(manifest))
 
 
 def _composition(runtime, model_status="loaded", *, session=None):  # noqa: ANN001, ANN202
@@ -208,7 +206,7 @@ def test_incomplete_typed_runtime_contract_fails_before_composition():
         compatibility_predict_runtime_snapshot(), target_descriptors=()
     )
 
-    with pytest.raises(ValueError, match="Target contract is empty"):
+    with pytest.raises(ValueError, match="authority provenance"):
         _composition(runtime)
 
 

@@ -772,6 +772,20 @@ entries:
     source: result_reports/records/2026-07/2026-07-22-train-admin-phase4g-target-registry-authoring.md; result_reports/records/2026-07/2026-07-22-train-admin-phase4g-audit-correction.md; docs/WORK_PLAN.md
 
   - type: decision
+    topic: Predict runtime Target authority provenance
+    content: Predict runtime Target fields and fingerprints are convenience projections rather than authority evidence. The validated generation repository issues the exact GenerationSnapshot, its builder issues the exact immutable Predict runtime, and composition, execution semantics, PredictionService/model lifecycle adoption, and migration reject caller-constructed or replaced objects before canonical use. Genuine fingerprint reuse or coherent Target field/fingerprint changes cannot acquire authority. The public/generated Predict schema and persisted Feature Definition shape remain unchanged.
+    keywords:
+      - predictor_v3
+      - Predict
+      - runtime authority
+      - Target registry
+      - provenance
+      - GenerationSnapshot
+      - coherent forgery
+    assertionStatus: verified
+    source: result_reports/records/2026-08/2026-08-01-predict-runtime-target-authority-provenance-recovery.md; docs/architecture/pyside6_train_predict_architecture.md
+
+  - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries
     content: Phase 4H+4I implements every persisted Predict/ML/Derived/One-hot/Mapping-requirement/Target projection as one immutable runtime candidate. Predict executes through one generation-bound snapshot covering table/input mapping, Derived, One-hot, ordered ML input, zero-fill, Target/result mapping, preprocessing, and compatibility fingerprints; production composition does not fall back to bootstrap/static owners. Disk publication, all-participant prepare, complete mutable-boundary stale guards, and application-wide commit are distinct. Predict case/session and running state, Train selected-path/file/header evidence, Definition draft/base/controller state, and Mapping draft/provider evidence are rechecked before commit. Predict projects case and ResultRow state atomically: existing values migrate only by stable active Result Feature identity, hidden-active values survive, removed values drop only at commit, new results start empty, and rollback restores A status/value/message and keys. Data Definition, embedded Predict, Train / Model, and Data Mapping never silently operate mixed generations; commit failure rolls back completed swaps, and abort/rollback uncertainty becomes Restart required. Dirty Definition and Mapping drafts remain explicit reconciliation states, while Mapping dirty-removal classification compares exact affected stable-identity values rather than manifest drift. Train idle Target list, order, count, waiting metrics, and Summary share the committed registry. A running request retains its start-generation presentation until terminal, then pending process-active Target presentation applies; new runs freeze the committed registry. Standalone Predict shares the embedded runtime owner and checks persisted generation at startup, Refresh, and prediction boundaries, preserving rows/results and blocking stale execution on reload or model-compatibility failure. Phase 4 is closed for repository-automated scope; Windows-native smoke remains pre-release, and Phase 5 model/shell UX is next but unimplemented.
     keywords:

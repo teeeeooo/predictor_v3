@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from weakref import ref
 
 from apps.common.runtime_generation import GenerationSnapshot
+from apps.common.runtime_generation.repository_contract import (
+    _issue_generation_snapshot,
+    require_issued_generation_snapshot,
+)
 from apps.predict.application.runtime_columns import (
     PredictRuntimeColumnDescriptor,
     build_runtime_column_descriptors,
@@ -68,10 +73,17 @@ class PredictRuntimeSnapshot:
         }
 
 
+_ISSUED_PREDICT_RUNTIMES: dict[
+    int,
+    tuple[ref[PredictRuntimeSnapshot], tuple[object, ...]],
+] = {}
+
+
 def build_predict_runtime_snapshot(
     generation: GenerationSnapshot,
 ) -> PredictRuntimeSnapshot:
     """Project one already validated repository snapshot without external reads."""
+    require_issued_generation_snapshot(generation)
     manifest = generation.manifest
     column_descriptors = build_runtime_column_descriptors(
         manifest.features,
@@ -138,23 +150,39 @@ def build_predict_runtime_snapshot(
         target_registry_fingerprint=fingerprints.target_registry,
         preprocessing_fingerprint=fingerprints.preprocessing,
     )
-    validate_runtime_target_contract(runtime)
+    _validate_runtime_target_projection(runtime)
+    _issue_predict_runtime(runtime)
     return runtime
 
 
 def compatibility_predict_runtime_snapshot() -> PredictRuntimeSnapshot:
     """Build the legacy/default facade once; production passes repository state."""
     manifest = bootstrap_manifest()
-    return build_predict_runtime_snapshot(GenerationSnapshot(
+    generation = _issue_generation_snapshot(
         manifest,
         generate_projections(manifest),
         scoped_fingerprints(manifest),
         Path("."),
-    ))
+    )
+    return build_predict_runtime_snapshot(generation)
 
 
 def validate_runtime_target_contract(runtime: PredictRuntimeSnapshot) -> None:
-    """Bind supplied descriptors to authoritative generation/runtime metadata."""
+    """Require issued runtime provenance before validating its Target projection."""
+    issued = _ISSUED_PREDICT_RUNTIMES.get(id(runtime))
+    if (
+        issued is None
+        or issued[0]() is not runtime
+        or issued[1] != _runtime_payload(runtime)
+    ):
+        raise ValueError(
+            "Predict runtime Target authority provenance is missing or invalid"
+        )
+    _validate_runtime_target_projection(runtime)
+
+
+def _validate_runtime_target_projection(runtime: PredictRuntimeSnapshot) -> None:
+    """Check builder-owned convenience fields against its canonical projection."""
     descriptors = tuple(runtime.target_descriptors)
     authoritative = tuple(runtime.target_registry_targets)
     if not descriptors or not authoritative:
@@ -213,6 +241,25 @@ def validate_runtime_target_contract(runtime: PredictRuntimeSnapshot) -> None:
         raise ValueError(
             "Predict Target descriptors do not match authoritative metadata"
         )
+
+
+def _issue_predict_runtime(runtime: PredictRuntimeSnapshot) -> None:
+    identity = id(runtime)
+
+    def release(reference: ref[PredictRuntimeSnapshot]) -> None:
+        current = _ISSUED_PREDICT_RUNTIMES.get(identity)
+        if current is not None and current[0] is reference:
+            _ISSUED_PREDICT_RUNTIMES.pop(identity, None)
+
+    reference = ref(runtime, release)
+    _ISSUED_PREDICT_RUNTIMES[identity] = (reference, _runtime_payload(runtime))
+
+
+def _runtime_payload(runtime: PredictRuntimeSnapshot) -> tuple[object, ...]:
+    return tuple(
+        getattr(runtime, name)
+        for name in PredictRuntimeSnapshot.__dataclass_fields__
+    )
 
 
 _TARGET_UNIT_BY_ID = {

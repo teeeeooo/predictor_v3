@@ -49,12 +49,18 @@ validates the destination Target contract for zero-result migration, couples
 supported case removal to dependent result/run cleanup, and releases sealed
 migration/snapshot artifacts on abort, rollback, and successful coordinator or
 standalone finalization. Standalone and embedded presentation fixtures now use
-coherent typed Target descriptors. The destination descriptor follow-up
-additionally binds every supplied
-identity/name/Feature/key/unit/source tuple to the existing immutable Target
-registry, canonical Feature column, five-target unit seam, and fixed model
-prediction source. Self-consistent forged metadata now fails before composition
-or zero-result artifact issue without changing current execution eligibility.
+coherent typed Target descriptors. The destination descriptor follow-up's
+local-consistency claim was incomplete: its Target registry projection and
+fingerprint were both caller-visible runtime assertions. The provenance recovery
+now requires an exact repository-issued GenerationSnapshot and the exact Predict
+runtime issued from it before any runtime Target projection or fingerprint can
+become execution authority. Coherent active-set reduction, ML-name rebind,
+Result-Feature swap, unit/source forge, genuine fingerprint reuse, and
+caller-updated fingerprint metadata all fail before composition, service/model
+adoption, or zero-result artifact issue without changing current execution
+eligibility. The convenience Target projection remains exact-bound to stable
+identity, current Feature key, the five-target unit seam, and fixed model
+prediction source after provenance is established.
 The Draft remains open pending a fresh
 independent exact-head re-audit. The Auditor
 owns complete adjacent-owner review, focused validation, and only then guarded

@@ -2,7 +2,6 @@
 
 import os
 from dataclasses import replace
-from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -32,19 +31,13 @@ from apps.train.application.runtime_generation.participants import (  # noqa: E4
 )
 from core.data_definition.contract import (  # noqa: E402
     bootstrap_manifest,
-    generate_projections,
-    scoped_fingerprints,
 )
+from tests.helpers.generation_authority import repository_issued_generation  # noqa: E402
 from tests.helpers.predict_results import accept_result_fixtures  # noqa: E402
 
 
 def _snapshot(manifest) -> GenerationSnapshot:  # noqa: ANN001
-    return GenerationSnapshot(
-        manifest,
-        generate_projections(manifest),
-        scoped_fingerprints(manifest),
-        Path("."),
-    )
+    return repository_issued_generation(manifest)
 
 
 def _candidate(snapshot, participant) -> GenerationCandidate:  # noqa: ANN001

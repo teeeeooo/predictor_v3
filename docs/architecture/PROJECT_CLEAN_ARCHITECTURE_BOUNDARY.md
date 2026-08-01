@@ -107,12 +107,17 @@ Examples:
   rejection occurs before case, result, revision, or allowed-execution mutation.
   The runtime snapshot must provide one non-empty, duplicate-free, internally
   consistent Target/Result descriptor contract before migration artifact issue,
-  including zero-result sessions. Descriptors are not self-authoritative: the
-  validator exact-binds them to the Data Definition Target registry's immutable
-  runtime Target identity/ML-name/Result-Feature projection, the Feature-owned
-  current result key, the closed five-target unit catalog, and the fixed
-  `model_prediction` source. Malformed composition or migration fails before an
-  adapter or sealed artifact is created. CaseStore removal invokes session-owned
+  including zero-result sessions. The runtime's Target registry projection and
+  descriptors are convenience fields, not independent authority evidence. The
+  validated generation repository issues the exact `GenerationSnapshot`; only
+  that object can issue one exact Predict runtime authority. Composition,
+  execution-semantics projection, model/service installation, and migration
+  reject caller-constructed or replaced runtimes before treating their Target
+  fields or fingerprints as canonical. An issued runtime exact-binds stable
+  Target identity/active set, ML name, Result Feature and current key, the closed
+  five-target unit catalog, and fixed `model_prediction` source. Malformed
+  composition or migration fails before an adapter or sealed artifact is
+  created. CaseStore removal invokes session-owned
   dependent result/run cleanup before publishing its new order. Generation
   abort releases staged migration evidence; rollback consumes prior snapshots;
   successful whole-transaction and standalone completion explicitly finalize

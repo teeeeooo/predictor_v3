@@ -16,12 +16,14 @@ from apps.predict.application.model_lifecycle import (
     PredictModelLifecycleService,
 )
 from apps.predict.application.runtime_snapshot import (
+    build_predict_runtime_snapshot,
     compatibility_predict_runtime_snapshot,
 )
 from apps.predict.services.prediction_service import PredictionService
 from tests.apps.common.model_lifecycle.conftest import artifact_for, publish_candidate
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.target_registry.runtime import model_registry_snapshot
+from tests.helpers.generation_authority import repository_issued_generation
 
 
 @pytest.fixture
@@ -45,6 +47,19 @@ def _activate(repository, candidate_id: str, revision: int) -> None:
 
 def _service(path, runtime):  # noqa: ANN001
     return PredictionService(model_file=path, runtime_snapshot=runtime)
+
+
+def _runtime_with_preprocessing(version: str):
+    manifest = bootstrap_manifest()
+    manifest = replace(
+        manifest,
+        generation=replace(
+            manifest.generation,
+            generation_id=f"preprocessing-{version}",
+        ),
+        preprocessing_version=version,
+    )
+    return build_predict_runtime_snapshot(repository_issued_generation(manifest))
 
 
 def test_active_change_requires_explicit_reload_and_success_swaps_whole_service(
@@ -228,7 +243,7 @@ def test_runtime_incompatibility_fails_before_swap(
         active_revision=1,
     )
     lifecycle.set_runtime_snapshot(
-        replace(runtime, preprocessing_version="future-version")
+        _runtime_with_preprocessing("future-version")
     )
     _activate(repository, second.manifest.candidate_id, 2)
 
@@ -463,7 +478,7 @@ def test_older_refresh_cannot_regress_newer_c_reload_failure(
 
     _activate(repository, "candidate-c", 3)
     lifecycle.set_runtime_snapshot(
-        replace(runtime, preprocessing_version="future-version")
+        _runtime_with_preprocessing("future-version")
     )
     c_outcome = lifecycle.reload(
         prediction_running=False,
@@ -536,7 +551,7 @@ def test_older_b_reload_and_callback_state_preserve_newer_c_failure(
 
     _activate(repository, "candidate-c", 3)
     lifecycle.set_runtime_snapshot(
-        replace(runtime, preprocessing_version="future-version")
+        _runtime_with_preprocessing("future-version")
     )
     c_outcome = lifecycle.reload(
         prediction_running=False,
@@ -596,7 +611,7 @@ def test_reload_failures_are_structured_and_keep_internal_details_out_of_message
         candidate.model_path.write_bytes(b"secret-corrupt-path")
     if setup == "incompatible":
         lifecycle.set_runtime_snapshot(
-            replace(runtime, preprocessing_version="secret-fingerprint-version")
+            _runtime_with_preprocessing("secret-fingerprint-version")
         )
     if setup == "preparation":
         lifecycle._service_factory = lambda *_args: (_ for _ in ()).throw(

@@ -345,14 +345,22 @@ typed results, destination Target descriptors, execution semantics, and loaded
 model identity. Result keys migrate only through stable Result Feature identity.
 The session validates the current canonical source, source-to-destination result
 lineage, destination contract, revision, and case structure before any mutation.
-The destination runtime snapshot is the generation-bound projection owner, but
-its typed Target descriptors are not self-authoritative. It retains the
-Data Definition Target registry's immutable ordered `RuntimeTarget` projection;
-the application validator derives expected identity, ML name, Result Feature,
-current Feature-owned key, the closed canonical unit, and fixed model-prediction
-source from those existing owners. Supplied descriptors, active Target names,
-and Target/result-key pairs must match that derived contract exactly before
-composition or artifact issue, even when the session has zero results.
+The destination runtime snapshot is a generation-bound execution projection,
+not a semantic authority issuer. Its ordered `RuntimeTarget`, typed descriptors,
+active names, Result keys, and fingerprints are all convenience fields within
+one caller-visible object, so agreement among them cannot prove provenance.
+The validated generation repository issues the exact `GenerationSnapshot`, and
+the Predict builder registers the exact runtime issued from that snapshot with
+its immutable payload outside the candidate runtime assertions. Composition,
+execution-semantics projection, model/service installation, and migration accept
+only that issued object. A caller-constructed or `replace()`-produced runtime is
+rejected even when it reuses a genuine fingerprint or changes every dependent
+field and fingerprint coherently. Once provenance is established, validation
+exact-binds stable Target identity and active set, ML name, Result Feature,
+current Feature-owned key, the closed canonical unit, and fixed
+model-prediction source before composition or artifact issue, including a
+zero-result session. The fixed bootstrap facade is the existing five-target
+compatibility seam; it does not expose a general runtime authority constructor.
 A presentation-only projection may keep a valid result current; a semantic
 projection preserves its typed evidence as stale. Caller-constructed, altered,
 or replayed projection DTOs are not install artifacts.

@@ -55,6 +55,11 @@ class ResultAcceptance:
 
 def execution_semantics_from_runtime(runtime) -> PredictionExecutionSemantics:  # noqa: ANN001
     """Reuse runtime-owned fingerprints without inventing a new hash owner."""
+    from apps.predict.application.runtime_snapshot import (
+        validate_runtime_target_contract,
+    )
+
+    validate_runtime_target_contract(runtime)
     return PredictionExecutionSemantics(
         runtime_generation_id=runtime.generation_id,
         ordered_ml_fingerprint=runtime.ordered_ml_fingerprint,

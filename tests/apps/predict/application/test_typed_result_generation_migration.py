@@ -1,7 +1,6 @@
 """Typed result freshness across atomic Predict generation transitions."""
 
 from dataclasses import replace
-from pathlib import Path
 
 from apps.common.runtime_generation import GenerationCandidate, GenerationSnapshot
 from apps.predict.application.model_compatibility import ModelCompatibilityEvidence
@@ -17,18 +16,12 @@ from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.state.result_row import ResultRow
 from core.data_definition.contract import (
     bootstrap_manifest,
-    generate_projections,
-    scoped_fingerprints,
 )
+from tests.helpers.generation_authority import repository_issued_generation
 
 
 def _snapshot(manifest):  # noqa: ANN001
-    return GenerationSnapshot(
-        manifest,
-        generate_projections(manifest),
-        scoped_fingerprints(manifest),
-        Path("."),
-    )
+    return repository_issued_generation(manifest)
 
 
 def _setup(active, candidate, tmp_path):  # noqa: ANN001

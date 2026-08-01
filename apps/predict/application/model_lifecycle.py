@@ -21,7 +21,10 @@ from apps.predict.application.model_reload_preparation import (
     ReloadPreparationFailure,
     prepare_model_replacement,
 )
-from apps.predict.application.runtime_snapshot import PredictRuntimeSnapshot
+from apps.predict.application.runtime_snapshot import (
+    PredictRuntimeSnapshot,
+    validate_runtime_target_contract,
+)
 from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
 from apps.common.model_lifecycle.closeout.loaded_model_lease import (
     loaded_model_lease,
@@ -37,6 +40,7 @@ class PredictModelLifecycleService:
         runtime_snapshot: PredictRuntimeSnapshot,
         service_factory: Callable[[str, PredictRuntimeSnapshot], PredictionServicePort],
     ) -> None:
+        validate_runtime_target_contract(runtime_snapshot)
         self._repository = repository
         self._runtime_snapshot = runtime_snapshot
         self._service_factory = service_factory
@@ -67,6 +71,7 @@ class PredictModelLifecycleService:
             return operation_id == self._current_operation_id
 
     def set_runtime_snapshot(self, snapshot: PredictRuntimeSnapshot) -> None:
+        validate_runtime_target_contract(snapshot)
         self._runtime_snapshot = snapshot
 
     def initialize_loaded(

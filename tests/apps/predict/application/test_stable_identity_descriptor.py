@@ -1,7 +1,6 @@
 """Predict-owned canonical identity descriptor regressions."""
 
 from dataclasses import FrozenInstanceError, asdict, replace
-from pathlib import Path
 import subprocess
 import sys
 
@@ -15,20 +14,14 @@ from apps.predict.schema.case_table_schema_adapter import (
 )
 from core.data_definition.contract import (
     bootstrap_manifest,
-    generate_projections,
     manifest_payload,
-    scoped_fingerprints,
 )
 from core.predictor_schema.catalog_v2 import REQUIRED_HEADERS
+from tests.helpers.generation_authority import repository_issued_generation
 
 
 def _snapshot(manifest) -> GenerationSnapshot:  # noqa: ANN001
-    return GenerationSnapshot(
-        manifest,
-        generate_projections(manifest),
-        scoped_fingerprints(manifest),
-        Path("."),
-    )
+    return repository_issued_generation(manifest)
 
 
 def test_descriptor_carries_canonical_identity_and_current_generation_metadata():
@@ -174,14 +167,14 @@ def test_generation_rename_order_visibility_show_hide_and_add_follow_identity():
 
 
 @pytest.mark.parametrize(
-    ("mutation", "message"),
+    "mutation",
     (
-        ("duplicate", "identity is duplicated"),
-        ("missing", "identity is missing"),
-        ("incomplete_projection", "generated projection is incomplete"),
+        "duplicate",
+        "missing",
+        "incomplete_projection",
     ),
 )
-def test_invalid_identity_or_projection_fails_fast(mutation, message):
+def test_replaced_generation_cannot_bypass_repository_authority(mutation):
     snapshot = _snapshot(bootstrap_manifest())
     if mutation == "duplicate":
         manifest = replace(
@@ -212,7 +205,7 @@ def test_invalid_identity_or_projection_fails_fast(mutation, message):
         )
         invalid = replace(snapshot, projections=projections)
 
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(ValueError, match="repository-issued generation"):
         build_predict_runtime_snapshot(invalid)
 
 
