@@ -42,7 +42,6 @@ class TableEditController:
     def reset_rows(self, initial_count: int) -> list[str]:
         """Reset all cases/results and append a fresh initial row set."""
         removed = self._session.case_store.remove_rows(self._session.case_order)
-        self._session.remove_results_for_cases(removed)
         self._session.case_store.append_empty_rows(initial_count)
         return removed
 
@@ -76,5 +75,4 @@ class TableEditController:
     def remove_case_ids(self, case_ids: tuple[str, ...]) -> list[str]:
         """Remove cases/results by id and return removed case ids."""
         removed = self._session.case_store.remove_rows(case_ids)
-        self._session.remove_results_for_cases(removed)
         return removed

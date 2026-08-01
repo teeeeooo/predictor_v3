@@ -20,6 +20,7 @@ class FakeParticipant:
         self.mutate = mutate
         self.aborted = 0
         self.rolled_back = 0
+        self.finalized = 0
 
     @property
     def active_generation_id(self):  # noqa: ANN201
@@ -53,6 +54,9 @@ class FakeParticipant:
             raise RuntimeError("injected abort failure")
         self.aborted += 1
 
+    def finalize(self, prior):  # noqa: ANN001
+        self.finalized += 1
+
 
 def _repository(tmp_path):  # noqa: ANN001
     repository = DataDefinitionGenerationRepository(tmp_path / "definitions")
@@ -80,6 +84,7 @@ def test_all_ready_commits_every_participant_after_prepare(tmp_path):
     assert status.message == "Saved and applied"
     assert {item.active_generation_id for item in participants} == {"generation-b"}
     assert status.active_generation == status.persisted_generation == "generation-b"
+    assert {item.finalized for item in participants} == {1}
 
 
 def test_explicit_prepare_keeps_active_state_until_commit(tmp_path):

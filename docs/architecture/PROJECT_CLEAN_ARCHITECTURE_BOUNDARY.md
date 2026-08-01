@@ -88,6 +88,42 @@ Examples:
   such as `QProcessTrainingRunner`.
 - Predict execution: `PredictionExecutionPort` -> PySide/QThread runner or
   another runtime runner.
+- Predict result attachment: the Qt-free application/session boundary pins one
+  immutable execution context and runtime-owned expected-target projection per
+  case request. It accepts an executed result only when session, case, run,
+  case-input revision, runtime semantics, loaded model identity, target
+  identities/metadata, and aggregate status all match. Cancellation and
+  infrastructure failure carry the same context through this gate. User-facing
+  progress and summaries count canonical accepted dispositions, not worker
+  transport progress. Direct single/bulk session setters accept only
+  non-executed `pending`, `running`, and `invalid` state; every
+  `complete`/`partial`/`error`/`cancelled` row uses canonical acceptance
+  regardless of payload shape. This restriction is invariant over canonical
+  state, not just direct setters: the session exposes results read-only and is
+  the only owner that may issue sealed migration or rollback artifacts. Fresh
+  results validate pinned request provenance; migration validates an already
+  canonical source plus the destination Target/semantics/model contract;
+  rollback restores only a previously validated session snapshot. Projection
+  rejection occurs before case, result, revision, or allowed-execution mutation.
+  The runtime snapshot must provide one non-empty, duplicate-free, internally
+  consistent Target/Result descriptor contract before migration artifact issue,
+  including zero-result sessions. The runtime's Target registry projection and
+  descriptors are convenience fields, not independent authority evidence. The
+  validated generation repository issues the exact `GenerationSnapshot`; only
+  that object can issue one exact Predict runtime authority. Composition,
+  execution-semantics projection, model/service installation, and migration
+  reject caller-constructed or replaced runtimes before treating their Target
+  fields or fingerprints as canonical. An issued runtime exact-binds stable
+  Target identity/active set, ML name, Result Feature and current key, the closed
+  five-target unit catalog, and fixed `model_prediction` source. Malformed
+  composition or migration fails before an adapter or sealed artifact is
+  created. CaseStore removal invokes session-owned
+  dependent result/run cleanup before publishing its new order. Generation
+  abort releases staged migration evidence; rollback consumes prior snapshots;
+  successful whole-transaction and standalone completion explicitly finalize
+  obsolete rollback evidence.
+  A worker, Qt view, runtime participant, compatibility facade, or test fixture
+  never owns reconciliation or arbitrary terminal installation.
 - Calculator execution: `CalculatorUseCase` -> core calculator dispatcher
   adapter, not direct orchestration inside UI sections.
 

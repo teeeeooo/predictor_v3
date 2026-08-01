@@ -62,6 +62,7 @@ class StandalonePredictGenerationGuard:
             if self._participant.active_generation_id != persisted:
                 self._participant.rollback(prior)
                 return self._block("Restart required", "mixed_generation_detected", "Restart Required")
+            self._participant.finalize(prior)
         except Exception:
             if "prepared" in locals():
                 try:

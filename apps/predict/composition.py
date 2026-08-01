@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from apps.common.model_lifecycle import ModelLifecycleRepository, ModelResolution
 from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
@@ -11,9 +11,14 @@ from apps.predict.adapters.pyside_prediction_runner import PySidePredictionRunne
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 from apps.predict.application.model_lifecycle import PredictModelLifecycleService
 from apps.predict.application.prediction_usecase import PredictionUseCase
+from apps.predict.application.result_contract import (
+    PredictionModelIdentity,
+    execution_semantics_from_runtime,
+)
 from apps.predict.application.runtime_snapshot import (
     PredictRuntimeSnapshot,
     compatibility_predict_runtime_snapshot,
+    validate_runtime_target_contract,
 )
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import (
@@ -77,6 +82,7 @@ def build_predict_workspace_composition(
     lifecycle_repository: ModelLifecycleRepository | None = None,
     model_resolution: ModelResolution | None = None,
     model_lifecycle: PredictModelLifecycleService | None = None,
+    model_identity: PredictionModelIdentity | None = None,
 ) -> PredictWorkspaceComposition:
     """Build the concrete Predict object graph without constructing widgets."""
 
@@ -94,16 +100,12 @@ def build_predict_workspace_composition(
             "predict_projection cannot establish canonical Feature identity; "
             "provide a complete runtime_snapshot"
         )
-    if one_hot_snapshot is not None or predict_projection is not None:
-        runtime = replace(
-            runtime,
-            generation_id=(
-                one_hot_snapshot.generation_id
-                if one_hot_snapshot is not None else runtime.generation_id
-            ),
-            one_hot=one_hot_snapshot or runtime.one_hot,
-            predict_projection=predict_projection or runtime.predict_projection,
+    if one_hot_snapshot is not None and one_hot_snapshot != runtime.one_hot:
+        raise ValueError(
+            "one_hot_snapshot cannot establish canonical generation authority; "
+            "provide a repository-issued runtime_snapshot"
         )
+    validate_runtime_target_contract(runtime)
     resolved_one_hot_snapshot = runtime.one_hot
     column_descriptors = runtime.column_descriptors
     predict_columns = build_predict_column_schema(column_descriptors)
@@ -123,12 +125,8 @@ def build_predict_workspace_composition(
         ),
         active_targets=runtime.active_targets,
         target_result_keys=runtime.target_result_keys,
+        target_descriptors=runtime.target_descriptors,
         generation_id=runtime.generation_id,
-    )
-    usecase = PredictionUseCase(
-        resolved_session,
-        input_mapper=resolved_input_mapper,
-        result_mapper=resolved_result_mapper,
     )
     service = prediction_service or PredictionService(
         model_file=model_file,
@@ -155,6 +153,19 @@ def build_predict_workspace_composition(
                 lifecycle.record_startup_failure(
                     f"{type(exc).__name__}: {str(exc)}"
                 )
+    loaded = lifecycle.loaded if lifecycle is not None else None
+    resolved_model_identity = model_identity or PredictionModelIdentity(
+        candidate_id=loaded.candidate_id if loaded is not None else f"unmanaged:{model_file}",
+        active_revision=loaded.active_revision if loaded is not None else 0,
+        generation_id=loaded.generation_id if loaded is not None else runtime.generation_id,
+    )
+    usecase = PredictionUseCase(
+        resolved_session,
+        input_mapper=resolved_input_mapper,
+        result_mapper=resolved_result_mapper,
+        execution_semantics=execution_semantics_from_runtime(runtime),
+        model_identity=resolved_model_identity,
+    )
     prediction_controller = PredictionController(
         resolved_session,
         usecase=usecase,

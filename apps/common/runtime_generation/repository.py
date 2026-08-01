@@ -15,6 +15,7 @@ from uuid import uuid4
 from apps.common.runtime_generation.repository_contract import (
     GenerationPublishResult,
     GenerationSnapshot,
+    _issue_generation_snapshot,
 )
 from core.data_definition.contract import (
     ContractProjections,
@@ -138,7 +139,12 @@ class DataDefinitionGenerationRepository:
         if stored_fingerprints not in candidates:
             raise ValueError("bundle fingerprint metadata mismatch")
         self._verify_projection_bytes(path, projections)
-        return GenerationSnapshot(manifest, projections, fingerprints, path)
+        return _issue_generation_snapshot(
+            manifest,
+            projections,
+            fingerprints,
+            path,
+        )
 
     def rollback(self, generation_id: str) -> GenerationSnapshot:
         with self._single_writer():

@@ -13,7 +13,10 @@ from apps.common.model_lifecycle.errors import (
     ModelLifecycleError,
 )
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
-from apps.predict.application.runtime_snapshot import PredictRuntimeSnapshot
+from apps.predict.application.runtime_snapshot import (
+    PredictRuntimeSnapshot,
+    validate_runtime_target_contract,
+)
 from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
 
 
@@ -37,6 +40,7 @@ def prepare_model_replacement(
     runtime: PredictRuntimeSnapshot,
     service_factory: Callable[[str, PredictRuntimeSnapshot], PredictionServicePort],
 ) -> PredictionServicePort:
+    validate_runtime_target_contract(runtime)
     try:
         candidate = repository.read_candidate(candidate_id)
     except LifecycleRecoveryRequiredError as exc:

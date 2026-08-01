@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication
 from apps.predict.application.models import PredictionModelStatus
 from apps.predict.application.runtime_snapshot import (
     PredictRuntimeSnapshot,
+    build_predict_runtime_snapshot,
     compatibility_predict_runtime_snapshot,
 )
 from apps.predict.composition import build_predict_workspace_composition
@@ -20,7 +21,9 @@ from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.shell import TrainShell
+from core.data_definition.contract import bootstrap_manifest
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
+from tests.helpers.generation_authority import repository_issued_generation
 
 
 class _LoadedPredictionService:
@@ -46,8 +49,8 @@ def _cleanup_qt_widgets():
 
 
 def _runtime_pair() -> tuple[PredictRuntimeSnapshot, PredictRuntimeSnapshot]:
-    full = compatibility_predict_runtime_snapshot()
-    reduced_rows = list(full.predict_projection)
+    base = compatibility_predict_runtime_snapshot()
+    reduced_rows = list(base.predict_projection)
     removed = next(
         index
         for index, row in enumerate(reduced_rows)
@@ -59,26 +62,39 @@ def _runtime_pair() -> tuple[PredictRuntimeSnapshot, PredictRuntimeSnapshot]:
         else row
         for index, row in enumerate(reduced_rows)
     ]
-    reduced = replace(
-        full,
-        generation_id="group-header-reduced",
-        predict_projection=tuple(reduced_rows),
-        column_descriptors=tuple(
-            replace(
-                item,
-                visible=False,
-            )
-            if item.key == full.predict_projection[removed].column_key
-            or (
-                item.active
-                and item.visible
-                and item.role == "auto"
-            )
-            else item
-            for item in full.column_descriptors
+    hidden_keys = {
+        base.predict_projection[removed].column_key,
+        *(
+            item.column_key for item in base.predict_projection
+            if item.active and item.visible and item.role == "auto"
+        ),
+    }
+    manifest = bootstrap_manifest()
+    reduced_manifest = replace(
+        manifest,
+        generation=replace(
+            manifest.generation,
+            generation_id="group-header-reduced",
+        ),
+        features=tuple(
+            replace(item, visible=False)
+            if item.column_key in hidden_keys else item
+            for item in manifest.features
         ),
     )
-    full = replace(full, generation_id="group-header-full")
+    full_manifest = replace(
+        manifest,
+        generation=replace(
+            manifest.generation,
+            generation_id="group-header-full",
+        ),
+    )
+    reduced = build_predict_runtime_snapshot(
+        repository_issued_generation(reduced_manifest)
+    )
+    full = build_predict_runtime_snapshot(
+        repository_issued_generation(full_manifest)
+    )
     return reduced, full
 
 

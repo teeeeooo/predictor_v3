@@ -49,8 +49,6 @@ class InputEditController:
             elif target.is_input:
                 case.set_input_value(update.key, update.value)
 
-        if result.updates:
-            self._session.clear_result(case_id)
         self._dropdown_options.update(result.dropdown_options)
         if result.dropdown_options:
             row_options = self._dropdown_options_by_case_id.setdefault(case_id, {})

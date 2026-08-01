@@ -339,11 +339,45 @@ draft/provider state. Standalone Predict uses the same Predict snapshot owner an
 performs its own persisted-generation check at startup, Refresh, and immediately
 before prediction.
 
-Predict generation prepare owns one complete session projection: case order,
-input/autofill/dirty fields, and ResultRow status/value/message. Result keys migrate
-only through stable active Result Feature identity. Commit validates revision and
-case structure before installing that projection; rollback restores the complete
-prior projection.
+Predict generation prepare asks the canonical session to issue one sealed
+migration projection: case order, input/autofill/dirty fields and revisions,
+typed results, destination Target descriptors, execution semantics, and loaded
+model identity. Result keys migrate only through stable Result Feature identity.
+The session validates the current canonical source, source-to-destination result
+lineage, destination contract, revision, and case structure before any mutation.
+The destination runtime snapshot is a generation-bound execution projection,
+not a semantic authority issuer. Its ordered `RuntimeTarget`, typed descriptors,
+active names, Result keys, and fingerprints are all convenience fields within
+one caller-visible object, so agreement among them cannot prove provenance.
+The validated generation repository issues the exact `GenerationSnapshot`, and
+the Predict builder registers the exact runtime issued from that snapshot with
+its immutable payload outside the candidate runtime assertions. Composition,
+execution-semantics projection, model/service installation, and migration accept
+only that issued object. A caller-constructed or `replace()`-produced runtime is
+rejected even when it reuses a genuine fingerprint or changes every dependent
+field and fingerprint coherently. Once provenance is established, validation
+exact-binds stable Target identity and active set, ML name, Result Feature,
+current Feature-owned key, the closed canonical unit, and fixed
+model-prediction source before composition or artifact issue, including a
+zero-result session. The fixed bootstrap facade is the existing five-target
+compatibility seam; it does not expose a general runtime authority constructor.
+A presentation-only projection may keep a valid result current; a semantic
+projection preserves its typed evidence as stale. Caller-constructed, altered,
+or replayed projection DTOs are not install artifacts.
+
+Rollback uses a distinct sealed snapshot issued from previously validated
+canonical state. It restores that exact case/result/runtime contract, session
+revision, and allowed-execution state, then consumes the artifact. Projection or
+rollback rejection is atomic: case values, case revisions, results, run
+authority, and session revision remain unchanged.
+
+Sealed artifacts have an explicit transaction lifecycle. Participant abort
+releases an unused migration artifact. Commit consumes migration and retains its
+prior snapshot through the coordinator rollback window. Failed commit rolls back
+and consumes that snapshot; successful whole-transaction completion calls
+participant finalize to release it. Standalone generation refresh applies the
+same finalize step. Repeated prepare/abort and successful cutovers therefore do
+not retain full case/result/provenance projections for the session lifetime.
 
 The generation-bound Predict runtime snapshot also owns an immutable
 `PredictRuntimeColumnDescriptor` tuple. Each descriptor binds canonical
@@ -663,26 +697,42 @@ Represents one input case.
 Recommended fields:
 
 - `case_id: str`
-- `values: dict[str, object]`
+- `input_values: dict[str, object]`
+- `autofill_values: dict[str, object]`
 - `dirty: bool`
-- `errors: list[str]`
-- `warnings: list[str]`
+- `input_revision: int` for prediction-relevant row-local mutation evidence
 
 No PySide6 dependency.
 
 ### 8.2 `ResultRow`
 
-Represents one prediction result.
+Represents one accepted prediction result. The application contract stores raw
+target outcomes; `result_values` is only the existing table-formatting facade.
 
 Recommended fields:
 
 - `case_id: str`
-- `status: pending | running | success | warning | error`
-- `values: dict[str, object]`
-- `error_message: str | None`
-- `warning_messages: list[str]`
+- `status: pending | running | complete | partial | error | invalid | cancelled`
+- immutable `target_outcomes`, each identified by stable Target identity and
+  result Feature identity with current result key, canonical unit, value source,
+  and either finite raw numeric value or bounded unavailable/failed reason
+- immutable execution context with session/case/run identity, case input
+  revision, runtime generation trace, existing scoped semantic fingerprints,
+  loaded Candidate identity, Active revision, and loaded-model generation
+- `freshness: current | stale` plus a bounded stale reason, independent from
+  the row execution status
 
 No PySide6 dependency.
+
+The current canonical unit catalog is a closed Predict application mapping for
+the five validated stable Target identities (`W`, `Hz`, and `kg`). An unknown
+active Target identity fails runtime composition rather than inventing a unit.
+The unit and fixed `model_prediction` source are bound to the authoritative
+runtime Target identity; a non-empty descriptor value is not acceptance
+evidence. `PredictionTargetDescriptor` consumes this projection and never owns
+Target semantics.
+Adding unit authoring to Feature Definition is a separately approved schema
+change and is not implied by this contract.
 
 ### 8.3 `CaseStore`
 
@@ -715,6 +765,11 @@ Recommended fields:
 
 - `case_store`
 - `results_by_case_id`
+- one immutable session identity
+- case-scoped input revisions and currently allowed execution context per case
+- the immutable runtime-owned expected-target descriptor projection pinned with
+  each allowed execution
+- bounded stale-result rejection diagnostics
 - `selected_case_ids`
 - `model_status`
 - `mapping_status`
@@ -722,6 +777,49 @@ Recommended fields:
 - `last_prediction_timestamp`
 
 No direct PySide6 widget ownership.
+
+`PredictSession` is the application-owned result acceptance gate. An executed
+result attaches only if the active session, existing `case_id`, allowed run,
+request input revision, pinned execution semantics, and pinned loaded model all
+match. The same canonical gate also requires exactly one outcome for each pinned
+Target identity, matching result Feature identity/key/unit/source metadata, and
+an aggregate status consistent with the available/unavailable/failed set.
+Target-derived errors carry the complete expected set; row-wide errors and
+cancelled requests carry no synthetic target outcomes but retain immutable
+execution context. Executed terminal rows cannot use the legacy direct result
+setter, including empty, message-only, legacy-value, typed-only, context-only,
+and bulk-setter forms. Direct session storage is an explicit allowlist for
+non-executed `pending`, `running`, and `invalid` rows. Rejection does not mutate
+input, result, row status, accepted progress, or counts.
+Editing another case is unrelated; editing the same case increments only that
+case revision, makes an existing typed result stale (or a running row pending),
+and causes the old request result to fail closed.
+
+This is a canonical state invariant, not an API-specific convention. The
+session exposes its result map read-only and classifies every production
+mutation as non-executed state creation, fresh executed-result acceptance,
+validated canonical migration, sealed rollback/restore, freshness
+transformation, or deletion. Every stored row must be a valid non-executed state
+or a provenance-bearing executed terminal state. Fresh acceptance validates the
+pinned request contract; migration validates both prior canonical lineage and
+the destination runtime contract; rollback restores only a session-issued prior
+snapshot. No private helper, bulk facade, generation projection, UI model, or
+test fixture may install arbitrary terminal state.
+
+`CaseStore` remains the case-order owner, but a bound session cleanup runs before
+supported case deletion. It removes dependent result and allowed-execution
+authority before the store publishes the new case order; one store mutation then
+advances the session revision. Callback failure occurs before either boundary is
+changed. Direct CaseStore removal, table-controller removal, and reset therefore
+cannot expose a dangling result or terminal counts greater than total cases.
+
+Generation and model transitions preserve typed outcomes and provenance. A
+presentation-only generation change may update current keys by Feature identity
+while remaining current because generation ID is trace-only for freshness.
+Changes to ordered ML input, preprocessing, Derived, One-hot, Target registry,
+Candidate identity, or Active revision mark the preserved result stale. Failed
+reload and generation rollback restore/preserve the old usable environment and
+must not change currentness.
 
 ## 9. Table Model Specification
 
@@ -1204,6 +1302,15 @@ Responsibility:
 - start execution through `PredictionExecutionPort`
 - receive worker row/progress/finish/cancel/failure events on the UI thread
 - apply result updates to `PredictSession` on the UI thread
+- ignore late row/progress/terminal events whose run identity is not active;
+  executed rows still pass the session-owned acceptance gate
+- treat worker progress and terminal summaries as transport evidence: advance
+  user-facing progress once per canonically accepted case and calculate the
+  final application summary from accepted complete/partial/error/cancelled
+  dispositions plus pre-run invalid rows; expose unresolved rows when accepted
+  dispositions do not cover the requested total
+- send cooperative cancellation and infrastructure failure through the same
+  context-preserving canonical acceptance path before revoking run authority
 - request table model refresh through callbacks or signals
 - expose model/run status to the workspace without making the workspace inspect
   raw model artifact paths

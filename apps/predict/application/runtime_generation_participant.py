@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
 
@@ -20,10 +20,8 @@ from apps.predict.composition import (
     build_predict_workspace_composition,
 )
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
-from apps.predict.state.predict_session import (
-    PredictSession,
-    PredictSessionProjection,
-)
+from apps.predict.state.predict_session import PredictSession
+from apps.predict.state.result_state_boundary import PredictSessionProjection
 from apps.predict.state.result_row import ResultRow
 
 
@@ -89,11 +87,9 @@ class PredictRuntimeParticipant:
         migrated_cases = _migrated_case_rows(
             self._composition.session, self._active, candidate.snapshot
         )
-        migrated_results = _migrated_result_rows(
-            self._composition.session, self._active, candidate.snapshot
-        )
         controller = self._composition.prediction_controller
         _prediction_service, runner_factory = controller.runtime_dependencies()
+        _semantics, model_identity = controller.execution_environment
         runtime = build_predict_runtime_snapshot(candidate.snapshot)
         composition = build_predict_workspace_composition(
             session=self._composition.session,
@@ -103,15 +99,23 @@ class PredictRuntimeParticipant:
             runtime_snapshot=runtime,
             model_file=self._model_file,
             model_lifecycle=controller.model_lifecycle,
+            model_identity=model_identity,
+        )
+        migrated_results = _migrated_result_rows(
+            self._composition.session, self._active, candidate.snapshot
+        )
+        session_projection = self._composition.session.prepare_runtime_projection(
+            cases=migrated_cases,
+            results=migrated_results,
+            runtime_snapshot=runtime,
+            model_identity=(
+                composition.prediction_controller.execution_environment[1]
+            ),
         )
         payload = _PredictPrepared(
             candidate.snapshot,
             composition,
-            PredictSessionProjection(
-                self._composition.session.case_order,
-                migrated_cases,
-                migrated_results,
-            ),
+            session_projection,
             compatibility,
             self._composition.session.revision,
         )
@@ -130,11 +134,6 @@ class PredictRuntimeParticipant:
                 "Predict cases, model, or execution state changed after prepare.",
                 "Retry Apply",
             )
-        prior = (
-            self._active,
-            self._composition,
-            self._composition.session.snapshot_runtime_projection(),
-        )
         payload: _PredictPrepared = prepared.payload
         runtime_generation = payload.composition.runtime_snapshot.generation_id
         semantic_generations = {
@@ -152,15 +151,40 @@ class PredictRuntimeParticipant:
                 "Prepared Predict execution semantics do not share one generation.",
                 "Restart Required",
             )
-        self._composition.session.apply_runtime_projection(
-            payload.session_projection,
-            expected_revision=payload.session_revision,
-        )
-        self._composition = payload.composition
-        self._active = payload.snapshot
-        lifecycle = self._composition.prediction_controller.model_lifecycle
-        if lifecycle is not None:
-            lifecycle.set_runtime_snapshot(payload.composition.runtime_snapshot)
+        previous_active = self._active
+        previous_composition = self._composition
+        session_state = self._composition.session.snapshot_runtime_projection()
+        prior = (previous_active, previous_composition, session_state)
+        applied = False
+        try:
+            self._composition.session.apply_runtime_projection(
+                payload.session_projection,
+                expected_revision=payload.session_revision,
+            )
+            applied = True
+            self._composition = payload.composition
+            self._active = payload.snapshot
+            lifecycle = self._composition.prediction_controller.model_lifecycle
+            if lifecycle is not None:
+                lifecycle.set_runtime_snapshot(payload.composition.runtime_snapshot)
+            self._composition.prediction_controller.reconcile_session_currentness()
+        except Exception:
+            if applied:
+                self._active = previous_active
+                self._composition = previous_composition
+                previous_lifecycle = (
+                    previous_composition.prediction_controller.model_lifecycle
+                )
+                if previous_lifecycle is not None:
+                    previous_lifecycle.set_runtime_snapshot(
+                        previous_composition.runtime_snapshot
+                    )
+                previous_composition.session.restore_runtime_projection(session_state)
+            else:
+                previous_composition.session.release_runtime_projection(
+                    session_state, kind="snapshot"
+                )
+            raise
         return prior
 
     def rollback(self, prior_state: object) -> None:
@@ -173,17 +197,27 @@ class PredictRuntimeParticipant:
         composition.session.restore_runtime_projection(session_state)
 
     def abort(self, prepared: PreparedParticipant) -> None:
-        return None
+        payload: _PredictPrepared = prepared.payload
+        self._composition.session.release_runtime_projection(
+            payload.session_projection, kind="migration"
+        )
+
+    def finalize(self, prior_state: object) -> None:
+        _active, composition, session_state = prior_state
+        composition.session.release_runtime_projection(
+            session_state, kind="snapshot"
+        )
 
 
 def _migrated_case_rows(
     session: PredictSession,
     active,
     candidate,
-) -> tuple[tuple[str, dict, dict, set], ...]:  # noqa: ANN001
+) -> tuple[tuple[str, dict, dict, set, int], ...]:  # noqa: ANN001
     old_by_id = {item.identity: item for item in active.manifest.features}
     new_by_id = {item.identity: item for item in candidate.manifest.features}
     migrated = []
+    input_semantics_changed = _case_input_semantics_changed(active, candidate)
     for case_id in session.case_order:
         case = session.case_store.get_case(case_id)
         inputs, autofill, dirty = {}, {}, set()
@@ -209,7 +243,13 @@ def _migrated_case_rows(
                 target[after.column_key] = value
                 if before.column_key in case.dirty_fields:
                     dirty.add(after.column_key)
-        migrated.append((case_id, inputs, autofill, dirty))
+        migrated.append((
+            case_id,
+            inputs,
+            autofill,
+            dirty,
+            case.input_revision + int(input_semantics_changed),
+        ))
     return tuple(migrated)
 
 
@@ -218,26 +258,69 @@ def _migrated_result_rows(
     active,
     candidate,
 ) -> tuple[ResultRow, ...]:  # noqa: ANN001
-    active_keys = _active_result_keys_by_identity(active)
     candidate_keys = _active_result_keys_by_identity(candidate)
-    shared_identities = active_keys.keys() & candidate_keys.keys()
+    semantics_changed = _prediction_semantics_changed(active, candidate)
     migrated = []
     for case_id in session.case_order:
         existing = session.results_by_case_id.get(case_id)
         if existing is None:
             continue
-        values = {
-            candidate_keys[identity]: existing.result_values[active_keys[identity]]
-            for identity in shared_identities
-            if active_keys[identity] in existing.result_values
-        }
-        migrated.append(ResultRow(
+        values = dict(existing._legacy_result_values)
+        outcomes = tuple(
+            replace(
+                outcome,
+                result_key=candidate_keys.get(
+                    outcome.result_feature_identity, outcome.result_key
+                ),
+            )
+            for outcome in existing.target_outcomes
+        )
+        result = ResultRow(
             case_id=case_id,
             status=existing.status,
             result_values=values,
             message=existing.message,
-        ))
+            target_outcomes=outcomes,
+            execution_context=existing.execution_context,
+            freshness=existing.freshness,
+            stale_reason=existing.stale_reason,
+        )
+        if semantics_changed and result.execution_context is not None:
+            result = result.marked_stale("execution_semantics_changed")
+        migrated.append(result)
     return tuple(migrated)
+
+
+def _case_input_semantics_changed(active, candidate) -> bool:  # noqa: ANN001
+    before, after = active.fingerprints, candidate.fingerprints
+    return (
+        before.ordered_ml,
+        before.preprocessing,
+        before.derived_semantics,
+        before.one_hot,
+    ) != (
+        after.ordered_ml,
+        after.preprocessing,
+        after.derived_semantics,
+        after.one_hot,
+    )
+
+
+def _prediction_semantics_changed(active, candidate) -> bool:  # noqa: ANN001
+    before, after = active.fingerprints, candidate.fingerprints
+    return (
+        before.ordered_ml,
+        before.preprocessing,
+        before.derived_semantics,
+        before.one_hot,
+        before.target_registry,
+    ) != (
+        after.ordered_ml,
+        after.preprocessing,
+        after.derived_semantics,
+        after.one_hot,
+        after.target_registry,
+    )
 
 
 def _active_result_keys_by_identity(snapshot) -> dict[str, str]:  # noqa: ANN001

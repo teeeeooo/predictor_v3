@@ -155,11 +155,14 @@ class RuntimeGenerationCoordinator:
                     participant.rollback(prior)
                 except Exception:
                     rollback_failed = True
-            code = "rollback_failed" if rollback_failed else "participant_commit_failed"
-            message = "Restart required" if rollback_failed else "Saved; update pending"
+            abort_failed = self._abort_tokens(prepared)
+            finalize_failed = self._finalize_states(prior_states)
+            cleanup_failed = rollback_failed or abort_failed or finalize_failed
+            code = "rollback_failed" if cleanup_failed else "participant_commit_failed"
+            message = "Restart required" if cleanup_failed else "Saved; update pending"
             return self._failed(
-                code, message, "rollback" if rollback_failed else "commit", code,
-                "Restart Required" if rollback_failed else "Retry Apply",
+                code, message, "rollback" if cleanup_failed else "commit", code,
+                "Restart Required" if cleanup_failed else "Retry Apply",
                 candidate.generation_id,
             )
         if any(item.active_generation_id != candidate.generation_id for item in self._participants):
@@ -169,12 +172,21 @@ class RuntimeGenerationCoordinator:
                     participant.rollback(prior)
                 except Exception:
                     rollback_failed = True
+            abort_failed = self._abort_tokens(prepared)
+            finalize_failed = self._finalize_states(prior_states)
+            cleanup_failed = rollback_failed or abort_failed or finalize_failed
             return self._failed(
-                "rollback_failed" if rollback_failed else "mixed_generation",
+                "rollback_failed" if cleanup_failed else "mixed_generation",
                 "Restart required",
-                "rollback" if rollback_failed else "post-commit",
-                "rollback_failed" if rollback_failed else "mixed_generation_detected",
+                "rollback" if cleanup_failed else "post-commit",
+                "rollback_failed" if cleanup_failed else "mixed_generation_detected",
                 "Restart Required",
+                candidate.generation_id,
+            )
+        if self._finalize_states(prior_states):
+            return self._failed(
+                "finalize_failed", "Restart required", "finalize",
+                "participant_finalize_failed", "Restart Required",
                 candidate.generation_id,
             )
         compatibility = next(
@@ -225,6 +237,16 @@ class RuntimeGenerationCoordinator:
         for participant, token in reversed(list(zip(self._participants, prepared))):
             try:
                 participant.abort(token)
+            except Exception:
+                failed = True
+        return failed
+
+    @staticmethod
+    def _finalize_states(prior_states) -> bool:  # noqa: ANN001
+        failed = False
+        for participant, prior in reversed(prior_states):
+            try:
+                participant.finalize(prior)
             except Exception:
                 failed = True
         return failed

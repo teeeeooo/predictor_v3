@@ -1,6 +1,7 @@
 """Prediction worker for batch prediction runs."""
 
 from PySide6.QtCore import QObject, Signal, Slot
+from dataclasses import replace
 
 from apps.predict.ports.prediction_execution_port import (
     PredictionJob,
@@ -42,6 +43,8 @@ class PredictionWorker(QObject):
                     return
 
                 result = self._service.predict_one(request)
+                if result.context is None:
+                    result = replace(result, context=request.context)
                 self.row_result.emit(result)
                 if result.status == "complete":
                     complete += 1

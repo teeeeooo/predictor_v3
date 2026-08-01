@@ -1,7 +1,6 @@
 """Behavioral proof that Predict execution semantics move with generation."""
 
 from dataclasses import replace
-from pathlib import Path
 
 from apps.common.runtime_generation import GenerationSnapshot
 from apps.predict.application.models import PredictionInputRequest, PredictionServiceResult
@@ -14,12 +13,11 @@ from apps.predict.services.prediction_service import PredictionService
 from apps.predict.state.case_row import CaseRow
 from core.data_definition.contract import (
     bootstrap_manifest,
-    generate_projections,
-    scoped_fingerprints,
 )
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
 )
+from tests.helpers.generation_authority import repository_issued_generation
 
 
 class _ColumnModel:
@@ -31,12 +29,7 @@ class _ColumnModel:
 
 
 def _snapshot(manifest) -> GenerationSnapshot:  # noqa: ANN001
-    return GenerationSnapshot(
-        manifest,
-        generate_projections(manifest),
-        scoped_fingerprints(manifest),
-        Path("."),
-    )
+    return repository_issued_generation(manifest)
 
 
 def _changed_manifest():  # noqa: ANN201

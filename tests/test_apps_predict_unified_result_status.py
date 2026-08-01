@@ -13,12 +13,30 @@ from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
+from apps.predict.ui.status_widgets import prediction_summary_text
 from apps.predict.ui.workspace import PredictWorkspace
+from tests.helpers.predict_results import accept_result_fixtures
 
 
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+def test_terminal_summary_exposes_partial_and_unresolved_dispositions():
+    text = prediction_summary_text(
+        PredictionRunSummary(
+            total=3,
+            complete=1,
+            partial=1,
+            error=0,
+            invalid=0,
+            unresolved=1,
+        )
+    )
+
+    assert "일부 결과 1건" in text
+    assert "미반영 1건" in text
 
 
 @pytest.fixture(autouse=True)
@@ -43,22 +61,23 @@ def _column_index(model: CaseTableModel, key: str) -> int:
     return next(index for index, column in enumerate(model.columns) if column.key == key)
 
 
-def test_complete_result_displays_result_status_and_message_columns():
+def test_complete_typed_result_displays_status_and_leaves_virtual_metric_empty():
     _app()
     session = _session_with_rows()
     case_id = session.case_order[0]
-    session.set_result(
+    accept_result_fixtures(
+        session,
         ResultRow(
             case_id=case_id,
             status="complete",
-            result_values={"cooling_power": "2.06", "eer": "3.45"},
+            result_values={"cooling_power": "2.06"},
             message="done",
-        )
+        ),
     )
     model = CaseTableModel(session)
 
     assert model.cell_value(0, _column_index(model, "cooling_power")) == "2.06"
-    assert model.cell_value(0, _column_index(model, "eer")) == "3.45"
+    assert model.cell_value(0, _column_index(model, "eer")) == ""
     assert model.cell_value(0, _column_index(model, "status")) == "complete"
     assert model.data(
         model.index(0, _column_index(model, "status")), Qt.DisplayRole
@@ -74,10 +93,13 @@ def test_error_invalid_and_partial_status_render_background_and_tooltip():
         ("invalid", "bad input"),
         ("partial", "missing target"),
     )
-    for row, (status, message) in enumerate(statuses):
-        session.set_result(
+    accept_result_fixtures(
+        session,
+        *(
             ResultRow(case_id=session.case_order[row], status=status, message=message)
-        )
+            for row, (status, message) in enumerate(statuses)
+        ),
+    )
     model = CaseTableModel(session)
     status_col = _column_index(model, "status")
 
@@ -91,8 +113,11 @@ def test_error_invalid_and_partial_status_render_background_and_tooltip():
 def test_summary_counts_and_workspace_badge_include_partial_warnings():
     _app()
     session = _session_with_rows()
-    session.set_result(
-        ResultRow(case_id=session.case_order[0], status="partial", message="missing target")
+    accept_result_fixtures(
+        session,
+        ResultRow(
+            case_id=session.case_order[0], status="partial", message="missing target"
+        ),
     )
     workspace = PredictWorkspace(session=session)
 
@@ -106,12 +131,13 @@ def test_summary_counts_and_workspace_badge_include_partial_warnings():
 def test_cancelled_status_counts_and_renders_as_warning():
     _app()
     session = _session_with_rows()
-    session.set_result(
+    accept_result_fixtures(
+        session,
         ResultRow(
             case_id=session.case_order[0],
             status="cancelled",
             message="Prediction cancelled.",
-        )
+        ),
     )
     model = CaseTableModel(session)
     workspace = PredictWorkspace(session=session)
@@ -166,7 +192,7 @@ def test_running_callbacks_keep_progress_summary_badge_and_terminal_projection_a
     assert "실행 중 2건" in workspace.result_badge.text()
     assert workspace.status_label.text() == "예측 실행 중..."
 
-    session.set_result(ResultRow(case_id=first, status="complete"))
+    accept_result_fixtures(session, ResultRow(case_id=first, status="complete"))
     callbacks["result_callback"](session.result_for_case(first))
     callbacks["progress_callback"](
         PredictionProgress(
@@ -183,7 +209,9 @@ def test_running_callbacks_keep_progress_summary_badge_and_terminal_projection_a
     assert "1/2" in workspace.status_label.text()
     assert session.result_for_case(invalid).status == "invalid"
 
-    session.set_result(ResultRow(case_id=second, status="error", message="row failed"))
+    accept_result_fixtures(
+        session, ResultRow(case_id=second, status="error", message="row failed")
+    )
     callbacks["result_callback"](session.result_for_case(second))
     callbacks["progress_callback"](
         PredictionProgress(
@@ -216,13 +244,14 @@ def test_copy_includes_selected_result_status_values_and_mutation_is_blocked():
     _app()
     session = _session_with_rows()
     case_id = session.case_order[0]
-    session.set_result(
+    accept_result_fixtures(
+        session,
         ResultRow(
             case_id=case_id,
-            status="error",
+            status="partial",
             result_values={"cooling_power": "2.0"},
             message="missing model",
-        )
+        ),
     )
     model = CaseTableModel(session)
     view = CaseTableView()
@@ -235,11 +264,11 @@ def test_copy_includes_selected_result_status_values_and_mutation_is_blocked():
     selection.select(model.index(0, status), QItemSelectionModel.Select)
     selection.select(model.index(0, message), QItemSelectionModel.Select)
 
-    assert view.copy_selection_tsv().endswith("error\tmissing model\n")
+    assert view.copy_selection_tsv().endswith("partial\tmissing model\n")
     assert view.clear_selection() == 0
     assert view.paste_tsv_at_selection("changed\tchanged\tchanged\n") == 0
-    assert model.cell_value(0, power) == "2.0"
-    assert model.cell_value(0, status) == "error"
+    assert model.cell_value(0, power) == "2"
+    assert model.cell_value(0, status) == "partial"
 
 
 def test_refresh_case_id_emits_row_refresh_for_result_status_change():
@@ -253,7 +282,7 @@ def test_refresh_case_id_emits_row_refresh_for_result_status_change():
             (top_left.row(), bottom_right.column())
         )
     )
-    session.set_result(ResultRow(case_id=case_id, status="complete"))
+    accept_result_fixtures(session, ResultRow(case_id=case_id, status="complete"))
 
     model.refresh_case_id(case_id)
 

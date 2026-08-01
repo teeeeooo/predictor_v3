@@ -1,7 +1,6 @@
 """Predict-owned canonical identity descriptor regressions."""
 
 from dataclasses import FrozenInstanceError, asdict, replace
-from pathlib import Path
 import subprocess
 import sys
 
@@ -15,20 +14,14 @@ from apps.predict.schema.case_table_schema_adapter import (
 )
 from core.data_definition.contract import (
     bootstrap_manifest,
-    generate_projections,
     manifest_payload,
-    scoped_fingerprints,
 )
 from core.predictor_schema.catalog_v2 import REQUIRED_HEADERS
+from tests.helpers.generation_authority import repository_issued_generation
 
 
 def _snapshot(manifest) -> GenerationSnapshot:  # noqa: ANN001
-    return GenerationSnapshot(
-        manifest,
-        generate_projections(manifest),
-        scoped_fingerprints(manifest),
-        Path("."),
-    )
+    return repository_issued_generation(manifest)
 
 
 def test_descriptor_carries_canonical_identity_and_current_generation_metadata():
@@ -174,14 +167,14 @@ def test_generation_rename_order_visibility_show_hide_and_add_follow_identity():
 
 
 @pytest.mark.parametrize(
-    ("mutation", "message"),
+    "mutation",
     (
-        ("duplicate", "identity is duplicated"),
-        ("missing", "identity is missing"),
-        ("incomplete_projection", "generated projection is incomplete"),
+        "duplicate",
+        "missing",
+        "incomplete_projection",
     ),
 )
-def test_invalid_identity_or_projection_fails_fast(mutation, message):
+def test_replaced_generation_cannot_bypass_repository_authority(mutation):
     snapshot = _snapshot(bootstrap_manifest())
     if mutation == "duplicate":
         manifest = replace(
@@ -212,7 +205,7 @@ def test_invalid_identity_or_projection_fails_fast(mutation, message):
         )
         invalid = replace(snapshot, projections=projections)
 
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(ValueError, match="repository-issued generation"):
         build_predict_runtime_snapshot(invalid)
 
 
@@ -231,6 +224,12 @@ def test_standalone_and_embedded_composition_share_descriptor_projection():
     assert standalone.columns == embedded.columns
     assert standalone.runtime_snapshot.column_descriptors == (
         embedded.runtime_snapshot.column_descriptors
+    )
+    assert standalone.runtime_snapshot.target_descriptors == (
+        embedded.runtime_snapshot.target_descriptors
+    )
+    assert standalone.prediction_controller.execution_environment == (
+        embedded.prediction_controller.execution_environment
     )
     assert {
         item.feature_identity
@@ -261,9 +260,31 @@ def test_runtime_descriptor_is_qt_free_and_does_not_change_serialized_shapes():
         "import compatibility_predict_runtime_snapshot; "
         "from apps.predict.schema.case_table_schema_adapter "
         "import build_case_table_column_schema; "
+        "from apps.predict.application.result_contract "
+        "import PredictionExecutionContext; "
+        "from apps.predict.application.target_outcome import TargetOutcome; "
+        "from apps.predict.state.result_row import ResultRow; "
         "runtime = compatibility_predict_runtime_snapshot(); "
         "assert runtime.column_descriptors; "
+        "assert runtime.target_descriptors; "
         "assert build_case_table_column_schema(runtime.column_descriptors); "
         "assert 'PySide6' not in sys.modules"
     )
     subprocess.run([sys.executable, "-B", "-c", code], check=True)
+
+
+def test_unknown_active_target_identity_fails_without_inventing_a_unit():
+    manifest = bootstrap_manifest()
+    target = manifest.targets[0]
+    unknown = replace(target, identity="unknown-active-target")
+    candidate = replace(
+        manifest,
+        targets=(unknown, *manifest.targets[1:]),
+        ordering=replace(
+            manifest.ordering,
+            targets=(unknown.identity, *manifest.ordering.targets[1:]),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="canonical unit is missing"):
+        build_predict_runtime_snapshot(_snapshot(candidate))
