@@ -100,6 +100,7 @@ class PredictRuntimeParticipant:
             model_file=self._model_file,
             model_lifecycle=controller.model_lifecycle,
             model_identity=model_identity,
+            workspace_state=self._composition.workspace_state,
         )
         migrated_results = _migrated_result_rows(
             self._composition.session, self._active, candidate.snapshot

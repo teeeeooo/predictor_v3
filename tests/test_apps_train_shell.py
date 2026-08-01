@@ -15,6 +15,10 @@ from PySide6.QtWidgets import (
 )
 
 from apps.predict.application.models import PredictionModelStatus
+from apps.predict.application.workspace_state import (
+    PredictWorkspaceState,
+    WorkspaceSurface,
+)
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.services.prediction_service import PredictionService
 from apps.predict.ui.shell import PredictShell
@@ -169,6 +173,7 @@ def _cleanup_qt_widgets():
 def test_train_shell_tabs_and_predict_workspace_reuse():
     _app()
     shell = _train_shell()
+    standalone = PredictShell()
 
     assert shell.tabs.count() == 4
     assert [shell.tabs.tabText(index) for index in range(4)] == [
@@ -180,6 +185,10 @@ def test_train_shell_tabs_and_predict_workspace_reuse():
     assert isinstance(shell.tabs.widget(0), PredictWorkspace)
     assert isinstance(shell.tabs.widget(2), DataDefinitionPanel)
     assert isinstance(shell.tabs.widget(3), DataMappingPanel)
+    for workspace in (standalone.workspace, shell.predict_workspace):
+        assert isinstance(workspace.workspace_state, PredictWorkspaceState)
+        assert workspace.workspace_state.current_surface is WorkspaceSurface.INPUT
+        assert workspace.surface_host.stack.count() == 2
 
 
 def test_predict_shell_keeps_standalone_title_and_status_strip():

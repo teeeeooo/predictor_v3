@@ -1,0 +1,234 @@
+"""Shared Predict Layout B composition and command routing tests."""
+
+import os
+
+import pytest
+from PySide6.QtCore import QItemSelectionModel, Qt
+from PySide6.QtWidgets import QApplication
+
+from apps.predict.application.models import PredictionModelStatus
+from apps.predict.application.prediction_usecase import PredictionRunSummary
+from apps.predict.application.workspace_state import WorkspaceSurface
+from apps.predict.composition import build_predict_workspace_composition
+from apps.predict.state.result_row import ResultRow
+from apps.predict.ui.workspace import PredictWorkspace
+from tests.helpers.predict_results import accept_result_fixtures
+
+
+class _LoadedPredictionService:
+    def model_status(self):
+        return PredictionModelStatus("fake", "loaded")
+
+
+def _app() -> QApplication:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    return QApplication.instance() or QApplication([])
+
+
+def _workspace() -> PredictWorkspace:
+    return PredictWorkspace(
+        composition=build_predict_workspace_composition(
+            prediction_service=_LoadedPredictionService(),
+        )
+    )
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_qt_widgets():
+    yield
+    app = QApplication.instance()
+    if app is None:
+        return
+    for widget in QApplication.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    app.processEvents()
+
+
+def test_layout_b_starts_on_input_and_both_models_read_one_session():
+    _app()
+    workspace = _workspace()
+
+    assert workspace.workspace_state.current_surface is WorkspaceSurface.INPUT
+    assert workspace.surface_host.stack.currentIndex() == 0
+    assert workspace.case_model._session is workspace.session
+    assert workspace.result_review_model.projection.session is workspace.session
+    assert workspace.result_review_model.rowCount() == workspace.case_model.rowCount()
+
+
+def test_stable_current_case_transfers_but_surface_selections_remain_local():
+    _app()
+    workspace = _workspace()
+    input_selection = workspace.case_table.selectionModel()
+    input_selection.setCurrentIndex(
+        workspace.case_model.index(1, 2),
+        QItemSelectionModel.ClearAndSelect,
+    )
+    input_selection.select(
+        workspace.case_model.index(2, 3),
+        QItemSelectionModel.Select,
+    )
+    input_selected = {(index.row(), index.column()) for index in input_selection.selectedIndexes()}
+
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    result_selection = workspace.result_review_table.selectionModel()
+
+    assert result_selection.currentIndex().row() == 1
+    assert workspace.workspace_state.selected_case_id == workspace.session.case_order[1]
+    result_selection.setCurrentIndex(
+        workspace.result_review_model.index(0, 0),
+        QItemSelectionModel.NoUpdate,
+    )
+    result_selection.select(
+        workspace.result_review_model.index(0, 0),
+        QItemSelectionModel.Select | QItemSelectionModel.Rows,
+    )
+    assert {(index.row(), index.column()) for index in input_selection.selectedIndexes()} == input_selected
+
+    workspace._switch_surface(WorkspaceSurface.INPUT)
+    assert input_selection.currentIndex().row() == 0
+    assert result_selection.selectedRows()
+
+
+def test_surfaces_keep_independent_horizontal_scroll_without_frozen_views():
+    _app()
+    workspace = _workspace()
+    input_scroll = workspace.case_table.horizontalScrollBar()
+    result_scroll = workspace.result_review_table.horizontalScrollBar()
+    input_scroll.setRange(0, 80)
+    result_scroll.setRange(0, 120)
+    input_scroll.setValue(21)
+    result_scroll.setValue(73)
+
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    workspace._switch_surface(WorkspaceSurface.INPUT)
+
+    assert input_scroll is not result_scroll
+    assert input_scroll.value() == 21
+    assert result_scroll.value() == 73
+    assert workspace.surface_host.stack.count() == 2
+
+
+def test_deleted_selected_case_is_reconciled_without_dangling_identity():
+    _app()
+    workspace = _workspace()
+    deleted_case_id = workspace.session.case_order[1]
+    selection = workspace.case_table.selectionModel()
+    selection.setCurrentIndex(
+        workspace.case_model.index(1, 0),
+        QItemSelectionModel.ClearAndSelect,
+    )
+
+    workspace._delete_selected_or_last_row()
+
+    assert deleted_case_id not in workspace.session.case_order
+    assert workspace.workspace_state.selected_case_id in workspace.session.case_order
+    assert workspace.result_review_model.rowCount() == workspace.case_model.rowCount()
+
+
+def test_result_surface_blocks_authoring_and_routes_full_row_copy():
+    _app()
+    workspace = _workspace()
+    initial_rows = workspace.case_model.rowCount()
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    selection = workspace.result_review_table.selectionModel()
+    selection.select(
+        workspace.result_review_model.index(0, 0),
+        QItemSelectionModel.Select | QItemSelectionModel.Rows,
+    )
+
+    workspace._append_row()
+    workspace._delete_selected_or_last_row()
+    workspace._reset_rows()
+    workspace._copy_results_selection()
+
+    copied = QApplication.clipboard().text()
+    assert workspace.case_model.rowCount() == initial_rows
+    assert copied.splitlines()[0].split("\t")[:10] == [
+        "Case", "상태", "냉방능력", "난방능력", "사양 요약",
+        "EER", "COP", "냉방 주파수", "난방 주파수", "냉매량",
+    ]
+    assert "stable case identity" in copied.splitlines()[0].split("\t")[10:]
+    assert workspace.command_bar.copy_results_button.text() == "결과 전체 행 복사"
+
+
+def test_input_copy_keeps_selected_cell_behavior():
+    _app()
+    workspace = _workspace()
+    index = workspace.case_model.index(0, 0)
+    workspace.case_table.selectionModel().setCurrentIndex(
+        index,
+        QItemSelectionModel.ClearAndSelect,
+    )
+
+    workspace._copy_results_selection()
+
+    assert QApplication.clipboard().text() == workspace.case_table.copy_selection_tsv()
+    assert workspace.command_bar.copy_results_button.text() == "선택 셀 복사"
+
+
+def test_progressive_result_refreshes_visible_readonly_projection_without_switching():
+    _app()
+    workspace = _workspace()
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    case_id = workspace.session.case_order[0]
+    result = ResultRow(case_id=case_id, status="error", message="bounded issue")
+    accept_result_fixtures(workspace.session, result)
+
+    workspace._refresh_result_row(result)
+
+    assert workspace.workspace_state.current_surface is WorkspaceSurface.RESULT
+    assert workspace.result_review_model.data(
+        workspace.result_review_model.index(0, 1), Qt.DisplayRole
+    ) != "대기"
+    assert workspace.session.result_for_case(case_id).message == "bounded issue"
+
+
+def test_run_surface_policy_is_shared_with_workspace_callbacks(monkeypatch):
+    _app()
+    workspace = _workspace()
+    callbacks = {}
+
+    def start_all(**received):
+        callbacks.update(received)
+        return PredictionRunSummary(total=3, complete=0, error=0, invalid=0)
+
+    monkeypatch.setattr(workspace.prediction_controller, "start_all", start_all)
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    workspace._run_prediction()
+
+    assert workspace.workspace_state.run_start_surface is WorkspaceSurface.RESULT
+    assert workspace.workspace_state.current_surface is WorkspaceSurface.RESULT
+    workspace._switch_surface(WorkspaceSurface.INPUT)
+    callbacks["finished_callback"](
+        PredictionRunSummary(total=3, complete=1, partial=0, error=0, invalid=0)
+    )
+    assert workspace.workspace_state.current_surface is WorkspaceSurface.INPUT
+
+    workspace._run_prediction()
+    callbacks["finished_callback"](
+        PredictionRunSummary(total=3, complete=0, partial=1, error=0, invalid=0)
+    )
+    assert workspace.workspace_state.current_surface is WorkspaceSurface.RESULT
+
+
+def test_runtime_rebind_preserves_workspace_state_and_replaces_both_models():
+    _app()
+    workspace = _workspace()
+    original_state = workspace.workspace_state
+    selected_case_id = workspace.session.case_order[1]
+    workspace.workspace_state.select_case(selected_case_id, workspace.session.case_order)
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    replacement = build_predict_workspace_composition(
+        session=workspace.session,
+        initial_empty_rows=0,
+        prediction_service=_LoadedPredictionService(),
+    )
+
+    workspace.apply_runtime_composition(replacement)
+
+    assert workspace.workspace_state is original_state
+    assert workspace.workspace_state.current_surface is WorkspaceSurface.RESULT
+    assert workspace.workspace_state.selected_case_id == selected_case_id
+    assert workspace.case_model.columns == replacement.columns
+    assert workspace.result_review_model.projection is replacement.result_review_projection

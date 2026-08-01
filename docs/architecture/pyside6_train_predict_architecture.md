@@ -859,6 +859,30 @@ row. The application clipboard document emits selected rows in canonical order,
 keeps the visible ten fields first, and appends hidden raw power/source and
 execution provenance. CSV/XLSX file publication is not part of this boundary.
 
+### 8.6 Shared Layout B workspace state
+
+`apps.predict.application.workspace_state.PredictWorkspaceState` owns the
+Qt-independent Layout B workflow state. It retains only the current Input or
+Result surface, one selected stable `case_id`, and run-local surface evidence:
+the surface visible at run start and the last explicit user choice during that
+run. It never stores case values, result rows, table indexes, or widget state.
+
+A run starts without changing the current surface. Progressive canonical result
+acceptance only notifies the Result Review model; it does not navigate. At the
+single terminal callback, complete plus partial greater than zero may reveal
+Result, unless the user explicitly selected Input during the run. A validation-
+only terminal returns to Input, while error/invalid/cancel-only terminal states
+do not force Result. Clearing the run-local evidence at every terminal/abort and
+capturing it anew at the next start prevents policy leakage between runs.
+
+The state owner is part of `PredictWorkspaceComposition`. Runtime generation
+prepare passes the same owner into the destination composition, while
+`PredictWorkspace` retains it across view/model rebinding. Compatible
+replacement therefore keeps current surface and a surviving selected identity;
+case deletion reconciles a missing identity to the first canonical case or
+`None`. Commit and rollback continue to use the existing session projection and
+runtime participant authorities.
+
 ## 9. Table Model Specification
 
 ### 9.1 Unified case table model
@@ -930,10 +954,30 @@ from the Qt-free projection. It is selection-only and owns no result state.
 EER/COP render with exactly two decimals, unavailable values render as `—`, and
 the full specification summary is returned for both display and tooltip. The
 view keeps the cell single-line with right elision, selects full rows, and sends
-the application-owned full-row TSV document to the clipboard. Slice 5 owns
-placing this shared seam into standalone and embedded Layout B compositions.
+the application-owned full-row TSV document to the clipboard. The shared
+workspace places this seam into both standalone and Train-embedded Predict.
 
-### 9.4 Historical split table foundation
+### 9.4 Layout B presentation composition
+
+`PredictLayoutBSurfaces` keeps Input Authoring and Result Review as two cached
+pages in one stack and displays one page across the full main-table area. The
+surface buttons make the current page and manual transition explicit. There is
+no split-table synchronization and no frozen-column auxiliary view; each table
+keeps its own cell/multi-selection, focus, and horizontal scroll state.
+
+`WorkspaceCaseSelectionBridge` maps only each table's current row to the shared
+stable `case_id`. Applying that identity to the other table changes its current
+row with `NoUpdate`, so its local selection is not copied. `WorkspaceModelGroup`
+brackets canonical row add/remove/reset notifications for both read models,
+without owning data. Result callbacks notify both models from the same canonical
+session.
+
+Global run, cancel, refresh, and reload owners remain unchanged. The command bar
+disables add/delete/reset/paste outside Input and routes copy by active surface:
+Input uses the existing selected-cell TSV behavior; Result uses the Slice 4
+header-bearing full-row clipboard document with hidden raw provenance.
+
+### 9.5 Historical split table foundation
 
 The former split-table files were retired after the unified `CaseTableModel` /
 `CaseTableView` path reached behavior parity:
