@@ -18,8 +18,8 @@ from apps.predict.application.result_contract import (
 from apps.predict.application.runtime_snapshot import (
     PredictRuntimeSnapshot,
     compatibility_predict_runtime_snapshot,
+    validate_runtime_target_contract,
 )
-from apps.predict.application.target_outcome import validate_runtime_target_contract
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import (
     PredictionController,

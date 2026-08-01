@@ -345,10 +345,14 @@ typed results, destination Target descriptors, execution semantics, and loaded
 model identity. Result keys migrate only through stable Result Feature identity.
 The session validates the current canonical source, source-to-destination result
 lineage, destination contract, revision, and case structure before any mutation.
-The destination runtime snapshot is the Target-contract owner: active Target
-names, Target/result-key pairs, typed descriptors, and active Result Feature
-descriptors must be non-empty, unique, complete, and mutually consistent before
-artifact issue, even when the session has zero results.
+The destination runtime snapshot is the generation-bound projection owner, but
+its typed Target descriptors are not self-authoritative. It retains the
+Data Definition Target registry's immutable ordered `RuntimeTarget` projection;
+the application validator derives expected identity, ML name, Result Feature,
+current Feature-owned key, the closed canonical unit, and fixed model-prediction
+source from those existing owners. Supplied descriptors, active Target names,
+and Target/result-key pairs must match that derived contract exactly before
+composition or artifact issue, even when the session has zero results.
 A presentation-only projection may keep a valid result current; a semantic
 projection preserves its typed evidence as stale. Caller-constructed, altered,
 or replayed projection DTOs are not install artifacts.
@@ -715,6 +719,10 @@ No PySide6 dependency.
 The current canonical unit catalog is a closed Predict application mapping for
 the five validated stable Target identities (`W`, `Hz`, and `kg`). An unknown
 active Target identity fails runtime composition rather than inventing a unit.
+The unit and fixed `model_prediction` source are bound to the authoritative
+runtime Target identity; a non-empty descriptor value is not acceptance
+evidence. `PredictionTargetDescriptor` consumes this projection and never owns
+Target semantics.
 Adding unit authoring to Feature Definition is a separately approved schema
 change and is not implied by this contract.
 

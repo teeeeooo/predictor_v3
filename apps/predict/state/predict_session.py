@@ -13,10 +13,8 @@ from apps.predict.application.result_contract import (
     execution_semantics_from_runtime,
 )
 from apps.predict.application.result_validation import canonical_result_rejection_reason
-from apps.predict.application.target_outcome import (
-    PredictionTargetDescriptor,
-    validate_runtime_target_contract,
-)
+from apps.predict.application.runtime_snapshot import validate_runtime_target_contract
+from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.case_store import CaseStore
 from apps.predict.state.result_state_boundary import (
     AllowedExecution,

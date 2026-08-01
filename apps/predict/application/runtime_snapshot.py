@@ -11,8 +11,8 @@ from apps.predict.application.runtime_columns import (
     build_runtime_column_descriptors,
 )
 from apps.predict.application.target_outcome import (
+    MODEL_PREDICTION_VALUE_SOURCE,
     PredictionTargetDescriptor,
-    validate_runtime_target_contract,
 )
 from core.data_definition.contract import (
     bootstrap_manifest,
@@ -24,7 +24,10 @@ from core.data_definition.derived.evaluator import (
     evaluation_snapshot,
 )
 from core.data_definition.one_hot import OneHotRuntimeSnapshot
-from core.data_definition.target_registry.runtime import model_registry_snapshot
+from core.data_definition.target_registry.runtime import (
+    RuntimeTarget,
+    model_registry_snapshot,
+)
 from core.predictor_schema.catalog_v2 import PredictSchemaV2Row
 
 
@@ -40,6 +43,7 @@ class PredictRuntimeSnapshot:
     derived: DerivedEvaluationSnapshot
     one_hot: OneHotRuntimeSnapshot
     active_targets: tuple[str, ...]
+    target_registry_targets: tuple[RuntimeTarget, ...]
     target_result_keys: tuple[tuple[str, str], ...]
     target_descriptors: tuple[PredictionTargetDescriptor, ...]
     zero_fill_policies: tuple[tuple[str, str], ...]
@@ -75,34 +79,35 @@ def build_predict_runtime_snapshot(
         generation.projections.predict,
     )
     registry = model_registry_snapshot(manifest)
-    target_by_id = {item.identity: item for item in manifest.targets if item.active}
     feature_by_id = {item.identity: item for item in manifest.features}
-    ordered_targets = tuple(
-        target_by_id[identity]
-        for identity in manifest.ordering.targets
-        if identity in target_by_id
-    )
-    target_result_keys = tuple(
-        (target.ml_name, feature_by_id[target.feature_identity].column_key)
-        for target in ordered_targets
-    )
     runtime_target_by_id = {
         target.identity: target
         for group in registry.groups
         for target in group.targets
     }
+    ordered_targets = tuple(
+        runtime_target_by_id[identity]
+        for identity in registry.target_presentation_order
+        if identity in runtime_target_by_id
+    )
+    target_result_keys = tuple(
+        (
+            target.ml_name,
+            feature_by_id[target.result_feature_identity].column_key,
+        )
+        for target in ordered_targets
+    )
     target_descriptors = tuple(
         PredictionTargetDescriptor(
             target_identity=target.identity,
-            result_feature_identity=target.feature_identity,
+            result_feature_identity=target.result_feature_identity,
             ml_name=target.ml_name,
-            result_key=feature_by_id[target.feature_identity].column_key,
+            result_key=feature_by_id[target.result_feature_identity].column_key,
             canonical_unit=_canonical_target_unit(target.identity),
         )
         for target in ordered_targets
-        if target.identity in runtime_target_by_id
     )
-    if len(target_descriptors) != len(ordered_targets):
+    if len(ordered_targets) != len(registry.target_presentation_order):
         raise ValueError("Predict target descriptor projection is incomplete")
     target_identities = tuple(item.target_identity for item in target_descriptors)
     if len(target_identities) != len(set(target_identities)):
@@ -122,6 +127,7 @@ def build_predict_runtime_snapshot(
         derived=evaluation_snapshot(manifest),
         one_hot=generation.projections.one_hot_runtime,
         active_targets=registry.active_target_names,
+        target_registry_targets=ordered_targets,
         target_result_keys=target_result_keys,
         target_descriptors=target_descriptors,
         zero_fill_policies=zero_fill,
@@ -145,6 +151,68 @@ def compatibility_predict_runtime_snapshot() -> PredictRuntimeSnapshot:
         scoped_fingerprints(manifest),
         Path("."),
     ))
+
+
+def validate_runtime_target_contract(runtime: PredictRuntimeSnapshot) -> None:
+    """Bind supplied descriptors to authoritative generation/runtime metadata."""
+    descriptors = tuple(runtime.target_descriptors)
+    authoritative = tuple(runtime.target_registry_targets)
+    if not descriptors or not authoritative:
+        raise ValueError("Predict runtime Target contract is empty")
+    required_fields = tuple(
+        (
+            item.target_identity,
+            item.result_feature_identity,
+            item.ml_name,
+            item.result_key,
+            item.canonical_unit,
+            item.value_source,
+        )
+        for item in descriptors
+    )
+    if any(not all(fields) for fields in required_fields):
+        raise ValueError("Predict runtime Target descriptor is incomplete")
+    for index, label in (
+        (0, "Target identity"),
+        (1, "result Feature identity"),
+        (2, "Target ML name"),
+        (3, "result key"),
+    ):
+        values = tuple(fields[index] for fields in required_fields)
+        if len(values) != len(set(values)):
+            raise ValueError(f"Predict runtime {label} is duplicated")
+    authority_ids = tuple(item.identity for item in authoritative)
+    if len(authority_ids) != len(set(authority_ids)):
+        raise ValueError("Predict authoritative Target identity is duplicated")
+    columns = {item.feature_identity: item for item in runtime.column_descriptors}
+    expected = []
+    for target in authoritative:
+        column = columns.get(target.result_feature_identity)
+        if column is None or column.role != "result" or not column.active:
+            raise ValueError(
+                "Predict authoritative Target/result Feature projection is invalid"
+            )
+        expected.append(PredictionTargetDescriptor(
+            target_identity=target.identity,
+            result_feature_identity=target.result_feature_identity,
+            ml_name=target.ml_name,
+            result_key=column.key,
+            canonical_unit=_canonical_target_unit(target.identity),
+            value_source=MODEL_PREDICTION_VALUE_SOURCE,
+        ))
+    expected_descriptors = tuple(expected)
+    expected_targets = tuple(item.ml_name for item in expected_descriptors)
+    expected_keys = tuple(
+        (item.ml_name, item.result_key) for item in expected_descriptors
+    )
+    if tuple(runtime.active_targets) != expected_targets:
+        raise ValueError("Predict active Target projection is not authoritative")
+    if tuple(runtime.target_result_keys) != expected_keys:
+        raise ValueError("Predict Target/result-key projection is not authoritative")
+    if descriptors != expected_descriptors:
+        raise ValueError(
+            "Predict Target descriptors do not match authoritative metadata"
+        )
 
 
 _TARGET_UNIT_BY_ID = {

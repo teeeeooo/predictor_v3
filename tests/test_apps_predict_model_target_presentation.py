@@ -92,6 +92,16 @@ def _runtime(base, generation_id, targets):  # noqa: ANN001, ANN202
         replace(descriptors_by_key[result_key], ml_name=target)
         for target, result_key, _label in targets
     )
+    registry_target_by_id = {
+        item.identity: item for item in base.target_registry_targets
+    }
+    target_registry_targets = tuple(
+        replace(
+            registry_target_by_id[descriptor.target_identity],
+            ml_name=descriptor.ml_name,
+        )
+        for descriptor in target_descriptors
+    )
     return replace(
         base,
         generation_id=generation_id,
@@ -103,6 +113,7 @@ def _runtime(base, generation_id, targets):  # noqa: ANN001, ANN202
             for item in base.column_descriptors
         ),
         active_targets=tuple(target for target, _key, _label in targets),
+        target_registry_targets=target_registry_targets,
         target_result_keys=tuple(
             (target, result_key) for target, result_key, _label in targets
         ),

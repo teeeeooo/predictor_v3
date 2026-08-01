@@ -49,7 +49,13 @@ validates the destination Target contract for zero-result migration, couples
 supported case removal to dependent result/run cleanup, and releases sealed
 migration/snapshot artifacts on abort, rollback, and successful coordinator or
 standalone finalization. Standalone and embedded presentation fixtures now use
-coherent typed Target descriptors. The Draft remains open pending a fresh
+coherent typed Target descriptors. The destination descriptor follow-up
+additionally binds every supplied
+identity/name/Feature/key/unit/source tuple to the existing immutable Target
+registry, canonical Feature column, five-target unit seam, and fixed model
+prediction source. Self-consistent forged metadata now fails before composition
+or zero-result artifact issue without changing current execution eligibility.
+The Draft remains open pending a fresh
 independent exact-head re-audit. The Auditor
 owns complete adjacent-owner review, focused validation, and only then guarded
 merge/closeout. Slice 3 does not start from this Worker branch.
