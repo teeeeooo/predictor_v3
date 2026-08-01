@@ -15,7 +15,7 @@ from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.status_widgets import prediction_summary_text
 from apps.predict.ui.workspace import PredictWorkspace
-from tests.helpers.predict_results import install_projection_results
+from tests.helpers.predict_results import accept_result_fixtures
 
 
 def _app() -> QApplication:
@@ -61,23 +61,23 @@ def _column_index(model: CaseTableModel, key: str) -> int:
     return next(index for index, column in enumerate(model.columns) if column.key == key)
 
 
-def test_complete_result_displays_result_status_and_message_columns():
+def test_complete_typed_result_displays_status_and_leaves_virtual_metric_empty():
     _app()
     session = _session_with_rows()
     case_id = session.case_order[0]
-    install_projection_results(
+    accept_result_fixtures(
         session,
         ResultRow(
             case_id=case_id,
             status="complete",
-            result_values={"cooling_power": "2.06", "eer": "3.45"},
+            result_values={"cooling_power": "2.06"},
             message="done",
         ),
     )
     model = CaseTableModel(session)
 
     assert model.cell_value(0, _column_index(model, "cooling_power")) == "2.06"
-    assert model.cell_value(0, _column_index(model, "eer")) == "3.45"
+    assert model.cell_value(0, _column_index(model, "eer")) == ""
     assert model.cell_value(0, _column_index(model, "status")) == "complete"
     assert model.data(
         model.index(0, _column_index(model, "status")), Qt.DisplayRole
@@ -93,7 +93,7 @@ def test_error_invalid_and_partial_status_render_background_and_tooltip():
         ("invalid", "bad input"),
         ("partial", "missing target"),
     )
-    install_projection_results(
+    accept_result_fixtures(
         session,
         *(
             ResultRow(case_id=session.case_order[row], status=status, message=message)
@@ -113,7 +113,7 @@ def test_error_invalid_and_partial_status_render_background_and_tooltip():
 def test_summary_counts_and_workspace_badge_include_partial_warnings():
     _app()
     session = _session_with_rows()
-    install_projection_results(
+    accept_result_fixtures(
         session,
         ResultRow(
             case_id=session.case_order[0], status="partial", message="missing target"
@@ -131,7 +131,7 @@ def test_summary_counts_and_workspace_badge_include_partial_warnings():
 def test_cancelled_status_counts_and_renders_as_warning():
     _app()
     session = _session_with_rows()
-    install_projection_results(
+    accept_result_fixtures(
         session,
         ResultRow(
             case_id=session.case_order[0],
@@ -192,7 +192,7 @@ def test_running_callbacks_keep_progress_summary_badge_and_terminal_projection_a
     assert "실행 중 2건" in workspace.result_badge.text()
     assert workspace.status_label.text() == "예측 실행 중..."
 
-    install_projection_results(session, ResultRow(case_id=first, status="complete"))
+    accept_result_fixtures(session, ResultRow(case_id=first, status="complete"))
     callbacks["result_callback"](session.result_for_case(first))
     callbacks["progress_callback"](
         PredictionProgress(
@@ -209,7 +209,7 @@ def test_running_callbacks_keep_progress_summary_badge_and_terminal_projection_a
     assert "1/2" in workspace.status_label.text()
     assert session.result_for_case(invalid).status == "invalid"
 
-    install_projection_results(
+    accept_result_fixtures(
         session, ResultRow(case_id=second, status="error", message="row failed")
     )
     callbacks["result_callback"](session.result_for_case(second))
@@ -244,11 +244,11 @@ def test_copy_includes_selected_result_status_values_and_mutation_is_blocked():
     _app()
     session = _session_with_rows()
     case_id = session.case_order[0]
-    install_projection_results(
+    accept_result_fixtures(
         session,
         ResultRow(
             case_id=case_id,
-            status="error",
+            status="partial",
             result_values={"cooling_power": "2.0"},
             message="missing model",
         ),
@@ -264,11 +264,11 @@ def test_copy_includes_selected_result_status_values_and_mutation_is_blocked():
     selection.select(model.index(0, status), QItemSelectionModel.Select)
     selection.select(model.index(0, message), QItemSelectionModel.Select)
 
-    assert view.copy_selection_tsv().endswith("error\tmissing model\n")
+    assert view.copy_selection_tsv().endswith("partial\tmissing model\n")
     assert view.clear_selection() == 0
     assert view.paste_tsv_at_selection("changed\tchanged\tchanged\n") == 0
-    assert model.cell_value(0, power) == "2.0"
-    assert model.cell_value(0, status) == "error"
+    assert model.cell_value(0, power) == "2"
+    assert model.cell_value(0, status) == "partial"
 
 
 def test_refresh_case_id_emits_row_refresh_for_result_status_change():
@@ -282,7 +282,7 @@ def test_refresh_case_id_emits_row_refresh_for_result_status_change():
             (top_left.row(), bottom_right.column())
         )
     )
-    install_projection_results(session, ResultRow(case_id=case_id, status="complete"))
+    accept_result_fixtures(session, ResultRow(case_id=case_id, status="complete"))
 
     model.refresh_case_id(case_id)
 

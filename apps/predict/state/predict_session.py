@@ -1,7 +1,8 @@
 """Qt-free canonical Predict workspace session state."""
 
 from collections import deque
-from dataclasses import dataclass
+from types import MappingProxyType
+from typing import Mapping
 from uuid import uuid4
 
 from apps.predict.application.result_contract import (
@@ -10,26 +11,20 @@ from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     ResultAcceptance,
 )
-from apps.predict.application.result_validation import (
-    NON_EXECUTED_RESULT_STATUSES,
-    canonical_result_rejection_reason,
-)
+from apps.predict.application.result_validation import canonical_result_rejection_reason
 from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.case_store import CaseStore
+from apps.predict.state.result_state_boundary import (
+    AllowedExecution,
+    PredictSessionProjection,
+    ResultProjectionAuthority,
+    copy_result,
+    validate_migration_relation,
+    validate_direct_result,
+    validate_projected_results,
+    validate_stored_result,
+)
 from apps.predict.state.result_row import ResultRow
-
-
-@dataclass(frozen=True)
-class PredictSessionProjection:
-    case_order: tuple[str, ...]
-    cases: tuple[tuple[str, dict, dict, set, int], ...]
-    results: tuple[ResultRow, ...]
-
-
-@dataclass(frozen=True)
-class _AllowedExecution:
-    context: PredictionExecutionContext
-    expected_targets: tuple[PredictionTargetDescriptor, ...]
 
 
 class PredictSession:
@@ -40,8 +35,12 @@ class PredictSession:
         self._session_id = session_id or f"predict-session-{uuid4().hex}"
         self.case_store = case_store or CaseStore()
         self.case_store.bind_mutation_callback(self._touch)
-        self.results_by_case_id: dict[str, ResultRow] = {}
-        self._allowed_executions: dict[str, _AllowedExecution] = {}
+        self._results_by_case_id: dict[str, ResultRow] = {}
+        self._allowed_executions: dict[str, AllowedExecution] = {}
+        self._active_target_contract: tuple[PredictionTargetDescriptor, ...] | None = None
+        self._active_semantics: PredictionExecutionSemantics | None = None
+        self._active_model: PredictionModelIdentity | None = None
+        self._projection_authority = ResultProjectionAuthority()
         self._acceptance_diagnostics: deque[ResultAcceptance] = deque(maxlen=32)
 
     @property
@@ -59,6 +58,11 @@ class PredictSession:
     @property
     def acceptance_diagnostics(self) -> tuple[ResultAcceptance, ...]:
         return tuple(self._acceptance_diagnostics)
+
+    @property
+    def results_by_case_id(self) -> Mapping[str, ResultRow]:
+        """Expose canonical results without granting a mutation backdoor."""
+        return MappingProxyType(self._results_by_case_id)
 
     def _touch(self, changed_case_id: str = "") -> None:
         self._revision += 1
@@ -78,31 +82,22 @@ class PredictSession:
             self._touch(case_id if value_changed else "")
 
     def result_for_case(self, case_id: str) -> ResultRow:
-        return self.results_by_case_id.get(case_id, ResultRow(case_id=case_id))
+        return self._results_by_case_id.get(case_id, ResultRow(case_id=case_id))
 
     def set_result(self, result: ResultRow) -> None:
         """Attach only non-executed state; terminal results use accept_result."""
-        self._validate_direct_result(result)
+        validate_direct_result(result)
         self._store_result(result)
-
-    @staticmethod
-    def _validate_direct_result(result: ResultRow) -> None:
-        if (
-            result.status not in NON_EXECUTED_RESULT_STATUSES
-            or result.execution_context is not None
-            or result.target_outcomes
-        ):
-            raise ValueError("executed result requires canonical acceptance")
 
     def _store_result(self, result: ResultRow) -> None:
         self.case_store.get_case(result.case_id)
-        if self.results_by_case_id.get(result.case_id) != result:
-            self.results_by_case_id[result.case_id] = result
+        if self._results_by_case_id.get(result.case_id) != result:
+            self._results_by_case_id[result.case_id] = result
             self._touch()
 
     def set_results(self, results: list[ResultRow]) -> None:
         for result in results:
-            self._validate_direct_result(result)
+            validate_direct_result(result)
         for result in results:
             self._store_result(result)
 
@@ -119,8 +114,25 @@ class PredictSession:
         identities = tuple(item.target_identity for item in expected_targets)
         if not identities or len(identities) != len(set(identities)):
             raise ValueError("expected target contract is invalid")
-        self._allowed_executions[context.case_id] = _AllowedExecution(
-            context, tuple(expected_targets)
+        target_contract = tuple(expected_targets)
+        if (
+            self._active_target_contract is not None
+            and self._active_target_contract != target_contract
+        ):
+            raise ValueError("execution target contract differs from active runtime")
+        if (
+            self._active_semantics is not None
+            and self._active_semantics.currentness_key
+            != context.semantics.currentness_key
+        ):
+            raise ValueError("execution semantics differ from active runtime")
+        if self._active_model is not None and self._active_model != context.model:
+            raise ValueError("loaded model differs from active runtime")
+        self._active_target_contract = target_contract
+        self._active_semantics = context.semantics
+        self._active_model = context.model
+        self._allowed_executions[context.case_id] = AllowedExecution(
+            context, target_contract
         )
 
     def accept_result(
@@ -155,9 +167,7 @@ class PredictSession:
             if allowed.context.run_id != run_id
         }
 
-    def allowed_context_for_case(
-        self, case_id: str
-    ) -> PredictionExecutionContext | None:
+    def allowed_context_for_case(self, case_id: str) -> PredictionExecutionContext | None:
         allowed = self._allowed_executions.get(case_id)
         return allowed.context if allowed is not None else None
 
@@ -178,7 +188,7 @@ class PredictSession:
         semantics: PredictionExecutionSemantics,
         model: PredictionModelIdentity,
     ) -> None:
-        for case_id, result in tuple(self.results_by_case_id.items()):
+        for case_id, result in tuple(self._results_by_case_id.items()):
             context = result.execution_context
             if context is None or result.freshness == "stale":
                 continue
@@ -189,51 +199,116 @@ class PredictSession:
                 else ""
             )
             if reason:
-                self.results_by_case_id[case_id] = result.marked_stale(reason)
+                self._results_by_case_id[case_id] = result.marked_stale(reason)
                 self._touch()
+        self._active_semantics = semantics
+        self._active_model = model
 
     def clear_result(self, case_id: str) -> None:
-        if self.results_by_case_id.pop(case_id, None) is not None:
+        if self._results_by_case_id.pop(case_id, None) is not None:
             self._touch()
 
     def clear_all_results(self) -> None:
-        if self.results_by_case_id:
-            self.results_by_case_id.clear()
+        if self._results_by_case_id:
+            self._results_by_case_id.clear()
             self._touch()
 
     def remove_results_for_cases(self, case_ids: list[str]) -> None:
         for case_id in case_ids:
             self.clear_result(case_id)
 
-    def apply_runtime_projection(self, projection: PredictSessionProjection, *, expected_revision: int) -> None:
+    def prepare_runtime_projection(
+        self,
+        *,
+        cases: tuple[tuple[str, dict, dict, set, int], ...],
+        results: tuple[ResultRow, ...],
+        target_contract: tuple[PredictionTargetDescriptor, ...],
+        execution_semantics: PredictionExecutionSemantics,
+        model_identity: PredictionModelIdentity,
+    ) -> PredictSessionProjection:
+        """Issue an atomic migration artifact after validating both boundaries."""
+        self._validate_canonical_state()
+        projection = PredictSessionProjection(
+            self.case_order,
+            cases,
+            tuple(copy_result(result) for result in results),
+            tuple(target_contract),
+            execution_semantics,
+            model_identity,
+            (),
+            self._revision,
+        )
+        self._validate_projection(projection)
+        validate_migration_relation(self._results_by_case_id, projection.results)
+        validate_projected_results(projection, session_id=self._session_id)
+        return self._projection_authority.issue(projection, "migration")
+
+    def apply_runtime_projection(
+        self, projection: PredictSessionProjection, *, expected_revision: int
+    ) -> None:
         if self._revision != expected_revision:
             raise ValueError("Predict session changed after prepare")
+        self._projection_authority.validate(projection, "migration")
+        self._validate_canonical_state()
         self._validate_projection(projection)
+        validate_migration_relation(self._results_by_case_id, projection.results)
+        validate_projected_results(projection, session_id=self._session_id)
         for case_id, inputs, autofill, dirty, input_revision in projection.cases:
             case = self.case_store.get_case(case_id)
             case.input_values = dict(inputs)
             case.autofill_values = dict(autofill)
             case.dirty_fields = set(dirty)
             case.input_revision = input_revision
-        self.results_by_case_id = {
-            result.case_id: _copy_result(result) for result in projection.results
+        self._results_by_case_id = {
+            result.case_id: copy_result(result) for result in projection.results
         }
+        self._active_target_contract = tuple(projection.target_contract)
+        self._active_semantics = projection.execution_semantics
+        self._active_model = projection.model_identity
         self._allowed_executions.clear()
+        self._projection_authority.consume(projection)
         self._touch()
 
     def restore_runtime_projection(self, projection: PredictSessionProjection) -> None:
-        self.apply_runtime_projection(projection, expected_revision=self._revision)
+        self._projection_authority.validate(projection, "snapshot")
+        self._validate_canonical_state()
+        self._validate_projection(projection)
+        validate_projected_results(projection, session_id=self._session_id)
+        for case_id, inputs, autofill, dirty, input_revision in projection.cases:
+            case = self.case_store.get_case(case_id)
+            case.input_values = dict(inputs)
+            case.autofill_values = dict(autofill)
+            case.dirty_fields = set(dirty)
+            case.input_revision = input_revision
+        self._results_by_case_id = {
+            result.case_id: copy_result(result) for result in projection.results
+        }
+        self._active_target_contract = (
+            tuple(projection.target_contract) if projection.target_contract else None
+        )
+        self._active_semantics = projection.execution_semantics
+        self._active_model = projection.model_identity
+        self._allowed_executions = dict(projection.allowed_executions)
+        self._revision = projection.session_revision
+        self._projection_authority.consume(projection)
 
     def snapshot_runtime_projection(self) -> PredictSessionProjection:
-        return PredictSessionProjection(
+        self._validate_canonical_state()
+        projection = PredictSessionProjection(
             self.case_order,
             tuple((case_id, dict(case.input_values), dict(case.autofill_values),
                    set(case.dirty_fields), case.input_revision)
                   for case_id in self.case_order
                   for case in (self.case_store.get_case(case_id),)),
-            tuple(_copy_result(self.results_by_case_id[case_id])
-                  for case_id in self.case_order if case_id in self.results_by_case_id),
+            tuple(copy_result(self._results_by_case_id[case_id])
+                  for case_id in self.case_order if case_id in self._results_by_case_id),
+            tuple(self._active_target_contract or ()),
+            self._active_semantics,
+            self._active_model,
+            tuple(self._allowed_executions.items()),
+            self._revision,
         )
+        return self._projection_authority.issue(projection, "snapshot")
 
     def _validate_projection(self, projection: PredictSessionProjection) -> None:
         if projection.case_order != self.case_order:
@@ -244,12 +319,29 @@ class PredictSession:
         if len(result_ids) != len(set(result_ids)) or not set(result_ids).issubset(projection.case_order):
             raise ValueError("Predict result projection identity is invalid")
 
+    def _validate_canonical_state(self) -> None:
+        case_revisions = {
+            case_id: self.case_store.get_case(case_id).input_revision
+            for case_id in self.case_order
+        }
+        for case_id, result in self._results_by_case_id.items():
+            if case_id != result.case_id or case_id not in self.case_order:
+                raise ValueError("canonical Predict result identity is invalid")
+            validate_stored_result(
+                result,
+                target_contract=self._active_target_contract,
+                case_revisions=case_revisions,
+                execution_semantics=self._active_semantics,
+                model_identity=self._active_model,
+                session_id=self._session_id,
+            )
+
     def _mark_case_result_stale(self, case_id: str, reason: str) -> None:
-        existing = self.results_by_case_id.get(case_id)
+        existing = self._results_by_case_id.get(case_id)
         if existing is not None and existing.status == "running":
-            self.results_by_case_id[case_id] = ResultRow(case_id)
+            self._results_by_case_id[case_id] = ResultRow(case_id)
         elif existing is not None:
-            self.results_by_case_id[case_id] = existing.marked_stale(reason)
+            self._results_by_case_id[case_id] = existing.marked_stale(reason)
 
     def _acceptance_reason(
         self,
@@ -287,7 +379,7 @@ class PredictSession:
         return ""
 
     def summary_counts(self) -> dict[str, int]:
-        statuses = [result.status for result in self.results_by_case_id.values()]
+        statuses = [result.status for result in self._results_by_case_id.values()]
         return {
             "total": len(self.case_store), "completed": statuses.count("complete"),
             "errors": statuses.count("error"), "running": statuses.count("running"),
@@ -295,13 +387,3 @@ class PredictSession:
             "warnings": sum(status in {"partial", "warning", "cancelled"} for status in statuses),
             "dirty": sum(self.case_store.get_case(case_id).is_dirty for case_id in self.case_order),
         }
-
-
-def _copy_result(result: ResultRow) -> ResultRow:
-    return ResultRow(
-        result.case_id, result.status, dict(result._legacy_result_values), result.message,
-        target_outcomes=result.target_outcomes,
-        execution_context=result.execution_context,
-        freshness=result.freshness,
-        stale_reason=result.stale_reason,
-    )

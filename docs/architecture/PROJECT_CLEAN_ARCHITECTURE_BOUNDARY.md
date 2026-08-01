@@ -98,7 +98,15 @@ Examples:
   transport progress. Direct single/bulk session setters accept only
   non-executed `pending`, `running`, and `invalid` state; every
   `complete`/`partial`/`error`/`cancelled` row uses canonical acceptance
-  regardless of payload shape. A worker or Qt view never owns reconciliation.
+  regardless of payload shape. This restriction is invariant over canonical
+  state, not just direct setters: the session exposes results read-only and is
+  the only owner that may issue sealed migration or rollback artifacts. Fresh
+  results validate pinned request provenance; migration validates an already
+  canonical source plus the destination Target/semantics/model contract;
+  rollback restores only a previously validated session snapshot. Projection
+  rejection occurs before case, result, revision, or allowed-execution mutation.
+  A worker, Qt view, runtime participant, compatibility facade, or test fixture
+  never owns reconciliation or arbitrary terminal installation.
 - Calculator execution: `CalculatorUseCase` -> core calculator dispatcher
   adapter, not direct orchestration inside UI sections.
 

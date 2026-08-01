@@ -18,6 +18,10 @@ def canonical_result_rejection_reason(
     """Return a bounded reason when an executed result violates its pinned contract."""
     if result.status not in EXECUTED_RESULT_STATUSES:
         return "non_terminal_execution_status"
+    if result.execution_context is None:
+        return "missing_execution_context"
+    if result._legacy_result_values:
+        return "legacy_execution_payload_not_allowed"
     if result.freshness != "current" or result.stale_reason:
         return "incoming_result_not_current"
 
@@ -64,3 +68,54 @@ def canonical_result_rejection_reason(
         or result.status == "error" and available == 0
     )
     return "" if aggregate_matches else "aggregate_status_mismatch"
+
+
+def canonical_stored_result_rejection_reason(
+    result: ResultRow,
+    expected_targets: tuple[PredictionTargetDescriptor, ...] | None,
+) -> str:
+    """Validate one row already held by the canonical session.
+
+    Current executed results must still match the active runtime target contract.
+    Stale results retain their historical typed contract; migration provenance is
+    enforced by the session-issued projection artifact rather than by pretending
+    the destination runtime produced those historical outcomes.
+    """
+    if result.status in NON_EXECUTED_RESULT_STATUSES:
+        if result.execution_context is not None or result.target_outcomes:
+            return "non_executed_state_has_execution_payload"
+        if result._legacy_result_values:
+            return "non_executed_state_has_result_values"
+        if result.freshness != "current" or result.stale_reason:
+            return "non_executed_state_is_stale"
+        return ""
+    if result.status not in EXECUTED_RESULT_STATUSES:
+        return "unknown_result_status"
+    if result.execution_context is None:
+        return "missing_execution_context"
+    if result._legacy_result_values:
+        return "legacy_execution_payload_not_allowed"
+    if result.freshness == "current":
+        if expected_targets is None:
+            return "missing_active_target_contract"
+        return canonical_result_rejection_reason(result, expected_targets)
+
+    historical_targets = tuple(
+        PredictionTargetDescriptor(
+            outcome.target_identity,
+            outcome.result_feature_identity,
+            "historical",
+            outcome.result_key,
+            outcome.canonical_unit,
+            outcome.value_source,
+        )
+        for outcome in result.target_outcomes
+    )
+    historical = ResultRow(
+        result.case_id,
+        result.status,
+        message=result.message,
+        target_outcomes=result.target_outcomes,
+        execution_context=result.execution_context,
+    )
+    return canonical_result_rejection_reason(historical, historical_targets)

@@ -38,8 +38,14 @@ user-facing progress and summaries reconcile only accepted dispositions, and
 cancellation/infrastructure failures retain execution context through that gate.
 The residual direct-setter bypass is also repaired: direct and bulk storage now
 allow only non-executed `pending`, `running`, and `invalid` rows, so every
-terminal status requires canonical acceptance independent of payload shape. The
-Draft remains open pending a fresh independent exact-head re-audit. The Auditor
+terminal status requires canonical acceptance independent of payload shape.
+The follow-up boundary recovery closes projection/rollback bypasses as the same
+canonical-state invariant: result storage is read-only outside the session,
+fresh acceptance and validated migration are distinct, and only sealed
+session-issued migration/snapshot artifacts can apply or restore state
+atomically. Test fixtures now prepare genuine accepted results instead of using
+runtime projection as an installer. The Draft remains open pending a fresh
+independent exact-head re-audit. The Auditor
 owns complete adjacent-owner review, focused validation, and only then guarded
 merge/closeout. Slice 3 does not start from this Worker branch.
 

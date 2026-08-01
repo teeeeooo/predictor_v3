@@ -11,7 +11,7 @@ from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
-from tests.helpers.predict_results import install_projection_results
+from tests.helpers.predict_results import accept_result_fixtures
 
 
 def _app() -> QApplication:
@@ -192,11 +192,11 @@ def test_one_row_paste_repeats_down_matching_selection_width():
 def test_result_and_status_copy_included_but_mutation_prevented():
     session, model, view = _table()
     case_id = session.case_order[0]
-    install_projection_results(
+    accept_result_fixtures(
         session,
         ResultRow(
             case_id=case_id,
-            status="error",
+            status="partial",
             result_values={"cooling_power": "2.0"},
             message="missing model",
         ),
@@ -206,8 +206,8 @@ def test_result_and_status_copy_included_but_mutation_prevented():
     message = _column_index(model, "message")
     _select(view, model, (0, power), (0, status), (0, message))
 
-    assert view.copy_selection_tsv().endswith("error\tmissing model\n")
+    assert view.copy_selection_tsv().endswith("partial\tmissing model\n")
     assert view.clear_selection() == 0
     assert view.paste_tsv_at_selection("changed\tchanged\tchanged\n") == 0
-    assert model.cell_value(0, power) == "2.0"
-    assert model.cell_value(0, status) == "error"
+    assert model.cell_value(0, power) == "2"
+    assert model.cell_value(0, status) == "partial"

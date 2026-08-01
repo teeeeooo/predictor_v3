@@ -16,7 +16,7 @@ from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables import case_table_model
 from apps.predict.ui.tables.case_table_model import CaseTableModel
-from tests.helpers.predict_results import install_projection_results
+from tests.helpers.predict_results import accept_result_fixtures
 
 
 def _app() -> QApplication:
@@ -52,7 +52,7 @@ def test_case_table_model_group_rendering_and_result_status_display():
     case = session.case_store.get_case_at(0)
     case.input_values["cooling_capa"] = "7.1"
     case.autofill_values["id_volume"] = "1.2"
-    install_projection_results(
+    accept_result_fixtures(
         session,
         ResultRow(
             case_id=case.case_id,
@@ -93,11 +93,11 @@ def test_case_table_model_prevents_auto_result_and_status_mutation():
     _app()
     session = _session_with_rows()
     case = session.case_store.get_case_at(0)
-    install_projection_results(
+    accept_result_fixtures(
         session,
         ResultRow(
             case_id=case.case_id,
-            status="error",
+            status="partial",
             result_values={"cooling_power": "2.0"},
         ),
     )
@@ -110,8 +110,8 @@ def test_case_table_model_prevents_auto_result_and_status_mutation():
         assert not model.setData(index, "changed", Qt.EditRole)
 
     assert case.autofill_values == {}
-    assert session.result_for_case(case.case_id).result_values["cooling_power"] == "2.0"
-    assert session.result_for_case(case.case_id).status == "error"
+    assert session.result_for_case(case.case_id).result_values["cooling_power"] == "2"
+    assert session.result_for_case(case.case_id).status == "partial"
 
 
 def test_case_table_model_invalid_numeric_tooltip_and_background():

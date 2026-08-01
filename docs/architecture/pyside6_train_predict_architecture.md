@@ -339,11 +339,21 @@ draft/provider state. Standalone Predict uses the same Predict snapshot owner an
 performs its own persisted-generation check at startup, Refresh, and immediately
 before prediction.
 
-Predict generation prepare owns one complete session projection: case order,
-input/autofill/dirty fields, and ResultRow status/value/message. Result keys migrate
-only through stable active Result Feature identity. Commit validates revision and
-case structure before installing that projection; rollback restores the complete
-prior projection.
+Predict generation prepare asks the canonical session to issue one sealed
+migration projection: case order, input/autofill/dirty fields and revisions,
+typed results, destination Target descriptors, execution semantics, and loaded
+model identity. Result keys migrate only through stable Result Feature identity.
+The session validates the current canonical source, source-to-destination result
+lineage, destination contract, revision, and case structure before any mutation.
+A presentation-only projection may keep a valid result current; a semantic
+projection preserves its typed evidence as stale. Caller-constructed, altered,
+or replayed projection DTOs are not install artifacts.
+
+Rollback uses a distinct sealed snapshot issued from previously validated
+canonical state. It restores that exact case/result/runtime contract, session
+revision, and allowed-execution state, then consumes the artifact. Projection or
+rollback rejection is atomic: case values, case revisions, results, run
+authority, and session revision remain unchanged.
 
 The generation-bound Predict runtime snapshot also owns an immutable
 `PredictRuntimeColumnDescriptor` tuple. Each descriptor binds canonical
@@ -756,6 +766,17 @@ input, result, row status, accepted progress, or counts.
 Editing another case is unrelated; editing the same case increments only that
 case revision, makes an existing typed result stale (or a running row pending),
 and causes the old request result to fail closed.
+
+This is a canonical state invariant, not an API-specific convention. The
+session exposes its result map read-only and classifies every production
+mutation as non-executed state creation, fresh executed-result acceptance,
+validated canonical migration, sealed rollback/restore, freshness
+transformation, or deletion. Every stored row must be a valid non-executed state
+or a provenance-bearing executed terminal state. Fresh acceptance validates the
+pinned request contract; migration validates both prior canonical lineage and
+the destination runtime contract; rollback restores only a session-issued prior
+snapshot. No private helper, bulk facade, generation projection, UI model, or
+test fixture may install arbitrary terminal state.
 
 Generation and model transitions preserve typed outcomes and provenance. A
 presentation-only generation change may update current keys by Feature identity

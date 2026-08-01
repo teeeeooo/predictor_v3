@@ -28,7 +28,7 @@ from apps.predict.application.model_compatibility import ModelCompatibilityEvide
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.state.result_row import ResultRow
-from tests.helpers.predict_results import install_projection_results
+from tests.helpers.predict_results import accept_result_fixtures
 
 
 def _candidate(snapshot, participant):  # noqa: ANN001
@@ -295,8 +295,8 @@ def test_real_participants_prepare_a_then_commit_b_with_owner_parity(tmp_path):
     definition, predict, train, mapping = participants
     session = predict.composition.session
     case_id = session.case_order[0]
-    install_projection_results(
-        session,
+    accept_result_fixtures(
+        predict.composition,
         ResultRow(case_id, "complete", {"cooling_power": "123"}, "before cutover"),
     )
 
@@ -310,12 +310,10 @@ def test_real_participants_prepare_a_then_commit_b_with_owner_parity(tmp_path):
     assert {item.active_generation_id for item in participants} == {"generation-b"}
     assert controller.runtime_generation_id == "generation-b"
     assert predict.composition.runtime_snapshot.derived.definitions[0].zero_value == 4.0
-    assert session.result_for_case(case_id) == ResultRow(
-        case_id,
-        "complete",
-        {"cooling_power_runtime_b": "123"},
-        "before cutover",
-    )
+    migrated = session.result_for_case(case_id)
+    assert migrated.result_values["cooling_power_runtime_b"] == "123"
+    assert migrated.message == "before cutover"
+    assert migrated.freshness == "stale"
     assert train.registry_snapshot.generation_id == "generation-b"
     assert mapping.active_snapshot.manifest.generation.generation_id == "generation-b"
 
@@ -330,7 +328,7 @@ def test_real_participant_commit_failure_rolls_definition_and_predict_back_to_a(
     original = ResultRow(
         case_id, "partial", {"cooling_power": "321"}, "original warning"
     )
-    install_projection_results(session, original)
+    original = accept_result_fixtures(predict.composition, original)[0]
 
     status = coordinator.request_cutover()
 

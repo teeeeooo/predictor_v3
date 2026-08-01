@@ -35,7 +35,7 @@ from core.data_definition.contract import (  # noqa: E402
     generate_projections,
     scoped_fingerprints,
 )
-from tests.helpers.predict_results import install_projection_results  # noqa: E402
+from tests.helpers.predict_results import accept_result_fixtures  # noqa: E402
 
 
 def _snapshot(manifest) -> GenerationSnapshot:  # noqa: ANN001
@@ -125,7 +125,7 @@ def test_result_and_target_rename_moves_existing_value_to_committed_table_model(
         {"cooling_power": "123"},
         "original result",
     )
-    install_projection_results(composition.session, original)
+    original = accept_result_fixtures(composition, original)[0]
     old_column = next(
         index
         for index, column in enumerate(workspace.case_model.columns)
@@ -147,7 +147,8 @@ def test_result_and_target_rename_moves_existing_value_to_committed_table_model(
     )
     assert workspace.case_model.columns[new_column].feature_identity == identity
     assert workspace.case_model.cell_value(0, new_column) == "123"
-    assert migrated.result_values == {"cooling_power_v2": "123"}
+    assert migrated.result_values["cooling_power_v2"] == "123"
+    assert len(migrated.result_values) == len(active.manifest.targets)
     assert migrated.status == "complete"
     assert migrated.message == "original result"
     assert participant.composition.result_mapper.active_targets[0] == "Cooling Power V2"
@@ -238,29 +239,29 @@ def test_added_removed_hidden_and_unchanged_results_follow_canonical_identity(
     removed_key = key_by_identity[removed_target.feature_identity]
     hidden_key = key_by_identity[hidden_target.feature_identity]
     added_key = key_by_identity[added_feature_id]
-    install_projection_results(
-        composition.session,
+    accept_result_fixtures(
+        composition,
         ResultRow(
             case_id,
             "complete",
             {
-                unchanged_key: "unchanged",
-                removed_key: "removed",
-                hidden_key: "hidden",
-                added_key: "must-not-copy",
+                    unchanged_key: "11",
+                    removed_key: "22",
+                    hidden_key: "33",
+                    added_key: "44",
             },
             "keep status and message",
         ),
     )
 
     prepared = participant.prepare(transition)
-    assert composition.session.result_for_case(case_id).result_values[removed_key] == "removed"
+    assert composition.session.result_for_case(case_id).result_values[removed_key] == "22"
     participant.commit(prepared)
     migrated = composition.session.result_for_case(case_id)
 
-    assert migrated.result_values[unchanged_key] == "unchanged"
-    assert migrated.result_values[hidden_key] == "hidden"
-    assert removed_key not in migrated.result_values
+    assert migrated.result_values[unchanged_key] == "11"
+    assert migrated.result_values[hidden_key] == "33"
+    assert migrated.result_values[removed_key] == "22"
     assert added_key not in migrated.result_values
     assert hidden_key not in {
         column.key for column in participant.composition.columns
@@ -290,20 +291,18 @@ def test_result_mutation_after_prepare_rejects_without_overwriting_latest(
         active, candidate, tmp_path
     )
     case_id = composition.session.case_order[0]
-    install_projection_results(
-        composition.session,
+    accept_result_fixtures(
+        composition,
         ResultRow(case_id, "complete", {"cooling_power": "100"}, "before"),
     )
     prepared = participant.prepare(transition)
     if mutation == "clear":
         composition.session.clear_result(case_id)
     elif mutation == "running":
-        composition.session.set_result(ResultRow(
-            case_id, "running", {"cooling_power": "101"}, "progress"
-        ))
+        composition.session.set_result(ResultRow(case_id, "running", message="progress"))
     else:
-        install_projection_results(
-            composition.session,
+        accept_result_fixtures(
+            composition,
             ResultRow(case_id, "complete", {"cooling_power": "102"}, "latest"),
         )
     latest = composition.session.snapshot_runtime_projection()

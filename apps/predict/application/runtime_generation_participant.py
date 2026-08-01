@@ -20,10 +20,8 @@ from apps.predict.composition import (
     build_predict_workspace_composition,
 )
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
-from apps.predict.state.predict_session import (
-    PredictSession,
-    PredictSessionProjection,
-)
+from apps.predict.state.predict_session import PredictSession
+from apps.predict.state.result_state_boundary import PredictSessionProjection
 from apps.predict.state.result_row import ResultRow
 
 
@@ -89,9 +87,6 @@ class PredictRuntimeParticipant:
         migrated_cases = _migrated_case_rows(
             self._composition.session, self._active, candidate.snapshot
         )
-        migrated_results = _migrated_result_rows(
-            self._composition.session, self._active, candidate.snapshot
-        )
         controller = self._composition.prediction_controller
         _prediction_service, runner_factory = controller.runtime_dependencies()
         _semantics, model_identity = controller.execution_environment
@@ -106,14 +101,24 @@ class PredictRuntimeParticipant:
             model_lifecycle=controller.model_lifecycle,
             model_identity=model_identity,
         )
+        migrated_results = _migrated_result_rows(
+            self._composition.session, self._active, candidate.snapshot
+        )
+        session_projection = self._composition.session.prepare_runtime_projection(
+            cases=migrated_cases,
+            results=migrated_results,
+            target_contract=runtime.target_descriptors,
+            execution_semantics=(
+                composition.prediction_controller.execution_environment[0]
+            ),
+            model_identity=(
+                composition.prediction_controller.execution_environment[1]
+            ),
+        )
         payload = _PredictPrepared(
             candidate.snapshot,
             composition,
-            PredictSessionProjection(
-                self._composition.session.case_order,
-                migrated_cases,
-                migrated_results,
-            ),
+            session_projection,
             compatibility,
             self._composition.session.revision,
         )
@@ -228,25 +233,24 @@ def _migrated_result_rows(
     active,
     candidate,
 ) -> tuple[ResultRow, ...]:  # noqa: ANN001
-    active_keys = _active_result_keys_by_identity(active)
     candidate_keys = _active_result_keys_by_identity(candidate)
-    shared_identities = active_keys.keys() & candidate_keys.keys()
+    semantics_changed = _prediction_semantics_changed(active, candidate)
     migrated = []
     for case_id in session.case_order:
         existing = session.results_by_case_id.get(case_id)
         if existing is None:
             continue
-        values = {
-            candidate_keys[identity]: existing.result_values[active_keys[identity]]
-            for identity in shared_identities
-            if active_keys[identity] in existing.result_values
-        }
+        values = dict(existing._legacy_result_values)
         outcomes = tuple(
-            replace(outcome, result_key=candidate_keys[outcome.result_feature_identity])
+            replace(
+                outcome,
+                result_key=candidate_keys.get(
+                    outcome.result_feature_identity, outcome.result_key
+                ),
+            )
             for outcome in existing.target_outcomes
-            if outcome.result_feature_identity in candidate_keys
         )
-        migrated.append(ResultRow(
+        result = ResultRow(
             case_id=case_id,
             status=existing.status,
             result_values=values,
@@ -255,7 +259,10 @@ def _migrated_result_rows(
             execution_context=existing.execution_context,
             freshness=existing.freshness,
             stale_reason=existing.stale_reason,
-        ))
+        )
+        if semantics_changed and result.execution_context is not None:
+            result = result.marked_stale("execution_semantics_changed")
+        migrated.append(result)
     return tuple(migrated)
 
 
@@ -271,6 +278,23 @@ def _case_input_semantics_changed(active, candidate) -> bool:  # noqa: ANN001
         after.preprocessing,
         after.derived_semantics,
         after.one_hot,
+    )
+
+
+def _prediction_semantics_changed(active, candidate) -> bool:  # noqa: ANN001
+    before, after = active.fingerprints, candidate.fingerprints
+    return (
+        before.ordered_ml,
+        before.preprocessing,
+        before.derived_semantics,
+        before.one_hot,
+        before.target_registry,
+    ) != (
+        after.ordered_ml,
+        after.preprocessing,
+        after.derived_semantics,
+        after.one_hot,
+        after.target_registry,
     )
 
 
