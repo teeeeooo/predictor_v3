@@ -9,8 +9,8 @@ Near-term execution belongs to `docs/WORK_PLAN.md`; history belongs to
 Train/Admin Phase 5 and Predict Findings #1–#7 are complete and merged. The
 active product workstream is **Predict input workflow broad overhaul**. Its
 product and integration boundary is approved, and Slice 1 — Stable Identity Seam
-is independently audited, merged, and closed. The next implementation gate is
-Slice 2 — Typed Result and Execution Context.
+and Slice 2 — Typed Result and Execution Context are independently audited,
+merged, and closed. The next implementation gate is Slice 3 — EER/COP Enrichment.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -90,9 +90,10 @@ execution, and Calculator owners remain authoritative.
 
 Slice 1 closed the canonical Feature identity propagation seam without changing
 the public/generated projection or persisted Feature Definition shape. Slice 2
-must separately define typed target outcomes, execution provenance, stale-result
-rejection, reload/cutover compatibility, and preserved row isolation before a
-Lane C Build handoff.
+closed the typed-result and execution-provenance foundation with one canonical
+Predict session, repository-issued runtime authority, fail-closed terminal
+acceptance, and preserved reload/generation lifecycle semantics. Slice 3 —
+EER/COP Enrichment is the next independent Lane C gate.
 
 ### Later — Production ML Readiness / Calculator Integration
 

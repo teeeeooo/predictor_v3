@@ -1,8 +1,8 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; Slice 1 merged, Slice 2 next
+Status: approved product and owner boundary; Slices 1–2 merged, Slice 3 next
 Created: 2026-07-14
-Updated: 2026-07-31
+Updated: 2026-08-01
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 
 ## 1. Purpose and Authority
@@ -10,8 +10,8 @@ Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 This record is the authoritative product and integration boundary for the
 **Predict input workflow broad overhaul**. It absorbs the completed disposable
 layout comparison and existing-application owner audit into a production-facing
-design direction. Slice 1 is closed; every remaining source slice still requires
-its own Lane C authorization.
+design direction. Slices 1 and 2 are closed; every remaining source slice still
+requires its own Lane C authorization.
 
 This record distinguishes:
 
@@ -347,8 +347,8 @@ the operating-point and standard-request contracts are separately defined.
 
 ## 7. Implementation Slice Boundary
 
-Slice 1 is merged and closed. Remaining slices are not authorized by this
-bounded documentation close and retain their independent Lane C gates.
+Slices 1 and 2 are merged and closed. Remaining slices are not authorized by
+this bounded documentation close and retain their independent Lane C gates.
 
 ### Slice 1 — Stable Identity Seam
 
@@ -359,10 +359,12 @@ standalone/embedded parity remain preserved.
 
 ### Slice 2 — Typed Result and Execution Context
 
-Introduce raw target outcomes, explicit target availability/failure, run ID,
-model/runtime generation, session and input revision, plus stale-result
-rejection. Preserve all existing prediction execution behaviors. This is the
-highest compatibility-risk foundation slice.
+**Status: merged and closed.** Predict stores raw typed Target outcomes and
+immutable session/case/run/input-revision/runtime/model provenance behind one
+canonical acceptance boundary. Repository-issued generation authority is the
+only source of canonical Predict runtime authority; reload and generation
+transitions preserve typed evidence with explicit current/stale semantics, while
+sealed migration/rollback artifacts retain atomic lifecycle behavior.
 
 ### Slice 3 — EER/COP Enrichment
 
@@ -423,13 +425,11 @@ These decisions are not changed into approved behavior by this record:
 
 1. whether Active models continue to require the exact active target set or may
    expose explicit partial-target capability;
-2. whether results are cleared, marked stale, or retained as historical after a
-   model reload or generation change;
-3. EER/COP display precision;
-4. the exact abbreviations, separators, wrapping, and truncation rules for
+2. EER/COP display precision;
+3. the exact abbreviations, separators, wrapping, and truncation rules for
    `사양 요약`;
-5. the user interaction for full-row copy/export of hidden source results;
-6. how far fixed or pinned columns extend in a narrow embedded viewport.
+4. the user interaction for full-row copy/export of hidden source results;
+5. how far fixed or pinned columns extend in a narrow embedded viewport.
 
 The default Result Review order and Layout B full-surface direction are approved
 and must not be reopened as compatibility gates.
@@ -459,13 +459,14 @@ current Feature Manager, Data Mapping, Train/model lifecycle, prediction
 execution, and Calculate owners are reusable while the Predict
 application/presentation seams in this record are missing.
 
-That baseline remains navigation evidence for the broader overhaul. Slice 1 was
-subsequently implemented, independently audited at its exact PR head, and merged
-without changing the public/generated Predict projection or persisted Feature
-Definition shape.
+That baseline remains navigation evidence for the broader overhaul. Slices 1 and
+2 were subsequently implemented, independently audited at their exact PR heads,
+and merged without changing the public/generated Predict projection or persisted
+Feature Definition shape. Slice 2 additionally established repository-issued
+Predict runtime authority and the canonical typed-result/provenance boundary.
 
-The next resume point is **Slice 2 — Typed Result and Execution Context**. The
-Orchestrator and user must first fix the typed target outcome, execution
-provenance, stale-result rejection, reload/cutover compatibility, and preserved
-row-execution boundary. No Slice 2 Worker handoff or Build starts before that
-gate.
+The next resume point is **Slice 3 — EER/COP Enrichment**. It retains its own Lane
+C gate and must consume the closed Slice 1 identity and Slice 2 raw-outcome
+contracts without changing ML targets, Feature formula schema, or Calculator
+formulas. This Slice 2 closeout does not start Slice 3 implementation or create a
+Worker handoff.

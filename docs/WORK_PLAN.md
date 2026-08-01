@@ -28,43 +28,19 @@
   generation-bound runtime descriptor into standalone and embedded presentation
   adapters without changing the public/generated projection or persisted Feature
   Definition shape.
+- Slice 2 — Typed Result and Execution Context is independently audited, merged,
+  and closed. Predict now owns raw typed target outcomes, immutable execution
+  provenance, one fail-closed canonical session boundary, and repository-issued
+  runtime authority across execution, reload, migration, rollback, and generation
+  transitions while preserving the public/generated and persisted schema shapes.
 
 ## Next Action
 
-**Slice 2 — Typed Result and Execution Context** is implemented on its dedicated
-Lane C Worker Draft branch. PR #44's exact-head audit findings are repaired: the
-canonical gate validates the pinned expected-target/aggregate contract,
-user-facing progress and summaries reconcile only accepted dispositions, and
-cancellation/infrastructure failures retain execution context through that gate.
-The residual direct-setter bypass is also repaired: direct and bulk storage now
-allow only non-executed `pending`, `running`, and `invalid` rows, so every
-terminal status requires canonical acceptance independent of payload shape.
-The follow-up boundary recovery closes projection/rollback bypasses as the same
-canonical-state invariant: result storage is read-only outside the session,
-fresh acceptance and validated migration are distinct, and only sealed
-session-issued migration/snapshot artifacts can apply or restore state
-atomically. Test fixtures now prepare genuine accepted results instead of using
-runtime projection as an installer. The final lifecycle completion additionally
-validates the destination Target contract for zero-result migration, couples
-supported case removal to dependent result/run cleanup, and releases sealed
-migration/snapshot artifacts on abort, rollback, and successful coordinator or
-standalone finalization. Standalone and embedded presentation fixtures now use
-coherent typed Target descriptors. The destination descriptor follow-up's
-local-consistency claim was incomplete: its Target registry projection and
-fingerprint were both caller-visible runtime assertions. The provenance recovery
-now requires an exact repository-issued GenerationSnapshot and the exact Predict
-runtime issued from it before any runtime Target projection or fingerprint can
-become execution authority. Coherent active-set reduction, ML-name rebind,
-Result-Feature swap, unit/source forge, genuine fingerprint reuse, and
-caller-updated fingerprint metadata all fail before composition, service/model
-adoption, or zero-result artifact issue without changing current execution
-eligibility. The convenience Target projection remains exact-bound to stable
-identity, current Feature key, the five-target unit seam, and fixed model
-prediction source after provenance is established.
-The Draft remains open pending a fresh
-independent exact-head re-audit. The Auditor
-owns complete adjacent-owner review, focused validation, and only then guarded
-merge/closeout. Slice 3 does not start from this Worker branch.
+The next gate is **Slice 3 — EER/COP Enrichment**. It may consume Slice 1 stable
+identities and Slice 2 raw typed outcomes, but must remain a Qt-free Predict
+application enrichment and must not change ML targets, Feature formula schema, or
+Calculator formulas. Slice 3 source work requires its own Lane C authorization;
+this Slice 2 closeout does not create that Worker handoff or start implementation.
 
 ## Active Blockers
 
@@ -88,7 +64,7 @@ merge/closeout. Slice 3 does not start from this Worker branch.
   Layout B workspace implementation, and Predict-owned workspace-state policy.
 - Keep root-level horizontal scrolling prohibited. Result Review table scrolling
   remains internal; the narrow embedded pinned-column range is an open gate.
-- Keep Layout B composition, typed result work, and bulk paste as independently
+- Keep EER/COP enrichment, Layout B composition, and bulk paste as independently
   reviewable Lane C slices.
 - Use repository fixtures or mock data only. Do not infer production readiness or
   mutate production data or models.
