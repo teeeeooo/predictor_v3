@@ -13,11 +13,20 @@ class CaseStore:
         self._case_order: list[str] = []
         self._next_case_number = 1
         self._mutation_callback = mutation_callback or (lambda _case_id="": None)
+        self._removal_callback: Callable[[tuple[str, ...]], None] = (
+            lambda _case_ids: None
+        )
 
     def bind_mutation_callback(self, callback: Callable[[str], None]) -> None:
         self._mutation_callback = callback
         for case in self._cases_by_id.values():
             case.bind_mutation_callback(callback)
+
+    def bind_removal_callback(
+        self, callback: Callable[[tuple[str, ...]], None]
+    ) -> None:
+        """Bind the canonical owner cleanup that must precede case deletion."""
+        self._removal_callback = callback
 
     @property
     def case_order(self) -> tuple[str, ...]:
@@ -52,18 +61,23 @@ class CaseStore:
     def remove_rows(self, case_ids: Iterable[str]) -> list[str]:
         """Remove cases by id and return ids that were removed."""
         requested = set(case_ids)
-        removed: list[str] = []
-        kept_order: list[str] = []
-        for case_id in self._case_order:
-            if case_id in requested:
-                self._cases_by_id.pop(case_id, None)
-                removed.append(case_id)
-            else:
-                kept_order.append(case_id)
+        removed = tuple(
+            case_id for case_id in self._case_order if case_id in requested
+        )
+        if not removed:
+            return []
+        kept_order = [
+            case_id for case_id in self._case_order if case_id not in requested
+        ]
+        kept_cases = {
+            case_id: case for case_id, case in self._cases_by_id.items()
+            if case_id not in requested
+        }
+        self._removal_callback(removed)
+        self._cases_by_id = kept_cases
         self._case_order = kept_order
-        if removed:
-            self._mutation_callback("")
-        return removed
+        self._mutation_callback("")
+        return list(removed)
 
     def remove_row_indexes(self, indexes: Iterable[int]) -> list[str]:
         """Remove cases by current row indexes."""

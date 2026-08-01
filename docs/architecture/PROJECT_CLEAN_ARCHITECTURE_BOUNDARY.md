@@ -105,6 +105,13 @@ Examples:
   canonical source plus the destination Target/semantics/model contract;
   rollback restores only a previously validated session snapshot. Projection
   rejection occurs before case, result, revision, or allowed-execution mutation.
+  The runtime snapshot must provide one non-empty, duplicate-free, internally
+  consistent Target/Result descriptor contract before migration artifact issue,
+  including zero-result sessions. CaseStore removal invokes session-owned
+  dependent result/run cleanup before publishing its new order. Generation
+  abort releases staged migration evidence; rollback consumes prior snapshots;
+  successful whole-transaction and standalone completion explicitly finalize
+  obsolete rollback evidence.
   A worker, Qt view, runtime participant, compatibility facade, or test fixture
   never owns reconciliation or arbitrary terminal installation.
 - Calculator execution: `CalculatorUseCase` -> core calculator dispatcher

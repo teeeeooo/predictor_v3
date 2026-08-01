@@ -39,6 +39,9 @@ class Participant:
     def abort(self, prepared):  # noqa: ANN001
         return None
 
+    def finalize(self, prior):  # noqa: ANN001
+        return None
+
 
 def test_prediction_boundary_reloads_latest_or_blocks_without_changing_active(tmp_path):
     repository = DataDefinitionGenerationRepository(tmp_path / "definitions")

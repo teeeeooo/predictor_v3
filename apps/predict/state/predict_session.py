@@ -10,31 +10,39 @@ from apps.predict.application.result_contract import (
     PredictionExecutionSemantics,
     PredictionModelIdentity,
     ResultAcceptance,
+    execution_semantics_from_runtime,
 )
 from apps.predict.application.result_validation import canonical_result_rejection_reason
-from apps.predict.application.target_outcome import PredictionTargetDescriptor
+from apps.predict.application.target_outcome import (
+    PredictionTargetDescriptor,
+    validate_runtime_target_contract,
+)
 from apps.predict.state.case_store import CaseStore
 from apps.predict.state.result_state_boundary import (
     AllowedExecution,
     PredictSessionProjection,
     ResultProjectionAuthority,
     copy_result,
-    validate_migration_relation,
     validate_direct_result,
+    validate_canonical_results,
+    validate_migration_relation,
+    validate_projection_structure,
     validate_projected_results,
-    validate_stored_result,
+    without_case_dependencies,
 )
 from apps.predict.state.result_row import ResultRow
 
 
 class PredictSession:
     """Own cases, typed results, and the stale-result acceptance gate."""
-
     def __init__(self, case_store: CaseStore | None = None, *, session_id: str | None = None) -> None:
         self._revision = 0
         self._session_id = session_id or f"predict-session-{uuid4().hex}"
         self.case_store = case_store or CaseStore()
         self.case_store.bind_mutation_callback(self._touch)
+        self.case_store.bind_removal_callback(
+            lambda case_ids: self._remove_case_dependencies(case_ids)
+        )
         self._results_by_case_id: dict[str, ResultRow] = {}
         self._allowed_executions: dict[str, AllowedExecution] = {}
         self._active_target_contract: tuple[PredictionTargetDescriptor, ...] | None = None
@@ -61,8 +69,11 @@ class PredictSession:
 
     @property
     def results_by_case_id(self) -> Mapping[str, ResultRow]:
-        """Expose canonical results without granting a mutation backdoor."""
         return MappingProxyType(self._results_by_case_id)
+
+    @property
+    def issued_projection_count(self) -> int:
+        return self._projection_authority.count
 
     def _touch(self, changed_case_id: str = "") -> None:
         self._revision += 1
@@ -217,28 +228,34 @@ class PredictSession:
         for case_id in case_ids:
             self.clear_result(case_id)
 
+    def _remove_case_dependencies(self, case_ids: tuple[str, ...]) -> None:
+        self._validate_canonical_state()
+        remaining = without_case_dependencies(
+            self._results_by_case_id, self._allowed_executions, case_ids)
+        self._results_by_case_id, self._allowed_executions = remaining
+
     def prepare_runtime_projection(
         self,
         *,
         cases: tuple[tuple[str, dict, dict, set, int], ...],
         results: tuple[ResultRow, ...],
-        target_contract: tuple[PredictionTargetDescriptor, ...],
-        execution_semantics: PredictionExecutionSemantics,
+        runtime_snapshot,
         model_identity: PredictionModelIdentity,
     ) -> PredictSessionProjection:
         """Issue an atomic migration artifact after validating both boundaries."""
         self._validate_canonical_state()
+        validate_runtime_target_contract(runtime_snapshot)
         projection = PredictSessionProjection(
             self.case_order,
             cases,
             tuple(copy_result(result) for result in results),
-            tuple(target_contract),
-            execution_semantics,
+            tuple(runtime_snapshot.target_descriptors),
+            execution_semantics_from_runtime(runtime_snapshot),
             model_identity,
             (),
             self._revision,
         )
-        self._validate_projection(projection)
+        validate_projection_structure(projection, self.case_order)
         validate_migration_relation(self._results_by_case_id, projection.results)
         validate_projected_results(projection, session_id=self._session_id)
         return self._projection_authority.issue(projection, "migration")
@@ -250,7 +267,7 @@ class PredictSession:
             raise ValueError("Predict session changed after prepare")
         self._projection_authority.validate(projection, "migration")
         self._validate_canonical_state()
-        self._validate_projection(projection)
+        validate_projection_structure(projection, self.case_order)
         validate_migration_relation(self._results_by_case_id, projection.results)
         validate_projected_results(projection, session_id=self._session_id)
         for case_id, inputs, autofill, dirty, input_revision in projection.cases:
@@ -272,7 +289,7 @@ class PredictSession:
     def restore_runtime_projection(self, projection: PredictSessionProjection) -> None:
         self._projection_authority.validate(projection, "snapshot")
         self._validate_canonical_state()
-        self._validate_projection(projection)
+        validate_projection_structure(projection, self.case_order)
         validate_projected_results(projection, session_id=self._session_id)
         for case_id, inputs, autofill, dirty, input_revision in projection.cases:
             case = self.case_store.get_case(case_id)
@@ -310,31 +327,25 @@ class PredictSession:
         )
         return self._projection_authority.issue(projection, "snapshot")
 
-    def _validate_projection(self, projection: PredictSessionProjection) -> None:
-        if projection.case_order != self.case_order:
-            raise ValueError("Predict case structure changed after prepare")
-        if tuple(item[0] for item in projection.cases) != projection.case_order:
-            raise ValueError("Predict case projection order is invalid")
-        result_ids = tuple(result.case_id for result in projection.results)
-        if len(result_ids) != len(set(result_ids)) or not set(result_ids).issubset(projection.case_order):
-            raise ValueError("Predict result projection identity is invalid")
+    def release_runtime_projection(
+        self, projection: PredictSessionProjection, *, kind: str
+    ) -> bool:
+        return self._projection_authority.release(projection, kind)
 
     def _validate_canonical_state(self) -> None:
         case_revisions = {
             case_id: self.case_store.get_case(case_id).input_revision
             for case_id in self.case_order
         }
-        for case_id, result in self._results_by_case_id.items():
-            if case_id != result.case_id or case_id not in self.case_order:
-                raise ValueError("canonical Predict result identity is invalid")
-            validate_stored_result(
-                result,
-                target_contract=self._active_target_contract,
-                case_revisions=case_revisions,
-                execution_semantics=self._active_semantics,
-                model_identity=self._active_model,
-                session_id=self._session_id,
-            )
+        validate_canonical_results(
+            self._results_by_case_id,
+            case_order=self.case_order,
+            case_revisions=case_revisions,
+            target_contract=self._active_target_contract,
+            execution_semantics=self._active_semantics,
+            model_identity=self._active_model,
+            session_id=self._session_id,
+        )
 
     def _mark_case_result_stale(self, case_id: str, reason: str) -> None:
         existing = self._results_by_case_id.get(case_id)

@@ -78,3 +78,6 @@ class DefinitionRuntimeParticipant:
 
     def abort(self, prepared: PreparedParticipant) -> None:
         return None
+
+    def finalize(self, prior_state: object) -> None:
+        return None

@@ -44,7 +44,12 @@ canonical-state invariant: result storage is read-only outside the session,
 fresh acceptance and validated migration are distinct, and only sealed
 session-issued migration/snapshot artifacts can apply or restore state
 atomically. Test fixtures now prepare genuine accepted results instead of using
-runtime projection as an installer. The Draft remains open pending a fresh
+runtime projection as an installer. The final lifecycle completion additionally
+validates the destination Target contract for zero-result migration, couples
+supported case removal to dependent result/run cleanup, and releases sealed
+migration/snapshot artifacts on abort, rollback, and successful coordinator or
+standalone finalization. Standalone and embedded presentation fixtures now use
+coherent typed Target descriptors. The Draft remains open pending a fresh
 independent exact-head re-audit. The Auditor
 owns complete adjacent-owner review, focused validation, and only then guarded
 merge/closeout. Slice 3 does not start from this Worker branch.

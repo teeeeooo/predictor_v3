@@ -99,6 +99,9 @@ class MappingRuntimeParticipant:
     def abort(self, prepared: PreparedParticipant) -> None:
         return None
 
+    def finalize(self, prior_state: object) -> None:
+        return None
+
     def review_update(self) -> tuple[MappingReconciliationItem, ...]:
         if self._pending is not None and self._review_revision != self.revision_token():
             self._refresh_review()

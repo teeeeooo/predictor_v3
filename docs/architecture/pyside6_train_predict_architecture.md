@@ -345,6 +345,10 @@ typed results, destination Target descriptors, execution semantics, and loaded
 model identity. Result keys migrate only through stable Result Feature identity.
 The session validates the current canonical source, source-to-destination result
 lineage, destination contract, revision, and case structure before any mutation.
+The destination runtime snapshot is the Target-contract owner: active Target
+names, Target/result-key pairs, typed descriptors, and active Result Feature
+descriptors must be non-empty, unique, complete, and mutually consistent before
+artifact issue, even when the session has zero results.
 A presentation-only projection may keep a valid result current; a semantic
 projection preserves its typed evidence as stale. Caller-constructed, altered,
 or replayed projection DTOs are not install artifacts.
@@ -354,6 +358,14 @@ canonical state. It restores that exact case/result/runtime contract, session
 revision, and allowed-execution state, then consumes the artifact. Projection or
 rollback rejection is atomic: case values, case revisions, results, run
 authority, and session revision remain unchanged.
+
+Sealed artifacts have an explicit transaction lifecycle. Participant abort
+releases an unused migration artifact. Commit consumes migration and retains its
+prior snapshot through the coordinator rollback window. Failed commit rolls back
+and consumes that snapshot; successful whole-transaction completion calls
+participant finalize to release it. Standalone generation refresh applies the
+same finalize step. Repeated prepare/abort and successful cutovers therefore do
+not retain full case/result/provenance projections for the session lifetime.
 
 The generation-bound Predict runtime snapshot also owns an immutable
 `PredictRuntimeColumnDescriptor` tuple. Each descriptor binds canonical
@@ -777,6 +789,13 @@ pinned request contract; migration validates both prior canonical lineage and
 the destination runtime contract; rollback restores only a session-issued prior
 snapshot. No private helper, bulk facade, generation projection, UI model, or
 test fixture may install arbitrary terminal state.
+
+`CaseStore` remains the case-order owner, but a bound session cleanup runs before
+supported case deletion. It removes dependent result and allowed-execution
+authority before the store publishes the new case order; one store mutation then
+advances the session revision. Callback failure occurs before either boundary is
+changed. Direct CaseStore removal, table-controller removal, and reset therefore
+cannot expose a dangling result or terminal counts greater than total cases.
 
 Generation and model transitions preserve typed outcomes and provenance. A
 presentation-only generation change may update current keys by Feature identity

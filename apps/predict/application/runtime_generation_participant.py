@@ -107,10 +107,7 @@ class PredictRuntimeParticipant:
         session_projection = self._composition.session.prepare_runtime_projection(
             cases=migrated_cases,
             results=migrated_results,
-            target_contract=runtime.target_descriptors,
-            execution_semantics=(
-                composition.prediction_controller.execution_environment[0]
-            ),
+            runtime_snapshot=runtime,
             model_identity=(
                 composition.prediction_controller.execution_environment[1]
             ),
@@ -137,11 +134,6 @@ class PredictRuntimeParticipant:
                 "Predict cases, model, or execution state changed after prepare.",
                 "Retry Apply",
             )
-        prior = (
-            self._active,
-            self._composition,
-            self._composition.session.snapshot_runtime_projection(),
-        )
         payload: _PredictPrepared = prepared.payload
         runtime_generation = payload.composition.runtime_snapshot.generation_id
         semantic_generations = {
@@ -159,16 +151,40 @@ class PredictRuntimeParticipant:
                 "Prepared Predict execution semantics do not share one generation.",
                 "Restart Required",
             )
-        self._composition.session.apply_runtime_projection(
-            payload.session_projection,
-            expected_revision=payload.session_revision,
-        )
-        self._composition = payload.composition
-        self._active = payload.snapshot
-        lifecycle = self._composition.prediction_controller.model_lifecycle
-        if lifecycle is not None:
-            lifecycle.set_runtime_snapshot(payload.composition.runtime_snapshot)
-        self._composition.prediction_controller.reconcile_session_currentness()
+        previous_active = self._active
+        previous_composition = self._composition
+        session_state = self._composition.session.snapshot_runtime_projection()
+        prior = (previous_active, previous_composition, session_state)
+        applied = False
+        try:
+            self._composition.session.apply_runtime_projection(
+                payload.session_projection,
+                expected_revision=payload.session_revision,
+            )
+            applied = True
+            self._composition = payload.composition
+            self._active = payload.snapshot
+            lifecycle = self._composition.prediction_controller.model_lifecycle
+            if lifecycle is not None:
+                lifecycle.set_runtime_snapshot(payload.composition.runtime_snapshot)
+            self._composition.prediction_controller.reconcile_session_currentness()
+        except Exception:
+            if applied:
+                self._active = previous_active
+                self._composition = previous_composition
+                previous_lifecycle = (
+                    previous_composition.prediction_controller.model_lifecycle
+                )
+                if previous_lifecycle is not None:
+                    previous_lifecycle.set_runtime_snapshot(
+                        previous_composition.runtime_snapshot
+                    )
+                previous_composition.session.restore_runtime_projection(session_state)
+            else:
+                previous_composition.session.release_runtime_projection(
+                    session_state, kind="snapshot"
+                )
+            raise
         return prior
 
     def rollback(self, prior_state: object) -> None:
@@ -181,7 +197,16 @@ class PredictRuntimeParticipant:
         composition.session.restore_runtime_projection(session_state)
 
     def abort(self, prepared: PreparedParticipant) -> None:
-        return None
+        payload: _PredictPrepared = prepared.payload
+        self._composition.session.release_runtime_projection(
+            payload.session_projection, kind="migration"
+        )
+
+    def finalize(self, prior_state: object) -> None:
+        _active, composition, session_state = prior_state
+        composition.session.release_runtime_projection(
+            session_state, kind="snapshot"
+        )
 
 
 def _migrated_case_rows(

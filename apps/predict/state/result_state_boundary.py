@@ -84,6 +84,19 @@ class ResultProjectionAuthority:
     def consume(self, projection: PredictSessionProjection) -> None:
         self._issued.pop(id(projection._authority), None)
 
+    def release(self, projection: PredictSessionProjection, kind: str) -> bool:
+        """Release an unconsumed artifact; already-consumed cleanup is idempotent."""
+        authority = projection._authority
+        if authority is None or id(authority) not in self._issued:
+            return False
+        self.validate(projection, kind)
+        self.consume(projection)
+        return True
+
+    @property
+    def count(self) -> int:
+        return len(self._issued)
+
 
 def validate_direct_result(result: ResultRow) -> None:
     if (
@@ -124,6 +137,56 @@ def validate_projected_results(
                 for outcome in result.target_outcomes
             ):
                 raise ValueError("invalid canonical Predict result: result_key_mismatch")
+
+
+def validate_projection_structure(
+    projection: PredictSessionProjection, case_order: tuple[str, ...]
+) -> None:
+    if projection.case_order != case_order:
+        raise ValueError("Predict case structure changed after prepare")
+    if tuple(item[0] for item in projection.cases) != projection.case_order:
+        raise ValueError("Predict case projection order is invalid")
+    result_ids = tuple(result.case_id for result in projection.results)
+    if (
+        len(result_ids) != len(set(result_ids))
+        or not set(result_ids).issubset(projection.case_order)
+    ):
+        raise ValueError("Predict result projection identity is invalid")
+
+
+def validate_canonical_results(
+    results: Mapping[str, ResultRow],
+    *,
+    case_order: tuple[str, ...],
+    case_revisions: Mapping[str, int],
+    target_contract: tuple[PredictionTargetDescriptor, ...] | None,
+    execution_semantics: PredictionExecutionSemantics | None,
+    model_identity: PredictionModelIdentity | None,
+    session_id: str,
+) -> None:
+    for case_id, result in results.items():
+        if case_id != result.case_id or case_id not in case_order:
+            raise ValueError("canonical Predict result identity is invalid")
+        validate_stored_result(
+            result,
+            target_contract=target_contract,
+            case_revisions=case_revisions,
+            execution_semantics=execution_semantics,
+            model_identity=model_identity,
+            session_id=session_id,
+        )
+
+
+def without_case_dependencies(
+    results: Mapping[str, ResultRow],
+    allowed: Mapping[str, AllowedExecution],
+    case_ids: tuple[str, ...],
+) -> tuple[dict[str, ResultRow], dict[str, AllowedExecution]]:
+    removed = set(case_ids)
+    return (
+        {key: value for key, value in results.items() if key not in removed},
+        {key: value for key, value in allowed.items() if key not in removed},
+    )
 
 
 def validate_stored_result(

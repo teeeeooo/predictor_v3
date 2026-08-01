@@ -19,6 +19,7 @@ from apps.predict.application.runtime_snapshot import (
     PredictRuntimeSnapshot,
     compatibility_predict_runtime_snapshot,
 )
+from apps.predict.application.target_outcome import validate_runtime_target_contract
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import (
     PredictionController,
@@ -109,6 +110,7 @@ def build_predict_workspace_composition(
             one_hot=one_hot_snapshot or runtime.one_hot,
             predict_projection=predict_projection or runtime.predict_projection,
         )
+    validate_runtime_target_contract(runtime)
     resolved_one_hot_snapshot = runtime.one_hot
     column_descriptors = runtime.column_descriptors
     predict_columns = build_predict_column_schema(column_descriptors)

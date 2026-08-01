@@ -51,10 +51,11 @@ def _cleanup_qt_widgets():
 
 def _runtime_pair() -> tuple[PredictRuntimeSnapshot, PredictRuntimeSnapshot]:
     base = compatibility_predict_runtime_snapshot()
+    target_result_keys = {item.result_key for item in base.target_descriptors}
     results = [
         row
         for row in base.predict_projection
-        if row.active and row.visible and row.role == "result"
+        if row.column_key in target_result_keys
     ]
     first, second, third = results[:3]
     runtime_a = _runtime(
@@ -84,6 +85,13 @@ def _runtime(base, generation_id, targets):  # noqa: ANN001, ANN202
         else row
         for row in base.predict_projection
     )
+    descriptors_by_key = {
+        item.result_key: item for item in base.target_descriptors
+    }
+    target_descriptors = tuple(
+        replace(descriptors_by_key[result_key], ml_name=target)
+        for target, result_key, _label in targets
+    )
     return replace(
         base,
         generation_id=generation_id,
@@ -98,6 +106,8 @@ def _runtime(base, generation_id, targets):  # noqa: ANN001, ANN202
         target_result_keys=tuple(
             (target, result_key) for target, result_key, _label in targets
         ),
+        target_descriptors=target_descriptors,
+        target_registry_fingerprint=f"fixture-targets:{generation_id}",
     )
 
 
@@ -182,6 +192,15 @@ def test_empty_target_projection_is_safe_and_bounded():
     assert tooltip.endswith(long_label)
 
 
+def test_incomplete_typed_runtime_contract_fails_before_composition():
+    runtime = replace(
+        compatibility_predict_runtime_snapshot(), target_descriptors=()
+    )
+
+    with pytest.raises(ValueError, match="Target contract is empty"):
+        _composition(runtime)
+
+
 def test_standalone_and_embedded_show_the_same_shared_presentation():
     app = _app()
     runtime_a, _runtime_b = _runtime_pair()
@@ -197,6 +216,14 @@ def test_standalone_and_embedded_show_the_same_shared_presentation():
     embedded_shell.show()
     app.processEvents()
     embedded = embedded_shell.predict_workspace
+
+    assert tuple(
+        item.ml_name for item in runtime_a.target_descriptors
+    ) == runtime_a.active_targets
+    assert tuple(
+        (item.ml_name, item.result_key)
+        for item in runtime_a.target_descriptors
+    ) == runtime_a.target_result_keys
 
     assert standalone.workspace.model_target_strip.isVisibleTo(standalone.workspace)
     assert embedded.model_target_strip.isVisibleTo(embedded)

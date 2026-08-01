@@ -90,6 +90,9 @@ class TrainRuntimeParticipant:
     def abort(self, prepared: PreparedParticipant) -> None:
         return None
 
+    def finalize(self, prior_state: object) -> None:
+        return None
+
     def _validate_selected_training_data(self, registry: ModelRegistrySnapshot) -> None:
         if self._selected_data_path_provider is None:
             return

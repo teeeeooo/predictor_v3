@@ -45,6 +45,20 @@ def _state(session):  # noqa: ANN001, ANN202
     )
 
 
+def _case_rows(session):  # noqa: ANN001, ANN202
+    return tuple(
+        (
+            case_id,
+            dict(case.input_values),
+            dict(case.autofill_values),
+            set(case.dirty_fields),
+            case.input_revision,
+        )
+        for case_id in session.case_order
+        for case in (session.case_store.get_case(case_id),)
+    )
+
+
 def test_result_view_cannot_mutate_canonical_storage():
     session = _session()
     case_id = session.case_order[0]
@@ -132,8 +146,7 @@ def test_migration_preparation_rejects_malformed_or_unknown_state(malformed):
         session.prepare_runtime_projection(
             cases=snapshot.cases,
             results=(malformed,),
-            target_contract=runtime.target_descriptors,
-            execution_semantics=execution_semantics_from_runtime(runtime),
+            runtime_snapshot=runtime,
             model_identity=PredictionModelIdentity(
                 "candidate", 1, runtime.generation_id
             ),
@@ -153,8 +166,7 @@ def test_non_executed_state_migrates_only_through_validated_projection(status):
     prepared = session.prepare_runtime_projection(
         cases=snapshot.cases,
         results=(state,),
-        target_contract=runtime.target_descriptors,
-        execution_semantics=execution_semantics_from_runtime(runtime),
+        runtime_snapshot=runtime,
         model_identity=PredictionModelIdentity(
             "candidate", 1, runtime.generation_id
         ),
@@ -214,8 +226,7 @@ def test_all_valid_terminal_families_migrate_through_sealed_projection(template)
     prepared = session.prepare_runtime_projection(
         cases=snapshot.cases,
         results=(accepted,),
-        target_contract=runtime.target_descriptors,
-        execution_semantics=accepted.execution_context.semantics,
+        runtime_snapshot=runtime,
         model_identity=accepted.execution_context.model,
     )
 
@@ -248,8 +259,7 @@ def test_projection_cannot_keep_result_current_after_case_revision_change():
         session.prepare_runtime_projection(
             cases=changed_cases,
             results=(accepted,),
-            target_contract=runtime.target_descriptors,
-            execution_semantics=accepted.execution_context.semantics,
+            runtime_snapshot=runtime,
             model_identity=accepted.execution_context.model,
         )
 
@@ -263,8 +273,7 @@ def test_sealed_projection_detects_in_place_payload_tampering_atomically():
     prepared = session.prepare_runtime_projection(
         cases=snapshot.cases,
         results=(),
-        target_contract=runtime.target_descriptors,
-        execution_semantics=execution_semantics_from_runtime(runtime),
+        runtime_snapshot=runtime,
         model_identity=PredictionModelIdentity(
             "candidate", 1, runtime.generation_id
         ),
@@ -278,6 +287,35 @@ def test_sealed_projection_detects_in_place_payload_tampering_atomically():
         )
 
     assert _state(session) == before
+
+
+def test_issued_artifact_rejects_wrong_session_and_wrong_lifecycle_kind():
+    runtime = compatibility_predict_runtime_snapshot()
+    owner = _session()
+    other = _session()
+    snapshot = owner.snapshot_runtime_projection()
+    migration = owner.prepare_runtime_projection(
+        cases=_case_rows(owner),
+        results=(),
+        runtime_snapshot=runtime,
+        model_identity=PredictionModelIdentity(
+            "candidate", 1, runtime.generation_id
+        ),
+    )
+
+    with pytest.raises(ValueError, match="not issued"):
+        other.restore_runtime_projection(snapshot)
+    with pytest.raises(ValueError, match="not issued"):
+        owner.apply_runtime_projection(
+            snapshot, expected_revision=owner.revision
+        )
+    with pytest.raises(ValueError, match="not issued"):
+        owner.restore_runtime_projection(migration)
+
+    assert owner.issued_projection_count == 2
+    assert owner.release_runtime_projection(snapshot, kind="snapshot")
+    assert owner.release_runtime_projection(migration, kind="migration")
+    assert owner.issued_projection_count == 0
 
 
 def test_clear_and_remove_delete_state_without_creating_terminal_results():
@@ -296,3 +334,135 @@ def test_clear_and_remove_delete_state_without_creating_terminal_results():
     assert session.results_by_case_id == {}
     assert session.summary_counts()["completed"] == 0
     assert session.summary_counts()["cancelled"] == 0
+
+
+@pytest.mark.parametrize(
+    "runtime_mutation",
+    (
+        lambda runtime: replace(runtime, target_descriptors=()),
+        lambda runtime: replace(
+            runtime,
+            target_descriptors=(
+                runtime.target_descriptors[0],
+                replace(
+                    runtime.target_descriptors[1],
+                    target_identity=runtime.target_descriptors[0].target_identity,
+                ),
+                *runtime.target_descriptors[2:],
+            ),
+        ),
+        lambda runtime: replace(
+            runtime,
+            target_descriptors=(
+                replace(runtime.target_descriptors[0], canonical_unit=""),
+                *runtime.target_descriptors[1:],
+            ),
+        ),
+        lambda runtime: replace(runtime, active_targets=("incomplete",)),
+        lambda runtime: replace(
+            runtime, target_result_keys=((runtime.active_targets[0], "wrong"),)
+        ),
+    ),
+)
+def test_zero_result_migration_rejects_invalid_destination_contract_before_issue(
+    runtime_mutation,
+):
+    runtime = compatibility_predict_runtime_snapshot()
+    session = _session()
+    case_id = session.case_order[0]
+    semantics = execution_semantics_from_runtime(runtime)
+    model = PredictionModelIdentity("candidate", 1, runtime.generation_id)
+    context = PredictionExecutionContext(
+        session.session_id,
+        case_id,
+        "before-invalid-migration",
+        0,
+        semantics,
+        model,
+    )
+    session.allow_result(context, runtime.target_descriptors)
+    session.revoke_run(context.run_id)
+    before = _state(session)
+
+    with pytest.raises(ValueError, match="Predict .*Target|Predict Target"):
+        session.prepare_runtime_projection(
+            cases=_case_rows(session),
+            results=(),
+            runtime_snapshot=runtime_mutation(runtime),
+            model_identity=model,
+        )
+
+    assert _state(session) == before
+    assert session.issued_projection_count == 0
+    next_context = replace(context, run_id="valid-next-run")
+    session.allow_result(next_context, runtime.target_descriptors)
+    assert session.allowed_context_for_case(case_id) == next_context
+
+
+def test_zero_result_migration_accepts_one_complete_runtime_contract():
+    runtime = compatibility_predict_runtime_snapshot()
+    session = _session()
+    model = PredictionModelIdentity("candidate", 1, runtime.generation_id)
+
+    projection = session.prepare_runtime_projection(
+        cases=_case_rows(session),
+        results=(),
+        runtime_snapshot=runtime,
+        model_identity=model,
+    )
+
+    assert session.issued_projection_count == 1
+    session.apply_runtime_projection(projection, expected_revision=session.revision)
+    assert session.issued_projection_count == 0
+    assert session.results_by_case_id == {}
+
+
+def test_direct_case_removal_atomically_cleans_result_and_run_authority():
+    runtime = compatibility_predict_runtime_snapshot()
+    session = _session(3)
+    completed, running, unrelated = session.case_order
+    accepted, preserved = accept_result_fixtures(
+        session,
+        ResultRow(completed, "complete", {"cooling_power": "12.5"}),
+        ResultRow(unrelated, "cancelled", message="preserve unrelated"),
+    )
+    context = PredictionExecutionContext(
+        session.session_id,
+        running,
+        "remove-running",
+        session.case_store.get_case(running).input_revision,
+        accepted.execution_context.semantics,
+        accepted.execution_context.model,
+    )
+    session.allow_result(context, runtime.target_descriptors)
+    session.set_result(ResultRow(running, "running"))
+    unrelated_revision = session.case_store.get_case(unrelated).input_revision
+    before_revision = session.revision
+
+    removed = session.case_store.remove_rows((completed, running))
+
+    assert removed == [completed, running]
+    assert set(session.results_by_case_id) == {unrelated}
+    assert session.result_for_case(unrelated) == preserved
+    assert session.allowed_context_for_case(running) is None
+    assert session.case_store.get_case(unrelated).input_revision == unrelated_revision
+    assert session.revision == before_revision + 1
+    counts = session.summary_counts()
+    assert counts["total"] == 1
+    assert sum(counts[key] for key in ("completed", "errors", "cancelled")) <= 1
+
+
+def test_case_removal_callback_failure_leaves_canonical_state_unchanged(monkeypatch):
+    session = _session(2)
+    case_id = session.case_order[0]
+    accept_result_fixtures(session, ResultRow(case_id, "complete"))
+    before = _state(session)
+
+    def fail_before_cleanup(_case_ids):  # noqa: ANN001
+        raise RuntimeError("injected removal failure")
+
+    monkeypatch.setattr(session, "_remove_case_dependencies", fail_before_cleanup)
+    with pytest.raises(RuntimeError, match="injected removal failure"):
+        session.case_store.remove_rows((case_id,))
+
+    assert _state(session) == before

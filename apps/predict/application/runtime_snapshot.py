@@ -10,7 +10,10 @@ from apps.predict.application.runtime_columns import (
     PredictRuntimeColumnDescriptor,
     build_runtime_column_descriptors,
 )
-from apps.predict.application.target_outcome import PredictionTargetDescriptor
+from apps.predict.application.target_outcome import (
+    PredictionTargetDescriptor,
+    validate_runtime_target_contract,
+)
 from core.data_definition.contract import (
     bootstrap_manifest,
     generate_projections,
@@ -110,7 +113,7 @@ def build_predict_runtime_snapshot(
         if item.active and item.ml_name
     )
     fingerprints = generation.fingerprints
-    return PredictRuntimeSnapshot(
+    runtime = PredictRuntimeSnapshot(
         generation_id=manifest.generation.generation_id,
         preprocessing_version=manifest.preprocessing_version,
         predict_projection=generation.projections.predict,
@@ -129,6 +132,8 @@ def build_predict_runtime_snapshot(
         target_registry_fingerprint=fingerprints.target_registry,
         preprocessing_fingerprint=fingerprints.preprocessing,
     )
+    validate_runtime_target_contract(runtime)
+    return runtime
 
 
 def compatibility_predict_runtime_snapshot() -> PredictRuntimeSnapshot:
