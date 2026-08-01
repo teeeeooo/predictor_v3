@@ -10,8 +10,9 @@ Train/Admin Phase 5 and Predict Findings #1–#7 are complete and merged. The
 active product workstream is **Predict input workflow broad overhaul**. Its
 product and integration boundary is approved, and Slices 1–3 — Stable Identity
 Seam, Typed Result and Execution Context, and EER/COP Enrichment — are
-independently audited, merged, and closed. The next implementation gate is
-Slice 4 — Result Review Projection.
+independently audited, merged, and closed. Slice 4 — Result Review Projection
+has a focused Worker implementation on a Draft PR and awaits a fresh independent
+exact-head Auditor; it is not merged or closed.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -96,7 +97,10 @@ Predict session, repository-issued runtime authority, fail-closed terminal
 acceptance, and preserved reload/generation lifecycle semantics. Slice 3 closed
 the Qt-free execution-pinned EER/COP enrichment while preserving raw precision,
 canonical result provenance, lifecycle semantics, and Calculator ownership.
-Slice 4 — Result Review Projection is the next independent Lane C gate.
+Slice 4 provides the read-only canonical-session projection, shared table
+presentation seam, and full-row TSV copy boundary on its focused Worker branch.
+Independent exact-head audit remains the current gate before any close or Slice
+5 work.
 
 ### Later — Production ML Readiness / Calculator Integration
 

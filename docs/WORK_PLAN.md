@@ -37,22 +37,22 @@
   Predict now derives raw EER/COP from execution-pinned stable-identity capacity
   evidence and accepted typed power outcomes while preserving canonical result
   provenance, lifecycle semantics, and the public/persisted schema boundaries.
+- Slice 4 — Result Review Projection has a focused Worker implementation on a
+  Draft PR. It projects the canonical session read-only, formats EER/COP only at
+  presentation, composes the stable-identity full specification summary, and
+  exposes full-row TSV copy with hidden raw source/provenance evidence. It is
+  not closed until a fresh independent exact-head Auditor approves it.
 
 ## Next Action
 
-The next gate is **Slice 4 — Result Review Projection**. It may consume the
-closed Slice 1 stable identities, Slice 2 canonical typed-result/provenance
-contract, and Slice 3 execution-pinned EER/COP enrichment to expose one read-only
-review projection over the canonical Predict session. Keep Result Review
-presentation, display rounding, summary composition, and hidden-source
-copy/export behind its own Lane C authorization; this Slice 3 close does not
-start Slice 4 source work or create a Worker handoff.
+The next gate is a **fresh independent exact-head Auditor for Slice 4 — Result
+Review Projection**. Audit the focused Worker head without merging it. Slice 4
+Close and Slice 5 Layout B composition remain separately authorized decisions.
 
 ## Active Blockers
 
-- Partial-target Active model support, EER/COP display precision,
-  `사양 요약` truncation, hidden-source copy/export,
-  and narrow-viewport pinning remain open gates.
+- Partial-target Active model support and narrow-viewport pinning remain open
+  gates.
 - A model-incompatible saved Definition generation continues to block Predict
   with Retraining required until compatibility is proven; the overhaul does not
   auto-replace or auto-promote a model.
@@ -77,7 +77,8 @@ start Slice 4 source work or create a Worker handoff.
 
 ## Deferred / Hold
 
-- Result graph or Advanced surface, export redesign, Train navigation, lifecycle
+- Result graph or Advanced surface, CSV/XLSX file export and export dialogs,
+  Train navigation, lifecycle
   wording redesign, model training workflow, ML feature/schema changes,
   calculator formula changes, and packaging/deployment require separate approval
   or follow-up workstreams.

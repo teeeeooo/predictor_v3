@@ -130,6 +130,15 @@ Examples:
   abort releases staged migration evidence; rollback consumes prior snapshots;
   successful whole-transaction and standalone completion explicitly finalize
   obsolete rollback evidence.
+  Result Review is a separate Qt-free, read-only projection over that same
+  canonical session. It derives Case ordinal from current `CaseStore` order,
+  resolves summary values through stable Feature identity plus current runtime
+  labels/keys, and retains typed Target, derived-metric, and execution evidence.
+  Executed rows use execution-pinned capacity evidence even when stale; only a
+  row without execution evidence may show current case capacity. Its full-row
+  TSV boundary emits raw canonical source values and provenance, while Qt owns
+  two-decimal EER/COP display, single-line visual elision, tooltip access, and
+  OS clipboard writes. Neither projection nor view mutates session state.
   A worker, Qt view, runtime participant, compatibility facade, or test fixture
   never owns reconciliation or arbitrary terminal installation.
 - Calculator execution: `CalculatorUseCase` -> core calculator dispatcher

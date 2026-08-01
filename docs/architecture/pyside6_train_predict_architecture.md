@@ -844,6 +844,21 @@ must not change currentness. The same transformation preserves the original
 derived metric and execution-pinned capacity evidence exactly; no transition
 recomputes a historical metric from a currently edited case.
 
+### 8.5 Result Review projection
+
+`apps.predict.application.result_review` owns a Qt-free read-only projection
+over `PredictSession`. It computes rows in current canonical case order and
+does not retain an independently mutable result collection. An executed row,
+including a stale row, reads cooling/heating capacity from its pinned execution
+context; only rows without executed evidence may read current case input.
+
+Stable Feature identities select the four specification groups while current
+runtime descriptors supply keys and labels. Typed `TargetOutcome`,
+`DerivedMetricOutcome`, and execution context remain attached to each projected
+row. The application clipboard document emits selected rows in canonical order,
+keeps the visible ten fields first, and appends hidden raw power/source and
+execution provenance. CSV/XLSX file publication is not part of this boundary.
+
 ## 9. Table Model Specification
 
 ### 9.1 Unified case table model
@@ -903,7 +918,22 @@ Must not:
 - call calculator APIs
 - implement hidden joined-copy behavior across separate tables
 
-### 9.3 Historical split table foundation
+### 9.3 Result Review table model and view
+
+Files:
+
+- `apps/predict/ui/result_review/table_model.py`
+- `apps/predict/ui/result_review/table_view.py`
+
+The model exposes the exact ten Result Review columns and recomputes display
+from the Qt-free projection. It is selection-only and owns no result state.
+EER/COP render with exactly two decimals, unavailable values render as `—`, and
+the full specification summary is returned for both display and tooltip. The
+view keeps the cell single-line with right elision, selects full rows, and sends
+the application-owned full-row TSV document to the clipboard. Slice 5 owns
+placing this shared seam into standalone and embedded Layout B compositions.
+
+### 9.4 Historical split table foundation
 
 The former split-table files were retired after the unified `CaseTableModel` /
 `CaseTableView` path reached behavior parity:

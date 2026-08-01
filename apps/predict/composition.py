@@ -11,6 +11,7 @@ from apps.predict.adapters.pyside_prediction_runner import PySidePredictionRunne
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 from apps.predict.application.model_lifecycle import PredictModelLifecycleService
 from apps.predict.application.prediction_usecase import PredictionUseCase
+from apps.predict.application.result_review import ResultReviewProjection
 from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     execution_semantics_from_runtime,
@@ -64,6 +65,7 @@ class PredictWorkspaceComposition:
     columns: tuple[UnifiedCaseColumn, ...]
     generation_id: str
     runtime_snapshot: PredictRuntimeSnapshot
+    result_review_projection: ResultReviewProjection
 
 
 def build_predict_workspace_composition(
@@ -190,6 +192,9 @@ def build_predict_workspace_composition(
         columns=columns,
         generation_id=runtime.generation_id,
         runtime_snapshot=runtime,
+        result_review_projection=ResultReviewProjection(
+            resolved_session, runtime.column_descriptors
+        ),
     )
 
 
