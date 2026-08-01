@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; Slices 1–3 merged, Slice 4 next
+Status: approved product and owner boundary; Slices 1–3 merged, Slice 4 Worker Draft pending audit
 Created: 2026-07-14
 Updated: 2026-08-02
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
@@ -165,6 +165,12 @@ Summary composition follows three separate concerns:
 - visible labels and values come from the active generation; and
 - grouping, formatting, and display order belong to Predict presentation.
 
+Slice 4 resolves the presentation detail as four deterministic groups joined by
+` · `, with entries inside a group joined by ` + `. The projection retains the
+complete active-generation label/value text. The table cell stays single-line
+and may visually elide at narrow widths, while its tooltip exposes the complete
+summary; no shortened semantic value is persisted or exported.
+
 Mutable labels, current column positions, and arbitrary string keys are not
 authoritative identity. Predict-specific summary grouping, width, and Result
 priority are not added to the Feature Definition semantic schema.
@@ -195,12 +201,13 @@ Their calculation owner is a Qt-free Predict application result-enrichment
 boundary. It consumes raw typed inputs and target outcomes, preserves raw numeric
 precision and unit/source provenance, and returns deterministic W/W metrics or an
 explicit unavailable reason. The Qt projection performs display formatting and
-rounding only.
+rounding only. EER and COP display exactly two decimal places; their raw
+`DerivedMetricOutcome` values remain unchanged for typed application and
+copy/export consumers.
 
 Missing, failed, non-finite, zero, or negative required inputs do not become
 silent numeric values. Cooling and heating derived metrics remain independently
-available under partial target success. Display precision remains an open
-implementation gate.
+available under partial target success.
 
 ### 5.4 CSPF and HSPF2 Capability
 
@@ -379,6 +386,9 @@ shape, and Calculator formulas remain unchanged.
 
 ### Slice 4 — Result Review Projection
 
+**Status: focused Worker implementation on Draft PR; independent exact-head
+audit required before close.**
+
 Provide a read-only projection over the canonical session with:
 
 - Case ordinal;
@@ -394,6 +404,13 @@ Provide a read-only projection over the canonical session with:
 
 Do not create mutable result-row copies, hidden joined tables, a persistent
 detail panel, or a separate Full Context surface.
+
+The Slice 4 application boundary also serializes selected full rows as TSV with
+headers in canonical case order. The visible ten fields come first, followed by
+hidden raw cooling/heating power, freshness, stable case identity, execution
+run/input/runtime/model provenance, and typed power source metadata. The richer
+application document retains the canonical typed outcomes and execution context;
+file export remains deferred.
 
 ### Slice 5 — Shared Layout B Composition
 
@@ -426,33 +443,29 @@ Future multi-point contract ─► Calculate integration
 
 ## 8. Open Compatibility Gates
 
-These decisions are not changed into approved behavior by this record:
+These decisions remain open after the Slice 4 Worker implementation:
 
 1. whether Active models continue to require the exact active target set or may
    expose explicit partial-target capability;
-2. EER/COP display precision;
-3. the exact abbreviations, separators, wrapping, and truncation rules for
-   `사양 요약`;
-4. the user interaction for full-row copy/export of hidden source results;
-5. how far fixed or pinned columns extend in a narrow embedded viewport.
+2. how far fixed or pinned columns extend in a narrow embedded viewport.
 
 The default Result Review order and Layout B full-surface direction are approved
 and must not be reopened as compatibility gates.
 
 ## 9. Current Exclusions
 
-This documentation slice does not perform:
+The Slice 4 Worker implementation does not perform:
 
-- production source or test changes;
 - public schema or result-type changes;
-- Layout B or Result Review implementation;
+- Layout B composition or workspace-state navigation;
 - bulk-paste implementation;
 - CSPF/HSPF2 implementation;
 - model-lifecycle or Feature Definition generation changes;
 - Calculator formula changes;
 - a persistent detail panel, Full Context screen, or legacy split-table restore;
-- graph, Advanced surface, export redesign, packaging, or deployment;
-- branch, PR, Auditor, or Lane C Worker handoff creation;
+- graph, Advanced surface, CSV/XLSX file export, export dialog/preferences,
+  packaging, or deployment;
+- merge, audit approval, or Slice 4 Close;
 - deletion of `/tmp` audit/mock evidence; or
 - detached validation worktree cleanup.
 
@@ -472,7 +485,7 @@ authority and the canonical typed-result/provenance boundary; Slice 3 added
 execution-pinned raw EER/COP enrichment without changing ML Targets, Feature
 formula schema, or Calculator formulas.
 
-The next gate is **Slice 4 — Result Review Projection**. It may consume the
-closed identity, typed-result/provenance, and EER/COP contracts to expose a
-read-only review projection over the canonical Predict session. This Slice 3
-close does not start Slice 4 source work or create a Worker handoff.
+The next gate is a **fresh independent exact-head Auditor for Slice 4 — Result
+Review Projection**. The Worker Draft consumes the closed identity,
+typed-result/provenance, and EER/COP contracts; it does not authorize merge,
+Slice 4 Close, Slice 5 Layout B composition, or Slice 6 bulk paste.
