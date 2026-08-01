@@ -24,6 +24,7 @@ _RUNS = count(1)
 def accept_result_fixtures(
     owner: PredictSession | object,
     *templates: ResultRow,
+    model_identity: PredictionModelIdentity | None = None,
 ) -> tuple[ResultRow, ...]:
     """Create test results through the same canonical gate as production.
 
@@ -42,6 +43,7 @@ def accept_result_fixtures(
         model = PredictionModelIdentity("test-candidate", 1, runtime.generation_id)
     else:
         semantics, model = owner.prediction_controller.execution_environment
+    model = model_identity or model
 
     accepted = []
     for template in templates:
