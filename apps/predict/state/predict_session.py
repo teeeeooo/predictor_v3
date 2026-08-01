@@ -381,6 +381,8 @@ class PredictSession:
             return "execution_semantics_changed"
         if context.model != allowed.model:
             return "loaded_model_changed"
+        if context.capacity_inputs != allowed.capacity_inputs:
+            return "execution_input_changed"
         if allowed.semantics.currentness_key != current_semantics.currentness_key:
             return "execution_semantics_changed"
         if allowed.model != current_model:

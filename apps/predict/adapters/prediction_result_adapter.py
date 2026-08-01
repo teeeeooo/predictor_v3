@@ -6,6 +6,7 @@ import re
 
 from apps.predict.application.models import PredictionServiceResult
 from apps.predict.application.result_contract import PredictionExecutionContext
+from apps.predict.application.result_enrichment import enrich_target_outcomes
 from apps.predict.application.target_outcome import (
     PredictionTargetDescriptor,
     TargetOutcome,
@@ -118,6 +119,10 @@ class PredictionResultAdapter:
             status=status,
             message=self._clean_message(message),
             target_outcomes=outcomes,
+            derived_metrics=enrich_target_outcomes(
+                result.context.capacity_inputs if result.context is not None else (),
+                outcomes,
+            ),
             execution_context=result.context,
         )
 

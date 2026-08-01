@@ -14,12 +14,16 @@ from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     execution_semantics_from_runtime,
 )
+from apps.predict.application.result_enrichment import (
+    COOLING_CAPACITY_FEATURE_ID,
+    HEATING_CAPACITY_FEATURE_ID,
+    enrich_target_outcomes,
+)
 from apps.predict.application.runtime_snapshot import (
     build_predict_runtime_snapshot,
     compatibility_predict_runtime_snapshot,
     validate_runtime_target_contract,
 )
-from apps.predict.application.target_outcome import TargetOutcome
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.state.result_row import ResultRow
 from core.data_definition.contract import (
@@ -27,6 +31,7 @@ from core.data_definition.contract import (
     generate_projections,
     scoped_fingerprints,
 )
+from tests.helpers.predict_results import accept_result_fixtures
 
 
 def _replace_descriptors(runtime, descriptors):  # noqa: ANN001, ANN202
@@ -176,22 +181,34 @@ def _session_state(session):  # noqa: ANN001, ANN202
     )
 
 
-def _complete_result(case_id, context, runtime):  # noqa: ANN001, ANN202
-    return ResultRow(
-        case_id,
-        "complete",
-        target_outcomes=tuple(
-            TargetOutcome(
-                descriptor.target_identity,
-                descriptor.result_feature_identity,
-                descriptor.result_key,
-                descriptor.canonical_unit,
-                "available",
-                raw_value=float(index),
-            )
-            for index, descriptor in enumerate(runtime.target_descriptors, start=1)
-        ),
-        execution_context=context,
+def _install_capacity_inputs(composition, case_id):  # noqa: ANN001, ANN202
+    case = composition.session.case_store.get_case(case_id)
+    case.set_input_value("cooling_capa", 3500.125)
+    case.set_input_value("heating_capa", 4200.875)
+    outcome = composition.input_mapper.build_request(case)
+
+    assert outcome.is_valid
+    assert outcome.request is not None
+    identities = {item.feature_identity for item in outcome.request.capacity_inputs}
+    assert identities == {
+        COOLING_CAPACITY_FEATURE_ID,
+        HEATING_CAPACITY_FEATURE_ID,
+    }
+    return outcome.request.capacity_inputs
+
+
+def _assert_canonical_enrichment(result):  # noqa: ANN001, ANN202
+    assert result.execution_context is not None
+    identities = {
+        item.feature_identity for item in result.execution_context.capacity_inputs
+    }
+    assert identities == {
+        COOLING_CAPACITY_FEATURE_ID,
+        HEATING_CAPACITY_FEATURE_ID,
+    }
+    assert result.derived_metrics == enrich_target_outcomes(
+        result.execution_context.capacity_inputs,
+        result.target_outcomes,
     )
 
 
@@ -236,6 +253,7 @@ def test_forged_zero_result_destination_does_not_issue_or_mutate(kind):
     )
     session = composition.session
     case_id = session.case_order[0]
+    capacity_inputs = _install_capacity_inputs(composition, case_id)
     model = PredictionModelIdentity("candidate", 1, valid_runtime.generation_id)
     context = PredictionExecutionContext(
         session.session_id,
@@ -244,6 +262,7 @@ def test_forged_zero_result_destination_does_not_issue_or_mutate(kind):
         session.case_store.get_case(case_id).input_revision,
         execution_semantics_from_runtime(valid_runtime),
         model,
+        capacity_inputs,
     )
     session.allow_result(context, valid_runtime.target_descriptors)
     before = _session_state(session)
@@ -258,15 +277,13 @@ def test_forged_zero_result_destination_does_not_issue_or_mutate(kind):
 
     assert _session_state(session) == before
     session.revoke_run(context.run_id)
-    next_context = replace(context, run_id="genuine-next-execution")
-    session.allow_result(next_context, valid_runtime.target_descriptors)
-    result = _complete_result(case_id, next_context, valid_runtime)
-    acceptance = session.accept_result(
-        result,
-        next_context.semantics,
-        model,
-    )
-    assert acceptance.accepted
+    result = accept_result_fixtures(
+        composition,
+        ResultRow(case_id, "complete"),
+        model_identity=model,
+    )[0]
+
+    _assert_canonical_enrichment(result)
     assert session.result_for_case(case_id) == result
 
 
@@ -343,6 +360,7 @@ def test_coherent_forged_zero_result_migration_is_atomic_and_genuine_next_runs(
     )
     session = composition.session
     case_id = session.case_order[0]
+    _install_capacity_inputs(composition, case_id)
     model = PredictionModelIdentity("candidate", 1, valid_runtime.generation_id)
     before = _session_state(session)
 
@@ -355,22 +373,13 @@ def test_coherent_forged_zero_result_migration_is_atomic_and_genuine_next_runs(
         )
 
     assert _session_state(session) == before
-    next_context = PredictionExecutionContext(
-        session.session_id,
-        case_id,
-        "genuine-five-target-next-execution",
-        session.case_store.get_case(case_id).input_revision,
-        execution_semantics_from_runtime(valid_runtime),
-        model,
-    )
-    session.allow_result(next_context, valid_runtime.target_descriptors)
-    result = _complete_result(case_id, next_context, valid_runtime)
-    acceptance = session.accept_result(
-        result,
-        next_context.semantics,
-        model,
-    )
-    assert acceptance.accepted
+    result = accept_result_fixtures(
+        composition,
+        ResultRow(case_id, "complete"),
+        model_identity=model,
+    )[0]
+
+    _assert_canonical_enrichment(result)
     assert session.result_for_case(case_id) == result
 
 

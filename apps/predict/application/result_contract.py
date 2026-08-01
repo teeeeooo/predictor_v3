@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from apps.predict.application.result_enrichment import ExecutionInputEvidence
+
 
 @dataclass(frozen=True)
 class PredictionExecutionSemantics:
@@ -43,6 +45,10 @@ class PredictionExecutionContext:
     case_input_revision: int
     semantics: PredictionExecutionSemantics
     model: PredictionModelIdentity
+    capacity_inputs: tuple[ExecutionInputEvidence, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "capacity_inputs", tuple(self.capacity_inputs))
 
 
 @dataclass(frozen=True)

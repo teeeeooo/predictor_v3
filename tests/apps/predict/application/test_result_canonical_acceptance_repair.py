@@ -11,6 +11,7 @@ from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     execution_semantics_from_runtime,
 )
+from apps.predict.application.result_enrichment import enrich_target_outcomes
 from apps.predict.application.runtime_snapshot import compatibility_predict_runtime_snapshot
 from apps.predict.application.target_outcome import TargetOutcome
 from apps.predict.state.predict_session import PredictSession
@@ -57,6 +58,16 @@ def _outcome(descriptor, status="available"):  # noqa: ANN001, ANN202
 def _accept(session, usecase, result):  # noqa: ANN001, ANN202
     semantics, model = usecase.execution_environment
     return session.accept_result(result, semantics, model)
+
+
+def _executed_result(case_id, status, outcomes, context):  # noqa: ANN001, ANN202
+    return ResultRow(
+        case_id,
+        status,
+        target_outcomes=tuple(outcomes),
+        derived_metrics=enrich_target_outcomes(context.capacity_inputs, tuple(outcomes)),
+        execution_context=context,
+    )
 
 
 @pytest.mark.parametrize(
@@ -107,11 +118,11 @@ def test_canonical_gate_rejects_malformed_expected_target_projection(mutate, rea
     session, case, usecase, request, descriptors = _prepared()
     before = session.result_for_case(case.case_id)
     outcomes = tuple(_outcome(item) for item in descriptors)
-    malformed = ResultRow(
+    malformed = _executed_result(
         case.case_id,
         "complete",
-        target_outcomes=mutate(outcomes, descriptors),
-        execution_context=request.context,
+        mutate(outcomes, descriptors),
+        request.context,
     )
 
     acceptance = _accept(session, usecase, malformed)
@@ -125,13 +136,13 @@ def test_canonical_gate_rejects_malformed_expected_target_projection(mutate, rea
 def test_complete_with_unavailable_target_is_rejected_by_aggregate_gate():
     session, case, usecase, request, descriptors = _prepared()
     outcomes = tuple(_outcome(item) for item in descriptors)
-    malformed = ResultRow(
+    malformed = _executed_result(
         case.case_id,
         "complete",
-        target_outcomes=(
+        (
             _outcome(descriptors[0], "unavailable"), *outcomes[1:]
         ),
-        execution_context=request.context,
+        request.context,
     )
 
     acceptance = _accept(session, usecase, malformed)
@@ -151,16 +162,17 @@ def test_complete_with_unavailable_target_is_rejected_by_aggregate_gate():
 )
 def test_canonical_gate_accepts_valid_target_aggregate(status, outcome_statuses):
     session, case, usecase, request, descriptors = _prepared()
-    result = ResultRow(
+    outcomes = tuple(
+        _outcome(descriptor, outcome_status)
+        for descriptor, outcome_status in zip(
+            descriptors, outcome_statuses, strict=True
+        )
+    )
+    result = _executed_result(
         case.case_id,
         status,
-        target_outcomes=tuple(
-            _outcome(descriptor, outcome_status)
-            for descriptor, outcome_status in zip(
-                descriptors, outcome_statuses, strict=True
-            )
-        ),
-        execution_context=request.context,
+        outcomes,
+        request.context,
     )
 
     assert _accept(session, usecase, result).accepted
@@ -305,21 +317,21 @@ def test_direct_setter_rejects_unclassified_status_instead_of_falling_back():
 
 def test_malformed_result_preserves_existing_accepted_result_and_only_adds_diagnostic():
     session, case, usecase, request, descriptors = _prepared()
-    accepted = ResultRow(
+    accepted = _executed_result(
         case.case_id,
         "complete",
-        target_outcomes=tuple(_outcome(item) for item in descriptors),
-        execution_context=request.context,
+        tuple(_outcome(item) for item in descriptors),
+        request.context,
     )
     assert _accept(session, usecase, accepted).accepted
     next_context = replace(request.context, run_id="next-run")
     session.allow_result(next_context, descriptors)
     before_diagnostics = session.acceptance_diagnostics
-    malformed = ResultRow(
+    malformed = _executed_result(
         case.case_id,
         "complete",
-        target_outcomes=(_outcome(descriptors[0]),),
-        execution_context=next_context,
+        (_outcome(descriptors[0]),),
+        next_context,
     )
 
     assert not _accept(session, usecase, malformed).accepted

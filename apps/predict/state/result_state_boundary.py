@@ -103,6 +103,7 @@ def validate_direct_result(result: ResultRow) -> None:
         result.status not in NON_EXECUTED_RESULT_STATUSES
         or result.execution_context is not None
         or result.target_outcomes
+        or result.derived_metrics
         or result._legacy_result_values
         or result.freshness != "current"
         or result.stale_reason
@@ -240,6 +241,7 @@ def copy_result(result: ResultRow) -> ResultRow:
         dict(result._legacy_result_values),
         result.message,
         target_outcomes=result.target_outcomes,
+        derived_metrics=result.derived_metrics,
         execution_context=result.execution_context,
         freshness=result.freshness,
         stale_reason=result.stale_reason,
@@ -271,6 +273,7 @@ def _is_valid_result_migration(before: ResultRow, after: ResultRow) -> bool:
         or before.execution_context != after.execution_context
         or before._legacy_result_values != after._legacy_result_values
         or len(before.target_outcomes) != len(after.target_outcomes)
+        or before.derived_metrics != after.derived_metrics
     ):
         return False
     if before.freshness == "stale" and after.freshness != "stale":

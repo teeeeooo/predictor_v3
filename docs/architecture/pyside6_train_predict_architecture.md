@@ -718,7 +718,12 @@ Recommended fields:
   and either finite raw numeric value or bounded unavailable/failed reason
 - immutable execution context with session/case/run identity, case input
   revision, runtime generation trace, existing scoped semantic fingerprints,
-  loaded Candidate identity, Active revision, and loaded-model generation
+  loaded Candidate identity, Active revision, loaded-model generation, and
+  execution-pinned cooling/heating capacity evidence identified by stable
+  Feature identity
+- immutable `derived_metrics` for EER and COP, each carrying available finite raw
+  W/W value or a bounded unavailable reason plus the exact capacity input and
+  power Target provenance used
 - `freshness: current | stale` plus a bounded stale reason, independent from
   the row execution status
 
@@ -733,6 +738,16 @@ evidence. `PredictionTargetDescriptor` consumes this projection and never owns
 Target semantics.
 Adding unit authoring to Feature Definition is a separately approved schema
 change and is not implied by this contract.
+
+EER and COP are Qt-free Predict application enrichments, not `TargetOutcome`
+values and not Target-registry entries. Their numerators come from the immutable
+validated request snapshot for stable cooling/heating capacity Feature
+identities, interpreted as W by this closed application contract. Their
+denominators come from accepted raw cooling/heating power Target outcomes in W.
+The enrichment preserves raw division precision and independently returns an
+unavailable reason for missing, non-numeric, non-finite, zero, negative, failed,
+or metadata-incompatible evidence. Calculator standards formulas are not reused
+or copied, and Qt owns only future display formatting.
 
 ### 8.3 `CaseStore`
 
@@ -795,6 +810,12 @@ Editing another case is unrelated; editing the same case increments only that
 case revision, makes an existing typed result stale (or a running row pending),
 and causes the old request result to fail closed.
 
+Canonical acceptance also recomputes EER/COP from the pinned capacity evidence
+and validated Target outcomes. A caller cannot inject derived evidence or alter
+its raw value, source identity, unit, or reason while keeping an otherwise valid
+terminal result. Derived availability never changes the Target-owned aggregate
+row status.
+
 This is a canonical state invariant, not an API-specific convention. The
 session exposes its result map read-only and classifies every production
 mutation as non-executed state creation, fresh executed-result acceptance,
@@ -819,7 +840,9 @@ while remaining current because generation ID is trace-only for freshness.
 Changes to ordered ML input, preprocessing, Derived, One-hot, Target registry,
 Candidate identity, or Active revision mark the preserved result stale. Failed
 reload and generation rollback restore/preserve the old usable environment and
-must not change currentness.
+must not change currentness. The same transformation preserves the original
+derived metric and execution-pinned capacity evidence exactly; no transition
+recomputes a historical metric from a currently edited case.
 
 ## 9. Table Model Specification
 

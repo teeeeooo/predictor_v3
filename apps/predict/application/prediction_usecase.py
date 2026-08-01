@@ -121,6 +121,7 @@ class PredictionUseCase:
                 case_input_revision=case.input_revision,
                 semantics=self._execution_semantics,
                 model=self._model_identity,
+                capacity_inputs=outcome.request.capacity_inputs,
             )
             request = replace(outcome.request, context=context)
             self._session.allow_result(context, self._target_descriptors)

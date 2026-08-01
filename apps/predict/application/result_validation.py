@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from apps.predict.application.result_enrichment import enrich_target_outcomes
 from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.result_row import ResultRow
 
@@ -27,8 +28,12 @@ def canonical_result_rejection_reason(
 
     outcomes = result.target_outcomes
     if result.status == "cancelled":
-        return "cancelled_has_target_outcomes" if outcomes else ""
+        return "cancelled_has_execution_outcomes" if (
+            outcomes or result.derived_metrics
+        ) else ""
     if result.status == "error" and not outcomes:
+        if result.derived_metrics:
+            return "row_wide_error_has_derived_metrics"
         return "" if result.message else "row_wide_error_detail_missing"
     if not outcomes:
         return "missing_expected_target"
@@ -67,7 +72,13 @@ def canonical_result_rejection_reason(
         or result.status == "partial" and available > 0 and non_available > 0
         or result.status == "error" and available == 0
     )
-    return "" if aggregate_matches else "aggregate_status_mismatch"
+    if not aggregate_matches:
+        return "aggregate_status_mismatch"
+    expected_metrics = enrich_target_outcomes(
+        result.execution_context.capacity_inputs,
+        outcomes,
+    )
+    return "" if result.derived_metrics == expected_metrics else "derived_metric_mismatch"
 
 
 def canonical_stored_result_rejection_reason(
@@ -82,7 +93,11 @@ def canonical_stored_result_rejection_reason(
     the destination runtime produced those historical outcomes.
     """
     if result.status in NON_EXECUTED_RESULT_STATUSES:
-        if result.execution_context is not None or result.target_outcomes:
+        if (
+            result.execution_context is not None
+            or result.target_outcomes
+            or result.derived_metrics
+        ):
             return "non_executed_state_has_execution_payload"
         if result._legacy_result_values:
             return "non_executed_state_has_result_values"
@@ -116,6 +131,7 @@ def canonical_stored_result_rejection_reason(
         result.status,
         message=result.message,
         target_outcomes=result.target_outcomes,
+        derived_metrics=result.derived_metrics,
         execution_context=result.execution_context,
     )
     return canonical_result_rejection_reason(historical, historical_targets)

@@ -9,6 +9,7 @@ from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     execution_semantics_from_runtime,
 )
+from apps.predict.application.result_enrichment import enrich_target_outcomes
 from apps.predict.application.runtime_generation_participant import PredictRuntimeParticipant
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from apps.predict.application.target_outcome import TargetOutcome
@@ -51,6 +52,11 @@ def _setup(active, candidate, tmp_path):  # noqa: ANN001
 
 def _install_typed_result(composition, model_file):  # noqa: ANN001
     case_id = composition.session.case_order[0]
+    case = composition.session.case_store.get_case(case_id)
+    case.set_input_value("cooling_capa", 3500.123456789)
+    case.set_input_value("heating_capa", 4200.987654321)
+    input_outcome = composition.input_mapper.build_request(case)
+    assert input_outcome.request is not None
     descriptors = composition.runtime_snapshot.target_descriptors
     context = PredictionExecutionContext(
         composition.session.session_id,
@@ -61,23 +67,26 @@ def _install_typed_result(composition, model_file):  # noqa: ANN001
         PredictionModelIdentity(
             f"unmanaged:{model_file}", 0, composition.runtime_snapshot.generation_id
         ),
+        input_outcome.request.capacity_inputs,
+    )
+    outcomes = tuple(
+        TargetOutcome(
+            descriptor.target_identity,
+            descriptor.result_feature_identity,
+            descriptor.result_key,
+            descriptor.canonical_unit,
+            "available",
+            value_source=descriptor.value_source,
+            raw_value=123.456789,
+        )
+        for descriptor in descriptors
     )
     result = ResultRow(
         case_id,
         "complete",
         message="accepted",
-        target_outcomes=tuple(
-            TargetOutcome(
-                descriptor.target_identity,
-                descriptor.result_feature_identity,
-                descriptor.result_key,
-                descriptor.canonical_unit,
-                "available",
-                value_source=descriptor.value_source,
-                raw_value=123.456789,
-            )
-            for descriptor in descriptors
-        ),
+        target_outcomes=outcomes,
+        derived_metrics=enrich_target_outcomes(context.capacity_inputs, outcomes),
         execution_context=context,
     )
     composition.session.allow_result(context, descriptors)
@@ -111,6 +120,7 @@ def test_presentation_only_cutover_keeps_current_and_renames_result_key(tmp_path
     assert migrated.target_outcomes[0].raw_value == 123.456789
     assert migrated.target_outcomes[0].result_feature_identity == feature.identity
     assert migrated.target_outcomes[0].result_key == "cooling_power_presented"
+    assert migrated.derived_metrics == original.derived_metrics
     assert composition.session.case_store.get_case(original.case_id).input_revision == revision
 
     participant.rollback(prior)
@@ -136,6 +146,7 @@ def test_semantic_cutover_preserves_outcome_and_provenance_but_marks_stale(tmp_p
     assert migrated.freshness == "stale"
     assert migrated.stale_reason == "execution_semantics_changed"
     assert migrated.target_outcomes == original.target_outcomes
+    assert migrated.derived_metrics == original.derived_metrics
     assert migrated.execution_context == original.execution_context
     assert composition.session.case_store.get_case(original.case_id).input_revision == revision + 1
 
