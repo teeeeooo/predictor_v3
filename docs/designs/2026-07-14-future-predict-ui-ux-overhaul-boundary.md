@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; Slices 1–3 merged, Slice 4 Worker Draft pending audit
+Status: approved product and owner boundary; Slices 1–4 merged and closed, Slice 5 next
 Created: 2026-07-14
 Updated: 2026-08-02
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
@@ -10,7 +10,7 @@ Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 This record is the authoritative product and integration boundary for the
 **Predict input workflow broad overhaul**. It absorbs the completed disposable
 layout comparison and existing-application owner audit into a production-facing
-design direction. Slices 1–3 are closed; every remaining source slice still
+design direction. Slices 1–4 are closed; every remaining source slice still
 requires its own Lane C authorization.
 
 This record distinguishes:
@@ -354,7 +354,7 @@ the operating-point and standard-request contracts are separately defined.
 
 ## 7. Implementation Slice Boundary
 
-Slices 1–3 are merged and closed. Slice 4 — Result Review Projection is the
+Slices 1–4 are merged and closed. Slice 5 — Shared Layout B Composition is the
 next independent Lane C gate. Later slices are not authorized by this bounded
 close and retain independent Lane C gates.
 
@@ -386,8 +386,7 @@ shape, and Calculator formulas remain unchanged.
 
 ### Slice 4 — Result Review Projection
 
-**Status: focused Worker implementation on Draft PR; independent exact-head
-audit required before close.**
+**Status: independently audited, merged, and closed.**
 
 Provide a read-only projection over the canonical session with:
 
@@ -443,7 +442,7 @@ Future multi-point contract ─► Calculate integration
 
 ## 8. Open Compatibility Gates
 
-These decisions remain open after the Slice 4 Worker implementation:
+These decisions remain open after the Slice 4 close:
 
 1. whether Active models continue to require the exact active target set or may
    expose explicit partial-target capability;
@@ -454,7 +453,7 @@ and must not be reopened as compatibility gates.
 
 ## 9. Current Exclusions
 
-The Slice 4 Worker implementation does not perform:
+The closed Slice 4 implementation does not include:
 
 - public schema or result-type changes;
 - Layout B composition or workspace-state navigation;
@@ -464,10 +463,7 @@ The Slice 4 Worker implementation does not perform:
 - Calculator formula changes;
 - a persistent detail panel, Full Context screen, or legacy split-table restore;
 - graph, Advanced surface, CSV/XLSX file export, export dialog/preferences,
-  packaging, or deployment;
-- merge, audit approval, or Slice 4 Close;
-- deletion of `/tmp` audit/mock evidence; or
-- detached validation worktree cleanup.
+  packaging, or deployment.
 
 ## 10. Evidence Baseline and Next Gate
 
@@ -477,15 +473,17 @@ current Feature Manager, Data Mapping, Train/model lifecycle, prediction
 execution, and Calculate owners are reusable while the Predict
 application/presentation seams in this record are missing.
 
-That baseline remains navigation evidence for the broader overhaul. Slices 1–3
+That baseline remains navigation evidence for the broader overhaul. Slices 1–4
 were subsequently implemented, independently audited at their exact PR heads,
 and merged without changing the public/generated Predict projection or persisted
 Feature Definition shape. Slice 2 established repository-issued Predict runtime
 authority and the canonical typed-result/provenance boundary; Slice 3 added
-execution-pinned raw EER/COP enrichment without changing ML Targets, Feature
-formula schema, or Calculator formulas.
+execution-pinned raw EER/COP enrichment; Slice 4 added the read-only Result
+Review projection, stable-identity summary, and provenance-preserving clipboard
+boundary without changing ML Targets, Feature formula schema, or Calculator
+formulas.
 
-The next gate is a **fresh independent exact-head Auditor for Slice 4 — Result
-Review Projection**. The Worker Draft consumes the closed identity,
-typed-result/provenance, and EER/COP contracts; it does not authorize merge,
-Slice 4 Close, Slice 5 Layout B composition, or Slice 6 bulk paste.
+The next gate is **Slice 5 — Shared Layout B Composition**. It may compose the
+closed Result Review projection and Input surface through the shared
+workspace-state direction for standalone and embedded Predict. Slice 6 bulk paste
+remains a separate Lane C gate.

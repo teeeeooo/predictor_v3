@@ -37,17 +37,17 @@
   Predict now derives raw EER/COP from execution-pinned stable-identity capacity
   evidence and accepted typed power outcomes while preserving canonical result
   provenance, lifecycle semantics, and the public/persisted schema boundaries.
-- Slice 4 — Result Review Projection has a focused Worker implementation on a
-  Draft PR. It projects the canonical session read-only, formats EER/COP only at
+- Slice 4 — Result Review Projection is independently audited, merged, and
+  closed. It projects the canonical session read-only, formats EER/COP only at
   presentation, composes the stable-identity full specification summary, and
-  exposes full-row TSV copy with hidden raw source/provenance evidence. It is
-  not closed until a fresh independent exact-head Auditor approves it.
+  exposes full-row TSV copy with hidden raw source/provenance evidence.
 
 ## Next Action
 
-The next gate is a **fresh independent exact-head Auditor for Slice 4 — Result
-Review Projection**. Audit the focused Worker head without merging it. Slice 4
-Close and Slice 5 Layout B composition remain separately authorized decisions.
+The next gate is **Slice 5 — Shared Layout B Composition**. It may compose the
+closed Result Review projection with the existing Input surface and shared
+workspace-state direction for standalone and embedded Predict. This Slice 4
+close does not start Slice 5 source work or create a Worker handoff.
 
 ## Active Blockers
 
@@ -70,8 +70,8 @@ Close and Slice 5 Layout B composition remain separately authorized decisions.
   Layout B workspace implementation, and Predict-owned workspace-state policy.
 - Keep root-level horizontal scrolling prohibited. Result Review table scrolling
   remains internal; the narrow embedded pinned-column range is an open gate.
-- Keep Result Review projection, Layout B composition, and bulk paste as
-  independently reviewable Lane C slices.
+- Keep Layout B composition and bulk paste as independently reviewable Lane C
+  slices; the closed Result Review projection remains their upstream contract.
 - Use repository fixtures or mock data only. Do not infer production readiness or
   mutate production data or models.
 

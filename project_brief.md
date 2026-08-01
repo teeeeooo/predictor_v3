@@ -8,11 +8,10 @@ Near-term execution belongs to `docs/WORK_PLAN.md`; history belongs to
 
 Train/Admin Phase 5 and Predict Findings #1–#7 are complete and merged. The
 active product workstream is **Predict input workflow broad overhaul**. Its
-product and integration boundary is approved, and Slices 1–3 — Stable Identity
-Seam, Typed Result and Execution Context, and EER/COP Enrichment — are
-independently audited, merged, and closed. Slice 4 — Result Review Projection
-has a focused Worker implementation on a Draft PR and awaits a fresh independent
-exact-head Auditor; it is not merged or closed.
+product and integration boundary is approved, and Slices 1–4 — Stable Identity
+Seam, Typed Result and Execution Context, EER/COP Enrichment, and Result Review
+Projection — are independently audited, merged, and closed. The next independent
+Lane C gate is Slice 5 — Shared Layout B Composition.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -97,10 +96,10 @@ Predict session, repository-issued runtime authority, fail-closed terminal
 acceptance, and preserved reload/generation lifecycle semantics. Slice 3 closed
 the Qt-free execution-pinned EER/COP enrichment while preserving raw precision,
 canonical result provenance, lifecycle semantics, and Calculator ownership.
-Slice 4 provides the read-only canonical-session projection, shared table
-presentation seam, and full-row TSV copy boundary on its focused Worker branch.
-Independent exact-head audit remains the current gate before any close or Slice
-5 work.
+Slice 4 closed the read-only canonical-session projection, shared table
+presentation seam, and full-row TSV copy boundary while preserving historical
+execution provenance and current-generation presentation metadata. Slice 5 —
+Shared Layout B Composition is the next independent Lane C gate.
 
 ### Later — Production ML Readiness / Calculator Integration
 
@@ -131,7 +130,7 @@ Independent exact-head audit remains the current gate before any close or Slice
 - Read `docs/WORK_PLAN.md` for the active slice, next action, blockers,
   constraints, and holds.
 - Read this brief for phase, owner, and milestone direction.
-- Read the future Predict boundary before the fresh audit; expand it only after
-  current-state evidence and owner decisions exist.
+- Read the future Predict boundary before each remaining Lane C slice; expand it
+  only after current-state evidence and owner decisions exist.
 - Search `project_log.md` and its monthly archives by heading for durable history;
   use result records only for pointed evidence.
