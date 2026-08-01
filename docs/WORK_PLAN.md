@@ -36,11 +36,13 @@
 
 ## Next Action
 
-The next gate is **Slice 3 — EER/COP Enrichment**. It may consume Slice 1 stable
-identities and Slice 2 raw typed outcomes, but must remain a Qt-free Predict
-application enrichment and must not change ML targets, Feature formula schema, or
-Calculator formulas. Slice 3 source work requires its own Lane C authorization;
-this Slice 2 closeout does not create that Worker handoff or start implementation.
+The next gate is a **fresh independent exact-head Lane C audit of Slice 3 —
+EER/COP Enrichment**. Its dedicated Draft implementation pins stable-identity
+capacity evidence in the validated execution request and derives independent
+EER/COP outcomes from accepted raw power Target outcomes in a Qt-free Predict
+application owner. Do not merge, advance to Slice 4, change ML Targets, extend
+Feature formula/public/persisted schema, or copy Calculator formulas before that
+audit.
 
 ## Active Blockers
 

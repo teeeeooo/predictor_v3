@@ -347,8 +347,10 @@ the operating-point and standard-request contracts are separately defined.
 
 ## 7. Implementation Slice Boundary
 
-Slices 1 and 2 are merged and closed. Remaining slices are not authorized by
-this bounded documentation close and retain their independent Lane C gates.
+Slices 1 and 2 are merged and closed. Slice 3 is implemented on its dedicated
+Draft PR and remains open pending fresh independent exact-head audit. Later
+slices are not authorized by this source completion and retain independent Lane
+C gates.
 
 ### Slice 1 — Stable Identity Seam
 
@@ -368,9 +370,12 @@ sealed migration/rollback artifacts retain atomic lifecycle behavior.
 
 ### Slice 3 — EER/COP Enrichment
 
-Use Slice 1 identities and Slice 2 raw outcomes to calculate deterministic W/W
-metrics in a Qt-free Predict application owner. Do not change Feature formula
-schema, ML targets, or Calculator formulas.
+**Status: implemented on Draft PR; audit pending.** Slice 1 identities and Slice
+2 raw outcomes calculate deterministic W/W metrics in a Qt-free Predict
+application owner. The accepted request pins stable-identity capacity evidence,
+and canonical result acceptance validates the exact enrichment attachment. No
+Feature formula schema, ML Target, persisted/public Feature Definition shape, or
+Calculator formula changes are included.
 
 ### Slice 4 — Result Review Projection
 
@@ -441,7 +446,7 @@ This documentation slice does not perform:
 - production source or test changes;
 - public schema or result-type changes;
 - Layout B or Result Review implementation;
-- EER/COP or bulk-paste implementation;
+- bulk-paste implementation;
 - CSPF/HSPF2 implementation;
 - model-lifecycle or Feature Definition generation changes;
 - Calculator formula changes;
@@ -465,8 +470,8 @@ and merged without changing the public/generated Predict projection or persisted
 Feature Definition shape. Slice 2 additionally established repository-issued
 Predict runtime authority and the canonical typed-result/provenance boundary.
 
-The next resume point is **Slice 3 — EER/COP Enrichment**. It retains its own Lane
-C gate and must consume the closed Slice 1 identity and Slice 2 raw-outcome
-contracts without changing ML targets, Feature formula schema, or Calculator
-formulas. This Slice 2 closeout does not start Slice 3 implementation or create a
-Worker handoff.
+The next gate is a **fresh independent exact-head Lane C audit of Slice 3 —
+EER/COP Enrichment**. The Draft implementation consumes the closed Slice 1
+identity and Slice 2 raw-outcome contracts without changing ML Targets, Feature
+formula schema, persisted/public Feature Definition shape, or Calculator
+formulas. It does not authorize Slice 4 Result Review work.

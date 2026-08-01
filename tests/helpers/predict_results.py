@@ -12,6 +12,7 @@ from apps.predict.application.result_contract import (
 from apps.predict.application.runtime_snapshot import (
     compatibility_predict_runtime_snapshot,
 )
+from apps.predict.application.result_enrichment import enrich_target_outcomes
 from apps.predict.application.target_outcome import TargetOutcome
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
@@ -53,6 +54,16 @@ def accept_result_fixtures(
             continue
 
         case = session.case_store.get_case(template.case_id)
+        input_outcome = (
+            owner.input_mapper.build_request(case)
+            if not isinstance(owner, PredictSession)
+            else None
+        )
+        capacity_inputs = (
+            input_outcome.request.capacity_inputs
+            if input_outcome is not None and input_outcome.request is not None
+            else ()
+        )
         context = PredictionExecutionContext(
             session.session_id,
             template.case_id,
@@ -60,6 +71,7 @@ def accept_result_fixtures(
             case.input_revision,
             semantics,
             model,
+            capacity_inputs,
         )
         outcomes = _outcomes_for_template(template, runtime.target_descriptors)
         result = ResultRow(
@@ -67,6 +79,10 @@ def accept_result_fixtures(
             template.status,
             message=template.message,
             target_outcomes=outcomes,
+            derived_metrics=(
+                enrich_target_outcomes(context.capacity_inputs, outcomes)
+                if outcomes else ()
+            ),
             execution_context=context,
         )
         session.allow_result(context, runtime.target_descriptors)

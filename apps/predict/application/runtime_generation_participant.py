@@ -281,6 +281,7 @@ def _migrated_result_rows(
             result_values=values,
             message=existing.message,
             target_outcomes=outcomes,
+            derived_metrics=existing.derived_metrics,
             execution_context=existing.execution_context,
             freshness=existing.freshness,
             stale_reason=existing.stale_reason,

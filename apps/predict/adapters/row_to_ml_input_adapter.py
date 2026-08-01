@@ -8,6 +8,11 @@ from apps.predict.application.models import (
     PredictionInputOutcome,
     PredictionInputRequest,
 )
+from apps.predict.application.result_enrichment import (
+    COOLING_CAPACITY_FEATURE_ID,
+    HEATING_CAPACITY_FEATURE_ID,
+    build_capacity_input_evidence,
+)
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_input_column_schema,
@@ -54,10 +59,19 @@ class RowToMlInputAdapter:
         row_input: dict[str, Any] = {}
         values = {**case.autofill_values, **case.input_values}
 
-        capacity = values.get("cooling_capa")
+        cooling_column = next(
+            (
+                column for column in self._columns
+                if column.feature_identity == COOLING_CAPACITY_FEATURE_ID
+            ),
+            None,
+        )
+        capacity = values.get(cooling_column.key) if cooling_column is not None else None
         if self._is_blank(capacity):
-            errors.append("cooling_capa is required.")
+            key = cooling_column.key if cooling_column is not None else "cooling_capa"
+            errors.append(f"{key} is required.")
 
+        capacity_inputs = []
         for column in self._columns:
             if not column.ml_feature:
                 continue
@@ -69,6 +83,13 @@ class RowToMlInputAdapter:
                 errors.append(f"{column.key} must be numeric.")
                 continue
             row_input[column.ml_feature] = converted
+            if column.feature_identity in {
+                COOLING_CAPACITY_FEATURE_ID,
+                HEATING_CAPACITY_FEATURE_ID,
+            }:
+                capacity_inputs.append(
+                    build_capacity_input_evidence(column, converted)
+                )
 
         encoded = encode_one_hot_values(self._one_hot_snapshot, values)
         row_input.update(encoded.values)
@@ -82,7 +103,11 @@ class RowToMlInputAdapter:
             )
         return PredictionInputOutcome(
             case_id=case.case_id,
-            request=PredictionInputRequest(case_id=case.case_id, row_input=row_input),
+            request=PredictionInputRequest(
+                case_id=case.case_id,
+                row_input=row_input,
+                capacity_inputs=tuple(capacity_inputs),
+            ),
             warnings=tuple(warnings),
         )
 

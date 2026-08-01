@@ -9,6 +9,7 @@ from typing import Any, Mapping
 from apps.predict.application.result_contract import (
     PredictionExecutionContext,
 )
+from apps.predict.application.result_enrichment import DerivedMetricOutcome
 from apps.predict.application.target_outcome import TargetOutcome
 
 
@@ -23,6 +24,7 @@ class ResultRow:
     case_id: str
     status: str
     target_outcomes: tuple[TargetOutcome, ...]
+    derived_metrics: tuple[DerivedMetricOutcome, ...]
     message: str
     execution_context: PredictionExecutionContext | None
     freshness: str
@@ -37,6 +39,7 @@ class ResultRow:
         message: str = "",
         *,
         target_outcomes: tuple[TargetOutcome, ...] = (),
+        derived_metrics: tuple[DerivedMetricOutcome, ...] = (),
         execution_context: PredictionExecutionContext | None = None,
         freshness: str = "current",
         stale_reason: str = "",
@@ -45,11 +48,12 @@ class ResultRow:
             raise ValueError(f"unsupported result freshness: {freshness}")
         if freshness == "stale" and not stale_reason:
             raise ValueError("stale result requires a reason")
-        if status in {"invalid", "cancelled"} and target_outcomes:
-            raise ValueError(f"{status} result cannot contain target outcomes")
+        if status in {"invalid", "cancelled"} and (target_outcomes or derived_metrics):
+            raise ValueError(f"{status} result cannot contain execution outcomes")
         object.__setattr__(self, "case_id", case_id)
         object.__setattr__(self, "status", status)
         object.__setattr__(self, "target_outcomes", tuple(target_outcomes))
+        object.__setattr__(self, "derived_metrics", tuple(derived_metrics))
         object.__setattr__(self, "message", _bounded(message))
         object.__setattr__(self, "execution_context", execution_context)
         object.__setattr__(self, "freshness", freshness)
@@ -78,6 +82,7 @@ class ResultRow:
             dict(self._legacy_result_values),
             self.message,
             target_outcomes=self.target_outcomes,
+            derived_metrics=self.derived_metrics,
             execution_context=self.execution_context,
             freshness="stale",
             stale_reason=_bounded(reason),

@@ -4,6 +4,7 @@ import pytest
 
 from apps.common.model_lifecycle import ActiveModelResolver, ModelLifecycleRepository
 from apps.predict.application.result_contract import PredictionExecutionContext
+from apps.predict.application.result_enrichment import enrich_target_outcomes
 from apps.predict.application.runtime_snapshot import compatibility_predict_runtime_snapshot
 from apps.predict.application.target_outcome import TargetOutcome
 from apps.predict.composition import build_predict_workspace_composition
@@ -40,31 +41,39 @@ def _composition(repository):  # noqa: ANN001
 
 def _install_result(composition):  # noqa: ANN001
     case_id = composition.session.case_order[0]
+    case = composition.session.case_store.get_case(case_id)
+    case.set_input_value("cooling_capa", 4200.125)
+    case.set_input_value("heating_capa", 5100.875)
+    input_outcome = composition.input_mapper.build_request(case)
+    assert input_outcome.request is not None
     semantics, model = composition.prediction_controller.execution_environment
     descriptors = composition.runtime_snapshot.target_descriptors
     context = PredictionExecutionContext(
         composition.session.session_id,
         case_id,
         "accepted-run",
-        0,
+        case.input_revision,
         semantics,
         model,
+        input_outcome.request.capacity_inputs,
+    )
+    outcomes = tuple(
+        TargetOutcome(
+            descriptor.target_identity,
+            descriptor.result_feature_identity,
+            descriptor.result_key,
+            descriptor.canonical_unit,
+            "available",
+            value_source=descriptor.value_source,
+            raw_value=42.123456789,
+        )
+        for descriptor in descriptors
     )
     result = ResultRow(
         case_id,
         "complete",
-        target_outcomes=tuple(
-            TargetOutcome(
-                descriptor.target_identity,
-                descriptor.result_feature_identity,
-                descriptor.result_key,
-                descriptor.canonical_unit,
-                "available",
-                value_source=descriptor.value_source,
-                raw_value=42.123456789,
-            )
-            for descriptor in descriptors
-        ),
+        target_outcomes=outcomes,
+        derived_metrics=enrich_target_outcomes(context.capacity_inputs, outcomes),
         execution_context=context,
     )
     composition.session.allow_result(context, descriptors)
@@ -88,6 +97,7 @@ def test_successful_model_reload_preserves_typed_result_but_marks_it_stale(repos
     assert stale.freshness == "stale"
     assert stale.stale_reason == "loaded_model_changed"
     assert stale.target_outcomes == original.target_outcomes
+    assert stale.derived_metrics == original.derived_metrics
     assert stale.execution_context == original.execution_context
 
 

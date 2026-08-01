@@ -7,6 +7,7 @@ from types import MappingProxyType
 from typing import Any
 
 from apps.predict.application.result_contract import PredictionExecutionContext
+from apps.predict.application.result_enrichment import ExecutionInputEvidence
 
 
 @dataclass(frozen=True)
@@ -16,9 +17,11 @@ class PredictionInputRequest:
     case_id: str
     row_input: dict[str, Any]
     context: PredictionExecutionContext | None = None
+    capacity_inputs: tuple[ExecutionInputEvidence, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "row_input", MappingProxyType(dict(self.row_input)))
+        object.__setattr__(self, "capacity_inputs", tuple(self.capacity_inputs))
         if self.context is not None and self.context.case_id != self.case_id:
             raise ValueError("prediction request context case_id mismatch")
 

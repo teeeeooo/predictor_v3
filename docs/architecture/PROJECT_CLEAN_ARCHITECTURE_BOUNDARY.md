@@ -117,7 +117,15 @@ Examples:
   Target identity/active set, ML name, Result Feature and current key, the closed
   five-target unit catalog, and fixed `model_prediction` source. Malformed
   composition or migration fails before an adapter or sealed artifact is
-  created. CaseStore removal invokes session-owned
+  created. The validated request also pins cooling/heating capacity evidence by
+  stable Feature identity, current generation key/ML name, the Predict-owned
+  `W` interpretation, and raw numeric value. Accepted cooling/heating power
+  `TargetOutcome` values and that immutable request evidence are the only inputs
+  to the Qt-free Predict enrichment owner. Its EER/COP outcomes are W/W derived
+  metrics, not ML Targets; canonical acceptance recomputes them and rejects
+  missing, fabricated, or mismatched attachments. Later row edits, reloads,
+  migrations, and rollback preserve that execution evidence rather than reading
+  the current case. CaseStore removal invokes session-owned
   dependent result/run cleanup before publishing its new order. Generation
   abort releases staged migration evidence; rollback consumes prior snapshots;
   successful whole-transaction and standalone completion explicitly finalize
