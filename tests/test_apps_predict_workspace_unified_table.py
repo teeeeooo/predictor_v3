@@ -19,6 +19,7 @@ from apps.predict.ports.prediction_execution_port import PredictionProgress
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
 from apps.predict.ui.workspace import PredictWorkspace
+from tests.helpers.predict_results import install_projection_results
 
 
 def _app() -> QApplication:
@@ -144,13 +145,14 @@ def test_workspace_copy_includes_selected_result_and_status_cells():
     _app()
     workspace = PredictWorkspace()
     case_id = workspace.session.case_order[0]
-    workspace.session.set_result(
+    install_projection_results(
+        workspace.session,
         ResultRow(
             case_id=case_id,
             status="complete",
             result_values={"cooling_power": "2.06"},
             message="ok",
-        )
+        ),
     )
     workspace.case_model.refresh_case_id(case_id)
 
@@ -183,7 +185,7 @@ def test_table_edit_controller_owns_row_lifecycle_and_result_clearing():
     controller = TableEditController(session)
     controller.ensure_initial_rows(2)
     case_id = session.case_order[0]
-    session.set_result(ResultRow(case_id=case_id, status="complete"))
+    install_projection_results(session, ResultRow(case_id=case_id, status="complete"))
 
     assert controller.append_row_span(1) == (2, 2)
     controller.append_empty_rows(1)
@@ -262,8 +264,9 @@ def test_workspace_reset_reprojects_terminal_session_as_idle(
     workspace = _loaded_workspace()
     model_status = workspace.model_badge.text()
     case_id = workspace.session.case_order[0]
-    workspace.session.set_result(
-        ResultRow(case_id=case_id, status=result_status, message="terminal")
+    install_projection_results(
+        workspace.session,
+        ResultRow(case_id=case_id, status=result_status, message="terminal"),
     )
     workspace.case_model.refresh_case_id(case_id)
     workspace._set_running_state(True)
@@ -311,7 +314,9 @@ def test_workspace_reset_allows_new_input_and_next_prediction(monkeypatch):
     _app()
     workspace = _loaded_workspace()
     case_id = workspace.session.case_order[0]
-    workspace.session.set_result(ResultRow(case_id=case_id, status="complete"))
+    install_projection_results(
+        workspace.session, ResultRow(case_id=case_id, status="complete")
+    )
     workspace._handle_prediction_finished(
         PredictionRunSummary(total=3, complete=1, error=0, invalid=0)
     )

@@ -11,6 +11,7 @@ from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
+from tests.helpers.predict_results import install_projection_results
 
 
 def _app() -> QApplication:
@@ -191,13 +192,14 @@ def test_one_row_paste_repeats_down_matching_selection_width():
 def test_result_and_status_copy_included_but_mutation_prevented():
     session, model, view = _table()
     case_id = session.case_order[0]
-    session.set_result(
+    install_projection_results(
+        session,
         ResultRow(
             case_id=case_id,
             status="error",
             result_values={"cooling_power": "2.0"},
             message="missing model",
-        )
+        ),
     )
     power = _column_index(model, "cooling_power")
     status = _column_index(model, "status")

@@ -36,9 +36,12 @@ Lane C Worker Draft branch. PR #44's exact-head audit findings are repaired: the
 canonical gate validates the pinned expected-target/aggregate contract,
 user-facing progress and summaries reconcile only accepted dispositions, and
 cancellation/infrastructure failures retain execution context through that gate.
-The Draft remains open pending a fresh independent exact-head re-audit. The
-Auditor owns complete adjacent-owner review, focused validation, and only then
-guarded merge/closeout. Slice 3 does not start from this Worker branch.
+The residual direct-setter bypass is also repaired: direct and bulk storage now
+allow only non-executed `pending`, `running`, and `invalid` rows, so every
+terminal status requires canonical acceptance independent of payload shape. The
+Draft remains open pending a fresh independent exact-head re-audit. The Auditor
+owns complete adjacent-owner review, focused validation, and only then guarded
+merge/closeout. Slice 3 does not start from this Worker branch.
 
 ## Active Blockers
 

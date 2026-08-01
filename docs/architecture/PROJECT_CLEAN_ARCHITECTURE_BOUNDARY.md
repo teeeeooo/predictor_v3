@@ -95,7 +95,10 @@ Examples:
   identities/metadata, and aggregate status all match. Cancellation and
   infrastructure failure carry the same context through this gate. User-facing
   progress and summaries count canonical accepted dispositions, not worker
-  transport progress. A worker or Qt view never owns reconciliation.
+  transport progress. Direct single/bulk session setters accept only
+  non-executed `pending`, `running`, and `invalid` state; every
+  `complete`/`partial`/`error`/`cancelled` row uses canonical acceptance
+  regardless of payload shape. A worker or Qt view never owns reconciliation.
 - Calculator execution: `CalculatorUseCase` -> core calculator dispatcher
   adapter, not direct orchestration inside UI sections.
 

@@ -28,6 +28,7 @@ from apps.predict.application.model_compatibility import ModelCompatibilityEvide
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.state.result_row import ResultRow
+from tests.helpers.predict_results import install_projection_results
 
 
 def _candidate(snapshot, participant):  # noqa: ANN001
@@ -294,9 +295,10 @@ def test_real_participants_prepare_a_then_commit_b_with_owner_parity(tmp_path):
     definition, predict, train, mapping = participants
     session = predict.composition.session
     case_id = session.case_order[0]
-    session.set_result(ResultRow(
-        case_id, "complete", {"cooling_power": "123"}, "before cutover"
-    ))
+    install_projection_results(
+        session,
+        ResultRow(case_id, "complete", {"cooling_power": "123"}, "before cutover"),
+    )
 
     assert coordinator.prepare_all().code == "prepared"
     assert len({item.active_generation_id for item in participants}) == 1
@@ -328,7 +330,7 @@ def test_real_participant_commit_failure_rolls_definition_and_predict_back_to_a(
     original = ResultRow(
         case_id, "partial", {"cooling_power": "321"}, "original warning"
     )
-    session.set_result(original)
+    install_projection_results(session, original)
 
     status = coordinator.request_cutover()
 

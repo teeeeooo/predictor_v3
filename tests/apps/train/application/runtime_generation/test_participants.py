@@ -22,6 +22,7 @@ from apps.train.application.runtime_generation.participants import (
 )
 from apps.train.services.data_mapping_service import DataMappingService, RuntimeMappingCatalogProvider
 from core.data_definition.contract import bootstrap_manifest
+from tests.helpers.predict_results import install_projection_results
 
 
 def _published_pair(tmp_path, *, mutate=None):  # noqa: ANN001
@@ -65,7 +66,7 @@ def test_predict_prepare_preserves_rows_results_and_commit_keeps_identity_values
         status="complete",
         result_values={"cooling_power": 1.0},
     )
-    composition.session.set_result(result)
+    install_projection_results(composition.session, result)
     participant = PredictRuntimeParticipant(
         active,
         composition,

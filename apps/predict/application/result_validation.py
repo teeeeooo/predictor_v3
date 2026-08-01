@@ -7,7 +7,8 @@ from apps.predict.state.result_row import ResultRow
 
 
 _TARGET_OUTCOME_STATUSES = {"available", "unavailable", "failed"}
-_EXECUTED_ROW_STATUSES = {"complete", "partial", "error", "cancelled"}
+EXECUTED_RESULT_STATUSES = frozenset({"complete", "partial", "error", "cancelled"})
+NON_EXECUTED_RESULT_STATUSES = frozenset({"pending", "running", "invalid"})
 
 
 def canonical_result_rejection_reason(
@@ -15,7 +16,7 @@ def canonical_result_rejection_reason(
     expected_targets: tuple[PredictionTargetDescriptor, ...],
 ) -> str:
     """Return a bounded reason when an executed result violates its pinned contract."""
-    if result.status not in _EXECUTED_ROW_STATUSES:
+    if result.status not in EXECUTED_RESULT_STATUSES:
         return "non_terminal_execution_status"
     if result.freshness != "current" or result.stale_reason:
         return "incoming_result_not_current"

@@ -10,7 +10,10 @@ from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     ResultAcceptance,
 )
-from apps.predict.application.result_validation import canonical_result_rejection_reason
+from apps.predict.application.result_validation import (
+    NON_EXECUTED_RESULT_STATUSES,
+    canonical_result_rejection_reason,
+)
 from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.case_store import CaseStore
 from apps.predict.state.result_row import ResultRow
@@ -78,10 +81,18 @@ class PredictSession:
         return self.results_by_case_id.get(case_id, ResultRow(case_id=case_id))
 
     def set_result(self, result: ResultRow) -> None:
-        """Attach non-executed/legacy state; executed results use accept_result."""
-        if result.execution_context is not None or result.target_outcomes:
-            raise ValueError("executed result requires canonical acceptance")
+        """Attach only non-executed state; terminal results use accept_result."""
+        self._validate_direct_result(result)
         self._store_result(result)
+
+    @staticmethod
+    def _validate_direct_result(result: ResultRow) -> None:
+        if (
+            result.status not in NON_EXECUTED_RESULT_STATUSES
+            or result.execution_context is not None
+            or result.target_outcomes
+        ):
+            raise ValueError("executed result requires canonical acceptance")
 
     def _store_result(self, result: ResultRow) -> None:
         self.case_store.get_case(result.case_id)
@@ -91,7 +102,9 @@ class PredictSession:
 
     def set_results(self, results: list[ResultRow]) -> None:
         for result in results:
-            self.set_result(result)
+            self._validate_direct_result(result)
+        for result in results:
+            self._store_result(result)
 
     def allow_result(
         self,

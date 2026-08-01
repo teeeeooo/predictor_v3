@@ -35,6 +35,7 @@ from core.data_definition.contract import (  # noqa: E402
     generate_projections,
     scoped_fingerprints,
 )
+from tests.helpers.predict_results import install_projection_results  # noqa: E402
 
 
 def _snapshot(manifest) -> GenerationSnapshot:  # noqa: ANN001
@@ -124,7 +125,7 @@ def test_result_and_target_rename_moves_existing_value_to_committed_table_model(
         {"cooling_power": "123"},
         "original result",
     )
-    composition.session.set_result(original)
+    install_projection_results(composition.session, original)
     old_column = next(
         index
         for index, column in enumerate(workspace.case_model.columns)
@@ -237,17 +238,20 @@ def test_added_removed_hidden_and_unchanged_results_follow_canonical_identity(
     removed_key = key_by_identity[removed_target.feature_identity]
     hidden_key = key_by_identity[hidden_target.feature_identity]
     added_key = key_by_identity[added_feature_id]
-    composition.session.set_result(ResultRow(
-        case_id,
-        "complete",
-        {
-            unchanged_key: "unchanged",
-            removed_key: "removed",
-            hidden_key: "hidden",
-            added_key: "must-not-copy",
-        },
-        "keep status and message",
-    ))
+    install_projection_results(
+        composition.session,
+        ResultRow(
+            case_id,
+            "complete",
+            {
+                unchanged_key: "unchanged",
+                removed_key: "removed",
+                hidden_key: "hidden",
+                added_key: "must-not-copy",
+            },
+            "keep status and message",
+        ),
+    )
 
     prepared = participant.prepare(transition)
     assert composition.session.result_for_case(case_id).result_values[removed_key] == "removed"
@@ -286,9 +290,10 @@ def test_result_mutation_after_prepare_rejects_without_overwriting_latest(
         active, candidate, tmp_path
     )
     case_id = composition.session.case_order[0]
-    composition.session.set_result(ResultRow(
-        case_id, "complete", {"cooling_power": "100"}, "before"
-    ))
+    install_projection_results(
+        composition.session,
+        ResultRow(case_id, "complete", {"cooling_power": "100"}, "before"),
+    )
     prepared = participant.prepare(transition)
     if mutation == "clear":
         composition.session.clear_result(case_id)
@@ -297,9 +302,10 @@ def test_result_mutation_after_prepare_rejects_without_overwriting_latest(
             case_id, "running", {"cooling_power": "101"}, "progress"
         ))
     else:
-        composition.session.set_result(ResultRow(
-            case_id, "complete", {"cooling_power": "102"}, "latest"
-        ))
+        install_projection_results(
+            composition.session,
+            ResultRow(case_id, "complete", {"cooling_power": "102"}, "latest"),
+        )
     latest = composition.session.snapshot_runtime_projection()
 
     with pytest.raises(ParticipantPrepareError) as error:

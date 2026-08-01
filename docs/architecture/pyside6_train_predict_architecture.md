@@ -749,8 +749,10 @@ an aggregate status consistent with the available/unavailable/failed set.
 Target-derived errors carry the complete expected set; row-wide errors and
 cancelled requests carry no synthetic target outcomes but retain immutable
 execution context. Executed terminal rows cannot use the legacy direct result
-setter. Rejection does not mutate input, result, row status, accepted progress,
-or counts.
+setter, including empty, message-only, legacy-value, typed-only, context-only,
+and bulk-setter forms. Direct session storage is an explicit allowlist for
+non-executed `pending`, `running`, and `invalid` rows. Rejection does not mutate
+input, result, row status, accepted progress, or counts.
 Editing another case is unrelated; editing the same case increments only that
 case revision, makes an existing typed result stale (or a running row pending),
 and causes the old request result to fail closed.

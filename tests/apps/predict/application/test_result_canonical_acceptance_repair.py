@@ -227,6 +227,82 @@ def test_executed_result_cannot_bypass_canonical_acceptance_with_set_result():
         session.set_result(result)
 
 
+@pytest.mark.parametrize(
+    "result",
+    (
+        ResultRow("case-0001", "complete"),
+        ResultRow("case-0001", "partial"),
+        ResultRow("case-0001", "error", message="row-wide failure"),
+        ResultRow("case-0001", "cancelled", message="cancelled"),
+        ResultRow("case-0001", "complete", {"cooling_power": "1.0"}),
+    ),
+)
+def test_direct_setter_rejects_terminal_status_without_execution_payload(result):
+    session = PredictSession()
+    session.case_store.append_empty_rows(1)
+
+    with pytest.raises(ValueError, match="canonical acceptance"):
+        session.set_result(result)
+
+    assert session.result_for_case(result.case_id).status == "pending"
+
+
+def test_direct_setter_rejects_typed_outcome_without_context():
+    session, case, _usecase, _request, descriptors = _prepared()
+    result = ResultRow(
+        case.case_id,
+        "complete",
+        target_outcomes=tuple(_outcome(item) for item in descriptors),
+    )
+
+    with pytest.raises(ValueError, match="canonical acceptance"):
+        session.set_result(result)
+
+
+def test_direct_setter_rejects_context_only_terminal_result():
+    session, case, _usecase, request, _descriptors = _prepared()
+    result = ResultRow(
+        case.case_id, "error", message="failure", execution_context=request.context
+    )
+
+    with pytest.raises(ValueError, match="canonical acceptance"):
+        session.set_result(result)
+
+
+def test_bulk_setter_rejects_terminal_result_before_storing_any_row():
+    session = PredictSession()
+    first, second = session.case_store.append_empty_rows(2)
+
+    with pytest.raises(ValueError, match="canonical acceptance"):
+        session.set_results(
+            [
+                ResultRow(first.case_id, "running"),
+                ResultRow(second.case_id, "complete"),
+            ]
+        )
+
+    assert session.results_by_case_id == {}
+
+
+@pytest.mark.parametrize("status", ("pending", "running", "invalid"))
+def test_direct_setter_keeps_non_executed_states(status):
+    session = PredictSession()
+    case = session.case_store.append_empty_rows(1)[0]
+    result = ResultRow(case.case_id, status, message="non-executed")
+
+    session.set_result(result)
+
+    assert session.result_for_case(case.case_id) == result
+
+
+def test_direct_setter_rejects_unclassified_status_instead_of_falling_back():
+    session = PredictSession()
+    case = session.case_store.append_empty_rows(1)[0]
+
+    with pytest.raises(ValueError, match="canonical acceptance"):
+        session.set_result(ResultRow(case.case_id, "warning"))
+
+
 def test_malformed_result_preserves_existing_accepted_result_and_only_adds_diagnostic():
     session, case, usecase, request, descriptors = _prepared()
     accepted = ResultRow(
