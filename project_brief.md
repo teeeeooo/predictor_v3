@@ -8,9 +8,10 @@ Near-term execution belongs to `docs/WORK_PLAN.md`; history belongs to
 
 Train/Admin Phase 5 and Predict Findings #1–#7 are complete and merged. The
 active product workstream is **Predict input workflow broad overhaul**. Its
-product and integration boundary is approved, and Slice 1 — Stable Identity Seam
-and Slice 2 — Typed Result and Execution Context are independently audited,
-merged, and closed. The next implementation gate is Slice 3 — EER/COP Enrichment.
+product and integration boundary is approved, and Slices 1–3 — Stable Identity
+Seam, Typed Result and Execution Context, and EER/COP Enrichment — are
+independently audited, merged, and closed. The next implementation gate is
+Slice 4 — Result Review Projection.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -84,16 +85,18 @@ records, and Git.
 
 The approved direction is one canonical case session with shared standalone and
 embedded Layout B Input/Result workspaces. Result Review will use a Predict-owned
-projection, one stable-identity `사양 요약`, typed result capability, and later
-row-local EER/COP enrichment while existing Feature, Mapping, lifecycle,
-execution, and Calculator owners remain authoritative.
+projection, one stable-identity `사양 요약`, typed result capability, and the
+closed execution-pinned EER/COP enrichment while existing Feature, Mapping,
+lifecycle, execution, and Calculator owners remain authoritative.
 
 Slice 1 closed the canonical Feature identity propagation seam without changing
 the public/generated projection or persisted Feature Definition shape. Slice 2
 closed the typed-result and execution-provenance foundation with one canonical
 Predict session, repository-issued runtime authority, fail-closed terminal
-acceptance, and preserved reload/generation lifecycle semantics. Slice 3 —
-EER/COP Enrichment is the next independent Lane C gate.
+acceptance, and preserved reload/generation lifecycle semantics. Slice 3 closed
+the Qt-free execution-pinned EER/COP enrichment while preserving raw precision,
+canonical result provenance, lifecycle semantics, and Calculator ownership.
+Slice 4 — Result Review Projection is the next independent Lane C gate.
 
 ### Later — Production ML Readiness / Calculator Integration
 

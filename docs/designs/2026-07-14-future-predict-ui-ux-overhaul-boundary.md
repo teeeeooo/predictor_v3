@@ -1,8 +1,8 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; Slices 1–2 merged, Slice 3 next
+Status: approved product and owner boundary; Slices 1–3 merged, Slice 4 next
 Created: 2026-07-14
-Updated: 2026-08-01
+Updated: 2026-08-02
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 
 ## 1. Purpose and Authority
@@ -10,7 +10,7 @@ Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 This record is the authoritative product and integration boundary for the
 **Predict input workflow broad overhaul**. It absorbs the completed disposable
 layout comparison and existing-application owner audit into a production-facing
-design direction. Slices 1 and 2 are closed; every remaining source slice still
+design direction. Slices 1–3 are closed; every remaining source slice still
 requires its own Lane C authorization.
 
 This record distinguishes:
@@ -347,10 +347,9 @@ the operating-point and standard-request contracts are separately defined.
 
 ## 7. Implementation Slice Boundary
 
-Slices 1 and 2 are merged and closed. Slice 3 is implemented on its dedicated
-Draft PR and remains open pending fresh independent exact-head audit. Later
-slices are not authorized by this source completion and retain independent Lane
-C gates.
+Slices 1–3 are merged and closed. Slice 4 — Result Review Projection is the
+next independent Lane C gate. Later slices are not authorized by this bounded
+close and retain independent Lane C gates.
 
 ### Slice 1 — Stable Identity Seam
 
@@ -370,12 +369,13 @@ sealed migration/rollback artifacts retain atomic lifecycle behavior.
 
 ### Slice 3 — EER/COP Enrichment
 
-**Status: implemented on Draft PR; audit pending.** Slice 1 identities and Slice
-2 raw outcomes calculate deterministic W/W metrics in a Qt-free Predict
-application owner. The accepted request pins stable-identity capacity evidence,
-and canonical result acceptance validates the exact enrichment attachment. No
-Feature formula schema, ML Target, persisted/public Feature Definition shape, or
-Calculator formula changes are included.
+**Status: merged and closed.** Slice 1 identities and Slice 2 raw outcomes now
+calculate deterministic W/W metrics in a Qt-free Predict application owner. The
+accepted request pins stable-identity capacity evidence, canonical acceptance
+recomputes and validates the exact enrichment attachment, and existing
+reload/generation/rollback lifecycle preserves that historical execution
+evidence. Feature formula schema, ML Targets, persisted/public Feature Definition
+shape, and Calculator formulas remain unchanged.
 
 ### Slice 4 — Result Review Projection
 
@@ -464,14 +464,15 @@ current Feature Manager, Data Mapping, Train/model lifecycle, prediction
 execution, and Calculate owners are reusable while the Predict
 application/presentation seams in this record are missing.
 
-That baseline remains navigation evidence for the broader overhaul. Slices 1 and
-2 were subsequently implemented, independently audited at their exact PR heads,
+That baseline remains navigation evidence for the broader overhaul. Slices 1–3
+were subsequently implemented, independently audited at their exact PR heads,
 and merged without changing the public/generated Predict projection or persisted
-Feature Definition shape. Slice 2 additionally established repository-issued
-Predict runtime authority and the canonical typed-result/provenance boundary.
+Feature Definition shape. Slice 2 established repository-issued Predict runtime
+authority and the canonical typed-result/provenance boundary; Slice 3 added
+execution-pinned raw EER/COP enrichment without changing ML Targets, Feature
+formula schema, or Calculator formulas.
 
-The next gate is a **fresh independent exact-head Lane C audit of Slice 3 —
-EER/COP Enrichment**. The Draft implementation consumes the closed Slice 1
-identity and Slice 2 raw-outcome contracts without changing ML Targets, Feature
-formula schema, persisted/public Feature Definition shape, or Calculator
-formulas. It does not authorize Slice 4 Result Review work.
+The next gate is **Slice 4 — Result Review Projection**. It may consume the
+closed identity, typed-result/provenance, and EER/COP contracts to expose a
+read-only review projection over the canonical Predict session. This Slice 3
+close does not start Slice 4 source work or create a Worker handoff.

@@ -33,16 +33,20 @@
   provenance, one fail-closed canonical session boundary, and repository-issued
   runtime authority across execution, reload, migration, rollback, and generation
   transitions while preserving the public/generated and persisted schema shapes.
+- Slice 3 — EER/COP Enrichment is independently audited, merged, and closed.
+  Predict now derives raw EER/COP from execution-pinned stable-identity capacity
+  evidence and accepted typed power outcomes while preserving canonical result
+  provenance, lifecycle semantics, and the public/persisted schema boundaries.
 
 ## Next Action
 
-The next gate is a **fresh independent exact-head Lane C audit of Slice 3 —
-EER/COP Enrichment**. Its dedicated Draft implementation pins stable-identity
-capacity evidence in the validated execution request and derives independent
-EER/COP outcomes from accepted raw power Target outcomes in a Qt-free Predict
-application owner. Do not merge, advance to Slice 4, change ML Targets, extend
-Feature formula/public/persisted schema, or copy Calculator formulas before that
-audit.
+The next gate is **Slice 4 — Result Review Projection**. It may consume the
+closed Slice 1 stable identities, Slice 2 canonical typed-result/provenance
+contract, and Slice 3 execution-pinned EER/COP enrichment to expose one read-only
+review projection over the canonical Predict session. Keep Result Review
+presentation, display rounding, summary composition, and hidden-source
+copy/export behind its own Lane C authorization; this Slice 3 close does not
+start Slice 4 source work or create a Worker handoff.
 
 ## Active Blockers
 
@@ -66,8 +70,8 @@ audit.
   Layout B workspace implementation, and Predict-owned workspace-state policy.
 - Keep root-level horizontal scrolling prohibited. Result Review table scrolling
   remains internal; the narrow embedded pinned-column range is an open gate.
-- Keep EER/COP enrichment, Layout B composition, and bulk paste as independently
-  reviewable Lane C slices.
+- Keep Result Review projection, Layout B composition, and bulk paste as
+  independently reviewable Lane C slices.
 - Use repository fixtures or mock data only. Do not infer production readiness or
   mutate production data or models.
 
