@@ -1,8 +1,8 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved boundary; Slices 1–6 closed; Target applicability correction implemented on a focused branch pending independent exact-head audit
+Status: approved boundary; Slices 1–6 and Case-Scoped Target Applicability correction independently audited, merged, and closed; Narrow Viewport Result Review Pinning is next
 Created: 2026-07-14
-Updated: 2026-08-02
+Updated: 2026-08-03
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 
 ## 1. Purpose and Authority
@@ -397,10 +397,10 @@ contract. The correction boundary is:
 
 This is a requested execution subset for one Case. It must not shrink the Active
 runtime Target registry, change model artifact capability, or weaken full Active
-compatibility. The focused Lane C correction now consumes the established ML
-policy as this Case-scoped requested Target contract while the full runtime
-Target authority remains unchanged. Independent exact-head audit and Close are
-still required before merge.
+compatibility. The independently audited and merged Lane C correction consumes
+the established ML policy as this Case-scoped requested Target contract while
+the full runtime Target authority remains unchanged. That correctness slice is
+closed.
 
 The final execution/validation UX when both cooling and heating capacities are
 blank is resolved as normal Case-scoped Target selection:
@@ -554,12 +554,12 @@ applicability controls only the requested execution subset on a compatible
 Active, and actual failure within that requested subset controls
 Complete/Partial status.
 
-The read-only Owner Audit, Ref Qty-only product decision, and focused Lane C
-source correction are complete. The next correctness gate is a **fresh
-independent exact-head Lane C Auditor** and Close. Narrow Viewport Result Review
-Pinning remains a later independent presentation slice with Case + 상태 as the
-anchor direction; it must not be bundled with the correctness repair. The
-default Result Review order and Layout B full-surface direction remain approved.
+The read-only Owner Audit, Ref Qty-only product decision, focused Lane C source
+correction, independent exact-head audit, merge, and Close are complete. The next
+gate is the independent **Narrow Viewport Result Review Pinning** presentation
+slice with Case + 상태 as the anchor direction; it must not reopen the closed
+correctness repair. The default Result Review order and Layout B full-surface
+direction remain approved.
 
 ## 9. Current Exclusions
 
@@ -599,8 +599,7 @@ formula schema, or Calculator formulas.
 
 The focused correction implements the approved requested subset without changing
 ML/Data Definition policy, runtime Target membership, or Active artifact
-compatibility. The next action is a **fresh independent exact-head Lane C
-Auditor** and Close, followed only after separate authorization by the independent
-Narrow Viewport Result Review Pinning presentation slice. CSV/XLSX export,
-future multi-point Predict-to-Calculate integration, and other deferred product
-work remain separate and unstarted.
+compatibility and is now independently audited, merged, and closed. The next
+action is the separately scoped **Narrow Viewport Result Review Pinning**
+presentation slice. CSV/XLSX export, future multi-point Predict-to-Calculate
+integration, and other deferred product work remain separate and unstarted.

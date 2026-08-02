@@ -52,9 +52,9 @@
 
 ## Next Action
 
-The Case-Scoped Target Applicability Lane C Source Correction is complete on its
-focused branch and PR. The next gate is a **fresh independent exact-head Lane C
-Auditor**; merge remains separately authorized.
+The Case-Scoped Target Applicability correction is independently audited, merged,
+and closed. The next gate is the separately scoped **Narrow Viewport Result Review
+Pinning** presentation slice, with Case + 상태 retained as the anchor direction.
 
 ## Active Decisions / Blockers
 
@@ -77,15 +77,15 @@ Auditor**; merge remains separately authorized.
 - Preserve model lifecycle, reload, Active observation, no-hot-swap, schema,
   mapping, preprocessing, runtime snapshot, and inference contracts.
 - Keep the Active runtime Target registry at its full compatible capability.
-  Future correction may derive a Case-scoped requested execution subset from
-  canonical raw user input before zero-fill/preprocessing; it must not shrink the
-  registry or change artifact capability per Case.
+  Case-scoped execution derives only the requested execution subset from canonical
+  raw user input before zero-fill/preprocessing; it does not shrink the registry
+  or change artifact capability per Case.
 - Preserve the distinction between an incompatible artifact and runtime partial
   results: missing Active capability fails compatibility, while actual execution
   failure for only some requested Targets on a valid Active produces `partial`.
 - Existing ML mode-specific missing and target leakage policies remain
-  authoritative. Their application to Predict Case execution is an integration
-  gap, not a new feature-policy design.
+  authoritative. Predict Case execution consumes those upstream policies without
+  redefining feature policy or Target registry ownership.
 - Requested Targets are fixed by canonical raw capacity presence: both present
   requests Cooling Power, Heating Power, Ref Qty, Cooling Hz, and Heating Hz;
   cooling-only requests Cooling Power, Ref Qty, and Cooling Hz; heating-only
@@ -136,12 +136,12 @@ Auditor**; merge remains separately authorized.
    owners and execution seams read-only.
 3. **Ref-Qty-only applicability product decision — complete in this task:** both
    capacities blank requests Ref Qty only when its existing inputs validate.
-4. **Case-Scoped Target Applicability Lane C Source Correction — complete on its
-   focused branch:** connected the established policy without relaxing Active
-   compatibility.
-5. **Fresh independent exact-head Lane C audit and Close — next.**
-6. **Narrow Viewport Result Review Pinning:** separate presentation slice using
-   Case + 상태 as the anchor direction; do not combine it with correctness repair.
+4. **Case-Scoped Target Applicability Lane C Source Correction — complete:**
+   independently audited, merged, and closed without relaxing Active compatibility.
+5. **Fresh independent exact-head Lane C audit and Close — complete.**
+6. **Narrow Viewport Result Review Pinning — next:** separate presentation slice
+   using Case + 상태 as the anchor direction; do not reopen the closed correctness
+   repair.
 7. **Separately approved deferred work:** CSV/XLSX export, multi-point
    Predict-to-Calculate, and other deferred product work.
 
