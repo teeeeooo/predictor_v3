@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from apps.predict.application.bulk_paste_contract import (
+    BulkPasteAuthoringState,
     BulkPasteDestination,
     BulkPasteIssue,
     BulkPasteOutcome,
@@ -22,6 +23,7 @@ class _UndoProjection:
     previous_issues: tuple[BulkPasteIssue, ...]
     pasted_cells: int
     derived_cells: int
+    mapping_data: object
 
 
 class BulkPasteTransaction:
@@ -65,7 +67,14 @@ class BulkPasteTransaction:
                     message="편집 가능한 입력 셀을 선택해 주세요.",
                 )
             mapping_data = self._mapping_loader()
-            staged, pending_issues, pasted_cells, derived_cells, truncated = (
+            (
+                staged,
+                pending_issues,
+                staged_authoring,
+                pasted_cells,
+                derived_cells,
+                truncated,
+            ) = (
                 self._stager.stage(
                     grid,
                     start_row=destination.start_row,
@@ -96,6 +105,13 @@ class BulkPasteTransaction:
             )
             for item in pending_issues
         )
+        authoring_states = tuple(
+            BulkPasteAuthoringState(
+                self._session.case_order[row_index],
+                dict(options),
+            )
+            for row_index, options in staged_authoring
+        )
         issues = tuple(
             issue for issue in previous_issues
             if issue.case_id not in staged_case_ids
@@ -106,7 +122,7 @@ class BulkPasteTransaction:
         ) else ""
         if undo_id:
             self._undo[undo_id] = _UndoProjection(
-                previous_issues, pasted_cells, derived_cells
+                previous_issues, pasted_cells, derived_cells, mapping_data
             )
             if len(self._undo) > 64:
                 oldest = next(iter(self._undo))
@@ -120,6 +136,7 @@ class BulkPasteTransaction:
             expanded_rows=len(commit.added_case_ids),
             affected_case_ids=commit.affected_case_ids,
             issues=issues,
+            authoring_states=authoring_states,
             undo_id=undo_id,
             truncated_cells=truncated,
         )
@@ -142,6 +159,10 @@ class BulkPasteTransaction:
             )
         del self._undo[transaction_id]
         self._issues = projection.previous_issues
+        authoring_states = tuple(
+            self._authoring_state_for_case(case_id, projection.mapping_data)
+            for case_id in commit.affected_case_ids
+        )
         return BulkPasteOutcome(
             True,
             pasted_cells=projection.pasted_cells,
@@ -149,7 +170,41 @@ class BulkPasteTransaction:
             expanded_rows=len(commit.added_case_ids),
             affected_case_ids=commit.affected_case_ids,
             issues=self._issues,
+            authoring_states=authoring_states,
         )
+
+    def reconcile_case_authoring(
+        self,
+        case_id: str,
+        mapping_data: object,
+    ) -> BulkPasteAuthoringState:
+        """Re-evaluate current row issues/options after one ordinary cell edit."""
+        row = self._session.case_order.index(case_id)
+        pending_issues, authoring = self._stager.project_current_row(
+            row, mapping_data
+        )
+        current = tuple(
+            issue for issue in self._issues if issue.case_id != case_id
+        )
+        self._issues = current + tuple(
+            BulkPasteIssue(
+                case_id, issue.column_key, issue.code, issue.message
+            )
+            for issue in pending_issues
+        )
+        return BulkPasteAuthoringState(
+            case_id, dict(authoring)
+        )
+
+    def reauthorize_undo(self, transaction_id: str) -> bool:
+        """Reauthorize only after table chronology restored the committed state."""
+        if transaction_id not in self._undo:
+            return False
+        try:
+            self._session.reauthorize_input_transaction(transaction_id)
+        except ValueError:
+            return False
+        return True
 
     def discard_undo(self, transaction_id: str) -> None:
         """Release canonical and projection undo state together."""
@@ -161,12 +216,12 @@ class BulkPasteTransaction:
         for transaction_id in tuple(self._undo):
             self.discard_undo(transaction_id)
 
-    def clear_issues_for_case(self, case_id: str) -> tuple[BulkPasteIssue, ...]:
-        """Drop paste-time issues when the single-cell owner edits that row."""
-        self._issues = tuple(
-            issue for issue in self._issues if issue.case_id != case_id
-        )
-        return self._issues
+    def _authoring_state_for_case(
+        self, case_id: str, mapping_data: object
+    ) -> BulkPasteAuthoringState:
+        row = self._session.case_order.index(case_id)
+        _issues, staged = self._stager.project_current_row(row, mapping_data)
+        return BulkPasteAuthoringState(case_id, dict(staged))
 
 
 __all__ = [

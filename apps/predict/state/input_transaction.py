@@ -44,6 +44,7 @@ class _UndoState:
     before: _SessionSnapshot
     committed_case_order: tuple[str, ...]
     committed_values: dict[str, tuple[dict, dict]]
+    expected_revision: int
     affected_existing_ids: tuple[str, ...]
     added_case_ids: tuple[str, ...]
 
@@ -100,12 +101,13 @@ class PredictInputTransactionAuthority:
                 dict(self._session.case_store.get_case(case_id).input_values),
                 dict(self._session.case_store.get_case(case_id).autofill_values),
             )
-            for case_id in (*affected_existing, *added_ids)
+            for case_id in self._session.case_order
         }
         self._undo_states[transaction_id] = _UndoState(
             before=before,
             committed_case_order=self._session.case_order,
             committed_values=committed_values,
+            expected_revision=self._session.revision,
             affected_existing_ids=affected_existing,
             added_case_ids=added_ids,
         )
@@ -154,6 +156,14 @@ class PredictInputTransactionAuthority:
     def discard(self, transaction_id: str) -> None:
         """Release an undo command when its UI history is invalidated."""
         self._undo_states.pop(transaction_id, None)
+
+    def reauthorize(self, transaction_id: str) -> None:
+        """Seal a new revision only after UI chronology restored exact inputs."""
+        state = self._undo_states.get(transaction_id)
+        if state is None:
+            raise ValueError("bulk paste undo command is unavailable")
+        self._validate_committed_values(state)
+        state.expected_revision = self._session.revision
 
     def _apply_case_state(self, case: CaseRow, staged: StagedCaseInput) -> bool:
         value_changed = (
@@ -225,12 +235,30 @@ class PredictInputTransactionAuthority:
             raise ValueError("bulk paste staged rows must be contiguous")
 
     def _validate_undo_target(self, state: _UndoState) -> None:
+        if self._session.revision != state.expected_revision:
+            raise ValueError("Predict session changed after bulk paste")
+        self._validate_committed_values(state)
+
+    def _validate_committed_values(self, state: _UndoState) -> None:
         if self._session.case_order != state.committed_case_order:
             raise ValueError("Predict row shape changed after bulk paste")
         for case_id, expected in state.committed_values.items():
             case = self._session.case_store.get_case(case_id)
-            if (case.input_values, case.autofill_values) != expected:
+            actual = (case.input_values, case.autofill_values)
+            if any(
+                _without_empty_values(actual_values)
+                != _without_empty_values(expected_values)
+                for actual_values, expected_values in zip(actual, expected)
+            ):
                 raise ValueError("Predict inputs changed after bulk paste")
+
+
+def _without_empty_values(values: dict) -> dict:
+    """Normalize the table owner's equivalent blank/missing cell states."""
+    return {
+        key: value for key, value in values.items()
+        if value is not None and value != ""
+    }
 
 
 __all__ = [

@@ -9,7 +9,10 @@ from apps.predict.application.bulk_paste_contract import (
     StagedBulkPasteIssue,
 )
 from apps.predict.state.input_transaction import StagedCaseInput
-from core.mapping.autofill import build_autofill_updates
+from core.mapping.autofill import (
+    build_autofill_updates,
+    build_final_dropdown_options,
+)
 
 
 BaseOptionResolver = Callable[[str, object], tuple[str, ...]]
@@ -56,6 +59,7 @@ class BulkPasteStager:
     ) -> tuple[
         tuple[StagedCaseInput, ...],
         tuple[StagedBulkPasteIssue, ...],
+        tuple[tuple[int, dict[str, tuple[str, ...]]], ...],
         int,
         int,
         int,
@@ -63,6 +67,7 @@ class BulkPasteStager:
         """Return complete row states resolved from each final raw combination."""
         staged_rows = []
         issues = []
+        authoring_states = []
         pasted_cells = derived_cells = truncated_cells = 0
         mapping = mapping_data if isinstance(mapping_data, dict) else {}
         for offset, raw_row in enumerate(grid):
@@ -87,12 +92,10 @@ class BulkPasteStager:
                     dirty.add(column.key)
                 inputs[column.key] = value
 
-            row_options: dict[str, tuple[str, ...]] = {}
             for key in _resolution_order(explicit_columns):
                 resolution = build_autofill_updates(
                     {**autofill, **inputs}, key, mapping
                 )
-                row_options.update(resolution.dropdown_options)
                 for update in resolution.updates:
                     target = self._columns_by_key.get(update.key)
                     if target is None:
@@ -105,13 +108,11 @@ class BulkPasteStager:
                         inputs[update.key] = update.value
 
             final_values = {**autofill, **inputs}
-            for key in ("odu", "fin_type"):
-                row_options.update(
-                    build_autofill_updates(final_values, key, mapping).dropdown_options
-                )
-            issues.extend(
-                self._validate_final_row(row_index, inputs, row_options, mapping_data)
+            row_issues, row_options = self._project_final_row(
+                row_index, inputs, final_values, mapping_data
             )
+            issues.extend(row_issues)
+            authoring_states.append((row_index, row_options))
             derived_cells += sum(
                 before_inputs.get(key, "") != value
                 for key, value in inputs.items()
@@ -122,7 +123,48 @@ class BulkPasteStager:
                 for key, value in autofill.items()
             )
             staged_rows.append(StagedCaseInput(row_index, inputs, autofill, dirty))
-        return tuple(staged_rows), tuple(issues), pasted_cells, derived_cells, truncated_cells
+        return (
+            tuple(staged_rows),
+            tuple(issues),
+            tuple(authoring_states),
+            pasted_cells,
+            derived_cells,
+            truncated_cells,
+        )
+
+    def project_current_row(
+        self,
+        row_index: int,
+        mapping_data: object,
+    ) -> tuple[
+        tuple[StagedBulkPasteIssue, ...],
+        dict[str, tuple[str, ...]],
+    ]:
+        """Re-evaluate issues/options from one current canonical row."""
+        case = self._session.case_store.get_case_at(row_index)
+        issues, options = self._project_final_row(
+            row_index,
+            case.input_values,
+            {**case.autofill_values, **case.input_values},
+            mapping_data,
+        )
+        return tuple(issues), options
+
+    def _project_final_row(
+        self,
+        row_index: int,
+        inputs: dict[str, Any],
+        final_values: dict[str, Any],
+        mapping_data: object,
+    ) -> tuple[list[StagedBulkPasteIssue], dict[str, tuple[str, ...]]]:
+        mapping = mapping_data if isinstance(mapping_data, dict) else {}
+        row_options = build_final_dropdown_options(final_values, mapping)
+        return (
+            self._validate_final_row(
+                row_index, inputs, row_options, mapping_data
+            ),
+            row_options,
+        )
 
     def _validate_final_row(
         self,

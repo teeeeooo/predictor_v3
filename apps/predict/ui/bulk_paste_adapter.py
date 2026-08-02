@@ -44,6 +44,7 @@ class PredictBulkPasteUiAdapter:
         )
         workspace.model_group.begin_reset()
         outcome = workspace.bulk_paste_transaction.apply(text, destination)
+        self._apply_authoring_states(outcome)
         workspace.case_model.set_input_issues(outcome.issues)
         workspace.model_group.end_reset()
         workspace._reconcile_shared_case_selection()
@@ -52,7 +53,10 @@ class PredictBulkPasteUiAdapter:
         if outcome.applied and outcome.undo_id:
             undo_id = outcome.undo_id
             workspace.case_table.register_compound_undo(
-                lambda: self.undo(undo_id)
+                lambda: self.undo(undo_id),
+                lambda: workspace.bulk_paste_transaction.reauthorize_undo(
+                    undo_id
+                ),
             )
         return outcome.pasted_cells + outcome.derived_cells
 
@@ -63,6 +67,7 @@ class PredictBulkPasteUiAdapter:
             return 0
         workspace.model_group.begin_reset()
         outcome = workspace.bulk_paste_transaction.undo(transaction_id)
+        self._apply_authoring_states(outcome)
         workspace.case_model.set_input_issues(outcome.issues)
         workspace.model_group.end_reset()
         workspace._reconcile_shared_case_selection()
@@ -83,10 +88,30 @@ class PredictBulkPasteUiAdapter:
         self._workspace.bulk_paste_transaction.clear_undo_history()
         self._workspace.case_table.clear_undo_history()
 
-    def clear_issues_for_case(self, case_id: str) -> None:
-        """Reproject issues after the ordinary single-cell owner changes a row."""
-        issues = self._workspace.bulk_paste_transaction.clear_issues_for_case(case_id)
-        self._workspace.case_model.set_input_issues(issues)
+    def reconcile_case_authoring(self, case_id: str, mapping_data: object) -> None:
+        """Reproject current row options and issues from one mapping snapshot."""
+        workspace = self._workspace
+        state = workspace.bulk_paste_transaction.reconcile_case_authoring(
+            case_id, mapping_data
+        )
+        workspace.input_edit_controller.replace_dropdown_options_for_case(
+            state.case_id, state.dropdown_options
+        )
+        workspace.case_model.set_input_issues(
+            workspace.bulk_paste_transaction.issues
+        )
+
+    def _apply_authoring_states(self, outcome: BulkPasteOutcome) -> None:
+        if not outcome.applied:
+            return
+        workspace = self._workspace
+        for state in outcome.authoring_states:
+            workspace.input_edit_controller.replace_dropdown_options_for_case(
+                state.case_id, state.dropdown_options
+            )
+        workspace.input_edit_controller.retain_case_ids(
+            workspace.session.case_order
+        )
 
     def _show_feedback(self, outcome: BulkPasteOutcome) -> None:
         workspace = self._workspace

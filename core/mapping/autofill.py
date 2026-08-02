@@ -82,6 +82,25 @@ def build_autofill_updates(
     )
 
 
+def build_final_dropdown_options(
+    row_values: dict[str, Any],
+    mapping_data: dict[str, Any],
+) -> dict[str, tuple[str, ...]]:
+    """Return dependent options for one already-resolved final row combination."""
+    options = dict(
+        build_autofill_updates(
+            row_values, "odu", mapping_data
+        ).dropdown_options
+    )
+    if _clean(row_values.get("odu")):
+        options.update(
+            build_autofill_updates(
+                row_values, "fin_type", mapping_data
+            ).dropdown_options
+        )
+    return options
+
+
 def _simple_mapping_updates(
     row_values: dict[str, Any],
     changed_key: str,

@@ -1,6 +1,7 @@
 """Unified Predict case table view."""
 
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
@@ -13,6 +14,13 @@ from apps.common.ui.tables.undo import CellChange
 
 PasteHandler = Callable[[str, int, int, int, int], int]
 UndoHandler = Callable[[], int]
+ReauthorizeHandler = Callable[[], bool]
+
+
+@dataclass(frozen=True)
+class _CompoundUndo:
+    execute: UndoHandler
+    reauthorize: ReauthorizeHandler | None = None
 
 
 class CaseTableView(QTableView):
@@ -26,7 +34,7 @@ class CaseTableView(QTableView):
             QAbstractItemView.DoubleClicked
             | QAbstractItemView.EditKeyPressed
         )
-        self._undo_stack: list[tuple[CellChange, ...] | UndoHandler] = []
+        self._undo_stack: list[tuple[CellChange, ...] | _CompoundUndo] = []
         self._paste_handler: PasteHandler | None = None
         self._press_started_on_selected_current = False
 
@@ -59,9 +67,13 @@ class CaseTableView(QTableView):
         """Bind the one production bulk-paste entry owner."""
         self._paste_handler = handler
 
-    def register_compound_undo(self, handler: UndoHandler) -> None:
+    def register_compound_undo(
+        self,
+        handler: UndoHandler,
+        reauthorize: ReauthorizeHandler | None = None,
+    ) -> None:
         """Place one application-owned transaction in table undo chronology."""
-        self._push_undo(handler)
+        self._push_undo(_CompoundUndo(handler, reauthorize))
 
     def clear_selection(self) -> int:
         """Clear selected editable cells."""
@@ -109,13 +121,18 @@ class CaseTableView(QTableView):
         if not self._undo_stack:
             return 0
         changes = self._undo_stack.pop()
-        if callable(changes):
-            return changes()
+        if isinstance(changes, _CompoundUndo):
+            undone = changes.execute()
+            if undone:
+                self._reauthorize_top_compound()
+            return undone
         undone = 0
         for change in reversed(changes):
             index = model.index(change.row, change.col)
             if model.setData(index, change.old_value, Qt.EditRole):
                 undone += 1
+        if undone == len(changes):
+            self._reauthorize_top_compound()
         return undone
 
     def clear_undo_history(self) -> None:
@@ -203,12 +220,21 @@ class CaseTableView(QTableView):
             return current.row(), current.column(), current.row(), current.column()
         return None
 
-    def _push_undo(self, action: tuple[CellChange, ...] | UndoHandler) -> None:
+    def _push_undo(
+        self, action: tuple[CellChange, ...] | _CompoundUndo
+    ) -> None:
         if isinstance(action, tuple) and not action:
             return
         self._undo_stack.append(action)
         if len(self._undo_stack) > 64:
             del self._undo_stack[0]
+
+    def _reauthorize_top_compound(self) -> None:
+        if not self._undo_stack:
+            return
+        action = self._undo_stack[-1]
+        if isinstance(action, _CompoundUndo) and action.reauthorize is not None:
+            action.reauthorize()
 
     def _move_current_horizontal(self, backward: bool = False) -> None:
         model = self.model()

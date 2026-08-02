@@ -26,6 +26,14 @@ class BulkPasteIssue:
 
 
 @dataclass(frozen=True)
+class BulkPasteAuthoringState:
+    """Committed row-specific options derived with the paste mapping snapshot."""
+
+    case_id: str
+    dropdown_options: dict[str, tuple[str, ...]]
+
+
+@dataclass(frozen=True)
 class BulkPasteOutcome:
     """Aggregate result for one attempted bulk paste or compound undo."""
 
@@ -35,6 +43,7 @@ class BulkPasteOutcome:
     expanded_rows: int = 0
     affected_case_ids: tuple[str, ...] = ()
     issues: tuple[BulkPasteIssue, ...] = ()
+    authoring_states: tuple[BulkPasteAuthoringState, ...] = ()
     undo_id: str = ""
     truncated_cells: int = 0
     message: str = ""
@@ -52,6 +61,7 @@ class StagedBulkPasteIssue:
 
 __all__ = [
     "BulkPasteDestination",
+    "BulkPasteAuthoringState",
     "BulkPasteIssue",
     "BulkPasteOutcome",
     "StagedBulkPasteIssue",

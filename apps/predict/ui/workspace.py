@@ -410,8 +410,10 @@ class PredictWorkspace(QWidget):
         self._refresh_after_row_change()
 
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
-        self.input_edit_controller.handle_cell_edited(case_id, changed_key)
-        self.bulk_paste_ui.clear_issues_for_case(case_id)
+        mapping_data = self.input_edit_controller.handle_cell_edited(
+            case_id, changed_key
+        )
+        self.bulk_paste_ui.reconcile_case_authoring(case_id, mapping_data)
         self.case_model.refresh_case_id(case_id)
         self.result_review_model.refresh_case_id(case_id)
         mapping_status = self.dropdown_option_adapter.mapping_status().status

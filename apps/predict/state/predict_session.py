@@ -351,6 +351,10 @@ class PredictSession:
         """Undo one sealed input transaction without restoring result freshness."""
         return self._input_transaction_authority.undo(transaction_id)
 
+    def reauthorize_input_transaction(self, transaction_id: str) -> None:
+        """Re-seal undo after table chronology restores exact committed inputs."""
+        self._input_transaction_authority.reauthorize(transaction_id)
+
     def discard_input_transaction(self, transaction_id: str) -> None:
         """Release input undo state after its presentation history is reset."""
         self._input_transaction_authority.discard(transaction_id)

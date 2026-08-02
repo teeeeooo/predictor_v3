@@ -268,6 +268,25 @@ def test_compound_undo_removes_added_rows_and_does_not_revive_result_freshness()
     assert composition.session.result_for_case(case_id).stale_reason == "input_changed"
 
 
+def test_compound_undo_fails_closed_after_unrelated_canonical_edit():
+    composition = _composition(rows=2)
+    transaction = composition.bulk_paste_transaction
+    paste = transaction.apply(
+        "1000", _destination(composition, "cooling_capa")
+    )
+    unrelated_id = composition.session.case_order[1]
+    composition.session.case_store.update_cell_value(
+        unrelated_id, "heating_capa", "2000"
+    )
+    before_undo = _state(composition.session)
+
+    undone = transaction.undo(paste.undo_id)
+
+    assert not undone.applied
+    assert "session changed" in undone.message
+    assert _state(composition.session) == before_undo
+
+
 def test_feature_identity_anchors_generation_specific_active_input_order():
     session = PredictSession()
     session.case_store.append_empty_rows(1)
