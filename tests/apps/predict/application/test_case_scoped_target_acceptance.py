@@ -133,6 +133,32 @@ def test_forged_omitted_and_late_results_cannot_bypass_canonical_acceptance():
         "requested_target_contract_changed"
     )
 
+    canonical = result_mapper.from_service_result(PredictionServiceResult(
+        forged_request.case_id,
+        "complete",
+        prediction_values(forged_request),
+        context=forged_request.context,
+    ))
+    reordered = ResultRow(
+        canonical.case_id,
+        canonical.status,
+        message=canonical.message,
+        target_outcomes=canonical.target_outcomes,
+        derived_metrics=canonical.derived_metrics,
+        execution_context=replace(
+            forged_request.context,
+            requested_target_identities=tuple(
+                reversed(forged_request.context.requested_target_identities)
+            ),
+        ),
+    )
+    assert not session.accept_result(
+        reordered, usecase.execution_environment[0], model
+    ).accepted
+    assert session.acceptance_diagnostics[-1].reason_code == (
+        "requested_target_contract_changed"
+    )
+
     only = forged_request.requested_targets[0]
     omitted = ResultRow(
         forged_request.case_id,

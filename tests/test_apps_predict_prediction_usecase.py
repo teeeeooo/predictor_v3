@@ -51,9 +51,10 @@ def test_prediction_usecase_keeps_multiple_row_errors_distinct_and_retries_after
     assert initial.job is None
     assert initial.summary.invalid == 2
     assert session.result_for_case(first).message == "냉방능력: 숫자로 입력해 주세요."
-    assert session.result_for_case(second).message == "냉방능력: 필수 입력값입니다."
+    assert session.result_for_case(second).message == "해당 입력 항목: 필수 입력값입니다."
     assert "cooling_capa" not in session.result_for_case(first).message
     assert "cooling_capa" not in session.result_for_case(second).message
+    assert "냉방능력" not in session.result_for_case(second).message
 
     session.case_store.get_case(first).set_input_value("cooling_capa", "3500")
     session.case_store.get_case(second).set_input_value("cooling_capa", "3600")

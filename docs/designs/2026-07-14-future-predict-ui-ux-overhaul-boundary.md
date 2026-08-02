@@ -397,12 +397,10 @@ contract. The correction boundary is:
 
 This is a requested execution subset for one Case. It must not shrink the Active
 runtime Target registry, change model artifact capability, or weaken full Active
-compatibility. Current implementation status is explicit:
-
-> existing ML policy is established, but Predict application execution does not yet fully consume that policy as a Case-scoped requested Target contract.
-
-This section records the correction invariant, not a claim that the correction
-is implemented.
+compatibility. The focused Lane C correction now consumes the established ML
+policy as this Case-scoped requested Target contract while the full runtime
+Target authority remains unchanged. Independent exact-head audit and Close are
+still required before merge.
 
 The final execution/validation UX when both cooling and heating capacities are
 blank is resolved as normal Case-scoped Target selection:

@@ -111,24 +111,24 @@ bulk transaction with final-combination Mapping/autofill, precise issue truth,
 atomic rollback, affected-only result invalidation, and fail-closed compound
 undo.
 
-### Next — Case-Scoped Target Applicability
+### Current Gate — Case-Scoped Target Applicability
 
-Existing ML mode-specific missing and Target leakage policy is established, but
-Predict application execution does not yet fully consume it as a Case-scoped
-requested Target contract. Full runtime Target capability remains mandatory for
-the Active artifact; a Case-specific requested subset must not alter the Active
-registry or relax compatibility. Both capacities present requests all five
-Targets; cooling-only requests Cooling Power, Ref Qty, and Cooling Hz;
-heating-only requests Heating Power, Ref Qty, and Heating Hz; both blank requests
-Ref Qty only when its existing required inputs validate. A valid Ref Qty-only
-success is `complete`; Power/Hz and EER/COP are N/A without fabricated outcomes.
-The focused correction implements this matrix without bypassing empty-row or Ref
-Qty artifact-selected input validation. Ordered stable Target identities are
-pinned per execution while the session retains the full runtime contract; typed
-mapping, aggregate status, stale/late rejection, migration, EER/COP, Result
-Review, and copy consume the same subset. The near-term order is fresh
-independent exact-head audit and Close, then separately authorized Narrow
-Viewport Result Review Pinning.
+Existing ML mode-specific missing and Target leakage policy is established, and
+the focused correction now consumes it as a Case-scoped requested Target
+contract. Full runtime Target capability remains mandatory for the Active
+artifact; a Case-specific requested subset does not alter the Active registry or
+relax compatibility. Both capacities present requests all five Targets;
+cooling-only requests Cooling Power, Ref Qty, and Cooling Hz; heating-only
+requests Heating Power, Ref Qty, and Heating Hz; both blank requests Ref Qty only
+when its existing required inputs validate. A valid Ref Qty-only success is
+`complete`; Power/Hz and EER/COP are N/A without fabricated outcomes. The
+correction implements this matrix without bypassing empty-row or Ref Qty
+artifact-selected input validation. Ordered stable Target identities are pinned
+per execution while the session retains the full runtime contract; typed mapping,
+aggregate status, stale/late rejection, migration, EER/COP, Result Review, and
+copy consume the same subset. The current gate is fresh independent exact-head
+audit and Close, followed by separately authorized Narrow Viewport Result Review
+Pinning.
 
 ### Later — Production ML Readiness / Calculator Integration
 

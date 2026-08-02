@@ -49,9 +49,12 @@ def test_nonblank_invalid_capacity_is_not_silently_treated_as_absent(invalid):
 
 def test_empty_row_is_invalid_but_ref_qty_artifact_requirements_can_authorize_case():
     runtime = compatibility_predict_runtime_snapshot()
+    ref_target = next(
+        item for item in runtime.target_registry_targets if item.ml_name == "Ref Qty"
+    )
     service = PredictionService(runtime_snapshot=runtime)
     service._model_data = {  # noqa: SLF001 - bounded artifact-selected test seam
-        "features": {"Ref Qty": ["OD Volume", "R32"]},
+        "features": {"Ref Qty": list(ref_target.policy_ml_names)},
         "models": {},
     }
     _runtime, session, _mapper, result_mapper, usecase, model = build_stack(
@@ -71,7 +74,13 @@ def test_empty_row_is_invalid_but_ref_qty_artifact_requirements_can_authorize_ca
     assert missing_plan.job is None
     assert session.result_for_case(ref_only).status == "invalid"
 
-    session.set_autofill_value(ref_only, "od_volume", 1.5)
+    for key, value in (
+        ("id_volume", 1.1),
+        ("evap_volume", 1.2),
+        ("od_volume", 1.5),
+        ("cond_volume", 1.6),
+    ):
+        session.set_autofill_value(ref_only, key, value)
     valid_plan = usecase.prepare_run([ref_only])
     assert valid_plan.job is not None
     request = valid_plan.job.requests[0]
