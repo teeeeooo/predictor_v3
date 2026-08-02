@@ -53,6 +53,16 @@ class DropdownOptionAdapter:
 
     def base_options_for_key(self, key: str) -> tuple[str, ...]:
         """Return mapping-backed base options for a dropdown key."""
+        return self.base_options_for_key_from_mapping(
+            key, self._mapping_repository.load()
+        )
+
+    def base_options_for_key_from_mapping(
+        self,
+        key: str,
+        mapping_data: object,
+    ) -> tuple[str, ...]:
+        """Resolve base options from one transaction-pinned mapping snapshot."""
         column = self._columns_by_key.get(key)
         if column is None:
             return ()
@@ -68,7 +78,11 @@ class DropdownOptionAdapter:
             section_name = column.dropdown_target or column.mapping
         if not section_name:
             return ()
-        section = self._mapping_section(section_name)
+        section = (
+            mapping_data.get(section_name, {})
+            if isinstance(mapping_data, dict)
+            else {}
+        )
         if not isinstance(section, dict):
             return ()
         return tuple(sorted(str(option) for option in section.keys()))

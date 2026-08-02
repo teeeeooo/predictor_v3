@@ -10,6 +10,7 @@ from apps.predict.adapters.prediction_result_adapter import PredictionResultAdap
 from apps.predict.adapters.pyside_prediction_runner import PySidePredictionRunner
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 from apps.predict.application.model_lifecycle import PredictModelLifecycleService
+from apps.predict.application.bulk_paste import BulkPasteTransaction
 from apps.predict.application.prediction_usecase import PredictionUseCase
 from apps.predict.application.result_review import ResultReviewProjection
 from apps.predict.application.workspace_state import PredictWorkspaceState
@@ -57,6 +58,7 @@ class PredictWorkspaceComposition:
     session: PredictSession
     table_edit_controller: TableEditController
     input_edit_controller: InputEditController
+    bulk_paste_transaction: BulkPasteTransaction
     prediction_controller: PredictionController
     input_mapper: PredictionInputMapper
     result_mapper: PredictionResultMapper
@@ -182,10 +184,17 @@ def build_predict_workspace_composition(
     dropdown_option_adapter = DropdownOptionAdapter(
         resolved_repository, columns, one_hot_snapshot=resolved_one_hot_snapshot
     )
+    bulk_paste_transaction = BulkPasteTransaction(
+        resolved_session,
+        predict_columns,
+        resolved_repository.load,
+        dropdown_option_adapter.base_options_for_key_from_mapping,
+    )
     return PredictWorkspaceComposition(
         session=resolved_session,
         table_edit_controller=table_edit_controller,
         input_edit_controller=input_edit_controller,
+        bulk_paste_transaction=bulk_paste_transaction,
         prediction_controller=prediction_controller,
         input_mapper=resolved_input_mapper,
         result_mapper=resolved_result_mapper,

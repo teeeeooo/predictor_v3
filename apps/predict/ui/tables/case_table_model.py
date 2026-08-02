@@ -7,6 +7,7 @@ from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtGui import QColor
 
 from apps.common.ui import style
+from apps.predict.application.bulk_paste import BulkPasteIssue
 from apps.predict.schema.case_table_schema_adapter import (
     UnifiedCaseColumn,
     build_case_table_column_schema,
@@ -29,6 +30,7 @@ class CaseTableModel(QAbstractTableModel):
         self._session = session or PredictSession()
         self._columns = columns or build_case_table_column_schema()
         self._edit_callback = edit_callback
+        self._input_issues: dict[tuple[str, str], BulkPasteIssue] = {}
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if parent.isValid():
@@ -139,6 +141,9 @@ class CaseTableModel(QAbstractTableModel):
         if not (0 <= row < self.rowCount() and 0 <= col < self.columnCount()):
             return False
         column = self._columns[col]
+        case_id = self._session.case_order[row]
+        if (case_id, column.key) in self._input_issues:
+            return True
         if not column.ml_feature:
             return False
         value = self.cell_value(row, col)
@@ -149,6 +154,19 @@ class CaseTableModel(QAbstractTableModel):
         except (TypeError, ValueError):
             return True
         return False
+
+    def set_input_issues(self, issues: tuple[BulkPasteIssue, ...]) -> None:
+        """Replace transaction-derived row/cell validation projection."""
+        self._input_issues = {
+            (issue.case_id, issue.column_key): issue for issue in issues
+        }
+
+    def input_issue(self, row: int, col: int) -> BulkPasteIssue | None:
+        """Return the exact transaction issue for one visible cell."""
+        if not (0 <= row < self.rowCount() and 0 <= col < self.columnCount()):
+            return None
+        case_id = self._session.case_order[row]
+        return self._input_issues.get((case_id, self._columns[col].key))
 
     def refresh(self) -> None:
         """Notify views that existing values may have changed."""
@@ -210,6 +228,9 @@ class CaseTableModel(QAbstractTableModel):
         return style.table_background_role("input")
 
     def _tooltip_for_cell(self, row: int, col: int) -> str:
+        issue = self.input_issue(row, col)
+        if issue is not None:
+            return issue.message
         if self.is_invalid(row, col):
             return f"{self._columns[col].header}: 숫자로 입력해 주세요."
         case_id = self._session.case_order[row]

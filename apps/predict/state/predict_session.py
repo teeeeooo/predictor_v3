@@ -16,6 +16,11 @@ from apps.predict.application.result_validation import canonical_result_rejectio
 from apps.predict.application.runtime_snapshot import validate_runtime_target_contract
 from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.case_store import CaseStore
+from apps.predict.state.input_transaction import (
+    InputTransactionCommit,
+    PredictInputTransactionAuthority,
+    StagedCaseInput,
+)
 from apps.predict.state.result_state_boundary import (
     AllowedExecution,
     PredictSessionProjection,
@@ -47,6 +52,7 @@ class PredictSession:
         self._active_semantics: PredictionExecutionSemantics | None = None
         self._active_model: PredictionModelIdentity | None = None
         self._projection_authority = ResultProjectionAuthority()
+        self._input_transaction_authority = PredictInputTransactionAuthority(self)
         self._acceptance_diagnostics: deque[ResultAcceptance] = deque(maxlen=32)
 
     @property
@@ -329,6 +335,25 @@ class PredictSession:
         self, projection: PredictSessionProjection, *, kind: str
     ) -> bool:
         return self._projection_authority.release(projection, kind)
+
+    def commit_input_transaction(
+        self,
+        staged_rows: tuple[StagedCaseInput, ...],
+        *,
+        expected_revision: int,
+    ) -> InputTransactionCommit:
+        """Commit one already-staged canonical input transaction."""
+        return self._input_transaction_authority.commit(
+            staged_rows, expected_revision=expected_revision
+        )
+
+    def undo_input_transaction(self, transaction_id: str) -> InputTransactionCommit:
+        """Undo one sealed input transaction without restoring result freshness."""
+        return self._input_transaction_authority.undo(transaction_id)
+
+    def discard_input_transaction(self, transaction_id: str) -> None:
+        """Release input undo state after its presentation history is reset."""
+        self._input_transaction_authority.discard(transaction_id)
 
     def _validate_canonical_state(self) -> None:
         case_revisions = {

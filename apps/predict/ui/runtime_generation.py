@@ -15,8 +15,10 @@ def apply_runtime_composition(workspace, composition: PredictWorkspaceCompositio
     scroll_value = horizontal_scroll.value()
     result_horizontal_scroll = workspace.result_review_table.horizontalScrollBar()
     result_scroll_value = result_horizontal_scroll.value()
+    workspace.bulk_paste_ui.clear_history()
     workspace.table_edit_controller = composition.table_edit_controller
     workspace.input_edit_controller = composition.input_edit_controller
+    workspace.bulk_paste_transaction = composition.bulk_paste_transaction
     workspace.prediction_controller = composition.prediction_controller
     workspace.dropdown_option_adapter = composition.dropdown_option_adapter
     workspace.mapping_repository = composition.mapping_repository
@@ -27,6 +29,7 @@ def apply_runtime_composition(workspace, composition: PredictWorkspaceCompositio
         edit_callback=workspace._handle_input_cell_edited,
     )
     workspace.case_table.setModel(workspace.case_model)
+    workspace.case_table.set_paste_handler(workspace.bulk_paste_ui.apply)
     workspace.result_review_model = ResultReviewTableModel(
         composition.result_review_projection
     )

@@ -924,12 +924,15 @@ File:
 
 Responsibility:
 
-- provide spreadsheet-like selection, copy/paste, clear, undo, navigation, and
+- provide spreadsheet-like selection, copy, clear, undo, navigation, and
   edit/replace behavior
 - copy selected visible rectangle as TSV
-- paste TSV to editable cells while skipping read-only cells
+- route toolbar and keyboard paste with one complete TSV payload, stable input
+  anchor identity, and selected-range shape to the Predict application bulk
+  transaction
 - keep result/status cells selectable/copyable but mutation-protected
-- implement grouped undo for edit/paste/clear
+- retain local grouped undo for edit/clear and place application-owned bulk
+  paste undo as one command in the same user-action chronology
 - implement Tab/Enter and shifted navigation
 - implement click/type replace-on-type behavior
 - provide or coordinate grouped column header visual affordance
@@ -1436,13 +1439,26 @@ File:
 
 Responsibility:
 
-- handle paste/clear/row insert/row delete behavior
+- keep ordinary single-cell mapping/cascade/autofill under
+  `InputEditController` and row insert/delete/reset under `TableEditController`
+- route bulk paste through `apps.predict.application.bulk_paste`, which parses
+  the complete headerless TSV, stages generation-ordered editable input
+  identities, pins one mapping snapshot, and resolves each final row combination
+- commit staged row shape/input/autofill through
+  `apps.predict.state.input_transaction`, which is the canonical atomic
+  commit/rollback and compound-undo authority behind `PredictSession`
 - update `CaseStore`
 - preserve table model responsibility boundaries
 - own mapping/autofill updates and dependent value clearing through state
   boundaries, not direct mapping repository calls from table model/view
 
-First production foundation may defer this file until paste/row operations are implemented.
+Bulk paste protects explicitly pasted dependent inputs from intermediate cascade
+clears, clears only non-pasted stale dependents, retains invalid raw inputs with
+stable case/column issues, invalidates only changed case revisions/results, and
+never restores historical result freshness during undo. Overflow rows are
+created before the committed projection is shown. Input and Result Review models
+receive one shared reset bracket for paste/undo, and standalone/embedded Predict
+reuse the same composition-owned transaction.
 
 ### 12.3 Train controller
 
