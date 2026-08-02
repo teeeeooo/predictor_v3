@@ -24,6 +24,7 @@ from apps.predict.composition import (
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.command_bar import PredictCommandBar
 from apps.predict.ui.bottom_status import build_bottom_status
+from apps.predict.ui.bulk_paste_adapter import PredictBulkPasteUiAdapter
 from apps.predict.ui.case_selection import WorkspaceCaseSelectionBridge
 from apps.predict.ui.layout_b import PredictLayoutBSurfaces
 from apps.predict.ui.model_group import WorkspaceModelGroup
@@ -84,6 +85,7 @@ class PredictWorkspace(QWidget):
         self.table_edit_controller = resolved.table_edit_controller
         self.mapping_repository = resolved.mapping_repository
         self.input_edit_controller = resolved.input_edit_controller
+        self.bulk_paste_transaction = resolved.bulk_paste_transaction
         self.prediction_controller = resolved.prediction_controller
         self.dropdown_option_adapter = resolved.dropdown_option_adapter
         self.generation_id = resolved.generation_id
@@ -99,6 +101,8 @@ class PredictWorkspace(QWidget):
         )
         self.case_table = CaseTableView(self)
         self.case_table.setModel(self.case_model)
+        self.bulk_paste_ui = PredictBulkPasteUiAdapter(self)
+        self.case_table.set_paste_handler(self.bulk_paste_ui.apply)
         self.result_review_model = ResultReviewTableModel(
             resolved.result_review_projection
         )
@@ -280,6 +284,7 @@ class PredictWorkspace(QWidget):
         self.model_group.begin_insert(first_row, last_row)
         self.table_edit_controller.append_empty_rows(1)
         self.model_group.end_insert()
+        self.bulk_paste_ui.clear_history()
         self._refresh_after_row_change()
 
     def _delete_selected_or_last_row(self) -> None:
@@ -297,7 +302,7 @@ class PredictWorkspace(QWidget):
         self.table_edit_controller.reset_rows(DEFAULT_INITIAL_ROWS)
         self.model_group.end_reset()
         self._reconcile_shared_case_selection()
-        self.case_table.clear_undo_history()
+        self.bulk_paste_ui.clear_history()
         self._refresh_idle_session_projection()
 
     def _refresh(self) -> None:
@@ -405,7 +410,10 @@ class PredictWorkspace(QWidget):
         self._refresh_after_row_change()
 
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
-        self.input_edit_controller.handle_cell_edited(case_id, changed_key)
+        mapping_data = self.input_edit_controller.handle_cell_edited(
+            case_id, changed_key
+        )
+        self.bulk_paste_ui.reconcile_case_authoring(case_id, mapping_data)
         self.case_model.refresh_case_id(case_id)
         self.result_review_model.refresh_case_id(case_id)
         mapping_status = self.dropdown_option_adapter.mapping_status().status
@@ -419,11 +427,7 @@ class PredictWorkspace(QWidget):
             self.status_label.setText("입력이 변경되었습니다.")
 
     def _paste_from_clipboard(self) -> None:
-        if not self._can_mutate_rows():
-            return
-        changed = self.case_table.paste_tsv_at_selection(QApplication.clipboard().text())
-        self.status_label.setText(f"붙여넣기 완료: {changed}개 셀")
-        self._refresh_after_row_change()
+        self.case_table.paste_tsv_at_selection(QApplication.clipboard().text())
 
     def _copy_results_selection(self) -> None:
         if self.workspace_state.current_surface is WorkspaceSurface.RESULT:
@@ -447,6 +451,8 @@ class PredictWorkspace(QWidget):
             self.table_edit_controller.remove_case_ids(group.case_ids)
             self.model_group.end_remove()
         self._reconcile_shared_case_selection()
+        if rows:
+            self.bulk_paste_ui.clear_history()
         self._refresh_after_row_change()
 
     def _set_running_state(self, running: bool) -> None:

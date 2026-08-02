@@ -11,6 +11,7 @@ from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
+from apps.predict.ui.workspace import PredictWorkspace
 from tests.helpers.predict_results import accept_result_fixtures
 
 
@@ -35,10 +36,21 @@ def _table() -> tuple[PredictSession, CaseTableModel, CaseTableView]:
     _app()
     session = PredictSession()
     session.case_store.append_empty_rows(3)
-    model = CaseTableModel(session)
-    view = CaseTableView()
-    view.setModel(model)
-    return session, model, view
+    workspace = PredictWorkspace(
+        session=session,
+        initial_empty_rows=0,
+        mapping_repository=_EmptyMappingRepository(),
+    )
+    workspace.show()
+    QApplication.processEvents()
+    return session, workspace.case_model, workspace.case_table
+
+
+class _EmptyMappingRepository:
+    mapping_file = ""
+
+    def load(self) -> dict:
+        return {}
 
 
 def _column_index(model: CaseTableModel, key: str) -> int:

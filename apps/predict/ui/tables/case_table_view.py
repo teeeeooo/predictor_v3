@@ -1,12 +1,26 @@
 """Unified Predict case table view."""
 
+from collections.abc import Callable
+from dataclasses import dataclass
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableView
 from PySide6.QtCore import QItemSelectionModel
 
-from apps.common.ui.tables.clipboard import format_tsv, parse_tsv, rectangular_bounds
-from apps.common.ui.tables.undo import CellChange, TableUndoStack
+from apps.common.ui.tables.clipboard import format_tsv, rectangular_bounds
+from apps.common.ui.tables.undo import CellChange
+
+
+PasteHandler = Callable[[str, int, int, int, int], int]
+UndoHandler = Callable[[], int]
+ReauthorizeHandler = Callable[[], bool]
+
+
+@dataclass(frozen=True)
+class _CompoundUndo:
+    execute: UndoHandler
+    reauthorize: ReauthorizeHandler | None = None
 
 
 class CaseTableView(QTableView):
@@ -20,7 +34,8 @@ class CaseTableView(QTableView):
             QAbstractItemView.DoubleClicked
             | QAbstractItemView.EditKeyPressed
         )
-        self._undo_stack = TableUndoStack()
+        self._undo_stack: list[tuple[CellChange, ...] | _CompoundUndo] = []
+        self._paste_handler: PasteHandler | None = None
         self._press_started_on_selected_current = False
 
     def copy_selection_tsv(self) -> str:
@@ -40,37 +55,25 @@ class CaseTableView(QTableView):
         return format_tsv(grid)
 
     def paste_tsv_at_selection(self, text: str) -> int:
-        """Paste TSV at the current selection anchor, skipping read-only cells."""
-        model = self.model()
-        if model is None or not hasattr(model, "setData"):
+        """Route a complete TSV payload to the Predict transaction owner."""
+        if self._paste_handler is None:
             return 0
-        anchor = self._selection_anchor()
-        if anchor is None:
+        bounds = self._selection_bounds()
+        if bounds is None:
             return 0
-        grid = parse_tsv(text)
-        if not grid:
-            return 0
-        grid = self._expand_grid_for_selection(grid)
-        changes: list[CellChange] = []
-        for r_offset, row_values in enumerate(grid):
-            top, left = anchor
-            row = top + r_offset
-            if row >= model.rowCount():
-                continue
-            for c_offset, value in enumerate(row_values):
-                col = left + c_offset
-                if col >= model.columnCount():
-                    continue
-                index = model.index(row, col)
-                if not (model.flags(index) & Qt.ItemIsEditable):
-                    continue
-                old_value = model.cell_value(row, col)
-                if str(old_value or "") == str(value):
-                    continue
-                if model.setData(index, value, Qt.EditRole):
-                    changes.append(CellChange(row, col, old_value, value))
-        self._undo_stack.push(changes)
-        return len(changes)
+        return self._paste_handler(text, *bounds)
+
+    def set_paste_handler(self, handler: PasteHandler | None) -> None:
+        """Bind the one production bulk-paste entry owner."""
+        self._paste_handler = handler
+
+    def register_compound_undo(
+        self,
+        handler: UndoHandler,
+        reauthorize: ReauthorizeHandler | None = None,
+    ) -> None:
+        """Place one application-owned transaction in table undo chronology."""
+        self._push_undo(_CompoundUndo(handler, reauthorize))
 
     def clear_selection(self) -> int:
         """Clear selected editable cells."""
@@ -87,7 +90,7 @@ class CaseTableView(QTableView):
                 continue
             if model.setData(index, "", Qt.EditRole):
                 changes.append(CellChange(row, col, old_value, ""))
-        self._undo_stack.push(changes)
+        self._push_undo(tuple(changes))
         return len(changes)
 
     def replace_current_cell(self, text: str) -> bool:
@@ -103,8 +106,8 @@ class CaseTableView(QTableView):
             return True
         if not model.setData(index, text, Qt.EditRole):
             return False
-        self._undo_stack.push(
-            [CellChange(index.row(), index.column(), old_value, text)]
+        self._push_undo(
+            (CellChange(index.row(), index.column(), old_value, text),)
         )
         if self.isVisible():
             self.edit(index)
@@ -115,12 +118,21 @@ class CaseTableView(QTableView):
         model = self.model()
         if model is None:
             return 0
+        if not self._undo_stack:
+            return 0
         changes = self._undo_stack.pop()
+        if isinstance(changes, _CompoundUndo):
+            undone = changes.execute()
+            if undone:
+                self._reauthorize_top_compound()
+            return undone
         undone = 0
         for change in reversed(changes):
             index = model.index(change.row, change.col)
             if model.setData(index, change.old_value, Qt.EditRole):
                 undone += 1
+        if undone == len(changes):
+            self._reauthorize_top_compound()
         return undone
 
     def clear_undo_history(self) -> None:
@@ -196,32 +208,33 @@ class CaseTableView(QTableView):
         indexes = self.selectionModel().selectedIndexes() if self.selectionModel() else []
         return sorted({(index.row(), index.column()) for index in indexes})
 
-    def _selection_anchor(self) -> tuple[int, int] | None:
+    def _selection_bounds(self) -> tuple[int, int, int, int] | None:
         cells = self._selected_cells()
         if cells:
             bounds = rectangular_bounds(cells)
             if bounds is None:
                 return None
-            top, left, _bottom, _right = bounds
-            return top, left
+            return bounds
         current = self.currentIndex()
         if current.isValid():
-            return current.row(), current.column()
+            return current.row(), current.column(), current.row(), current.column()
         return None
 
-    def _expand_grid_for_selection(self, grid: list[list[str]]) -> list[list[str]]:
-        cells = self._selected_cells()
-        bounds = rectangular_bounds(cells)
-        if bounds is None:
-            return grid
-        top, left, bottom, right = bounds
-        selected_rows = bottom - top + 1
-        selected_cols = right - left + 1
-        if len(grid) == 1 and len(grid[0]) == 1:
-            return [[grid[0][0] for _col in range(selected_cols)] for _row in range(selected_rows)]
-        if len(grid) == 1 and len(grid[0]) == selected_cols and selected_rows > 1:
-            return [list(grid[0]) for _row in range(selected_rows)]
-        return grid
+    def _push_undo(
+        self, action: tuple[CellChange, ...] | _CompoundUndo
+    ) -> None:
+        if isinstance(action, tuple) and not action:
+            return
+        self._undo_stack.append(action)
+        if len(self._undo_stack) > 64:
+            del self._undo_stack[0]
+
+    def _reauthorize_top_compound(self) -> None:
+        if not self._undo_stack:
+            return
+        action = self._undo_stack[-1]
+        if isinstance(action, _CompoundUndo) and action.reauthorize is not None:
+            action.reauthorize()
 
     def _move_current_horizontal(self, backward: bool = False) -> None:
         model = self.model()

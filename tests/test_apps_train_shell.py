@@ -19,6 +19,7 @@ from apps.predict.application.workspace_state import (
     PredictWorkspaceState,
     WorkspaceSurface,
 )
+from apps.predict.application.bulk_paste import BulkPasteTransaction
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.services.prediction_service import PredictionService
 from apps.predict.ui.shell import PredictShell
@@ -187,6 +188,8 @@ def test_train_shell_tabs_and_predict_workspace_reuse():
     assert isinstance(shell.tabs.widget(3), DataMappingPanel)
     for workspace in (standalone.workspace, shell.predict_workspace):
         assert isinstance(workspace.workspace_state, PredictWorkspaceState)
+        assert isinstance(workspace.bulk_paste_transaction, BulkPasteTransaction)
+        assert workspace.case_table._paste_handler == workspace.bulk_paste_ui.apply
         assert workspace.workspace_state.current_surface is WorkspaceSurface.INPUT
         assert workspace.surface_host.stack.count() == 2
 
