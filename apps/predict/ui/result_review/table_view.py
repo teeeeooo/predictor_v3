@@ -15,6 +15,7 @@ class ResultReviewTableView(QTableView):
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setWordWrap(False)
         self.setTextElideMode(Qt.ElideRight)
 
     def selected_row_indexes(self) -> list[int]:
