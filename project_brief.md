@@ -11,9 +11,10 @@ broad overhaul** are complete and merged. Overhaul Slices 1–6 — Stable Ident
 Seam, Typed Result and Execution Context, EER/COP Enrichment, Result Review
 Projection, Shared Layout B Composition, and Bulk Paste Transaction — are
 independently audited, merged, and closed. The Target applicability Owner Audit
-and Ref Qty-only product decision are complete without source mutation. The next
-gate is the separately authorized **Case-Scoped Target Applicability Lane C
-Source Correction**.
+and Ref Qty-only product decision are complete. The focused Lane C source
+correction now carries the requested subset through Predict execution and
+historical provenance without relaxing full Active compatibility. The next gate
+is a **fresh independent exact-head Lane C Auditor**.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -110,21 +111,24 @@ bulk transaction with final-combination Mapping/autofill, precise issue truth,
 atomic rollback, affected-only result invalidation, and fail-closed compound
 undo.
 
-### Next — Case-Scoped Target Applicability
+### Current Gate — Case-Scoped Target Applicability
 
-Existing ML mode-specific missing and Target leakage policy is established, but
-Predict application execution does not yet fully consume it as a Case-scoped
-requested Target contract. Full runtime Target capability remains mandatory for
-the Active artifact; a Case-specific requested subset must not alter the Active
-registry or relax compatibility. Both capacities present requests all five
-Targets; cooling-only requests Cooling Power, Ref Qty, and Cooling Hz;
-heating-only requests Heating Power, Ref Qty, and Heating Hz; both blank requests
-Ref Qty only when its existing required inputs validate. A valid Ref Qty-only
-success is `complete`; Power/Hz and EER/COP are N/A without fabricated outcomes.
-This product decision is not yet implemented and does not bypass empty-row or Ref
-Qty input validation. The near-term order is Lane C source correction, fresh
-independent exact-head audit and Close, then independent Narrow Viewport Result
-Review Pinning.
+Existing ML mode-specific missing and Target leakage policy is established, and
+the focused correction now consumes it as a Case-scoped requested Target
+contract. Full runtime Target capability remains mandatory for the Active
+artifact; a Case-specific requested subset does not alter the Active registry or
+relax compatibility. Both capacities present requests all five Targets;
+cooling-only requests Cooling Power, Ref Qty, and Cooling Hz; heating-only
+requests Heating Power, Ref Qty, and Heating Hz; both blank requests Ref Qty only
+when its existing required inputs validate. A valid Ref Qty-only success is
+`complete`; Power/Hz and EER/COP are N/A without fabricated outcomes. The
+correction implements this matrix without bypassing empty-row or Ref Qty
+artifact-selected input validation. Ordered stable Target identities are pinned
+per execution while the session retains the full runtime contract; typed mapping,
+aggregate status, stale/late rejection, migration, EER/COP, Result Review, and
+copy consume the same subset. The current gate is fresh independent exact-head
+audit and Close, followed by separately authorized Narrow Viewport Result Review
+Pinning.
 
 ### Later — Production ML Readiness / Calculator Integration
 

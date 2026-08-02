@@ -46,9 +46,15 @@ class PredictionExecutionContext:
     semantics: PredictionExecutionSemantics
     model: PredictionModelIdentity
     capacity_inputs: tuple[ExecutionInputEvidence, ...] = ()
+    requested_target_identities: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "capacity_inputs", tuple(self.capacity_inputs))
+        object.__setattr__(
+            self,
+            "requested_target_identities",
+            tuple(self.requested_target_identities),
+        )
 
 
 @dataclass(frozen=True)

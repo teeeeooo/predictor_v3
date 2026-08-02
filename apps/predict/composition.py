@@ -123,7 +123,8 @@ def build_predict_workspace_composition(
     )
     resolved_input_mapper = input_mapper or RowToMlInputAdapter(
         columns=tuple(item for item in predict_columns if item.group in {"input", "auto"}),
-        one_hot_snapshot=resolved_one_hot_snapshot
+        one_hot_snapshot=resolved_one_hot_snapshot,
+        target_descriptors=runtime.target_descriptors,
     )
     resolved_result_mapper = result_mapper or PredictionResultAdapter(
         build_result_column_schema(column_descriptors),
@@ -172,6 +173,7 @@ def build_predict_workspace_composition(
         result_mapper=resolved_result_mapper,
         execution_semantics=execution_semantics_from_runtime(runtime),
         model_identity=resolved_model_identity,
+        request_validator=getattr(service, "validate_request", None),
     )
     prediction_controller = PredictionController(
         resolved_session,

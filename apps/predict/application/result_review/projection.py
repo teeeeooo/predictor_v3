@@ -8,6 +8,11 @@ from apps.predict.application.result_enrichment import (
     COOLING_CAPACITY_FEATURE_ID,
     HEATING_CAPACITY_FEATURE_ID,
 )
+from apps.predict.application.target_applicability import (
+    COOLING_FREQUENCY_TARGET_ID,
+    HEATING_FREQUENCY_TARGET_ID,
+    REFRIGERANT_QUANTITY_TARGET_ID,
+)
 from apps.predict.application.runtime_columns import PredictRuntimeColumnDescriptor
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
@@ -25,10 +30,6 @@ ROW_FEATURE_ID = "ufm_feature_b9296ee2678057bfb28734e4cabb4f6b"
 COMPRESSOR_FEATURE_ID = "ufm_feature_648806b49b8e56c6b337959409e25da4"
 REFRIGERANT_FEATURE_ID = "ufm_feature_dd53e21576665050a1b5172fd869aa0f"
 EXPANSION_FEATURE_ID = "ufm_feature_7a39f82756d9569e841ae17505fc816b"
-
-REFRIGERANT_QUANTITY_TARGET_ID = "ufm_target_330e4539dc7e5bb583132943914a5df5"
-COOLING_FREQUENCY_TARGET_ID = "ufm_target_4e8d07df9558577a94701a10cdeabf71"
-HEATING_FREQUENCY_TARGET_ID = "ufm_target_e73ce9f258985ccf8ce1d3774cc108ce"
 
 SUMMARY_GROUPS = (
     (IDU_FEATURE_ID, EVAP_FEATURE_ID),

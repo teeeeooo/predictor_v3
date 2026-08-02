@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; Slices 1–6 merged and closed, successor work requires separate approval
+Status: approved boundary; Slices 1–6 closed; Target applicability correction implemented on a focused branch pending independent exact-head audit
 Created: 2026-07-14
 Updated: 2026-08-02
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
@@ -397,12 +397,10 @@ contract. The correction boundary is:
 
 This is a requested execution subset for one Case. It must not shrink the Active
 runtime Target registry, change model artifact capability, or weaken full Active
-compatibility. Current implementation status is explicit:
-
-> existing ML policy is established, but Predict application execution does not yet fully consume that policy as a Case-scoped requested Target contract.
-
-This section records the correction invariant, not a claim that the correction
-is implemented.
+compatibility. The focused Lane C correction now consumes the established ML
+policy as this Case-scoped requested Target contract while the full runtime
+Target authority remains unchanged. Independent exact-head audit and Close are
+still required before merge.
 
 The final execution/validation UX when both cooling and heating capacities are
 blank is resolved as normal Case-scoped Target selection:
@@ -437,8 +435,10 @@ TargetOutcome status. Full compatible Active/runtime Target capability remains
 mandatory. Existing mode-missing policy, target-specific exclude/allowed and
 leakage rules, Ref Qty feature requirements, lifecycle, execution provenance,
 EER/COP formula, Result Review, Layout B, and bulk transaction contracts remain
-closed and unchanged. The requested-Target matrix is a product decision for the
-future correction; current source behavior has not implemented it yet.
+closed and unchanged. The Lane C correction now derives this requested-Target
+matrix from canonical raw Case input, pins its stable Target identity order in
+execution provenance, and carries it through inference, acceptance, migration,
+enrichment, and Result Review without changing the full runtime registry.
 
 ### 6.6 Calculate
 
@@ -554,13 +554,12 @@ applicability controls only the requested execution subset on a compatible
 Active, and actual failure within that requested subset controls
 Complete/Partial status.
 
-The read-only Owner Audit and Ref Qty-only product decision are complete. The
-next correctness gate is the separately authorized **Case-Scoped Target
-Applicability Lane C Source Correction**, followed by a fresh independent
-exact-head audit and Close. Narrow Viewport Result Review Pinning remains a later
-independent presentation slice with Case + 상태 as the anchor direction; it must
-not be bundled with the correctness repair. The default Result Review order and
-Layout B full-surface direction remain approved.
+The read-only Owner Audit, Ref Qty-only product decision, and focused Lane C
+source correction are complete. The next correctness gate is a **fresh
+independent exact-head Lane C Auditor** and Close. Narrow Viewport Result Review
+Pinning remains a later independent presentation slice with Case + 상태 as the
+anchor direction; it must not be bundled with the correctness repair. The
+default Result Review order and Layout B full-surface direction remain approved.
 
 ## 9. Current Exclusions
 
@@ -598,9 +597,10 @@ canonical final-combination bulk transaction, Mapping/issue continuity, atomic
 rollback, and fail-closed compound undo without changing ML Targets, Feature
 formula schema, or Calculator formulas.
 
-This Ref Qty-only product decision authorizes no source mutation. The next action
-is the separately authorized **Case-Scoped Target Applicability Lane C Source
-Correction**, followed by a fresh independent exact-head audit and Close, then
-the independent Narrow Viewport Result Review Pinning presentation slice.
-CSV/XLSX export, future multi-point Predict-to-Calculate integration, and other
-deferred product work remain separate and unstarted.
+The focused correction implements the approved requested subset without changing
+ML/Data Definition policy, runtime Target membership, or Active artifact
+compatibility. The next action is a **fresh independent exact-head Lane C
+Auditor** and Close, followed only after separate authorization by the independent
+Narrow Viewport Result Review Pinning presentation slice. CSV/XLSX export,
+future multi-point Predict-to-Calculate integration, and other deferred product
+work remain separate and unstarted.

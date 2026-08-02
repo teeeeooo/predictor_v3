@@ -66,6 +66,11 @@ def accept_result_fixtures(
             if input_outcome is not None and input_outcome.request is not None
             else ()
         )
+        requested_targets = (
+            input_outcome.request.requested_targets
+            if input_outcome is not None and input_outcome.request is not None
+            else runtime.target_descriptors
+        )
         context = PredictionExecutionContext(
             session.session_id,
             template.case_id,
@@ -74,8 +79,9 @@ def accept_result_fixtures(
             semantics,
             model,
             capacity_inputs,
+            tuple(item.target_identity for item in requested_targets),
         )
-        outcomes = _outcomes_for_template(template, runtime.target_descriptors)
+        outcomes = _outcomes_for_template(template, requested_targets)
         result = ResultRow(
             template.case_id,
             template.status,

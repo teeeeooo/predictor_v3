@@ -8,12 +8,15 @@ from apps.predict.application.models import (
     PredictionModelStatus,
     PredictionServiceResult,
 )
-from core.ml.artifacts import MODEL_FILE
-from core.ml.inference import load_model, predict_row
+from apps.predict.application.target_applicability import (
+    requested_target_contract_reason,
+)
 from apps.predict.application.runtime_snapshot import (
     PredictRuntimeSnapshot,
     validate_runtime_target_contract,
 )
+from core.ml.artifacts import MODEL_FILE
+from core.ml.inference import build_input_df, load_model, predict_row
 
 
 class PredictionService:
@@ -69,6 +72,37 @@ class PredictionService:
         if self._load_model_data() is None:
             raise ValueError(self._load_error or "Model could not be loaded.")
 
+    def validate_request(
+        self, request: PredictionInputRequest
+    ) -> tuple[str, ...]:
+        """Validate artifact-selected inputs for this exact requested subset."""
+        model_data = self._load_model_data()
+        if model_data is None:
+            return ()
+        try:
+            targets = self._requested_ml_names(request)
+            required_features = tuple(
+                feature
+                for target in targets
+                for feature in (model_data["features"].get(target) or ())
+            )
+            runtime = self._runtime_snapshot
+            build_input_df(
+                request.row_input,
+                required_features or None,
+                derived_snapshot=runtime.derived if runtime is not None else None,
+                zero_fill_policies=(
+                    runtime.zero_fill_policy_by_ml_name
+                    if runtime is not None else None
+                ),
+                ordered_input_features=(
+                    runtime.ordered_input_ml_names if runtime is not None else None
+                ),
+            )
+        except ValueError as exc:
+            return (str(exc),)
+        return ()
+
     def predict_many(
         self,
         requests: list[PredictionInputRequest],
@@ -99,10 +133,11 @@ class PredictionService:
             )
         try:
             runtime = self._runtime_snapshot
+            targets = self._requested_ml_names(request)
             predictions = predict_row(
                 model_data,
                 request.row_input,
-                targets=runtime.active_targets if runtime is not None else None,
+                targets=targets,
                 derived_snapshot=runtime.derived if runtime is not None else None,
                 zero_fill_policies=(
                     runtime.zero_fill_policy_by_ml_name if runtime is not None else None
@@ -124,6 +159,22 @@ class PredictionService:
             predictions=predictions,
             context=request.context,
         )
+
+    def _requested_ml_names(
+        self, request: PredictionInputRequest
+    ) -> tuple[str, ...] | None:
+        runtime = self._runtime_snapshot
+        requested = tuple(request.requested_targets)
+        if runtime is None:
+            return tuple(item.ml_name for item in requested) or None
+        if not requested and request.context is None:
+            return tuple(runtime.active_targets)
+        reason = requested_target_contract_reason(
+            requested, tuple(runtime.target_descriptors)
+        )
+        if reason:
+            raise ValueError(f"Predict requested Target contract is invalid: {reason}")
+        return tuple(item.ml_name for item in requested)
 
     def _load_model_data(self) -> Any | None:
         if self._model_data is not None:

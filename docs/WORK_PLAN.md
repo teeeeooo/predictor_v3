@@ -52,10 +52,9 @@
 
 ## Next Action
 
-The next gate is the separately authorized **Case-Scoped Target Applicability
-Lane C Source Correction**. It must connect the established raw-input requested
-Target matrix, including Ref Qty-only Cases, to Predict execution without
-changing the full Active capability contract or existing Target input policy.
+The Case-Scoped Target Applicability Lane C Source Correction is complete on its
+focused branch and PR. The next gate is a **fresh independent exact-head Lane C
+Auditor**; merge remains separately authorized.
 
 ## Active Decisions / Blockers
 
@@ -91,7 +90,8 @@ changing the full Active capability contract or existing Target input policy.
   requests Cooling Power, Heating Power, Ref Qty, Cooling Hz, and Heating Hz;
   cooling-only requests Cooling Power, Ref Qty, and Cooling Hz; heating-only
   requests Heating Power, Ref Qty, and Heating Hz; both blank requests Ref Qty
-  only when its existing inputs validate. This decision is not yet implemented.
+  only when its existing inputs validate. The Lane C correction now implements
+  this matrix from raw Case input before zero-fill/preprocessing.
 - For a valid Ref Qty-only Case, Ref Qty success makes the row `complete`; actual
   Ref Qty execution failure follows existing terminal/error semantics. Power/Hz
   Targets are not requested and EER/COP are N/A, without fabricated Target
@@ -136,9 +136,10 @@ changing the full Active capability contract or existing Target input policy.
    owners and execution seams read-only.
 3. **Ref-Qty-only applicability product decision — complete in this task:** both
    capacities blank requests Ref Qty only when its existing inputs validate.
-4. **Case-Scoped Target Applicability Lane C Source Correction — next:** connect
-   the established policy to Predict without relaxing Active compatibility.
-5. **Fresh independent exact-head audit and Close.**
+4. **Case-Scoped Target Applicability Lane C Source Correction — complete on its
+   focused branch:** connected the established policy without relaxing Active
+   compatibility.
+5. **Fresh independent exact-head Lane C audit and Close — next.**
 6. **Narrow Viewport Result Review Pinning:** separate presentation slice using
    Case + 상태 as the anchor direction; do not combine it with correctness repair.
 7. **Separately approved deferred work:** CSV/XLSX export, multi-point

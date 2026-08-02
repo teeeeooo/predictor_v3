@@ -29,6 +29,7 @@ from apps.predict.state.result_row import ResultRow
 
 
 ResultCallback = Callable[[ResultRow], None]
+RequestValidator = Callable[[PredictionInputRequest], tuple[str, ...]]
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,7 @@ class PredictionUseCase:
         result_mapper: PredictionResultMapper,
         execution_semantics: PredictionExecutionSemantics | None = None,
         model_identity: PredictionModelIdentity | None = None,
+        request_validator: RequestValidator | None = None,
     ) -> None:
         self._session = session
         self._input_mapper = input_mapper
@@ -72,6 +74,7 @@ class PredictionUseCase:
         self._model_identity = model_identity or PredictionModelIdentity(
             "unmanaged", 0, "legacy"
         )
+        self._request_validator = request_validator
         self._target_descriptors = tuple(result_mapper.target_descriptors)
         if not self._target_descriptors:
             raise ValueError("Predict result mapper has no target descriptors")
@@ -83,6 +86,12 @@ class PredictionUseCase:
     ) -> None:
         self._execution_semantics = semantics
         self._model_identity = model_identity
+
+    def update_request_validator(
+        self, request_validator: RequestValidator | None
+    ) -> None:
+        """Rebind validation when explicit model reload swaps the service."""
+        self._request_validator = request_validator
 
     @property
     def execution_environment(
@@ -121,9 +130,28 @@ class PredictionUseCase:
                 case_input_revision=case.input_revision,
                 semantics=self._execution_semantics,
                 model=self._model_identity,
+                requested_target_identities=tuple(
+                    item.target_identity
+                    for item in outcome.request.requested_targets
+                ),
                 capacity_inputs=outcome.request.capacity_inputs,
             )
             request = replace(outcome.request, context=context)
+            validation_errors = (
+                self._request_validator(request)
+                if self._request_validator is not None
+                else ()
+            )
+            if validation_errors:
+                self._record_result(
+                    self._result_mapper.invalid_result(
+                        case_id=case_id,
+                        message="; ".join(validation_errors),
+                    ),
+                    result_callback,
+                )
+                invalid_count += 1
+                continue
             self._session.allow_result(context, self._target_descriptors)
             self._record_result(
                 self._result_mapper.running_result(case_id),

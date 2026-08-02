@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
+from math import isfinite
 from typing import Any
 
 from apps.predict.application.models import (
@@ -13,6 +14,13 @@ from apps.predict.application.result_enrichment import (
     HEATING_CAPACITY_FEATURE_ID,
     build_capacity_input_evidence,
 )
+from apps.predict.application.runtime_snapshot import (
+    compatibility_predict_runtime_snapshot,
+)
+from apps.predict.application.target_applicability import (
+    requested_target_descriptors,
+)
+from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_input_column_schema,
@@ -35,10 +43,16 @@ class RowToMlInputAdapter:
         columns: tuple[PredictColumn, ...] | None = None,
         one_hot_groups: Mapping[str, Sequence[str]] | None = None,
         one_hot_snapshot: OneHotRuntimeSnapshot | None = None,
+        target_descriptors: tuple[PredictionTargetDescriptor, ...] | None = None,
     ) -> None:
         if one_hot_groups is not None and one_hot_snapshot is not None:
             raise ValueError("provide one_hot_snapshot or legacy one_hot_groups, not both")
         self._columns = columns or build_input_column_schema()
+        self._target_descriptors = (
+            tuple(target_descriptors)
+            if target_descriptors is not None
+            else compatibility_predict_runtime_snapshot().target_descriptors
+        )
         default_snapshot = one_hot_runtime_snapshot(bootstrap_manifest())
         self._one_hot_snapshot = (
             one_hot_snapshot
@@ -59,17 +73,27 @@ class RowToMlInputAdapter:
         row_input: dict[str, Any] = {}
         values = {**case.autofill_values, **case.input_values}
 
-        cooling_column = next(
-            (
-                column for column in self._columns
-                if column.feature_identity == COOLING_CAPACITY_FEATURE_ID
-            ),
-            None,
+        if not any(not self._is_blank(value) for value in values.values()):
+            errors.append("prediction_input is required.")
+
+        capacity_columns = {
+            column.feature_identity: column
+            for column in self._columns
+            if column.feature_identity in {
+                COOLING_CAPACITY_FEATURE_ID,
+                HEATING_CAPACITY_FEATURE_ID,
+            }
+        }
+        cooling_column = capacity_columns.get(COOLING_CAPACITY_FEATURE_ID)
+        heating_column = capacity_columns.get(HEATING_CAPACITY_FEATURE_ID)
+        cooling_value = (
+            values.get(cooling_column.key) if cooling_column is not None else None
         )
-        capacity = values.get(cooling_column.key) if cooling_column is not None else None
-        if self._is_blank(capacity):
-            key = cooling_column.key if cooling_column is not None else "cooling_capa"
-            errors.append(f"{key} is required.")
+        heating_value = (
+            values.get(heating_column.key) if heating_column is not None else None
+        )
+        cooling_present = not self._is_blank(cooling_value)
+        heating_present = not self._is_blank(heating_value)
 
         capacity_inputs = []
         for column in self._columns:
@@ -82,6 +106,13 @@ class RowToMlInputAdapter:
             if converted is None:
                 errors.append(f"{column.key} must be numeric.")
                 continue
+            if column.feature_identity in capacity_columns:
+                if not isfinite(converted):
+                    errors.append(f"{column.key} must be finite.")
+                    continue
+                if converted <= 0:
+                    errors.append(f"{column.key} must be greater than 0.")
+                    continue
             row_input[column.ml_feature] = converted
             if column.feature_identity in {
                 COOLING_CAPACITY_FEATURE_ID,
@@ -106,6 +137,11 @@ class RowToMlInputAdapter:
             request=PredictionInputRequest(
                 case_id=case.case_id,
                 row_input=row_input,
+                requested_targets=requested_target_descriptors(
+                    self._target_descriptors,
+                    cooling_present=cooling_present,
+                    heating_present=heating_present,
+                ),
                 capacity_inputs=tuple(capacity_inputs),
             ),
             warnings=tuple(warnings),
