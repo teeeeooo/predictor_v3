@@ -12,6 +12,7 @@ from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 from apps.predict.application.model_lifecycle import PredictModelLifecycleService
 from apps.predict.application.prediction_usecase import PredictionUseCase
 from apps.predict.application.result_review import ResultReviewProjection
+from apps.predict.application.workspace_state import PredictWorkspaceState
 from apps.predict.application.result_contract import (
     PredictionModelIdentity,
     execution_semantics_from_runtime,
@@ -66,6 +67,7 @@ class PredictWorkspaceComposition:
     generation_id: str
     runtime_snapshot: PredictRuntimeSnapshot
     result_review_projection: ResultReviewProjection
+    workspace_state: PredictWorkspaceState
 
 
 def build_predict_workspace_composition(
@@ -85,6 +87,7 @@ def build_predict_workspace_composition(
     model_resolution: ModelResolution | None = None,
     model_lifecycle: PredictModelLifecycleService | None = None,
     model_identity: PredictionModelIdentity | None = None,
+    workspace_state: PredictWorkspaceState | None = None,
 ) -> PredictWorkspaceComposition:
     """Build the concrete Predict object graph without constructing widgets."""
 
@@ -195,6 +198,7 @@ def build_predict_workspace_composition(
         result_review_projection=ResultReviewProjection(
             resolved_session, runtime.column_descriptors
         ),
+        workspace_state=workspace_state or PredictWorkspaceState(),
     )
 
 

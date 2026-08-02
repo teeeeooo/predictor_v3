@@ -5,6 +5,7 @@ from __future__ import annotations
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
 
 from apps.common.ui import style
+from apps.predict.application.workspace_state import WorkspaceSurface
 
 
 class PredictCommandBar(QFrame):
@@ -64,3 +65,17 @@ class PredictCommandBar(QFrame):
         self.paste_button.setEnabled(not running)
         self.refresh_button.setEnabled(not running)
         self.reload_model_button.setEnabled(not running)
+
+    def set_surface(self, surface: WorkspaceSurface, *, running: bool) -> None:
+        """Route authoring availability and copy meaning to the active surface."""
+        input_active = surface is WorkspaceSurface.INPUT
+        for button in (
+            self.reset_button,
+            self.add_row_button,
+            self.delete_row_button,
+            self.paste_button,
+        ):
+            button.setEnabled(input_active and not running)
+        self.copy_results_button.setText(
+            "선택 셀 복사" if input_active else "결과 전체 행 복사"
+        )

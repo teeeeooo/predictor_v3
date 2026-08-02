@@ -3,7 +3,7 @@
 import os
 
 from PySide6.QtCore import QItemSelectionModel, Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QHeaderView
 
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.ui.result_review import ResultReviewTableModel, ResultReviewTableView
@@ -41,6 +41,13 @@ def test_model_is_exact_readonly_projection_and_summary_tooltip_is_full_text():
 def test_view_elides_only_visually_and_copies_selected_full_rows_with_headers():
     _app()
     composition = build_predict_workspace_composition(initial_empty_rows=2)
+    case = composition.session.case_store.get_case(composition.session.case_order[0])
+    case.input_values.update(
+        {
+            "idu": "A very long indoor unit value retained in full",
+            "evap_index": "A very long evaporator value retained in full",
+        }
+    )
     model = ResultReviewTableModel(composition.result_review_projection)
     view = ResultReviewTableView()
     view.setModel(model)
@@ -55,13 +62,21 @@ def test_view_elides_only_visually_and_copies_selected_full_rows_with_headers():
     )
 
     text = view.copy_selected_rows_tsv()
+    copied_rows = [line.split("\t") for line in text.splitlines()]
+    full_summary = model.data(model.index(0, 4), Qt.DisplayRole)
 
+    assert not view.wordWrap()
     assert view.textElideMode() == Qt.ElideRight
+    assert view.selectionBehavior() == QAbstractItemView.SelectRows
+    assert view.selectionMode() == QAbstractItemView.ExtendedSelection
+    assert view.verticalHeader().sectionResizeMode(0) == QHeaderView.Interactive
     assert [line.split("\t")[0] for line in text.splitlines()[1:]] == ["1", "2"]
     assert text.splitlines()[0].split("\t")[:10] == [
         "Case", "상태", "냉방능력", "난방능력", "사양 요약",
         "EER", "COP", "냉방 주파수", "난방 주파수", "냉매량",
     ]
+    assert copied_rows[1][4] == full_summary
+    assert "retained in full" in copied_rows[1][4]
     assert view.copy_selected_rows_to_clipboard()
     assert QApplication.clipboard().text() == text
 

@@ -83,3 +83,31 @@ class ResultReviewTableModel(QAbstractTableModel):
     def refresh(self) -> None:
         self.beginResetModel()
         self.endResetModel()
+
+    def refresh_case_id(self, case_id: str) -> None:
+        """Notify views that one canonical projection row changed."""
+        try:
+            row = self._projection.session.case_order.index(case_id)
+        except ValueError:
+            return
+        first = self.index(row, 0)
+        last = self.index(row, self.columnCount() - 1)
+        self.dataChanged.emit(first, last)
+
+    def begin_insert_rows(self, first_row: int, last_row: int) -> None:
+        self.beginInsertRows(QModelIndex(), first_row, last_row)
+
+    def end_insert_rows(self) -> None:
+        self.endInsertRows()
+
+    def begin_remove_rows(self, first_row: int, last_row: int) -> None:
+        self.beginRemoveRows(QModelIndex(), first_row, last_row)
+
+    def end_remove_rows(self) -> None:
+        self.endRemoveRows()
+
+    def begin_reset_model(self) -> None:
+        self.beginResetModel()
+
+    def end_reset_model(self) -> None:
+        self.endResetModel()
