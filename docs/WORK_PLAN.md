@@ -18,7 +18,7 @@
 
 - Train/Admin Phase 5 is complete and merged.
 - Predict Findings #1–#7 are complete and merged.
-- The active product workstream is **Predict input workflow broad overhaul**.
+- The **Predict input workflow broad overhaul** is complete and closed.
 - The disposable Layout A–D comparison and existing-app owner audit are complete.
 - The approved direction is a shared Layout B full-surface Input/Result switch,
   one `사양 요약` review column, and a Predict-owned identity/result/state seam
@@ -52,19 +52,24 @@
 
 ## Next Action
 
-Predict input workflow broad overhaul Slices 1–6 are complete. No successor
-source slice is authorized by this close. The next gate is product/owner
-prioritization of the remaining compatibility gates or a separately approved
-deferred workstream; export and Predict-to-Calculate integration remain separate
-and unstarted.
+The next gate is the read-only **Case-Scoped Target Applicability Owner Audit**.
+It must locate the current owners for canonical raw-input applicability,
+requested-Target propagation, execution provenance and result acceptance,
+Complete/Partial/N/A, EER/COP interaction, and the both-capacities-blank product
+decision before any source correction is authorized.
 
-## Active Blockers
+## Active Decisions / Blockers
 
-- Partial-target Active model support and narrow-viewport pinning remain open
-  gates.
+- Partial-target Active models are not supported. An Active artifact must provide
+  and prove compatibility with the full runtime Target contract. Missing artifact
+  capability is an incompatible Active / fail-closed error, not a compatibility
+  option to relax.
 - A model-incompatible saved Definition generation continues to block Predict
   with Retraining required until compatibility is proven; the overhaul does not
   auto-replace or auto-promote a model.
+- The execution/validation UX for a Case whose cooling and heating capacities are
+  both blank is unresolved and requires a small product decision before source
+  implementation.
 
 ## Active Constraints
 
@@ -72,6 +77,16 @@ and unstarted.
   isolation, cancellation, and partial-result behavior.
 - Preserve model lifecycle, reload, Active observation, no-hot-swap, schema,
   mapping, preprocessing, runtime snapshot, and inference contracts.
+- Keep the Active runtime Target registry at its full compatible capability.
+  Future correction may derive a Case-scoped requested execution subset from
+  canonical raw user input before zero-fill/preprocessing; it must not shrink the
+  registry or change artifact capability per Case.
+- Preserve the distinction between an incompatible artifact and runtime partial
+  results: missing Active capability fails compatibility, while actual execution
+  failure for only some requested Targets on a valid Active produces `partial`.
+- Existing ML mode-specific missing and target leakage policies remain
+  authoritative. Their application to Predict Case execution is an integration
+  gap, not a new feature-policy design.
 - Preserve Data Definition, Data Mapping, Train, Predict, and Calculator owner
   directions. Predict remains a consumer of saved contracts, mapping values, and
   a compatible loaded model.
@@ -80,8 +95,8 @@ and unstarted.
 - Keep root-level horizontal scrolling prohibited. Result Review table scrolling
   remains internal; the narrow embedded pinned-column range is an open gate.
 - Treat closed Slices 1–6 as upstream contracts. Do not fold export, Calculate
-  integration, target-set changes, or viewport-pinning work into post-close
-  maintenance without separate approval.
+  integration, Target-registry changes, or viewport-pinning work into the
+  correctness repair without separate approval.
 - Use repository fixtures or mock data only. Do not infer production readiness or
   mutate production data or models.
 
@@ -103,6 +118,22 @@ and unstarted.
   validation remain company-local.
 - Windows native Feature Manager smoke and deferred Phase 2 native interaction
   acceptance remain separate verification items and do not define this overhaul.
+
+## Authoritative Near-Term Order
+
+1. **Documentation reconciliation — complete in this task:** record the design
+   invariant and the existing Predict integration gap without source mutation.
+2. **Case-Scoped Target Applicability Owner Audit:** read-only owner and current
+   source audit, including requested Target flow, outcomes, EER/COP, and the
+   both-capacities-blank decision.
+3. **Case-Scoped Target Applicability source correction:** separate Lane C slice
+   that connects existing ML policy to Predict execution without relaxing Active
+   compatibility.
+4. **Fresh independent exact-head audit and Close.**
+5. **Narrow Viewport Result Review Pinning:** separate presentation slice using
+   Case + 상태 as the anchor direction; do not combine it with correctness repair.
+6. **Separately approved deferred work:** CSV/XLSX export, multi-point
+   Predict-to-Calculate, and other deferred product work.
 
 ## Minimal Anchors
 

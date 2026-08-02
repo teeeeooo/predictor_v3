@@ -19,9 +19,10 @@ This record distinguishes:
 - **approved product direction**, which future work must preserve;
 - **existing owners**, which future work must reuse rather than duplicate;
 - **Predict seams delivered by Slices 1–6**, which remain bounded by their closed
-  contracts; and
-- **open compatibility gates**, which remain undecided until a future owner
-  decision or separately authorized implementation gate.
+  contracts;
+- **Active compatibility invariants**, which are not Case-specific; and
+- **the Case-scoped Target applicability integration gap**, which requires a
+  separate audit and source-correction gate.
 
 No source, test, schema, public result type, model, mapping data, Calculator
 formula, or runtime behavior changes are made by this documentation decision.
@@ -41,7 +42,8 @@ The overhaul preserves:
 - row isolation, progressive and partial results, cancellation, validation, and
   the no-usable-model execution gate;
 - Active observation, atomic reload, reload-failure fallback, and no-hot-swap
-  behavior; and
+  behavior;
+- fail-closed Active compatibility against the full runtime Target contract; and
 - production model and data mutation as separately authorized operations.
 
 The historical split-table implementation and its synchronization owner are not
@@ -207,8 +209,10 @@ rounding only. EER and COP display exactly two decimal places; their raw
 copy/export consumers.
 
 Missing, failed, non-finite, zero, or negative required inputs do not become
-silent numeric values. Cooling and heating derived metrics remain independently
-available under partial target success.
+silent numeric values. EER and COP availability is determined independently by
+whether its mode was requested and whether the corresponding power outcome was
+actually accepted. Failure of one requested Target does not fabricate failure or
+availability for a Target that was not requested for that Case.
 
 ### 5.4 CSPF and HSPF2 Capability
 
@@ -344,7 +348,68 @@ Before a result mutates the canonical session, the acceptance gate rejects any
 outcome whose run, generation, session, case, or input revision no longer matches
 the active execution context.
 
-### 6.5 Calculate
+### 6.5 Active Compatibility and Case-Scoped Target Applicability
+
+Active compatibility and Case execution are separate contracts.
+
+An Active artifact must provide the complete capability required by the current
+runtime Target contract and must prove that compatibility before Predict may use
+it. A Target capability missing from an Active artifact is an incompatible
+Active and a fail-closed error. It is not supported partial-target capability and
+must not be treated as a compatibility relaxation. Existing Candidate/Active
+promotion, explicit reload, reload-failure fallback to the previous usable
+model, Active observation, and no-hot-swap semantics remain unchanged.
+
+A compatible Active can still produce a runtime `partial` result when actual
+inference fails for only some Targets requested by a particular Case. Therefore:
+
+- missing model artifact capability means incompatible Active / FAIL; and
+- failed execution for a subset of requested Targets on a valid Active means
+  runtime `partial`.
+
+The existing ML policy already establishes mode-specific missing and feature
+boundaries: `Cooling Capa`, `Heating Capa`, `Cooling Power`, and `Heating Power`
+may use mode-specific missing; cooling Power/Hz Targets exclude heating-side
+leakage and risk features; heating Power/Hz Targets exclude cooling-side leakage
+and risk features; and ordinary missing hardware or Mapping features are not
+equivalent to an absent operating mode. The ML/Data Definition owners remain the
+authority for those rules; this design does not copy or redesign them.
+
+Predict must consume that established policy as a Case-scoped requested Target
+contract. The correction boundary is:
+
+- inspect canonical raw user input before zero-fill or preprocessing;
+- request cooling-mode Targets when cooling capacity is present;
+- request heating-mode Targets when heating capacity is present;
+- do not request the opposite mode's Targets when its capacity is blank;
+- distinguish blank from numeric `0`, negative, and non-numeric invalid input;
+- keep mode-independent Targets such as refrigerant quantity under their
+  existing Target/feature policy and request them as common Targets for a
+  runnable Case;
+- mark a cooling-only or heating-only Case `complete` when every requested
+  Target succeeds;
+- mark a Case `partial` only when actual execution fails for part of its
+  requested Target set;
+- preserve N/A / not-applicable meaning in Result Review for Targets that were
+  not requested instead of fabricating failures; and
+- resolve EER and COP independently from requested mode and the actually
+  accepted corresponding power outcome.
+
+This is a requested execution subset for one Case. It must not shrink the Active
+runtime Target registry, change model artifact capability, or weaken full Active
+compatibility. Current implementation status is explicit:
+
+> existing ML policy is established, but Predict application execution does not yet fully consume that policy as a Case-scoped requested Target contract.
+
+This section records the correction invariant, not a claim that the correction
+is implemented.
+
+The final execution/validation UX when both cooling and heating capacities are
+blank is unresolved. Resolve it as a small product decision after the owner audit
+and before source implementation; do not infer that blank, numeric `0`, negative,
+or non-numeric inputs share one meaning.
+
+### 6.6 Calculate
 
 Calculate owns standard formulas, capability execution, and Calculator result
 contracts. Predict never reproduces those formulas.
@@ -450,16 +515,20 @@ Slice 2 ─► Slice 3 ────┘
 Future multi-point contract ─► Calculate integration
 ```
 
-## 8. Open Compatibility Gates
+## 8. Reconciled Gates
 
-These decisions remain open after the Slice 6 close:
+Partial-target Active support is closed as a rejected direction. Full runtime
+Target capability remains an Active compatibility invariant. Case-scoped
+applicability controls only the requested execution subset on a compatible
+Active, and actual failure within that requested subset controls
+Complete/Partial status.
 
-1. whether Active models continue to require the exact active target set or may
-   expose explicit partial-target capability;
-2. how far fixed or pinned columns extend in a narrow embedded viewport.
-
-The default Result Review order and Layout B full-surface direction are approved
-and must not be reopened as compatibility gates.
+The next correctness gate is the read-only **Case-Scoped Target Applicability
+Owner Audit**, followed by a separately authorized Lane C source correction and
+a fresh independent exact-head audit and Close. Narrow Viewport Result Review
+Pinning remains a later independent presentation slice with Case + 상태 as the
+anchor direction; it must not be bundled with the correctness repair. The
+default Result Review order and Layout B full-surface direction remain approved.
 
 ## 9. Current Exclusions
 
@@ -497,7 +566,10 @@ canonical final-combination bulk transaction, Mapping/issue continuity, atomic
 rollback, and fail-closed compound undo without changing ML Targets, Feature
 formula schema, or Calculator formulas.
 
-There is no automatically authorized successor source gate. The next action is
-product/owner prioritization of the two open compatibility gates or a separately
-approved deferred workstream. CSV/XLSX export and future multi-point
-Predict-to-Calculate integration remain separate and unstarted.
+This documentation reconciliation authorizes no source mutation. The next action
+is the read-only **Case-Scoped Target Applicability Owner Audit**. After that,
+authoritative order is a separate Lane C source correction, fresh independent
+exact-head audit and Close, then the independent Narrow Viewport Result Review
+Pinning presentation slice. CSV/XLSX export, future multi-point
+Predict-to-Calculate integration, and other deferred product work remain
+separate and unstarted.

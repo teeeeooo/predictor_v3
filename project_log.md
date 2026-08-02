@@ -33,6 +33,35 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-02 — Target applicability design reconciliation
+
+### Decision
+
+- Reject Partial-target Active model support as a product direction. Active
+  artifacts must prove the full runtime Target capability; missing artifact
+  capability is incompatible Active / FAIL. Preserve Candidate/Active promotion,
+  explicit reload, fail-closed compatibility, reload-failure fallback, Active
+  observation, and no-hot-swap semantics.
+- Distinguish full Active compatibility from a Case-scoped requested execution
+  subset. Actual failure for part of the requested subset on a compatible Active
+  remains runtime `partial`; a not-requested Target retains N/A / not-applicable
+  meaning rather than becoming a fabricated failure.
+- Preserve existing ML mode-specific missing and target leakage policy. Record
+  the current integration gap: the policy is established, but Predict execution
+  does not yet fully consume it as a Case-scoped requested Target contract. This
+  documentation decision implements no source behavior.
+- Derive future applicability from canonical raw user input before zero-fill or
+  preprocessing, distinguish blank from numeric `0`, negative, and non-numeric
+  invalid values, keep mode-independent Targets common to runnable Cases, and
+  determine EER/COP independently from requested mode and accepted power outcome.
+- Leave the both-capacities-blank execution/validation UX unresolved for a small
+  product decision before implementation.
+- Set the authoritative order to documentation reconciliation → read-only
+  Case-Scoped Target Applicability Owner Audit → separate Lane C source
+  correction → fresh independent exact-head audit and Close → independent Narrow
+  Viewport Result Review Pinning → separately approved deferred work. This
+  decision supersedes the earlier close-time gate description.
+
 ## 2026-08-02 — Predict input workflow broad overhaul completion
 
 ### Decision
@@ -47,9 +76,9 @@
 - Preserve the audit lesson that a canonical transaction is not complete unless
   its adjacent authoring projections and undo authorization remain synchronized
   with current canonical state.
-- This close authorizes no successor source slice. Partial-target capability and
-  narrow-viewport pinning remain open compatibility gates; export and future
-  multi-point Predict-to-Calculate integration require separate approval.
+- This close authorized no immediate successor source slice. Target applicability
+  is now reconciled by the decision above; narrow-viewport pinning, export, and
+  future multi-point Predict-to-Calculate integration remain separately gated.
 
 ## 2026-07-31 — Predict overhaul product and integration boundary approval
 

@@ -10,8 +10,10 @@ Train/Admin Phase 5, Predict Findings #1–#7, and the **Predict input workflow
 broad overhaul** are complete and merged. Overhaul Slices 1–6 — Stable Identity
 Seam, Typed Result and Execution Context, EER/COP Enrichment, Result Review
 Projection, Shared Layout B Composition, and Bulk Paste Transaction — are
-independently audited, merged, and closed. No successor source workstream is
-currently authorized; the next gate is product/owner prioritization.
+independently audited, merged, and closed. Target applicability documentation is
+now reconciled without source mutation. The next gate is the read-only
+**Case-Scoped Target Applicability Owner Audit**; no successor source workstream
+is currently authorized.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -31,10 +33,12 @@ this workstream.
   promotion workflow. Definition Save and training success do not automatically
   train or replace Active.
 - **Predict** consumes a saved contract generation, Data Mapping values, and a
-  compatible loaded model. It preserves generation-bound preprocessing,
+  compatible loaded model whose Active artifact proves the complete runtime
+  Target capability. It preserves generation-bound preprocessing,
   inference, Target/result mapping, execution gating, row isolation,
   cancellation, partial results, reload, Active observation, and no-hot-swap
-  behavior.
+  behavior. Case-scoped requested execution is distinct from full Active
+  compatibility.
 - **Calculator** owns calculation implementations under `core/calculators` and
   the protected formula, profile/config, fixture/golden, and public result
   contracts. Standard calculation core and region config stay
@@ -106,6 +110,18 @@ bulk transaction with final-combination Mapping/autofill, precise issue truth,
 atomic rollback, affected-only result invalidation, and fail-closed compound
 undo.
 
+### Next — Case-Scoped Target Applicability
+
+Existing ML mode-specific missing and Target leakage policy is established, but
+Predict application execution does not yet fully consume it as a Case-scoped
+requested Target contract. Full runtime Target capability remains mandatory for
+the Active artifact; a Case-specific requested subset must not alter the Active
+registry or relax compatibility. The near-term order is read-only owner audit,
+separate Lane C source correction, fresh independent exact-head audit and Close,
+then independent Narrow Viewport Result Review Pinning. The execution/validation
+UX for both cooling and heating capacities blank remains a small unresolved
+product decision before implementation.
+
 ### Later — Production ML Readiness / Calculator Integration
 
 - Validate production model/data availability, prediction quality, physical
@@ -124,6 +140,9 @@ undo.
   wording redesign, model training workflow, ML feature/schema changes,
   Calculator formula changes, and packaging/deployment are not automatically part
   of the first Predict input overhaul scope.
+- Narrow Viewport Result Review Pinning remains a separate presentation slice
+  after the Target applicability correctness repair; CSV/XLSX export and
+  multi-point Predict-to-Calculate remain later separately approved work.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.
