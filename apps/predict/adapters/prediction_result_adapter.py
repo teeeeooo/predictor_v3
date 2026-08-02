@@ -7,6 +7,12 @@ import re
 from apps.predict.application.models import PredictionServiceResult
 from apps.predict.application.result_contract import PredictionExecutionContext
 from apps.predict.application.result_enrichment import enrich_target_outcomes
+from apps.predict.application.runtime_snapshot import (
+    compatibility_predict_runtime_snapshot,
+)
+from apps.predict.application.target_applicability import (
+    descriptors_for_requested_identities,
+)
 from apps.predict.application.target_outcome import (
     PredictionTargetDescriptor,
     TargetOutcome,
@@ -46,16 +52,10 @@ class PredictionResultAdapter:
         self._active_targets = (
             active_targets if active_targets is not None else tuple(self._target_to_result_key)
         )
-        self._target_descriptors = target_descriptors or tuple(
-            PredictionTargetDescriptor(
-                target_identity=f"legacy-target:{column.ml_target}",
-                result_feature_identity=column.feature_identity,
-                ml_name=column.ml_target,
-                result_key=column.key,
-                canonical_unit=_canonical_legacy_unit(column.key),
-            )
-            for column in self._columns
-            if column.ml_target
+        self._target_descriptors = (
+            tuple(target_descriptors)
+            if target_descriptors is not None
+            else compatibility_predict_runtime_snapshot().target_descriptors
         )
         if tuple(item.ml_name for item in self._target_descriptors) != self._active_targets:
             raise ValueError("Predict target descriptor projection is incomplete")
@@ -88,9 +88,18 @@ class PredictionResultAdapter:
                 execution_context=result.context,
             )
 
+        expected_targets = (
+            descriptors_for_requested_identities(
+                tuple(result.context.requested_target_identities),
+                self._target_descriptors,
+            )
+            if result.context is not None
+            and result.context.requested_target_identities
+            else self._target_descriptors
+        )
         outcomes = tuple(
             self._target_outcome(descriptor, result.predictions)
-            for descriptor in self._target_descriptors
+            for descriptor in expected_targets
         )
         available = sum(item.status == "available" for item in outcomes)
         status = (
@@ -100,7 +109,7 @@ class PredictionResultAdapter:
         )
         missing_targets = tuple(
             item.ml_name
-            for item in self._target_descriptors
+            for item in expected_targets
             if item.ml_name not in result.predictions
         )
         if status != "complete":
@@ -257,24 +266,6 @@ _RUNTIME_FAILURE_MESSAGE = (
 _PARTIAL_RESULT_MESSAGE = (
     "일부 예측 결과를 생성하지 못했습니다. 생성된 결과를 확인해 주세요."
 )
-_UNIT_BY_RESULT_KEY = {
-    "cooling_power": "W",
-    "heating_power": "W",
-    "ref_qty": "kg",
-    "cooling_hz": "Hz",
-    "heating_hz": "Hz",
-}
-
-
-def _canonical_legacy_unit(result_key: str) -> str:
-    try:
-        return _UNIT_BY_RESULT_KEY[result_key]
-    except KeyError as exc:
-        raise ValueError(
-            f"Predict canonical unit is missing for result key {result_key}"
-        ) from exc
-
-
 def _required_message(label: str, _values: dict[str, str]) -> str:
     return f"{label}: 필수 입력값입니다."
 

@@ -9,12 +9,14 @@ from apps.predict.application.target_outcome import (
     MODEL_PREDICTION_VALUE_SOURCE,
     TargetOutcome,
 )
+from apps.predict.application.target_applicability import (
+    COOLING_POWER_TARGET_ID,
+    HEATING_POWER_TARGET_ID,
+)
 
 
 COOLING_CAPACITY_FEATURE_ID = "ufm_feature_38273f0cc29252dd8dffc5b8c6fa1c75"
 HEATING_CAPACITY_FEATURE_ID = "ufm_feature_0b680f0d07ce5a5a8ec361b836545023"
-COOLING_POWER_TARGET_ID = "ufm_target_df11df5180785a149e85f5f228aaa7e1"
-HEATING_POWER_TARGET_ID = "ufm_target_78b4bbb97725586a97e41ae0ad04c561"
 COOLING_POWER_FEATURE_ID = "ufm_feature_7e37047ef3bc56ed8258efd2ebf7af2a"
 HEATING_POWER_FEATURE_ID = "ufm_feature_20091175f4535f80bd8c48f807ec8f18"
 
@@ -114,7 +116,11 @@ def enrich_target_outcomes(
     """Calculate independent raw W/W metrics or deterministic unavailability."""
     inputs = {item.feature_identity: item for item in capacity_inputs}
     targets = {item.target_identity: item for item in target_outcomes}
-    return tuple(_metric_outcome(item, inputs, targets) for item in _METRICS)
+    return tuple(
+        _metric_outcome(item, inputs, targets)
+        for item in _METRICS
+        if item.power_target_identity in targets
+    )
 
 
 def _metric_outcome(definition, inputs, targets) -> DerivedMetricOutcome:  # noqa: ANN001

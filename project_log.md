@@ -33,6 +33,34 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-02 — Case-scoped Target applicability source correction
+
+### Decision
+
+- Complete the focused Lane C correction by deriving the Case requested subset
+  from canonical raw cooling/heating capacity presence before zero-fill and
+  preprocessing. Blank alone means mode absence; nonnumeric, non-finite, zero,
+  and negative capacity remain validation failures.
+- Keep the full repository-issued runtime Target contract as session and Active
+  authority. Each request carries its ordered descriptors derived from that full
+  contract for exact inference, while immutable execution context pins only
+  their stable Target identities so result-key presentation migration cannot
+  rewrite historical request meaning.
+- Validate artifact-selected inputs for the exact subset before authorization,
+  then use the same subset for inference, typed outcomes, aggregate status,
+  acceptance, stale/late rejection, canonical storage, reload/generation
+  migration, and Result Review. Missing requested outputs remain real
+  partial/error evidence; not-requested Targets create no synthetic outcomes.
+- Gate EER/COP by requested power Target presence and accepted power evidence.
+  Cooling-only, heating-only, dual, and Ref Qty-only rows may coexist in one
+  canonical session; a successful Ref Qty-only row is complete with Power/Hz and
+  EER/COP projected as N/A.
+- Preserve full Active compatibility, Candidate/Active/reload/no-hot-swap,
+  existing ML missing/allowed/exclude/leakage and artifact feature ordering,
+  Slice 2 provenance, Slices 3–6 behavior, Mapping, schema, training, and
+  Calculator boundaries. The next gate is a fresh independent exact-head Lane C
+  Auditor; merge is not authorized by this implementation completion.
+
 ## 2026-08-02 — Ref Qty-only applicability product decision
 
 ### Decision

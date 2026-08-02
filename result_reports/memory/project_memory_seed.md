@@ -773,7 +773,7 @@ entries:
 
   - type: decision
     topic: Predict runtime Target authority provenance
-    content: Predict runtime Target fields and fingerprints are convenience projections rather than authority evidence. The validated generation repository issues the exact GenerationSnapshot, its builder issues the exact immutable Predict runtime, and composition, execution semantics, PredictionService/model lifecycle adoption, and migration reject caller-constructed or replaced objects before canonical use. Genuine fingerprint reuse or coherent Target field/fingerprint changes cannot acquire authority. The public/generated Predict schema and persisted Feature Definition shape remain unchanged.
+    content: Predict runtime Target fields and fingerprints are convenience projections rather than authority evidence. The validated generation repository issues the exact GenerationSnapshot, its builder issues the exact immutable Predict runtime, and composition, execution semantics, PredictionService/model lifecycle adoption, and migration reject caller-constructed or replaced objects before canonical use. Genuine fingerprint reuse or coherent Target field/fingerprint changes cannot acquire authority. Active artifacts and the session retain the full exact-compatible runtime Target contract. A Case derives an ordered requested subset from raw cooling/heating capacity presence before zero-fill; request descriptors drive exact inference while immutable execution context pins only stable Target identities for acceptance and historical migration. Requested success alone controls complete/partial/error; not-requested outcomes are absent and project N/A, including Ref Qty-only complete rows and mode-gated EER/COP. The public/generated Predict schema and persisted Feature Definition shape remain unchanged.
     keywords:
       - predictor_v3
       - Predict
@@ -782,8 +782,11 @@ entries:
       - provenance
       - GenerationSnapshot
       - coherent forgery
+      - requested Target subset
+      - Ref Qty-only
+      - EER COP applicability
     assertionStatus: verified
-    source: result_reports/records/2026-08/2026-08-01-predict-runtime-target-authority-provenance-recovery.md; docs/architecture/pyside6_train_predict_architecture.md
+    source: result_reports/records/2026-08/2026-08-01-predict-runtime-target-authority-provenance-recovery.md; result_reports/records/2026-08/2026-08-02-case-scoped-target-applicability.md; docs/architecture/pyside6_train_predict_architecture.md
 
   - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries

@@ -15,6 +15,9 @@ from apps.predict.application.result_contract import (
 from apps.predict.application.result_validation import canonical_result_rejection_reason
 from apps.predict.application.runtime_snapshot import validate_runtime_target_contract
 from apps.predict.application.target_outcome import PredictionTargetDescriptor
+from apps.predict.application.target_applicability import (
+    descriptors_for_requested_identities,
+)
 from apps.predict.state.case_store import CaseStore
 from apps.predict.state.input_transaction import (
     InputTransactionCommit,
@@ -143,11 +146,18 @@ class PredictSession:
             raise ValueError("execution semantics differ from active runtime")
         if self._active_model is not None and self._active_model != context.model:
             raise ValueError("loaded model differs from active runtime")
+        requested_identities = (
+            tuple(context.requested_target_identities)
+            or tuple(item.target_identity for item in target_contract)
+        )
+        requested_targets = descriptors_for_requested_identities(
+            requested_identities, target_contract
+        )
         self._active_target_contract = target_contract
         self._active_semantics = context.semantics
         self._active_model = context.model
         self._allowed_executions[context.case_id] = AllowedExecution(
-            context, target_contract
+            context, requested_targets
         )
 
     def accept_result(
@@ -412,6 +422,11 @@ class PredictSession:
             return "loaded_model_changed"
         if context.capacity_inputs != allowed.capacity_inputs:
             return "execution_input_changed"
+        if (
+            context.requested_target_identities
+            != allowed.requested_target_identities
+        ):
+            return "requested_target_contract_changed"
         if allowed.semantics.currentness_key != current_semantics.currentness_key:
             return "execution_semantics_changed"
         if allowed.model != current_model:

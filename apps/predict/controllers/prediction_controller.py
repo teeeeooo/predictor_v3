@@ -266,6 +266,9 @@ class PredictionController:
         if self._is_running:
             raise RuntimeError("Prediction started during model reload.")
         self._service = service
+        self._usecase.update_request_validator(
+            getattr(service, "validate_request", None)
+        )
 
     def _start_worker(
         self,

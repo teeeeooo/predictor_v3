@@ -8,6 +8,7 @@ from typing import Any
 
 from apps.predict.application.result_contract import PredictionExecutionContext
 from apps.predict.application.result_enrichment import ExecutionInputEvidence
+from apps.predict.application.target_outcome import PredictionTargetDescriptor
 
 
 @dataclass(frozen=True)
@@ -18,12 +19,20 @@ class PredictionInputRequest:
     row_input: dict[str, Any]
     context: PredictionExecutionContext | None = None
     capacity_inputs: tuple[ExecutionInputEvidence, ...] = ()
+    requested_targets: tuple[PredictionTargetDescriptor, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "row_input", MappingProxyType(dict(self.row_input)))
+        object.__setattr__(self, "requested_targets", tuple(self.requested_targets))
         object.__setattr__(self, "capacity_inputs", tuple(self.capacity_inputs))
         if self.context is not None and self.context.case_id != self.case_id:
             raise ValueError("prediction request context case_id mismatch")
+        if (
+            self.context is not None
+            and self.context.requested_target_identities
+            != tuple(item.target_identity for item in self.requested_targets)
+        ):
+            raise ValueError("prediction request Target contract mismatch")
 
 
 @dataclass(frozen=True)

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from apps.predict.application.result_enrichment import enrich_target_outcomes
+from apps.predict.application.target_applicability import (
+    descriptors_for_requested_identities,
+)
 from apps.predict.application.target_outcome import PredictionTargetDescriptor
 from apps.predict.state.result_row import ResultRow
 
@@ -25,6 +30,14 @@ def canonical_result_rejection_reason(
         return "legacy_execution_payload_not_allowed"
     if result.freshness != "current" or result.stale_reason:
         return "incoming_result_not_current"
+
+    context_requested = tuple(
+        result.execution_context.requested_target_identities
+    )
+    if context_requested and context_requested != tuple(
+        item.target_identity for item in expected_targets
+    ):
+        return "requested_target_context_mismatch"
 
     outcomes = result.target_outcomes
     if result.status == "cancelled":
@@ -113,8 +126,21 @@ def canonical_stored_result_rejection_reason(
     if result.freshness == "current":
         if expected_targets is None:
             return "missing_active_target_contract"
-        return canonical_result_rejection_reason(result, expected_targets)
+        if result.execution_context.requested_target_identities:
+            try:
+                requested_targets = descriptors_for_requested_identities(
+                    tuple(result.execution_context.requested_target_identities),
+                    tuple(expected_targets),
+                )
+            except ValueError as exc:
+                return str(exc).rsplit(": ", 1)[-1]
+        else:
+            requested_targets = tuple(expected_targets)
+        return canonical_result_rejection_reason(result, requested_targets)
 
+    requested_identities = tuple(
+        result.execution_context.requested_target_identities
+    )
     historical_targets = tuple(
         PredictionTargetDescriptor(
             outcome.target_identity,
@@ -126,12 +152,25 @@ def canonical_stored_result_rejection_reason(
         )
         for outcome in result.target_outcomes
     )
+    if (
+        requested_identities
+        and result.target_outcomes
+        and requested_identities != tuple(
+            item.target_identity for item in historical_targets
+        )
+    ):
+        return "historical_requested_target_mismatch"
     historical = ResultRow(
         result.case_id,
         result.status,
         message=result.message,
         target_outcomes=result.target_outcomes,
         derived_metrics=result.derived_metrics,
-        execution_context=result.execution_context,
+        execution_context=replace(
+            result.execution_context,
+            requested_target_identities=tuple(
+                item.target_identity for item in historical_targets
+            ),
+        ),
     )
     return canonical_result_rejection_reason(historical, historical_targets)

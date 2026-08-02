@@ -67,6 +67,11 @@ class PredictionServicePort(Protocol):
     def prepare_model(self) -> None:
         """Fully load and validate the immutable runtime bundle or raise."""
 
+    def validate_request(
+        self, request: PredictionInputRequest
+    ) -> tuple[str, ...]:
+        """Return target-specific input errors before execution authorization."""
+
     def predict_many(
         self,
         requests: list[PredictionInputRequest],
