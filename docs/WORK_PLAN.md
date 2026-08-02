@@ -45,13 +45,18 @@
   closed. Standalone and embedded Predict now share one cached full-surface
   Input/Result workspace, Qt-free surface/selected-case state, bounded terminal
   reveal policy, and generation-preserving presentation rebinding.
+- Slice 6 — Bulk Paste Transaction is independently audited, merged, and closed.
+  Headerless TSV now lands through one generation-ordered canonical transaction
+  with final-combination Mapping/autofill, precise issue reconciliation, atomic
+  rollback, affected-only result invalidation, and fail-closed compound undo.
 
 ## Next Action
 
-The next gate is **Slice 6 — Bulk Paste Transaction**. It may implement the
-approved staged headerless TSV transaction over the closed identity/result and
-Layout B boundaries. This Slice 5 close does not start Slice 6 source work or
-create a Worker handoff.
+Predict input workflow broad overhaul Slices 1–6 are complete. No successor
+source slice is authorized by this close. The next gate is product/owner
+prioritization of the remaining compatibility gates or a separately approved
+deferred workstream; export and Predict-to-Calculate integration remain separate
+and unstarted.
 
 ## Active Blockers
 
@@ -74,8 +79,9 @@ create a Worker handoff.
   Layout B workspace implementation, and Predict-owned workspace-state policy.
 - Keep root-level horizontal scrolling prohibited. Result Review table scrolling
   remains internal; the narrow embedded pinned-column range is an open gate.
-- Keep the closed Layout B composition as an upstream contract for the separate
-  Slice 6 bulk-paste Lane C gate; do not fold later export work into that slice.
+- Treat closed Slices 1–6 as upstream contracts. Do not fold export, Calculate
+  integration, target-set changes, or viewport-pinning work into post-close
+  maintenance without separate approval.
 - Use repository fixtures or mock data only. Do not infer production readiness or
   mutate production data or models.
 

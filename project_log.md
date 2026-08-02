@@ -33,6 +33,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-02 — Predict input workflow broad overhaul completion
+
+### Decision
+
+- Close Predict overhaul Slices 1–6 after independent exact-head Lane C audits
+  and guarded merges. The delivered boundary now includes stable identity, typed
+  result/execution provenance, EER/COP enrichment, Result Review, shared Layout B,
+  and one canonical bulk-paste transaction.
+- The repaired bulk transaction preserves final-combination Mapping/autofill,
+  current row issue truth, atomic rollback, affected-only result invalidation,
+  and fail-closed compound undo across ordinary authoring chronology.
+- Preserve the audit lesson that a canonical transaction is not complete unless
+  its adjacent authoring projections and undo authorization remain synchronized
+  with current canonical state.
+- This close authorizes no successor source slice. Partial-target capability and
+  narrow-viewport pinning remain open compatibility gates; export and future
+  multi-point Predict-to-Calculate integration require separate approval.
+
 ## 2026-07-31 — Predict overhaul product and integration boundary approval
 
 ### Decision

@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; Slices 1–5 merged and closed, Slice 6 next
+Status: approved product and owner boundary; Slices 1–6 merged and closed, successor work requires separate approval
 Created: 2026-07-14
 Updated: 2026-08-02
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
@@ -10,17 +10,18 @@ Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 This record is the authoritative product and integration boundary for the
 **Predict input workflow broad overhaul**. It absorbs the completed disposable
 layout comparison and existing-application owner audit into a production-facing
-design direction. Slices 1–5 are closed; every remaining source slice still
-requires its own Lane C authorization.
+design direction. Slices 1–6 are closed. No successor source slice is authorized
+by this close; future work requires its own product/owner decision and review
+boundary.
 
 This record distinguishes:
 
-- **approved product direction**, which later implementation must preserve;
-- **existing owners**, which later slices must reuse rather than duplicate;
-- **missing Predict seams**, which must be introduced behind explicit Lane C
-  boundaries; and
-- **open compatibility gates**, which remain undecided until their implementation
-  audit or user decision.
+- **approved product direction**, which future work must preserve;
+- **existing owners**, which future work must reuse rather than duplicate;
+- **Predict seams delivered by Slices 1–6**, which remain bounded by their closed
+  contracts; and
+- **open compatibility gates**, which remain undecided until a future owner
+  decision or separately authorized implementation gate.
 
 No source, test, schema, public result type, model, mapping data, Calculator
 formula, or runtime behavior changes are made by this documentation decision.
@@ -354,9 +355,9 @@ the operating-point and standard-request contracts are separately defined.
 
 ## 7. Implementation Slice Boundary
 
-Slices 1–5 are merged and closed. Slice 6 — Bulk Paste Transaction is the next
-independent Lane C gate. Later work is not authorized by this bounded close and
-retains its own review boundary.
+Slices 1–6 are independently audited, merged, and closed. No successor source
+slice is authorized by this bounded close. Any future implementation retains a
+separate product/owner decision and review boundary.
 
 ### Slice 1 — Stable Identity Seam
 
@@ -423,9 +424,15 @@ canonical session, lifecycle, or shell-specific ownership.
 
 ### Slice 6 — Bulk Paste Transaction
 
-Implement the bounded transaction described in §6.2 as a separate Lane C slice.
-It may use Slice 1 identity and must integrate Slice 2 result invalidation and
-execution provenance. It is not part of the Layout B PR.
+**Status: independently audited, merged, and closed.**
+
+Headerless TSV is staged in active stable-identity input order against one Mapping
+snapshot, then committed as one canonical Predict transaction. Overflow rows,
+final-combination cascade/autofill, raw invalid values with precise issues,
+affected-only result invalidation, exact rollback, and fail-closed compound undo
+share the existing session, Mapping, execution-provenance, and Layout B owners.
+Bulk and ordinary authoring reproject the same row-specific Mapping state and
+current issue truth.
 
 ### Future — Calculate Integration
 
@@ -445,7 +452,7 @@ Future multi-point contract ─► Calculate integration
 
 ## 8. Open Compatibility Gates
 
-These decisions remain open after the Slice 5 close:
+These decisions remain open after the Slice 6 close:
 
 1. whether Active models continue to require the exact active target set or may
    expose explicit partial-target capability;
@@ -456,10 +463,10 @@ and must not be reopened as compatibility gates.
 
 ## 9. Current Exclusions
 
-The closed Slice 5 implementation does not include:
+The closed Slice 6 implementation does not include:
 
 - public schema or result-type changes;
-- bulk-paste implementation;
+- header matching, arbitrary import mapping, or an import wizard;
 - CSPF/HSPF2 implementation;
 - model-lifecycle or Feature Definition generation changes;
 - Calculator formula changes;
@@ -473,10 +480,11 @@ The closed Slice 5 implementation does not include:
 The existing-application owner audit completed without repository mutation and
 reported **218 focused tests passed in 30.46s**. The audit established that the
 current Feature Manager, Data Mapping, Train/model lifecycle, prediction
-execution, and Calculate owners are reusable while the Predict
-application/presentation seams in this record are missing.
+execution, and Calculate owners were reusable while the Predict
+application/presentation seams in this record were still missing at that
+baseline.
 
-That baseline remains navigation evidence for the broader overhaul. Slices 1–5
+That baseline remains navigation evidence for the broader overhaul. Slices 1–6
 were subsequently implemented, independently audited at their exact PR heads,
 and merged without changing the public/generated Predict projection or persisted
 Feature Definition shape. Slice 2 established repository-issued Predict runtime
@@ -484,9 +492,12 @@ authority and the canonical typed-result/provenance boundary; Slice 3 added
 execution-pinned raw EER/COP enrichment; Slice 4 added the read-only Result
 Review projection, stable-identity summary, and provenance-preserving clipboard
 boundary; Slice 5 composed that projection with Input through one shared
-workspace-state policy and standalone/embedded Layout B without changing ML
-Targets, Feature formula schema, or Calculator formulas.
+workspace-state policy and standalone/embedded Layout B; Slice 6 added the
+canonical final-combination bulk transaction, Mapping/issue continuity, atomic
+rollback, and fail-closed compound undo without changing ML Targets, Feature
+formula schema, or Calculator formulas.
 
-The next gate is **Slice 6 — Bulk Paste Transaction**. It may implement the
-approved staged transaction over the closed identity/result and Layout B
-boundaries. Later export work remains separate.
+There is no automatically authorized successor source gate. The next action is
+product/owner prioritization of the two open compatibility gates or a separately
+approved deferred workstream. CSV/XLSX export and future multi-point
+Predict-to-Calculate integration remain separate and unstarted.

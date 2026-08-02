@@ -6,12 +6,12 @@ Near-term execution belongs to `docs/WORK_PLAN.md`; history belongs to
 
 ## Current Phase
 
-Train/Admin Phase 5 and Predict Findings #1–#7 are complete and merged. The
-active product workstream is **Predict input workflow broad overhaul**. Its
-product and integration boundary is approved, and Slices 1–5 — Stable Identity
+Train/Admin Phase 5, Predict Findings #1–#7, and the **Predict input workflow
+broad overhaul** are complete and merged. Overhaul Slices 1–6 — Stable Identity
 Seam, Typed Result and Execution Context, EER/COP Enrichment, Result Review
-Projection, and Shared Layout B Composition — are independently audited, merged,
-and closed. The next independent Lane C gate is Slice 6 — Bulk Paste Transaction.
+Projection, Shared Layout B Composition, and Bulk Paste Transaction — are
+independently audited, merged, and closed. No successor source workstream is
+currently authorized; the next gate is product/owner prioritization.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -81,10 +81,10 @@ Closed foundation retains its owner and behavior contracts; exact audit heads,
 validation runs, repair sequences, and merge history belong to the log, archives,
 records, and Git.
 
-### Active — Predict Input Workflow Broad Overhaul
+### Closed — Predict Input Workflow Broad Overhaul
 
-The approved direction is one canonical case session with shared standalone and
-embedded Layout B Input/Result workspaces. Result Review will use a Predict-owned
+The delivered direction is one canonical case session with shared standalone and
+embedded Layout B Input/Result workspaces. Result Review uses a Predict-owned
 projection, one stable-identity `사양 요약`, typed result capability, and the
 closed execution-pinned EER/COP enrichment while existing Feature, Mapping,
 lifecycle, execution, and Calculator owners remain authoritative.
@@ -101,8 +101,10 @@ presentation seam, and full-row TSV copy boundary while preserving historical
 execution provenance and current-generation presentation metadata. Slice 5
 closed the shared cached full-surface Input/Result composition, Qt-free
 surface/selected-case policy, bounded terminal reveal, and generation-preserving
-standalone/embedded rebinding. Slice 6 — Bulk Paste Transaction is the next
-independent Lane C gate.
+standalone/embedded rebinding. Slice 6 closed one generation-ordered canonical
+bulk transaction with final-combination Mapping/autofill, precise issue truth,
+atomic rollback, affected-only result invalidation, and fail-closed compound
+undo.
 
 ### Later — Production ML Readiness / Calculator Integration
 
@@ -133,7 +135,7 @@ independent Lane C gate.
 - Read `docs/WORK_PLAN.md` for the active slice, next action, blockers,
   constraints, and holds.
 - Read this brief for phase, owner, and milestone direction.
-- Read the future Predict boundary before each remaining Lane C slice; expand it
-  only after current-state evidence and owner decisions exist.
+- Read the closed Predict overhaul boundary before authorizing successor work;
+  expand it only after a new product/owner decision exists.
 - Search `project_log.md` and its monthly archives by heading for durable history;
   use result records only for pointed evidence.
