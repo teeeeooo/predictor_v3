@@ -10,10 +10,10 @@ Train/Admin Phase 5, Predict Findings #1–#7, and the **Predict input workflow
 broad overhaul** are complete and merged. Overhaul Slices 1–6 — Stable Identity
 Seam, Typed Result and Execution Context, EER/COP Enrichment, Result Review
 Projection, Shared Layout B Composition, and Bulk Paste Transaction — are
-independently audited, merged, and closed. Target applicability documentation is
-now reconciled without source mutation. The next gate is the read-only
-**Case-Scoped Target Applicability Owner Audit**; no successor source workstream
-is currently authorized.
+independently audited, merged, and closed. The Target applicability Owner Audit
+and Ref Qty-only product decision are complete without source mutation. The next
+gate is the separately authorized **Case-Scoped Target Applicability Lane C
+Source Correction**.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -116,11 +116,15 @@ Existing ML mode-specific missing and Target leakage policy is established, but
 Predict application execution does not yet fully consume it as a Case-scoped
 requested Target contract. Full runtime Target capability remains mandatory for
 the Active artifact; a Case-specific requested subset must not alter the Active
-registry or relax compatibility. The near-term order is read-only owner audit,
-separate Lane C source correction, fresh independent exact-head audit and Close,
-then independent Narrow Viewport Result Review Pinning. The execution/validation
-UX for both cooling and heating capacities blank remains a small unresolved
-product decision before implementation.
+registry or relax compatibility. Both capacities present requests all five
+Targets; cooling-only requests Cooling Power, Ref Qty, and Cooling Hz;
+heating-only requests Heating Power, Ref Qty, and Heating Hz; both blank requests
+Ref Qty only when its existing required inputs validate. A valid Ref Qty-only
+success is `complete`; Power/Hz and EER/COP are N/A without fabricated outcomes.
+This product decision is not yet implemented and does not bypass empty-row or Ref
+Qty input validation. The near-term order is Lane C source correction, fresh
+independent exact-head audit and Close, then independent Narrow Viewport Result
+Review Pinning.
 
 ### Later — Production ML Readiness / Calculator Integration
 

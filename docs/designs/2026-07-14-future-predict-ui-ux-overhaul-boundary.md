@@ -21,8 +21,8 @@ This record distinguishes:
 - **Predict seams delivered by Slices 1–6**, which remain bounded by their closed
   contracts;
 - **Active compatibility invariants**, which are not Case-specific; and
-- **the Case-scoped Target applicability integration gap**, which requires a
-  separate audit and source-correction gate.
+- **the Case-scoped Target applicability integration gap**, whose Owner Audit is
+  complete and whose source correction remains a separate gate.
 
 No source, test, schema, public result type, model, mapping data, Calculator
 formula, or runtime behavior changes are made by this documentation decision.
@@ -405,9 +405,40 @@ This section records the correction invariant, not a claim that the correction
 is implemented.
 
 The final execution/validation UX when both cooling and heating capacities are
-blank is unresolved. Resolve it as a small product decision after the owner audit
-and before source implementation; do not infer that blank, numeric `0`, negative,
-or non-numeric inputs share one meaning.
+blank is resolved as normal Case-scoped Target selection:
+
+| Cooling Capa | Heating Capa | Requested Targets |
+| --- | --- | --- |
+| present | present | `Cooling Power`, `Heating Power`, `Ref Qty`, `Cooling Hz`, `Heating Hz` |
+| present | blank | `Cooling Power`, `Ref Qty`, `Cooling Hz` |
+| blank | present | `Heating Power`, `Ref Qty`, `Heating Hz` |
+| blank | blank | `Ref Qty`, only when its existing required input contract is satisfied |
+
+Both capacities blank does not by itself invalidate a Case. `Ref Qty` is the
+existing mode-independent common Target, so a Ref Qty-only execution is a normal
+Case when the current authoritative Ref Qty HW/one-hot/model input requirements
+and validation are satisfied. This does not make an entirely empty row runnable
+or bypass missing Ref Qty inputs. Blank remains distinct from numeric `0`,
+negative, and non-numeric invalid input.
+
+For a valid Ref Qty-only Case:
+
+- successful `Ref Qty` execution makes the row `complete`;
+- actual `Ref Qty` execution failure follows the existing terminal/error
+  semantics;
+- Cooling/Heating Power and Hz are not requested and remain N/A;
+- EER and COP are N/A; and
+- Predict does not fabricate unavailable/failed outcomes for not-requested
+  Targets.
+
+This is not a user-selected Ref Qty-only mode and adds no selector, model
+artifact, Target-registry reduction, Active compatibility relaxation, or new
+TargetOutcome status. Full compatible Active/runtime Target capability remains
+mandatory. Existing mode-missing policy, target-specific exclude/allowed and
+leakage rules, Ref Qty feature requirements, lifecycle, execution provenance,
+EER/COP formula, Result Review, Layout B, and bulk transaction contracts remain
+closed and unchanged. The requested-Target matrix is a product decision for the
+future correction; current source behavior has not implemented it yet.
 
 ### 6.6 Calculate
 
@@ -523,12 +554,13 @@ applicability controls only the requested execution subset on a compatible
 Active, and actual failure within that requested subset controls
 Complete/Partial status.
 
-The next correctness gate is the read-only **Case-Scoped Target Applicability
-Owner Audit**, followed by a separately authorized Lane C source correction and
-a fresh independent exact-head audit and Close. Narrow Viewport Result Review
-Pinning remains a later independent presentation slice with Case + 상태 as the
-anchor direction; it must not be bundled with the correctness repair. The
-default Result Review order and Layout B full-surface direction remain approved.
+The read-only Owner Audit and Ref Qty-only product decision are complete. The
+next correctness gate is the separately authorized **Case-Scoped Target
+Applicability Lane C Source Correction**, followed by a fresh independent
+exact-head audit and Close. Narrow Viewport Result Review Pinning remains a later
+independent presentation slice with Case + 상태 as the anchor direction; it must
+not be bundled with the correctness repair. The default Result Review order and
+Layout B full-surface direction remain approved.
 
 ## 9. Current Exclusions
 
@@ -566,10 +598,9 @@ canonical final-combination bulk transaction, Mapping/issue continuity, atomic
 rollback, and fail-closed compound undo without changing ML Targets, Feature
 formula schema, or Calculator formulas.
 
-This documentation reconciliation authorizes no source mutation. The next action
-is the read-only **Case-Scoped Target Applicability Owner Audit**. After that,
-authoritative order is a separate Lane C source correction, fresh independent
-exact-head audit and Close, then the independent Narrow Viewport Result Review
-Pinning presentation slice. CSV/XLSX export, future multi-point
-Predict-to-Calculate integration, and other deferred product work remain
-separate and unstarted.
+This Ref Qty-only product decision authorizes no source mutation. The next action
+is the separately authorized **Case-Scoped Target Applicability Lane C Source
+Correction**, followed by a fresh independent exact-head audit and Close, then
+the independent Narrow Viewport Result Review Pinning presentation slice.
+CSV/XLSX export, future multi-point Predict-to-Calculate integration, and other
+deferred product work remain separate and unstarted.

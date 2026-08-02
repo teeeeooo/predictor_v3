@@ -33,6 +33,34 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-02 — Ref Qty-only applicability product decision
+
+### Decision
+
+- Resolve the both-capacities-blank case as a normal Case-scoped requested Target
+  combination: request `Ref Qty` only when its existing authoritative required
+  HW/one-hot/model inputs and validation are satisfied. Blank capacities alone
+  do not invalidate a Case, but an empty row or missing Ref Qty requirements does
+  not become runnable.
+- Fix the requested matrix as both present → Cooling Power, Heating Power, Ref
+  Qty, Cooling Hz, Heating Hz; cooling-only → Cooling Power, Ref Qty, Cooling Hz;
+  heating-only → Heating Power, Ref Qty, Heating Hz; both blank → eligible Ref Qty
+  only. Blank remains distinct from numeric `0`, negative, and non-numeric
+  invalid input.
+- For a valid Ref Qty-only Case, success is row `complete`; actual execution
+  failure follows existing terminal/error semantics. Power/Hz Targets are not
+  requested, EER/COP are N/A, and no unavailable/failed outcomes are fabricated
+  for not-requested Targets.
+- Do not create a Ref Qty-only selector or mode, separate artifact, reduced
+  Target registry, relaxed Active compatibility, or new TargetOutcome status.
+  Preserve full Active capability, existing Target/feature policy and Ref Qty
+  requirements, lifecycle, execution provenance, EER/COP, Result Review, Layout
+  B, and bulk transaction contracts.
+- This documentation decision changes no source behavior. The next gate is the
+  **Case-Scoped Target Applicability Lane C Source Correction**, followed by a
+  fresh independent exact-head audit and Close. Narrow Viewport pinning remains
+  a separate later presentation workstream.
+
 ## 2026-08-02 — Target applicability design reconciliation
 
 ### Decision

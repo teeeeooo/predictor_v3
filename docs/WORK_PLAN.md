@@ -52,11 +52,10 @@
 
 ## Next Action
 
-The next gate is the read-only **Case-Scoped Target Applicability Owner Audit**.
-It must locate the current owners for canonical raw-input applicability,
-requested-Target propagation, execution provenance and result acceptance,
-Complete/Partial/N/A, EER/COP interaction, and the both-capacities-blank product
-decision before any source correction is authorized.
+The next gate is the separately authorized **Case-Scoped Target Applicability
+Lane C Source Correction**. It must connect the established raw-input requested
+Target matrix, including Ref Qty-only Cases, to Predict execution without
+changing the full Active capability contract or existing Target input policy.
 
 ## Active Decisions / Blockers
 
@@ -67,9 +66,10 @@ decision before any source correction is authorized.
 - A model-incompatible saved Definition generation continues to block Predict
   with Retraining required until compatibility is proven; the overhaul does not
   auto-replace or auto-promote a model.
-- The execution/validation UX for a Case whose cooling and heating capacities are
-  both blank is unresolved and requires a small product decision before source
-  implementation.
+- Both cooling and heating capacities blank requests only `Ref Qty`, provided the
+  Case satisfies the existing Ref Qty required HW/one-hot/model input contract.
+  The blank capacities alone do not invalidate the Case; an empty row or missing
+  Ref Qty requirements does not become runnable.
 
 ## Active Constraints
 
@@ -87,6 +87,15 @@ decision before any source correction is authorized.
 - Existing ML mode-specific missing and target leakage policies remain
   authoritative. Their application to Predict Case execution is an integration
   gap, not a new feature-policy design.
+- Requested Targets are fixed by canonical raw capacity presence: both present
+  requests Cooling Power, Heating Power, Ref Qty, Cooling Hz, and Heating Hz;
+  cooling-only requests Cooling Power, Ref Qty, and Cooling Hz; heating-only
+  requests Heating Power, Ref Qty, and Heating Hz; both blank requests Ref Qty
+  only when its existing inputs validate. This decision is not yet implemented.
+- For a valid Ref Qty-only Case, Ref Qty success makes the row `complete`; actual
+  Ref Qty execution failure follows existing terminal/error semantics. Power/Hz
+  Targets are not requested and EER/COP are N/A, without fabricated Target
+  outcomes or a new outcome status.
 - Preserve Data Definition, Data Mapping, Train, Predict, and Calculator owner
   directions. Predict remains a consumer of saved contracts, mapping values, and
   a compatible loaded model.
@@ -121,18 +130,18 @@ decision before any source correction is authorized.
 
 ## Authoritative Near-Term Order
 
-1. **Documentation reconciliation — complete in this task:** record the design
-   invariant and the existing Predict integration gap without source mutation.
-2. **Case-Scoped Target Applicability Owner Audit:** read-only owner and current
-   source audit, including requested Target flow, outcomes, EER/COP, and the
-   both-capacities-blank decision.
-3. **Case-Scoped Target Applicability source correction:** separate Lane C slice
-   that connects existing ML policy to Predict execution without relaxing Active
-   compatibility.
-4. **Fresh independent exact-head audit and Close.**
-5. **Narrow Viewport Result Review Pinning:** separate presentation slice using
+1. **Target applicability documentation reconciliation — complete:** recorded
+   the design invariant and Predict integration gap without source mutation.
+2. **Case-Scoped Target Applicability Owner Audit — complete:** resolved current
+   owners and execution seams read-only.
+3. **Ref-Qty-only applicability product decision — complete in this task:** both
+   capacities blank requests Ref Qty only when its existing inputs validate.
+4. **Case-Scoped Target Applicability Lane C Source Correction — next:** connect
+   the established policy to Predict without relaxing Active compatibility.
+5. **Fresh independent exact-head audit and Close.**
+6. **Narrow Viewport Result Review Pinning:** separate presentation slice using
    Case + 상태 as the anchor direction; do not combine it with correctness repair.
-6. **Separately approved deferred work:** CSV/XLSX export, multi-point
+7. **Separately approved deferred work:** CSV/XLSX export, multi-point
    Predict-to-Calculate, and other deferred product work.
 
 ## Minimal Anchors
