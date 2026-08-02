@@ -8,10 +8,10 @@ Near-term execution belongs to `docs/WORK_PLAN.md`; history belongs to
 
 Train/Admin Phase 5 and Predict Findings #1–#7 are complete and merged. The
 active product workstream is **Predict input workflow broad overhaul**. Its
-product and integration boundary is approved, and Slices 1–4 — Stable Identity
-Seam, Typed Result and Execution Context, EER/COP Enrichment, and Result Review
-Projection — are independently audited, merged, and closed. The next independent
-Lane C gate is Slice 5 — Shared Layout B Composition.
+product and integration boundary is approved, and Slices 1–5 — Stable Identity
+Seam, Typed Result and Execution Context, EER/COP Enrichment, Result Review
+Projection, and Shared Layout B Composition — are independently audited, merged,
+and closed. The next independent Lane C gate is Slice 6 — Bulk Paste Transaction.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -98,8 +98,11 @@ the Qt-free execution-pinned EER/COP enrichment while preserving raw precision,
 canonical result provenance, lifecycle semantics, and Calculator ownership.
 Slice 4 closed the read-only canonical-session projection, shared table
 presentation seam, and full-row TSV copy boundary while preserving historical
-execution provenance and current-generation presentation metadata. Slice 5 —
-Shared Layout B Composition is the next independent Lane C gate.
+execution provenance and current-generation presentation metadata. Slice 5
+closed the shared cached full-surface Input/Result composition, Qt-free
+surface/selected-case policy, bounded terminal reveal, and generation-preserving
+standalone/embedded rebinding. Slice 6 — Bulk Paste Transaction is the next
+independent Lane C gate.
 
 ### Later — Production ML Readiness / Calculator Integration
 

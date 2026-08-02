@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved product and owner boundary; Slices 1–4 merged and closed, Slice 5 next
+Status: approved product and owner boundary; Slices 1–5 merged and closed, Slice 6 next
 Created: 2026-07-14
 Updated: 2026-08-02
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
@@ -10,7 +10,7 @@ Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 This record is the authoritative product and integration boundary for the
 **Predict input workflow broad overhaul**. It absorbs the completed disposable
 layout comparison and existing-application owner audit into a production-facing
-design direction. Slices 1–4 are closed; every remaining source slice still
+design direction. Slices 1–5 are closed; every remaining source slice still
 requires its own Lane C authorization.
 
 This record distinguishes:
@@ -354,9 +354,9 @@ the operating-point and standard-request contracts are separately defined.
 
 ## 7. Implementation Slice Boundary
 
-Slices 1–4 are merged and closed. Slice 5 — Shared Layout B Composition is the
-next independent Lane C gate. Later slices are not authorized by this bounded
-close and retain independent Lane C gates.
+Slices 1–5 are merged and closed. Slice 6 — Bulk Paste Transaction is the next
+independent Lane C gate. Later work is not authorized by this bounded close and
+retains its own review boundary.
 
 ### Slice 1 — Stable Identity Seam
 
@@ -413,10 +413,13 @@ file export remains deferred.
 
 ### Slice 5 — Shared Layout B Composition
 
-Compose Slice 4 with the Input/Result full-surface switch once for standalone and
-embedded Predict. Add the shared workspace-state controller while preserving
-shell-specific title, global status, Train navigation, session, and lifecycle
-ownership.
+**Status: independently audited, merged, and closed.**
+
+Slice 4 is composed with the Input/Result full-surface switch once for standalone
+and embedded Predict. One Qt-free workspace-state owner retains surface and
+stable selected-case policy, terminal reveal is bounded by run-local user choice,
+and runtime replacement rebinds both cached presentations without changing
+canonical session, lifecycle, or shell-specific ownership.
 
 ### Slice 6 — Bulk Paste Transaction
 
@@ -442,7 +445,7 @@ Future multi-point contract ─► Calculate integration
 
 ## 8. Open Compatibility Gates
 
-These decisions remain open after the Slice 4 close:
+These decisions remain open after the Slice 5 close:
 
 1. whether Active models continue to require the exact active target set or may
    expose explicit partial-target capability;
@@ -453,14 +456,14 @@ and must not be reopened as compatibility gates.
 
 ## 9. Current Exclusions
 
-The closed Slice 4 implementation does not include:
+The closed Slice 5 implementation does not include:
 
 - public schema or result-type changes;
-- Layout B composition or workspace-state navigation;
 - bulk-paste implementation;
 - CSPF/HSPF2 implementation;
 - model-lifecycle or Feature Definition generation changes;
 - Calculator formula changes;
+- process-restart workspace-state persistence;
 - a persistent detail panel, Full Context screen, or legacy split-table restore;
 - graph, Advanced surface, CSV/XLSX file export, export dialog/preferences,
   packaging, or deployment.
@@ -473,17 +476,17 @@ current Feature Manager, Data Mapping, Train/model lifecycle, prediction
 execution, and Calculate owners are reusable while the Predict
 application/presentation seams in this record are missing.
 
-That baseline remains navigation evidence for the broader overhaul. Slices 1–4
+That baseline remains navigation evidence for the broader overhaul. Slices 1–5
 were subsequently implemented, independently audited at their exact PR heads,
 and merged without changing the public/generated Predict projection or persisted
 Feature Definition shape. Slice 2 established repository-issued Predict runtime
 authority and the canonical typed-result/provenance boundary; Slice 3 added
 execution-pinned raw EER/COP enrichment; Slice 4 added the read-only Result
 Review projection, stable-identity summary, and provenance-preserving clipboard
-boundary without changing ML Targets, Feature formula schema, or Calculator
-formulas.
+boundary; Slice 5 composed that projection with Input through one shared
+workspace-state policy and standalone/embedded Layout B without changing ML
+Targets, Feature formula schema, or Calculator formulas.
 
-The next gate is **Slice 5 — Shared Layout B Composition**. It may compose the
-closed Result Review projection and Input surface through the shared
-workspace-state direction for standalone and embedded Predict. Slice 6 bulk paste
-remains a separate Lane C gate.
+The next gate is **Slice 6 — Bulk Paste Transaction**. It may implement the
+approved staged transaction over the closed identity/result and Layout B
+boundaries. Later export work remains separate.

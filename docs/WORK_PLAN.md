@@ -41,13 +41,17 @@
   closed. It projects the canonical session read-only, formats EER/COP only at
   presentation, composes the stable-identity full specification summary, and
   exposes full-row TSV copy with hidden raw source/provenance evidence.
+- Slice 5 — Shared Layout B Composition is independently audited, merged, and
+  closed. Standalone and embedded Predict now share one cached full-surface
+  Input/Result workspace, Qt-free surface/selected-case state, bounded terminal
+  reveal policy, and generation-preserving presentation rebinding.
 
 ## Next Action
 
-The next gate is **Slice 5 — Shared Layout B Composition**. It may compose the
-closed Result Review projection with the existing Input surface and shared
-workspace-state direction for standalone and embedded Predict. This Slice 4
-close does not start Slice 5 source work or create a Worker handoff.
+The next gate is **Slice 6 — Bulk Paste Transaction**. It may implement the
+approved staged headerless TSV transaction over the closed identity/result and
+Layout B boundaries. This Slice 5 close does not start Slice 6 source work or
+create a Worker handoff.
 
 ## Active Blockers
 
@@ -70,8 +74,8 @@ close does not start Slice 5 source work or create a Worker handoff.
   Layout B workspace implementation, and Predict-owned workspace-state policy.
 - Keep root-level horizontal scrolling prohibited. Result Review table scrolling
   remains internal; the narrow embedded pinned-column range is an open gate.
-- Keep Layout B composition and bulk paste as independently reviewable Lane C
-  slices; the closed Result Review projection remains their upstream contract.
+- Keep the closed Layout B composition as an upstream contract for the separate
+  Slice 6 bulk-paste Lane C gate; do not fold later export work into that slice.
 - Use repository fixtures or mock data only. Do not infer production readiness or
   mutate production data or models.
 
