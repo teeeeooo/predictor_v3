@@ -30,9 +30,11 @@ superseded, and resolved entries remain preserved with source traces under
 entries:
   - type: procedure
     topic: agent workflow and lifecycle boundary
-    content: AGENTS.md is the lite entrypoint and AGENT_TASK_ROUTER.md is the route map. Ordinary tracked-file work does not create reports. Durable compact records are limited to contract/policy/migration/manual-evidence and non-obvious regression triggers, use date-based final paths plus REPORT_INDEX, and are committed with their source changes. Memory Review replaces report-count lifecycle cleanup and is required for new records, milestone/branch closeout, explicit handoff, and return to a long-paused workstream. Pre-cutover evidence is read-only under result_reports/legacy/archive and result_reports/legacy/summaries; legacy bodies preserve historical paths and commands.
+    content: AGENTS.md is the lite repository entrypoint and AGENT_TASK_ROUTER.md is the task-to-owner route map. When an Engineering Workflow role contract applies, it owns generic role/lane authority, Build → Gate → Close, generic evidence reuse/re-proof, merge/synchronization/hygiene, and role-specific reporting; predictor_v3 separately owns project-specific hard boundaries, routing, architecture/domain/UI contracts, conditional Result Record/Memory lifecycle, and repository-specific mechanical enforcement. Repository Result Records are durable conditional evidence and do not replace Engineering Workflow Worker/Auditor/Orchestrator reports. Ordinary tracked-file work does not create Result Records. Durable compact records are limited to contract/policy/migration/manual-evidence and non-obvious regression triggers, use date-based final paths plus REPORT_INDEX, and are committed with their source changes. Memory Review replaces report-count lifecycle cleanup and is required for new records, milestone/branch closeout, explicit handoff, and return to a long-paused workstream. Pre-cutover evidence is read-only under result_reports/legacy/archive and result_reports/legacy/summaries; legacy bodies preserve historical paths and commands.
     keywords:
       - predictor_v3
+      - Engineering Workflow
+      - role reporting
       - AGENTS.md
       - AGENT_TASK_ROUTER.md
       - result report
@@ -42,7 +44,7 @@ entries:
       - memory review
       - report index
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-10-agent-harness-report-policy-bootstrap.md; result_reports/records/2026-07/2026-07-10-result-report-legacy-migration.md; docs/designs/2026-07-10-agent-harness-report-lifecycle-redesign.md
+    source: result_reports/records/2026-07/2026-07-10-agent-harness-report-policy-bootstrap.md; result_reports/records/2026-07/2026-07-10-result-report-legacy-migration.md; docs/designs/2026-07-10-agent-harness-report-lifecycle-redesign.md; result_reports/records/2026-08/2026-08-05-active-documentation-contract-restoration.md; result_reports/records/2026-08/2026-08-05-active-documentation-contract-restoration-memory-correction.md
 
   - type: decision
     topic: architecture and source owner boundary
