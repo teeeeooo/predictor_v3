@@ -90,7 +90,7 @@ def test_stable_current_case_transfers_but_surface_selections_remain_local():
     assert result_selection.selectedRows()
 
 
-def test_surfaces_keep_independent_horizontal_scroll_without_frozen_views():
+def test_surfaces_keep_independent_horizontal_scroll_with_result_anchor():
     _app()
     workspace = _workspace()
     input_scroll = workspace.case_table.horizontalScrollBar()
@@ -232,3 +232,53 @@ def test_runtime_rebind_preserves_workspace_state_and_replaces_both_models():
     assert workspace.workspace_state.selected_case_id == selected_case_id
     assert workspace.case_model.columns == replacement.columns
     assert workspace.result_review_model.projection is replacement.result_review_projection
+
+
+def test_runtime_rebind_retains_result_anchor_widths_scroll_and_shared_selection():
+    app = _app()
+    workspace = PredictWorkspace(
+        composition=build_predict_workspace_composition(
+            initial_empty_rows=30,
+            prediction_service=_LoadedPredictionService(),
+        )
+    )
+    workspace.resize(720, 520)
+    workspace.show()
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    app.processEvents()
+    table = workspace.result_review_table
+    table.setColumnWidth(0, 78)
+    table.setColumnWidth(1, 126)
+    table.setRowHeight(1, 47)
+    table.horizontalScrollBar().setValue(table.horizontalScrollBar().maximum())
+    prior_scroll = table.horizontalScrollBar().value()
+    table.verticalScrollBar().setValue(8)
+    selected_case_id = workspace.session.case_order[1]
+    table.selectionModel().setCurrentIndex(
+        workspace.result_review_model.index(1, 1),
+        QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+    )
+    replacement = build_predict_workspace_composition(
+        session=workspace.session,
+        initial_empty_rows=0,
+        prediction_service=_LoadedPredictionService(),
+    )
+
+    workspace.apply_runtime_composition(replacement)
+    app.processEvents()
+
+    assert table.pinned_columns_active
+    assert table.pinned_anchor_view.columnWidth(0) == 78
+    assert table.pinned_anchor_view.columnWidth(1) == 126
+    assert table.horizontalScrollBar().value() == min(
+        prior_scroll, table.horizontalScrollBar().maximum()
+    )
+    assert table.pinned_anchor_view.verticalScrollBar().value() == (
+        table.verticalScrollBar().value()
+    )
+    assert table.rowHeight(1) == 47
+    assert table.pinned_anchor_view.rowHeight(1) == 47
+    assert table.pinned_anchor_view.model() is workspace.result_review_model
+    assert table.pinned_anchor_view.selectionModel() is table.selectionModel()
+    assert workspace.workspace_state.selected_case_id == selected_case_id
+    assert table.selectionModel().currentIndex().row() == 1

@@ -14,7 +14,8 @@ independently audited, merged, and closed. The Target applicability Owner Audit,
 Ref Qty-only product decision, focused Lane C source correction, independent
 exact-head audit, merge, and Close are also complete without relaxing full Active
 compatibility. The next gate is the separately scoped **Narrow Viewport Result
-Review Pinning** presentation slice.
+Review Pinning Lane B Exact-Head Orchestrator Gate** over the focused worker
+candidate.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -128,12 +129,15 @@ per execution while the session retains the full runtime contract; typed mapping
 aggregate status, stale/late rejection, migration, EER/COP, Result Review, and
 copy consume the same subset.
 
-### Next — Narrow Viewport Result Review Pinning
+### Current Gate — Narrow Viewport Result Review Pinning
 
-Keep Case + 상태 as the anchor direction and solve only the separately scoped
-narrow Result Review presentation boundary. Do not reopen Target applicability,
-Active compatibility, export, Predict-to-Calculate, training, or schema work in
-this presentation gate.
+The focused Lane B worker candidate keeps exactly `Case + 상태` visible only
+when Result Review content overflows its own viewport. It uses the existing
+shared standalone/embedded workspace, canonical projection, model, selection,
+copy, and generation rebind owners. The next action is its exact-head
+Orchestrator gate. Do not reopen Target applicability, Active compatibility,
+export, Predict-to-Calculate, training, or schema work in this presentation
+gate.
 
 ### Later — Production ML Readiness / Calculator Integration
 

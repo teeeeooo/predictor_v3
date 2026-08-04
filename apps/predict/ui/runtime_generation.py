@@ -15,6 +15,10 @@ def apply_runtime_composition(workspace, composition: PredictWorkspaceCompositio
     scroll_value = horizontal_scroll.value()
     result_horizontal_scroll = workspace.result_review_table.horizontalScrollBar()
     result_scroll_value = result_horizontal_scroll.value()
+    result_column_widths = (
+        workspace.result_review_table.presentation_column_widths()
+    )
+    result_row_heights = workspace.result_review_table.presentation_row_heights()
     workspace.bulk_paste_ui.clear_history()
     workspace.table_edit_controller = composition.table_edit_controller
     workspace.input_edit_controller = composition.input_edit_controller
@@ -43,6 +47,12 @@ def apply_runtime_composition(workspace, composition: PredictWorkspaceCompositio
         composition.columns,
     )
     workspace._configure_tables()
+    workspace.result_review_table.restore_presentation_column_widths(
+        result_column_widths
+    )
+    workspace.result_review_table.restore_presentation_row_heights(
+        result_row_heights
+    )
     workspace._refresh()
     workspace._reconcile_shared_case_selection()
     workspace._show_workspace_surface()

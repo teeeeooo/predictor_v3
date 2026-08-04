@@ -12,7 +12,7 @@ def configure_workspace_tables(
     input_model: CaseTableModel,
     result_table: ResultReviewTableView,
 ) -> None:
-    """Configure independent horizontal-scrolling views without frozen columns."""
+    """Configure independent table scrolling and Result Review anchoring."""
     input_table.setAlternatingRowColors(True)
     input_table.setSortingEnabled(False)
     input_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
@@ -28,6 +28,11 @@ def configure_workspace_tables(
     result_table.horizontalHeader().setStretchLastSection(False)
     result_table.verticalHeader().setDefaultSectionSize(34)
     result_table.setStyleSheet("")
+    result_anchor = result_table.pinned_anchor_view
+    result_anchor.setAlternatingRowColors(True)
+    result_anchor.setSortingEnabled(False)
+    result_anchor.verticalHeader().setDefaultSectionSize(34)
+    result_anchor.setStyleSheet("")
     for column_index, width in enumerate(
         (64, 100, 100, 100, 360, 72, 72, 112, 112, 90)
     ):

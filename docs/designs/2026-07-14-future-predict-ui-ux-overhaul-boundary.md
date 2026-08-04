@@ -1,8 +1,8 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved boundary; Slices 1–6 and Case-Scoped Target Applicability correction independently audited, merged, and closed; Narrow Viewport Result Review Pinning is next
+Status: approved boundary; Slices 1–6 and Case-Scoped Target Applicability correction independently audited, merged, and closed; Narrow Viewport Result Review Pinning Lane B worker candidate complete, exact-head Orchestrator gate next
 Created: 2026-07-14
-Updated: 2026-08-03
+Updated: 2026-08-04
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
 
 ## 1. Purpose and Authority
@@ -143,6 +143,25 @@ information, not optional decoration, and remains before the result metrics.
 
 Status and issue presentation must be discoverable through text and accessible
 detail or tooltip behavior. Color-only row tint is supplemental.
+
+#### Narrow Viewport Anchor
+
+When the canonical Result Review columns exceed the table's own viewport,
+`Case + 상태` remain visible as the exact left anchor and columns from
+`냉방능력` through `냉매량` retain their canonical order inside the Result
+Review horizontal scroll. When the content fits, Result Review retains its
+ordinary single-view presentation without an anchor gap or forced clipping.
+
+The anchor and scrollable region are two Qt presentation viewports over the
+same read-only Result Review model and the same selection model. They synchronize
+vertical position, row/header geometry, and anchor width changes. Selection and
+full-row copy therefore continue to identify one canonical row by stable
+`case_id`; the visible `Case` value remains its numeric ordinal. Runtime
+generation rebind replaces the model in both viewports and restores valid
+presentation widths and horizontal position. This behavior belongs only to the
+shared Result Review view used by standalone and embedded Predict. It adds no
+Input Authoring pinning, root horizontal scrolling, schema change, persisted
+view state, or second result/session owner.
 
 ### 5.2 사양 요약
 
@@ -555,11 +574,11 @@ Active, and actual failure within that requested subset controls
 Complete/Partial status.
 
 The read-only Owner Audit, Ref Qty-only product decision, focused Lane C source
-correction, independent exact-head audit, merge, and Close are complete. The next
-gate is the independent **Narrow Viewport Result Review Pinning** presentation
-slice with Case + 상태 as the anchor direction; it must not reopen the closed
-correctness repair. The default Result Review order and Layout B full-surface
-direction remain approved.
+correction, independent exact-head audit, merge, and Close are complete. The
+focused Narrow Viewport Result Review Pinning Lane B worker candidate is
+complete; the next gate is its independent exact-head Orchestrator review. It
+must not reopen the closed correctness repair. The default Result Review order
+and Layout B full-surface direction remain approved.
 
 ## 9. Current Exclusions
 
@@ -599,7 +618,8 @@ formula schema, or Calculator formulas.
 
 The focused correction implements the approved requested subset without changing
 ML/Data Definition policy, runtime Target membership, or Active artifact
-compatibility and is now independently audited, merged, and closed. The next
-action is the separately scoped **Narrow Viewport Result Review Pinning**
-presentation slice. CSV/XLSX export, future multi-point Predict-to-Calculate
-integration, and other deferred product work remain separate and unstarted.
+compatibility and is now independently audited, merged, and closed. The Narrow
+Viewport Result Review Pinning worker candidate remains presentation-only; its
+exact-head Orchestrator gate is next. CSV/XLSX export, future multi-point
+Predict-to-Calculate integration, and other deferred product work remain
+separate and unstarted.
