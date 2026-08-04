@@ -29,6 +29,7 @@ from apps.predict.ui.case_selection import WorkspaceCaseSelectionBridge
 from apps.predict.ui.layout_b import PredictLayoutBSurfaces
 from apps.predict.ui.model_group import WorkspaceModelGroup
 from apps.predict.ui.result_review import ResultReviewTableModel, ResultReviewTableView
+from apps.predict.ui.result_review.csv_export import export_selected_rows_csv
 from apps.predict.ui.tables.delegates import DropdownDelegate
 from apps.predict.ui.status_widgets import (
     StatusBadge,
@@ -165,6 +166,7 @@ class PredictWorkspace(QWidget):
         )
         self.command_bar.paste_button.clicked.connect(self._paste_from_clipboard)
         self.command_bar.copy_results_button.clicked.connect(self._copy_results_selection)
+        self.command_bar.export_results_button.clicked.connect(self._export_results_csv)
         self.command_bar.refresh_button.clicked.connect(self._refresh_generation)
         self.surface_host = PredictLayoutBSurfaces(
             self.case_table,
@@ -439,6 +441,11 @@ class PredictWorkspace(QWidget):
         if text:
             QApplication.clipboard().setText(text)
         self.status_label.setText(copied)
+
+    def _export_results_csv(self) -> None:
+        self.status_label.setText(
+            export_selected_rows_csv(self, self.result_review_table)
+        )
 
     def _selected_case_rows(self) -> list[int]:
         return sorted(

@@ -1,5 +1,6 @@
 """Shared Predict Layout B composition and command routing tests."""
 
+import csv
 import os
 
 import pytest
@@ -11,6 +12,7 @@ from apps.predict.application.prediction_usecase import PredictionRunSummary
 from apps.predict.application.workspace_state import WorkspaceSurface
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.state.result_row import ResultRow
+from apps.predict.ui.result_review import csv_export as result_review_csv_export
 from apps.predict.ui.workspace import PredictWorkspace
 from tests.helpers.predict_results import accept_result_fixtures
 
@@ -165,6 +167,7 @@ def test_input_copy_keeps_selected_cell_behavior():
 
     assert QApplication.clipboard().text() == workspace.case_table.copy_selection_tsv()
     assert workspace.command_bar.copy_results_button.text() == "선택 셀 복사"
+    assert not workspace.command_bar.export_results_button.isEnabled()
 
 
 def test_progressive_result_refreshes_visible_readonly_projection_without_switching():
@@ -282,3 +285,117 @@ def test_runtime_rebind_retains_result_anchor_widths_scroll_and_shared_selection
     assert table.pinned_anchor_view.selectionModel() is table.selectionModel()
     assert workspace.workspace_state.selected_case_id == selected_case_id
     assert table.selectionModel().currentIndex().row() == 1
+
+
+@pytest.mark.parametrize(
+    ("selected_rows", "expected_cases"),
+    (((1,), ["2"]), ((2, 0), ["1", "3"])),
+)
+def test_result_csv_action_exports_selected_rows_in_canonical_order(
+    tmp_path, monkeypatch, selected_rows, expected_cases
+):
+    _app()
+    workspace = _workspace()
+    destination = tmp_path / "selected.csv"
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    selection = workspace.result_review_table.selectionModel()
+    for row in selected_rows:
+        selection.select(
+            workspace.result_review_model.index(row, 0),
+            QItemSelectionModel.Select | QItemSelectionModel.Rows,
+        )
+    monkeypatch.setattr(
+        result_review_csv_export.QFileDialog,
+        "getSaveFileName",
+        lambda *args, **kwargs: (str(destination), "CSV files (*.csv)"),
+    )
+
+    workspace.command_bar.export_results_button.click()
+
+    with destination.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.reader(handle))
+    assert [row[0] for row in rows[1:]] == expected_cases
+    assert "stable case identity" in rows[0][10:]
+    assert workspace.command_bar.export_results_button.isEnabled()
+    assert "저장 완료" in workspace.status_label.text()
+
+
+def test_result_csv_without_selection_does_not_open_dialog_or_publish(monkeypatch):
+    _app()
+    workspace = _workspace()
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+
+    def unexpected_dialog(*args, **kwargs):  # noqa: ANN002, ANN003
+        pytest.fail("save dialog must not open without selected Result Review rows")
+
+    monkeypatch.setattr(
+        result_review_csv_export.QFileDialog,
+        "getSaveFileName",
+        unexpected_dialog,
+    )
+
+    workspace.command_bar.export_results_button.click()
+
+    assert "선택" in workspace.status_label.text()
+    assert workspace.result_review_table.selected_row_indexes() == []
+
+
+def test_result_csv_cancel_preserves_canonical_state_and_selection(monkeypatch):
+    _app()
+    workspace = _workspace()
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    selection = workspace.result_review_table.selectionModel()
+    selection.select(
+        workspace.result_review_model.index(1, 0),
+        QItemSelectionModel.Select | QItemSelectionModel.Rows,
+    )
+    before_revision = workspace.session.revision
+    before_results = dict(workspace.session.results_by_case_id)
+    before_selected = workspace.result_review_table.selected_row_indexes()
+    monkeypatch.setattr(
+        result_review_csv_export.QFileDialog,
+        "getSaveFileName",
+        lambda *args, **kwargs: ("", ""),
+    )
+
+    workspace.command_bar.export_results_button.click()
+
+    assert workspace.session.revision == before_revision
+    assert dict(workspace.session.results_by_case_id) == before_results
+    assert workspace.result_review_table.selected_row_indexes() == before_selected
+    assert "취소" in workspace.status_label.text()
+
+
+def test_result_csv_publication_failure_preserves_state_and_selection(monkeypatch):
+    _app()
+    workspace = _workspace()
+    workspace._switch_surface(WorkspaceSurface.RESULT)
+    selection = workspace.result_review_table.selectionModel()
+    selection.select(
+        workspace.result_review_model.index(0, 0),
+        QItemSelectionModel.Select | QItemSelectionModel.Rows,
+    )
+    before_revision = workspace.session.revision
+    before_results = dict(workspace.session.results_by_case_id)
+    before_selected = workspace.result_review_table.selected_row_indexes()
+    monkeypatch.setattr(
+        result_review_csv_export.QFileDialog,
+        "getSaveFileName",
+        lambda *args, **kwargs: ("/unwritable/result.csv", "CSV files (*.csv)"),
+    )
+
+    def fail_publication(*args, **kwargs):  # noqa: ANN002, ANN003
+        raise OSError("publication denied")
+
+    monkeypatch.setattr(
+        result_review_csv_export,
+        "publish_result_review_csv",
+        fail_publication,
+    )
+
+    workspace.command_bar.export_results_button.click()
+
+    assert workspace.session.revision == before_revision
+    assert dict(workspace.session.results_by_case_id) == before_results
+    assert workspace.result_review_table.selected_row_indexes() == before_selected
+    assert "문제가" in workspace.status_label.text()

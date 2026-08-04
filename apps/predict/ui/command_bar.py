@@ -24,10 +24,12 @@ class PredictCommandBar(QFrame):
         self.delete_row_button = QPushButton("행 삭제", self)
         self.paste_button = QPushButton("입력 붙여넣기", self)
         self.copy_results_button = QPushButton("결과 복사", self)
+        self.export_results_button = QPushButton("CSV 내보내기", self)
         self.refresh_button = QPushButton("Refresh", self)
         self.reload_model_button = QPushButton("새 모델 다시 불러오기", self)
 
         self.cancel_button.setEnabled(False)
+        self.export_results_button.setEnabled(False)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(
@@ -46,6 +48,7 @@ class PredictCommandBar(QFrame):
         layout.addSpacing(style.spacing("space.md"))
         layout.addWidget(self.paste_button)
         layout.addWidget(self.copy_results_button)
+        layout.addWidget(self.export_results_button)
         layout.addWidget(self.refresh_button)
         layout.addWidget(self.reload_model_button)
         layout.addStretch(1)
@@ -63,6 +66,7 @@ class PredictCommandBar(QFrame):
         self.add_row_button.setEnabled(not running)
         self.delete_row_button.setEnabled(not running)
         self.paste_button.setEnabled(not running)
+        self.export_results_button.setEnabled(not running)
         self.refresh_button.setEnabled(not running)
         self.reload_model_button.setEnabled(not running)
 
@@ -79,3 +83,4 @@ class PredictCommandBar(QFrame):
         self.copy_results_button.setText(
             "선택 셀 복사" if input_active else "결과 전체 행 복사"
         )
+        self.export_results_button.setEnabled(not input_active and not running)
