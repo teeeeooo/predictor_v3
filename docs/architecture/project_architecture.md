@@ -5,9 +5,10 @@
 ## 1. 파일 구조 (File Structure)
 
 프로젝트는 기능별 분리를 지향하며, Arc 8.5 이후 ML, predictor schema, mapping,
-common paths, calculator 구현 owner는 package boundary 아래에 있습니다.
-Architecture SSOT update의 source input은
-`docs/architecture/project_wide_architecture_restructuring_plan.md`입니다.
+common paths, calculator 구현 owner는 package boundary 아래에 있습니다. 이 문서가
+현재 project architecture owner다. 완료된
+`docs/architecture/project_wide_architecture_restructuring_plan.md`은 해당 package
+migration의 historical source evidence이며 current implementation authority가 아니다.
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
   - `ml/`: 순방향 ML 예측, 학습, 전처리, feature/target, registry, artifact path owner.

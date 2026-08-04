@@ -1,8 +1,12 @@
 # Task Routing Rules
 
-`AGENTS.md`가 mandatory entrypoint이고 이 문서는 route map이다. 작업 유형을
-분류한 뒤 matching section과 직접 owner 문서만 읽는다. 규칙 충돌 시
-`AGENTS.md` → 이 router → workflow owner → reference evidence 순으로 해석한다.
+`AGENTS.md`가 mandatory repository entrypoint이고 이 문서는 route map이다.
+작업 유형을 분류한 뒤 matching section과 직접 owner 문서만 읽는다. 설치된
+Engineering Workflow role contract가 적용되면 generic role/lane,
+Build → Gate → Close, evidence/re-proof, merge/synchronization/hygiene,
+role-specific reporting은 그 contract가 소유한다. Repository 내부 authority는
+`AGENTS.md` → 이 router → matching workflow/domain owner → reference evidence
+순으로 해석하며, 이 router는 generic Engineering Workflow 절차를 재정의하지 않는다.
 
 ## Quick Route Index
 
@@ -17,24 +21,29 @@
 | ML / Predictor | `ML_PREDICTOR_WORKFLOW.md` |
 | Packaging | `PACKAGING_WORKFLOW.md` |
 
-## Common Gates
+## Common Route Gates
 
-### Work Boundary
+이 section은 절차를 복제하지 않고 repository-specific owner를 찾는 gate만 둔다.
 
-- Goal / Scope / Non-goals / Verification은 `AGENTS.md` Work Contract를
-  따른다.
-- every changed line은 Goal과 직접 연결되어야 한다.
-- ambiguous standard/profile/region/schema combination은 fail-fast한다.
-- commit/push와 tracked file 삭제는 사용자 승인이 필요하다.
-- 기존 변경 검토는 changed paths/stat, exact-symbol 검색, narrow
-  hunk/owner range순으로 시작하고 behavior/ownership가 불명확할 때만
-  범위를 넓힌다.
-- validation은 matching owner에서 가져오며 unrelated guard나 최종
-  focused suite가 이미 커버한 unchanged subset을 반복하지 않는다.
+- Project hard boundary와 standalone baseline: `AGENTS.md`.
+- 새/moved owner, public/schema/registry/resolver, cross-layer responsibility:
+  matching architecture owner와
+  `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
+- Repository-specific staged enforcement와 warning-first structure checks:
+  `docs/agent_workflows/AGENT_CHANGE_GATES.md`.
+- Conditional Result Record trigger, path/index, same-change atomicity:
+  `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`.
+- Result Record/closeout/handoff의 Memory Review:
+  `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md`.
+- Active owner map, work-plan/log/document lifecycle synchronization:
+  `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md`.
+- Matching behavior validation은 해당 workflow/domain owner가 소유한다.
+  Engineering Workflow role이 적용되면 generic evidence reuse/re-proof,
+  Git/merge/synchronization, role reporting은 그 role contract를 따른다.
 
 ### Architecture Triage
 
-다음 중 하나가 Yes이면 owner boundary를 먼저 정한다.
+다음 중 하나가 Yes이면 Architecture route와 matching owner를 함께 연다.
 
 - 새 Model / Service / Controller / Shell / Adapter / View / Policy 책임
 - 한 파일에 state, UI, calculation, formatting, I/O가 새로 혼합됨
@@ -46,63 +55,19 @@ prompt가 owner/tests를 충분히 고정하면
 `prompt-supplied boundary is sufficient`로 진행할 수 있다. 그렇지 않으면
 Design Gate 또는 별도 audit/design slice를 사용한다.
 
-### Staged Change Gate
-
-- objective whitespace, syntax, hard LOC, UI literal 정책은 hard check다.
-- reuse/commonization과 hotspot 책임 판단은 기본 warning-first다.
-- ordinary source/test/tool/config 변경은 report 부재만으로 실패하지 않는다.
-- 예외 UI literal 또는 구조 판단을 durable하게 남길 필요가 있으면 optional
-  `change_gate` block을 compact record에 둔다.
-- 상세 owner: `docs/agent_workflows/AGENT_CHANGE_GATES.md`.
-
-### Conditional Result Record
-
-다음 변경만 compact record trigger다.
-
-- architecture/owner boundary
-- schema, public API, JSON key, diagnostics contract
-- calculator formula, golden, fixture, region-config behavior
-- agent harness/gate/workflow enforcement
-- migration, release, decisive external/manual acceptance evidence
-- non-obvious/repeated/cross-owner/platform/manual-only/unguarded UI or bugfix
-- explicit user request
-
-그 외는 기본 `report: not created`다. record path, index, same-commit,
-Memory Review, terminal 형식은
-`docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`가 소유한다.
-
-### Memory Review
-
-다음 trigger에서 `updated` 또는 `no-change + reason`을 판단한다.
-
-- 새 compact record
-- milestone/branch closeout
-- explicit session handoff
-- 장기 중단 workstream 복귀
-
-상세 owner는 `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md`다.
-
-### Documentation Sync
-
-- owner 역할/inbound/outbound 또는 active doc 집합이 바뀌면
-  `ACTIVE_DOCUMENTS.md`를 확인한다.
-- current slice/next action이 바뀔 때만 `docs/WORK_PLAN.md`를 갱신한다.
-- milestone decision/process rule이면 `project_log.md` 갱신을 판단한다.
-- 상세 owner는 `DOCUMENT_SYNC_AND_LIFECYCLE.md`다.
-
 ## 1. Commit / Git
 
 읽기:
 
 - `AGENTS.md`
-- 필요 시 Result Report / Document Sync owner
+- Result Record trigger/commit atomicity가 관련되면
+  `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`
+- owner/document synchronization이 관련되면
+  `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md`
 
-절차:
-
-1. `git status --short`, diff stat, focused validation 상태를 확인한다.
-2. 사용자가 승인한 scope만 stage/commit/push한다.
-3. compact record가 있으면 source 변경과 같은 commit에 포함한다.
-4. final output에 commit hash와 push remote/branch 결과를 남긴다.
+이 route는 repository-specific record/document owner를 찾기 위한 것이다.
+Generic stage/commit/push/merge 순서와 role-specific completion reporting은
+적용 중인 Engineering Workflow role contract가 있으면 그 authority를 따른다.
 
 ## 2. Calculator Logic / Golden / Region
 

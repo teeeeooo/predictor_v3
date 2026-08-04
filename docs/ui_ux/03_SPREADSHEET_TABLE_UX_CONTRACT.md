@@ -48,12 +48,15 @@ Before a new table-shaped UI or table adapter is treated as complete:
 
 - Reuse the existing reference table implementation for the toolkit when the
   shape fits.
-- If the reference implementation cannot be reused, record the reason and
-  the controller-level parity test plan in the result report.
-- Record the table parity checklist below as pass/fail evidence in the
-  report validation section.
+- If the reference implementation cannot be reused, preserve the reason and
+  controller-level parity test plan in task validation/evidence.
+- Preserve the table parity checklist below as pass/fail validation evidence.
 - If a toolkit-specific adapter does not yet exist, use this document
-  directly as the acceptance contract and record any adapter gap.
+  directly as the acceptance contract and preserve the adapter gap in task
+  evidence.
+- These evidence requirements do not by themselves require a compact Result
+  Record; `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md` owns that conditional
+  trigger.
 - Windows or platform smoke is a final platform check. If a core interaction
   bug is first discovered there, record it as a validation gap and add an
   automated helper/controller-level guard in the next correction slice.

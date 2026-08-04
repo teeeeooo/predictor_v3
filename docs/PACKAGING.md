@@ -2,8 +2,12 @@
 
 ## Purpose
 - `predictor_v3`의 로컬/배포 패키징 원칙을 관리한다.
-- 기존 packaging 상세 규칙은 `AGENT_TASK_ROUTER.md` §10 Packaging / 배포 빌드와 `project_log.md`에서 관리한다.
-- 실제 패키징 실행 기록이나 실패 로그는 `project_log.md`에 남긴다.
+- Packaging task routing과 실행 contract는
+  `docs/agent_workflows/PACKAGING_WORKFLOW.md`가 소유하고, runtime dependency
+  policy는 `docs/development/dependencies.md`가 소유한다.
+- `AGENT_TASK_ROUTER.md`는 이 owner들을 찾는 route만 제공한다. 과거
+  milestone/failure context가 필요할 때만 `project_log.md`를 reference evidence로
+  조회한다.
 
 ## Current status
 - 현재 프로젝트에 완전 자동화된 packaging workflow나 전용 빌드 스크립트는 존재하지 않는다.

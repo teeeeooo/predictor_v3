@@ -344,7 +344,7 @@ production `korea.json`에는 golden/sample/test 전용 2-bin 값을 넣지 않�
 | Step | Fixed decision | Regression risk |
 | --- | --- | --- |
 | 1 | 기존 CSPF path와 public API를 변경하지 않는다. | CSPF golden `6.504`가 깨지면 HSPF 작업을 중단한다. |
-| 2 | KS C 9306 HSPF production path는 ISO common calculator 안에 두되, KS-only assumptions는 region-specific branch로 격리한다. | KS C 9306 식이 ISO 16358 generic HSPF path에 섞이면 다른 region 확장이 어려워진다. |
+| 2 | KS C 9306 HSPF production path는 stable `core/calculators/standards/ks_c9306.py` facade와 private `_ks_c9306/` owners 안에 유지하고 ISO common/public facade로 라우팅하지 않는다. | KS C 9306 식이 ISO 16358 generic HSPF path에 섞이면 standard owner boundary가 깨진다. |
 | 3 | E.2.20~E.2.33 성능선 helper를 먼저 만들고, E.2.36~E.2.40 operating selection은 그 helper의 평가값만 사용한다. | 같은 식을 branch마다 재작성하면 첨자 혼동이 발생한다. |
 | 4 | frost/non-frost branch를 먼저 결정한 뒤 해당 영역의 capacity/power curve를 평가한다. | defrost ratio를 interpolation 뒤에 다시 적용하면 이중 보정된다. |
 | 5 | capacity shortage와 cyclic minimum은 별도 branch로 유지한다. | shortage를 PLF로 처리하거나 cyclic을 auxiliary로 처리하면 HSEC가 틀어진다. |

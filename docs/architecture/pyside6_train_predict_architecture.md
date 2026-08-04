@@ -46,18 +46,20 @@ Boundary note:
   `docs/agent_workflows/UI_SURFACE_WORKFLOW.md`,
   `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, and
   `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` as applicable. If a
-  PySide6 table adapter does not exist yet, record that adapter gap in the
-  report and use the toolkit-neutral table contract as the acceptance contract.
-- PySide6 Predictor schema/mapping recovery follows the project-wide
-  architecture SSOT in `docs/architecture/project_architecture.md` and the
-  restructuring plan in
-  `docs/architecture/project_wide_architecture_restructuring_plan.md`.
-  The recovered Predict path imports `core/predictor_schema`, `core/mapping`,
-  and `core/ml` package owners directly.
-- PySide6 Train/Predict follows the project-wide target package boundary. New
-  PySide6 code must not deepen dependency on the current flat `core/` root
-  beyond approved adapters. Current local schemas/mappings/adapters in PySide6
-  are recovery targets.
+  PySide6 table adapter does not exist yet, preserve that gap in task
+  validation/evidence and use the toolkit-neutral table contract as the
+  acceptance contract. A compact Result Record is created only when the normal
+  repository trigger applies.
+- Current PySide6 Predictor schema/mapping ownership follows
+  `docs/architecture/project_architecture.md` and the generation-bound owners
+  under `core/predictor_schema`, `core/mapping`, `core/ml`, and
+  `core/data_definition`. The completed
+  `docs/architecture/project_wide_architecture_restructuring_plan.md` is
+  historical migration evidence only and is not an implementation authority.
+- PySide6 Train/Predict follows the current project-wide package boundary. New
+  work resolves current responsibility from this contract, the matching workflow,
+  and current source owners rather than reviving pre-migration flat-root or
+  recovery-plan ownership.
 
 ## 2. Implementation Principle
 
@@ -1566,216 +1568,35 @@ execution blockers when the prior loaded model remains usable. The workspace
 projects this controller-owned capability without inspecting Active references,
 model paths, or Train UI.
 
-## 14. Implementation Slices
-
-### Slice 1: Docs alignment
-
-Allowed:
-
-- add design gate document
-- add architecture contract document
-- update charter/architecture/work plan active references
-- add result report
-
-Forbidden:
-
-- production code changes
-- dependency changes
-- legacy Qt binding deletion
-
-Verification:
-
-- markdown presence check
-- link/path sanity check
-- git diff check
-
-### Slice 2: PySide6 package foundation
-
-Allowed:
-
-- add `apps/predict` and `apps/train` foundation packages
-- add thin entrypoint wrappers
-- add empty shell windows
-- add tab shell in Trainer
-
-Forbidden:
-
-- model training logic changes
-- prediction logic changes
-- table implementation beyond placeholders
-- deleting old `ui/`
-
-Verification:
-
-- `python3 -B -m py_compile app_predict.py app_train.py`
-- import smoke for `apps.predict.app` and `apps.train.app`
-- structure guard
-- manual launch smoke if environment supports GUI
-
-### Slice 3: Predict workspace foundation
-
-Allowed:
-
-- add command bar
-- add input/result table placeholders
-- add status bar
-- add `PredictSession` basic state
-
-Forbidden:
-
-- core prediction execution
-- training panels
-- paste/export implementation
-
-Verification:
-
-- import smoke
-- focused UI construction smoke if available
-- structure guard
-
-### Slice 4: Predict table models
-
-Allowed:
-
-- implement input table model
-- implement result table model
-- implement basic table sync
-- implement row append/delete if scoped
-
-Forbidden:
-
-- calling `core.ml.inference.predict_row`
-- training logic
-- calculator integration
-
-Verification:
-
-- focused table model tests
-- row count/order tests
-- session/result alignment tests
-
-### Slice 5: Prediction execution
-
-Allowed:
-
-- implement model service
-- implement row-to-ML input adapter
-- implement prediction service
-- implement result adapter
-- wire predict-all action
-
-Forbidden:
-
-- model artifact schema change
-- feature definition change
-- calculator integration
-- inverse search
-
-Verification:
-
-- adapter unit tests
-- model service failure tests
-- prediction service smoke with fixture or stub model data
-- GUI manual smoke if possible
-
-### Slice 6: Trainer panels
-
-Allowed:
-
-- implement Train / Model tab
-- implement Data Definition tab
-- implement Data Mapping tab
-- implement the training execution port and process adapter
-- wire training log/progress
-
-Forbidden:
-
-- changing `core.ml.training` algorithm
-- changing Optuna/RFECV settings unless explicitly scoped
-- changing model artifact schema
-
-Verification:
-
-- execution port/process-adapter smoke
-- service boundary tests
-- import smoke
-- manual training-panel smoke if possible
-
-### Slice 7: Legacy retirement audit
-
-Allowed:
-
-- audit old `ui/` usage
-- confirm no new app imports legacy `ui.*`
-- propose deletion/move/archive plan
-
-Forbidden:
-
-- deleting files without explicit approval
-- changing new app behavior
-
-Verification:
-
-- import graph search
-- structure guard
-- git status/diff check
-
-## 15. Verification Matrix
-
-### Always run for source changes
-
-- `python3 -B tools/check_code_structure.py`
-- `git diff --check`
-- focused py_compile/import smoke for changed package
-- focused tests matching modified owner
-
-### Run for Predict table changes
-
-- table row count/order test
-- case_id/result alignment test
-- editable/read-only role test
-- table sync smoke if testable headlessly
-
-### Run for ML adapter changes
-
-- row-to-ML dict conversion test
-- one-hot mapping test
-- missing input validation test
-- prediction result adapter test
-- leakage/feature guard tests if feature boundary changes
-
-### Run for Trainer changes
-
-- training execution port/controller test
-- process adapter smoke
-- train service boundary test
-- log/progress callback smoke if feasible
-- no UI-thread or QThread direct `train_all_models` call accepted as production
-  Train execution
-
-### Manual smoke candidates
-
-Manual smoke should be separate from automated verification.
-
-Predict app:
-
-- launch window
-- add rows
-- paste sample cases
-- run prediction with available model
-- confirm input/result row alignment
-- confirm error row display
-- copy/export result if implemented
-
-Trainer app:
-
-- launch window
-- confirm tabs
-- confirm Predict tab reuses predictor workspace
-- select training file
-- start training smoke or stub run
-- confirm log/progress display
-- cancel/finish behavior if implemented
+## 14. Current Work Authorization Boundary
+
+The original foundation Slices 1–7 are completed migration history. They are
+not current work authorization and must not be used to revive retired split
+models, legacy UI paths, or pre-package owners. Historical sequencing remains
+discoverable through the governing design record, Git history, and conditional
+Result Records.
+
+Current Train/Predict work is scoped from the active task, the matching
+repository workflow/UI owners, this document's current responsibility sections,
+and current source identity. When those sources disagree with a historical
+slice description, the current owner contract wins.
+
+## 15. Validation Boundary
+
+Validation follows the responsibility actually changed:
+
+- Predict table/input/result work uses the current table/session/projection owner
+  tests plus applicable UI Surface Workflow parity evidence.
+- ML adapter or execution changes use the current generation/input/Target and
+  prediction-service owners rather than a historical fixed slice suite.
+- Train changes use the current lifecycle/execution-port/controller owner tests.
+- Manual GUI/platform smoke is selected only when the changed user-facing or
+  platform behavior requires it; it is not inherited from an old slice plan.
+
+Generic evidence reuse/re-proof belongs to the active Engineering Workflow role
+when one applies. Repository-specific Result Record creation remains conditional
+under `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`; validation evidence does
+not imply a record by itself.
 
 ## 16. Coding Guardrails
 
@@ -1791,18 +1612,14 @@ Trainer app:
 - Do not change public calculator APIs in this workstream.
 - Do not change fixtures/golden expected values in this workstream.
 
-## 17. Result Report Requirements
+## 17. Result Record And Role Reporting
 
-Each implementation slice should produce a result report with:
+Preserve acceptance, architecture, parity, and validation evidence in the task
+regardless of whether a compact repository Result Record is required. Create a
+Result Record only when the current conditional trigger applies, and keep it in
+the same change as the contract it records.
 
-- task goal
-- files modified
-- architecture boundary decision
-- reuse/commonization decision
-- validation commands and results
-- manual smoke status
-- excluded scope
-- known risks
-- next action
-
-For structure-impacting source changes, include a change gate block according to current project workflow.
+A Result Record is durable repository evidence, not a replacement for
+Engineering Workflow Worker/Auditor/Orchestrator reporting. Role-specific
+identity, exact-head evidence, intentional non-runs, and next-gate reporting
+remain owned by the active role contract.

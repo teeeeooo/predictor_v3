@@ -178,9 +178,10 @@ Rules:
   scroll behavior policy is owned by
   `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
 - Toolkit implementations place these values in a named layout owner.
-  For Tkinter, use `ui_tk/layout_constants.py` or an equivalent
-  toolkit-local layout owner, then import the named constants/ratios
-  into shell modules such as `ui_tk/calculator_app.py`.
+  For the current Tkinter Calculator, use
+  `apps/calculator/ui/layout_constants.py` together with shared visual tokens in
+  `ui_common/visual_tokens.py`, then import named constants/ratios into shell
+  modules such as `apps/calculator/ui/calculator_app.py`.
 - Prefer helpers based on content-requested size and screen/content
   ratios over fixed pixel dimensions. The shell may calculate geometry,
   but the policy values used by that calculation come from the owner.

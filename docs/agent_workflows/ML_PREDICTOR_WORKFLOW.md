@@ -14,8 +14,8 @@ the short routing gate.
 - New Train/Predict UI code targets PySide6 under `apps/predict/` and
   `apps/train/`; the legacy `ui/` path is retired and must not be imported by
   production Train/Predict code.
-- Do not import `optuna`, `sklearn`, `shap`, or `matplotlib` from
-  `core/predictor.py`.
+- Predict inference lives under `core/ml/inference.py`; keep
+  `core.ml.training` and training/tuning-only `optuna` out of that runtime path.
 - Canonical Data Definition owns Target/Result association and target-level policy.
   Production Train consumes an immutable registry snapshot for one generation;
   `core/ml/registry.py::MODEL_REGISTRY` is compatibility-only and must not become
@@ -36,8 +36,9 @@ the short routing gate.
   `docs/knowledge/README.md` and relevant knowledge docs.
 - ML schema/feature boundary or calculator input/output boundary:
   `docs/architecture/project_architecture.md`.
-- Project-wide architecture restructuring source input:
-  `docs/architecture/project_wide_architecture_restructuring_plan.md`.
+- The completed package-restructuring plan
+  `docs/architecture/project_wide_architecture_restructuring_plan.md` is
+  historical migration evidence only; it is not a current implementation owner.
 - Train/Predict PySide6 rewrite architecture contract:
   `docs/architecture/pyside6_train_predict_architecture.md`; design decision
   record:
@@ -47,8 +48,9 @@ the short routing gate.
   owners. Table surfaces use
   `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`; input/result surfaces use
   `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`. If no PySide6 table
-  adapter exists yet, report the adapter gap and use the toolkit-neutral table
-  contract as the acceptance contract.
+  adapter exists yet, preserve the adapter gap in task validation/evidence and
+  use the toolkit-neutral table contract as the acceptance contract. Create a
+  compact Result Record only when its normal trigger applies.
 - Project-wide responsibility boundaries:
   `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
 - DEV-only mock smoke owner: `tools/dev/mock_smoke/README.md`. It can verify
