@@ -13,9 +13,9 @@ Projection, Shared Layout B Composition, and Bulk Paste Transaction — are
 independently audited, merged, and closed. The Target applicability Owner Audit,
 Ref Qty-only product decision, focused Lane C source correction, independent
 exact-head audit, merge, and Close are also complete without relaxing full Active
-compatibility. The next gate is the separately scoped **Narrow Viewport Result
-Review Pinning Lane B Exact-Head Orchestrator Gate** over the focused worker
-candidate.
+compatibility. Narrow Viewport Result Review Pinning is also merged and closed.
+No successor source slice is currently authorized; the next step is a bounded
+product/owner decision over the remaining deferred Predict work.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -129,15 +129,14 @@ per execution while the session retains the full runtime contract; typed mapping
 aggregate status, stale/late rejection, migration, EER/COP, Result Review, and
 copy consume the same subset.
 
-### Current Gate — Narrow Viewport Result Review Pinning
+### Closed — Narrow Viewport Result Review Pinning
 
-The focused Lane B worker candidate keeps exactly `Case + 상태` visible only
-when Result Review content overflows its own viewport. It uses the existing
+The merged Lane B presentation slice keeps exactly `Case + 상태` visible only
+when Result Review content overflows its own viewport. It reuses the existing
 shared standalone/embedded workspace, canonical projection, model, selection,
-copy, and generation rebind owners. The next action is its exact-head
-Orchestrator gate. Do not reopen Target applicability, Active compatibility,
-export, Predict-to-Calculate, training, or schema work in this presentation
-gate.
+copy, and generation rebind owners without reopening Target applicability or
+Active compatibility. Future export, Predict-to-Calculate, training, or schema
+work remains separately authorized.
 
 ### Later — Production ML Readiness / Calculator Integration
 
@@ -157,9 +156,9 @@ gate.
   wording redesign, model training workflow, ML feature/schema changes,
   Calculator formula changes, and packaging/deployment are not automatically part
   of the first Predict input overhaul scope.
-- Narrow Viewport Result Review Pinning remains a separate presentation slice
-  after the Target applicability correctness repair; CSV/XLSX export and
-  multi-point Predict-to-Calculate remain later separately approved work.
+- Narrow Viewport Result Review Pinning is closed. CSV/XLSX export and multi-point
+  Predict-to-Calculate remain later separately approved work; neither is an
+  authorized successor source slice yet.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.

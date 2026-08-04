@@ -49,16 +49,17 @@
   Headerless TSV now lands through one generation-ordered canonical transaction
   with final-combination Mapping/autofill, precise issue reconciliation, atomic
   rollback, affected-only result invalidation, and fail-closed compound undo.
-- Narrow Viewport Result Review Pinning has a focused Lane B worker candidate:
-  Result Review alone keeps `Case + 상태` visible when its canonical columns
-  overflow, while the remaining columns retain internal horizontal scrolling
-  over the same model, selection, vertical position, copy path, and generation
-  rebind. Input Authoring and shell geometry remain unchanged.
+- Narrow Viewport Result Review Pinning is merged and closed. Result Review alone
+  keeps `Case + 상태` visible when its canonical columns overflow, while the
+  remaining columns retain internal horizontal scrolling over the same model,
+  selection, vertical position, copy path, and generation rebind. Input Authoring
+  and shell geometry remain unchanged.
 
 ## Next Action
 
-Run the **Narrow Viewport Result Review Pinning Lane B Exact-Head Orchestrator
-Gate** against the focused worker candidate. Do not merge from the worker lane.
+No successor source slice is currently authorized. The next action is a bounded
+product/owner decision over the remaining deferred Predict work before any new
+implementation begins.
 
 ## Active Decisions / Blockers
 
@@ -106,8 +107,8 @@ Gate** against the focused worker candidate. Do not merge from the worker lane.
 - Standalone and embedded Predict must use the same canonical session, shared
   Layout B workspace implementation, and Predict-owned workspace-state policy.
 - Keep root-level horizontal scrolling prohibited. Result Review table scrolling
-  remains internal; the Lane B candidate pins exactly `Case + 상태` only when
-  the Result Review content exceeds its own viewport.
+  remains internal; the closed narrow-viewport presentation pins exactly
+  `Case + 상태` only when Result Review content exceeds its own viewport.
 - Treat closed Slices 1–6 as upstream contracts. Do not fold export, Calculate
   integration, Target-registry changes, or viewport-pinning work into the
   correctness repair without separate approval.
@@ -144,11 +145,11 @@ Gate** against the focused worker candidate. Do not merge from the worker lane.
 4. **Case-Scoped Target Applicability Lane C Source Correction — complete:**
    independently audited, merged, and closed without relaxing Active compatibility.
 5. **Fresh independent exact-head Lane C audit and Close — complete.**
-6. **Narrow Viewport Result Review Pinning — worker candidate complete:** exact
-   `Case + 상태` responsive anchor with the exact-head Orchestrator gate next;
-   do not reopen the closed correctness repair.
-7. **Separately approved deferred work:** CSV/XLSX export, multi-point
-   Predict-to-Calculate, and other deferred product work.
+6. **Narrow Viewport Result Review Pinning — merged and closed:** exact
+   `Case + 상태` responsive anchor without reopening the closed correctness repair.
+7. **Successor product/owner decision — next:** choose and bound any future work
+   before authorizing a new source slice; CSV/XLSX export and multi-point
+   Predict-to-Calculate remain deferred candidates.
 
 ## Minimal Anchors
 

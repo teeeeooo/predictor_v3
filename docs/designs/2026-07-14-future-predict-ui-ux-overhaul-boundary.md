@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved boundary; Slices 1–6 and Case-Scoped Target Applicability correction independently audited, merged, and closed; Narrow Viewport Result Review Pinning Lane B worker candidate complete, exact-head Orchestrator gate next
+Status: approved boundary; Slices 1–6, Case-Scoped Target Applicability correction, and Narrow Viewport Result Review Pinning are merged and closed; no successor source slice is currently authorized
 Created: 2026-07-14
 Updated: 2026-08-04
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
@@ -21,8 +21,10 @@ This record distinguishes:
 - **Predict seams delivered by Slices 1–6**, which remain bounded by their closed
   contracts;
 - **Active compatibility invariants**, which are not Case-specific; and
-- **the Case-scoped Target applicability integration gap**, whose Owner Audit is
-  complete and whose source correction remains a separate gate.
+- **the Case-scoped Target applicability correction**, which is independently
+  audited, merged, and closed; and
+- **the narrow Result Review anchor**, which is merged and closed as a bounded
+  presentation extension over the existing shared Result Review owner.
 
 No source, test, schema, public result type, model, mapping data, Calculator
 formula, or runtime behavior changes are made by this documentation decision.
@@ -574,11 +576,10 @@ Active, and actual failure within that requested subset controls
 Complete/Partial status.
 
 The read-only Owner Audit, Ref Qty-only product decision, focused Lane C source
-correction, independent exact-head audit, merge, and Close are complete. The
-focused Narrow Viewport Result Review Pinning Lane B worker candidate is
-complete; the next gate is its independent exact-head Orchestrator review. It
-must not reopen the closed correctness repair. The default Result Review order
-and Layout B full-surface direction remain approved.
+correction, independent exact-head audit, merge, and Close are complete. Narrow
+Viewport Result Review Pinning is also merged and closed without reopening the
+correctness repair. The default Result Review order and Layout B full-surface
+direction remain approved. No successor source slice is authorized by this close.
 
 ## 9. Current Exclusions
 
@@ -618,8 +619,8 @@ formula schema, or Calculator formulas.
 
 The focused correction implements the approved requested subset without changing
 ML/Data Definition policy, runtime Target membership, or Active artifact
-compatibility and is now independently audited, merged, and closed. The Narrow
-Viewport Result Review Pinning worker candidate remains presentation-only; its
-exact-head Orchestrator gate is next. CSV/XLSX export, future multi-point
-Predict-to-Calculate integration, and other deferred product work remain
-separate and unstarted.
+compatibility and is independently audited, merged, and closed. Narrow Viewport
+Result Review Pinning is also merged and closed as a presentation-only extension.
+CSV/XLSX export, future multi-point Predict-to-Calculate integration, and other
+deferred product work remain separate and unstarted; a new source slice requires
+a bounded product/owner decision.
