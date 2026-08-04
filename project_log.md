@@ -33,6 +33,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-05 — Engineering Workflow / repository authority boundary
+
+### Decision
+
+- Engineering Workflow owns generic role/lane authority, Build → Gate → Close,
+  generic evidence reuse/re-proof, merge/synchronization/hygiene, and
+  role-specific reporting when its role contract applies.
+- `predictor_v3` separately owns project-specific hard boundaries, task routing,
+  architecture/domain/UI contracts, conditional Result Record/Memory lifecycle,
+  and repository-specific mechanical enforcement. Neither authority replaces the
+  other's responsibility.
+- `AGENT_TASK_ROUTER.md` remains task-to-owner navigation rather than a duplicate
+  generic execution workflow. Repository Result Records remain conditional
+  durable evidence and do not replace Engineering Workflow role reports.
+- Durable source: `result_reports/records/2026-08/2026-08-05-active-documentation-contract-restoration-memory-correction.md`, which supersedes the original record's Memory Review disposition while preserving the original authority evidence.
+  This entry records the process-rule decision only and does not assert PR merge,
+  audit acceptance, synchronization, or Close.
+
 ## 2026-08-04 — Predict successor sequencing decision
 
 ### Decision

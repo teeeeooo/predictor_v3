@@ -4,6 +4,19 @@
 필수이며, 세부 절차가 필요한 경우에만 `AGENT_TASK_ROUTER.md`의 matching
 route와 owner 문서를 읽는다.
 
+## Authority Relationship
+
+- 설치된 Engineering Workflow role contract가 적용되는 작업에서는 그
+  contract가 generic role/lane authority, Build → Gate → Close, evidence
+  reuse/re-proof, merge/synchronization/hygiene, role-specific reporting을 소유한다.
+- 이 repository는 project-specific hard boundary, task routing,
+  architecture/domain/UI acceptance, conditional Result Record/Memory lifecycle,
+  repository-specific mechanical enforcement를 소유한다.
+- Repository 문서는 Engineering Workflow의 generic authority를 재정의하지 않고,
+  Engineering Workflow도 이 repository의 product/domain/mechanical contract를
+  대체하지 않는다. Standalone 작업은 아래 local baseline과 matching owner를
+  그대로 따른다.
+
 ## Work Contract
 
 - 수정 전 Goal / Scope / Non-goals / Verification을 짧게 확정한다.
@@ -32,22 +45,24 @@ route와 owner 문서를 읽는다.
 ## Non-Negotiable Boundaries
 
 - `app_train.py`와 `app_predict.py`를 병합하지 않는다.
-- `core/predictor.py`에 `optuna`, `sklearn`, `shap`, `matplotlib`을
-  import하지 않는다.
-- `COLUMNS`는 `core/constants.py`, `MODEL_REGISTRY`는
-  `core/models.py`를 단일 소스로 유지한다.
+- Predict inference는 `core/ml/inference.py`와 shared ML runtime에 남기고
+  `core.ml.training` 또는 training/tuning-only `optuna` 경로를 끌어들이지 않는다.
+- Canonical Data Definition manifest/generation이 Feature/Target association과
+  target-level policy를 소유한다. `core/predictor_schema/columns.py::COLUMNS`와
+  `core/ml/registry.py::MODEL_REGISTRY`는 compatibility projection/facade이며
+  독립적인 writable SSOT로 승격하지 않는다.
 - 계산기 구현은 순수 Python을 유지하고 `numpy` / `pandas`를 사용하지
   않는다.
-- `calculate_hspf2_v2()` / `calculate_hspf2()`는 사용자 명시 지시 없이
-  수정하지 않는다.
+- Retired AHRI `calculate_hspf2_v2()`를 복원하지 않는다. 현재 HSPF2
+  facade/capability contract 변경은 명시적으로 scope된 작업에서만 수행한다.
 - `model.fit()`에 `.values` 변환을 넣지 않고 Cooling / Heating 독립
   모델과 monotone constraints를 유지한다.
 - 함수명, JSON key, public API, diagnostics schema는 승인 없이 변경하지
   않는다.
 - region config, HW candidate, ML feature, calculator result, UI table schema를
   섞지 않는다.
-- `core/`는 UI toolkit을 import하지 않고 `ui_tk/`는 PyQt를 import하지
-  않는다.
+- `core/`는 UI toolkit을 import하지 않고 현재 Tk Calculator UI
+  `apps/calculator/ui/`는 retired PyQt `ui` package를 import하지 않는다.
 - 명시적 지시 없이 구조 개선이나 unrelated refactor를 시작하지 않는다.
 
 ## Code And Design Gate
@@ -68,7 +83,7 @@ route와 owner 문서를 읽는다.
 
 ## Conditional Result Records
 
-ordinary 변경은 result report를 작성하지 않는다. 다음 경우에만 compact
+ordinary 변경은 compact Result Record를 작성하지 않는다. 다음 경우에만
 record를 만든다.
 
 - architecture/owner, schema/public API, calculator formula/golden/config
@@ -97,7 +112,8 @@ Memory Review Gate를 수행한다. 상세 owner는
 
 ## Final Output
 
-변경 작업의 기본 terminal/final 형식:
+Standalone repository 작업의 최소 terminal/final status는 다음 형식을 사용할 수
+있다.
 
 ```text
 modified: <paths | none>
@@ -107,4 +123,7 @@ push: <remote/branch + OK/NG | not requested>
 report: <path | not created>
 ```
 
-상세 설명이 필요한 failure/risk만 이 형식 위에 짧게 추가한다.
+이 다섯 field는 repository-local compact status이며, 설치된 Engineering Workflow
+Worker/Auditor/Orchestrator의 role-specific reporting requirement를 대체하거나
+축소하지 않는다. Role contract가 적용되면 decision-bearing evidence와 next gate를
+그 contract에 맞게 추가한다.

@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-이 문서는 EN14825 계산 경로를 수정하거나 검증하는 개발자와 AI Agent를 위한 구현 지침이다. 기준 동작은 `core/calculators/standards/en14825.py`, `data/region_configs/en14825_scop.json`, `tests/test_en14825_golden.py`와 반드시 일치해야 한다. PDF는 Clause/Table/Equation 번호 확인용 Secondary 자료로만 사용한다.
+이 문서는 EN14825 계산 경로를 수정하거나 검증하는 개발자와 AI Agent를 위한 구현 지침이다. 기준 동작은 `core/calculators/standards/en14825.py`, unified owner `data/region_configs/en14825.json`, `tests/test_en14825_golden.py`와 반드시 일치해야 한다. PDF는 Clause/Table/Equation 번호 확인용 Secondary 자료로만 사용한다.
 
 핵심 목적은 계산 순서, 입력 단위, 보간 규칙, Cd 적용 조건, golden 검증을 재현 가능하게 만드는 것이다. EN14825는 bin hour와 운전 모드 시간이 최종 지표에 직접 들어가므로, 작은 schema 오해가 SEER/SCOP 전체를 바꿀 수 있다. 근거: EN14825:2012 Table 36, Table 37, Annex D Table D.1~D.4.
 
@@ -47,8 +47,8 @@
 | --- | --- | --- | --- |
 | cooling bin temps/hours | `core/calculators/standards/en14825.py` constants | Table 36 냉방 bin | 현재 상수로 고정 |
 | cooling test points | `calculate_seer(test_points=...)` | A/B/C/D capacity/power | key 누락, 0 이하 값 금지 |
-| SCOP climate data | `data/region_configs/en14825_scop.json` | Table 37, Tdesignh, Tbiv/TOL limits | length, non-negative hour, total hour 검증 |
-| SCOP operational hours | `data/region_configs/en14825_scop.json` | Annex D Table D.2/D.4 | appliance_type/climate key 검증 |
+| SCOP climate data | `data/region_configs/en14825.json` `scop` section | Table 37, Tdesignh, Tbiv/TOL limits | length, non-negative hour, total hour 검증 |
+| SCOP operational hours | `data/region_configs/en14825.json` `scop` section | Annex D Table D.2/D.4 | appliance_type/climate key 검증 |
 | SCOP test points | `calculate_scop(test_points=...)` | A/B/C/D/TOL/Tbiv declared point | dict 또는 tuple 허용, capacity/power 0 이하 금지 |
 | SCOP source metadata | `calculate_scop()` return | JSON source block | 문서와 결과 추적용 |
 
@@ -281,5 +281,5 @@ AGENTS.md를 먼저 읽고, 수정 범위를 core/calculators/standards/en14825.
 ### JSON 데이터 변경
 
 ```text
-AGENTS.md와 docs/en14825/en14825_notes.md를 먼저 읽어라. data/region_configs/en14825_scop.json의 Table 37 또는 Annex D 값을 변경할 때는 출처 메타데이터를 유지하고, temperature/hour 길이와 heating_bin_hours_total이 일치하는지 확인하라.
+AGENTS.md와 docs/en14825/en14825_notes.md를 먼저 읽어라. unified `data/region_configs/en14825.json`의 `scop` section에서 Table 37 또는 Annex D 값을 변경할 때는 출처 메타데이터를 유지하고, temperature/hour 길이와 heating_bin_hours_total이 일치하는지 확인하라.
 ```

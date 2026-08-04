@@ -80,13 +80,8 @@ default first reads.
 
 ## Commit/Git Sync Status
 
-When commit/push is requested, mention only sync judgments that matter to the
-change. The universal final fields remain:
-
-```text
-modified:
-validation:
-commit:
-push:
-report:
-```
+When commit/push is in scope, mention only document-sync judgments that matter to
+the change. `AGENTS.md` defines an optional repository-local compact status
+block; an active Engineering Workflow role contract may require additional
+role-specific reporting and next-gate evidence. This lifecycle owner does not
+redefine generic Git/merge/reporting procedure.

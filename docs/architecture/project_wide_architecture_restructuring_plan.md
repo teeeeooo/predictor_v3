@@ -2,9 +2,11 @@
 
 ## Role and scope
 
-This document records the project-wide architecture audit result and restructuring plan for `predictor_v3`.
+This document preserves the historical project-wide architecture audit and package-restructuring plan for `predictor_v3`.
 
-It is intended to be used as the source input for the next Architecture SSOT update. It does not implement the migration by itself, and it does not authorize behavior changes to calculator formulas, ML algorithms, model artifacts, fixtures, golden data, or public result contracts.
+The package migration described here is complete. This file is historical source evidence for why the current package boundaries were chosen; it is not a current implementation owner, work authorization, or inbound architecture contract. Current authority lives in `docs/architecture/project_architecture.md` plus the matching workflow/domain owner. Historical paths and migration steps below are retained as evidence and must not override current source identity.
+
+This document does not authorize behavior changes to calculator formulas, ML algorithms, model artifacts, fixtures, golden data, or public result contracts.
 
 The key decision is:
 

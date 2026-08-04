@@ -17,14 +17,19 @@ Feature engineering must therefore preserve this separation:
 
 ## Current Feature Sources
 
-The current base feature pool is defined in `core/constants.py` as `BASE_FEATURES`.
+The current compatibility exports `BASE_FEATURES`, `DERIVED_FEATURES`, and
+`TARGETS` live in `core/ml/features.py` and are projected from the validated ML
+feature catalog. Generation-specific Feature/Target authority and target policy
+belong to canonical Data Definition plus the immutable
+`ModelRegistrySnapshot`; `core/ml/registry.py::MODEL_REGISTRY` remains a generated
+compatibility facade rather than a writable owner.
 
-It includes:
+The base candidate pool includes:
 - point performance columns: cooling/heating capacity, power, and frequency;
 - hardware dimensions: indoor/outdoor volume, evaporator/condenser area and volume;
 - compressor and refrigerant information: compressor EER, compressor cc, refrigerant one-hot columns, expansion-device one-hot columns, and refrigerant quantity.
 
-This is a candidate pool, not a global mandatory feature list. The final feature set depends on the model target and `MODEL_REGISTRY` rules.
+This is a candidate pool, not a global mandatory feature list. Production training applies the generation-bound `ModelRegistrySnapshot` Target policy to the ordered input pool for each target; compatibility `MODEL_REGISTRY` output is not the policy owner.
 
 ## Cooling / Heating Separation
 
@@ -42,7 +47,7 @@ Examples:
 - power-derived features are leakage for power target prediction if they use the power value being predicted;
 - measured capacity or power from other existing test points can be a feature source only when it does not include the target point's measured answer.
 
-The current `prepare_pipeline()` implementation visibly drops the active target columns plus the global `TARGETS` list before building `X`. `MODEL_REGISTRY.target_rules` defines the target-specific `exclude` or `allowed` boundary that model orchestration should apply around that candidate feature pool. These rules are the current feature boundary reference, not a claim that every base feature is mandatory for every model.
+The current `prepare_pipeline()` path uses the generation-bound registry snapshot when provided to remove active Targets and construct the ordered input pool. Production training then applies the selected runtime Target policy through the canonical target-registry owner before fitting. Compatibility `TARGETS`/`MODEL_REGISTRY` remain bootstrap/import facades, not an independent source of target policy.
 
 ## XGBoost RFE Feature Selection Pattern
 

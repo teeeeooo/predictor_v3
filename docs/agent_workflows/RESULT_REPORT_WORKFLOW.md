@@ -2,10 +2,15 @@
 
 ## Role
 
-This document owns conditional result-record triggers, record shape, discovery
-index, terminal status, and commit/push handling.
+This document owns the repository-specific conditional Result Record lifecycle:
+trigger classification, record shape/path, discovery index, append-only history,
+Memory Review coupling, and required same-change atomicity.
 
-Ordinary tracked-file changes do not require a report.
+It does not own generic Engineering Workflow role reporting, evidence re-proof,
+or merge/synchronization procedure. A compact Result Record is durable repository
+evidence; it is not the Worker/Auditor/Orchestrator final report.
+
+Ordinary tracked-file changes do not require a Result Record.
 
 ## Required Record Triggers
 
@@ -114,35 +119,34 @@ The broader Memory Review Gate also applies at milestone/branch closeout,
 explicit handoff, and return to a long-paused workstream. Its owner is
 `PROJECT_LOG_AND_MEMORY.md`.
 
-## Verification Budget
+## Verification Evidence
 
-- Run focused behavior/tool tests once against the final implementation.
-- Run structure/staged checks only when their owned surface changed.
-- Do not rerun a passing command unless relevant evidence changed.
-- Record skipped stronger verification only when it leaves a meaningful risk.
+A Result Record preserves the decision-bearing validation evidence produced by
+the matching workflow/domain owner and, when applicable, the active Engineering
+Workflow role. This document does not create a second generic validation budget
+or require rerunning evidence merely because a record exists. Note a meaningful
+weaker/skipped verification when it changes the confidence of the recorded
+contract decision.
 
-## Commit And Push
+## Commit Atomicity
 
-- Commit and push require explicit user authorization.
 - A required compact record is included in the same commit as its source/docs
   changes.
+- The Result Record requirement does not itself grant commit/push authority;
+  authorization and generic Git handling come from the active task/role contract.
 - Do not put a commit hash in the record. Git history already associates the
   record and diff.
-- Use a separate report-only commit only when the user explicitly requests it.
+- Use a separate report-only commit only when explicitly required by the task.
 - Do not create self-referential hash update loops.
 
-## Terminal Output
+## Terminal Status
 
-Use the five-field result:
-
-```text
-modified: <paths | none>
-validation: <passed/failed/skipped + short scope>
-commit: <hash | not requested | not performed>
-push: <remote/branch + OK/NG | not requested>
-report: <path | not created>
-```
+For standalone repository work, the five-field block in `AGENTS.md` is a compact
+local status summary. It is not a complete Worker/Auditor/Orchestrator reporting
+contract and does not suppress successful decision-bearing evidence required by
+an active Engineering Workflow role.
 
 When push is performed, resolve and compare the actual remote branch SHA before
-claiming `OK`. Add prose only for failures, weaker verification, or residual
-risks that are not clear from these fields.
+claiming `OK`. Role-specific final reporting and next-gate evidence follow the
+active role contract; the `report` field only states whether a repository Result
+Record was created.

@@ -86,7 +86,7 @@ complete:
 - If that shape does not fit, introduce or reuse an equivalent common Tk
   adapter that exposes cell metadata and implements the same Excel-like
   interaction contract.
-- When a new adapter/controller is introduced, the result report must state
+- When a new adapter/controller is introduced, task validation/evidence must state
   why the reference implementation could not be reused and list the
   controller-level parity tests that cover the common checklist.
 - Do not treat a standalone `Entry`/`Label` grid as a compliant table UX.
@@ -107,7 +107,8 @@ source of truth, owner doc, dependency, vendor target, or copy target for
 `predictor_v3` should build its own common Tk table foundation. New Tkinter
 table-shaped UI should use that foundation once it exists; until then, a new
 standalone controller must explain why the existing table foundation cannot be
-used and must list controller-level parity tests in the result report. Avoid
+used and must list controller-level parity tests in task validation/evidence.
+This parity requirement does not itself trigger a compact Result Record. Avoid
 creating independent Entry/Label-grid controllers for each feature.
 
 ## 4. Implementing the baseline on an Entry grid

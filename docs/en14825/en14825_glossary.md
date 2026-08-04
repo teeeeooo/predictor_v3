@@ -66,4 +66,4 @@
 | `total_kwh` | number | SCOP return dict | 활성 난방 에너지와 보조 운전 모드 에너지의 합이다. |
 | `bin_details` | list | SCOP return dict | bin별 난방 부하, 용량, COPPL, elbu, denominator 기여량, 운전 케이스를 담는다. |
 | `unimplemented_notes` | list 또는 string | SCOP return dict | 현재 구현 제한과 미지원 범위 설명이다. |
-| `data/region_configs/en14825_scop.json` | JSON | project data | Table 37 난방 bin, 기후별 Tdesignh, TOL/Tbiv 제한, Annex D 운전 시간을 담는다. 문서 작업에서는 수정하지 않는다. |
+| `data/region_configs/en14825.json` `scop` section | JSON | project data | Table 37 난방 bin, 기후별 Tdesignh, TOL/Tbiv 제한, Annex D 운전 시간을 담는 current unified config owner다. 문서 작업에서는 수정하지 않는다. |
