@@ -54,16 +54,19 @@
   remaining columns retain internal horizontal scrolling over the same model,
   selection, vertical position, copy path, and generation rebind. Input Authoring
   and shell geometry remain unchanged.
+- Result Review CSV v1 is merged and closed. Selected Result Review rows now
+  publish through the existing full-row application document in canonical Case
+  order, retaining raw numeric evidence, provenance, issues, and stale/unavailable
+  semantics without a second mutable export schema or new dependency.
 
 ## Next Action
 
-**Result Review CSV v1** is the next authorized source candidate. Its first slice
-reuses the existing Result Review application document as the export source and
-is limited to selected Result Review rows in canonical Case order with canonical
-raw numeric evidence and existing execution/model/runtime provenance and issues.
-No selection does not expand to all rows, and this slice does not introduce a new
-mutable Result/export schema, XLSX support, Calculator integration, or dependency
-changes.
+**Agent Work-Contract Audit** is next. It is a read-only review of the current
+repository-specific AGENTS/router/workflow/validation/change-gate ownership and
+its overlap with the generic Engineering Workflow contract. It must decide
+whether meaningful responsibility/navigation drift exists before any rewrite is
+authorized; no meaningful drift may close without source or documentation
+contract changes.
 
 ## Active Decisions / Blockers
 
@@ -155,14 +158,14 @@ changes.
 5. **Fresh independent exact-head Lane C audit and Close — complete.**
 6. **Narrow Viewport Result Review Pinning — merged and closed:** exact
    `Case + 상태` responsive anchor without reopening the closed correctness repair.
-7. **Result Review CSV v1 — next authorized source candidate:** reuse the
-   canonical Result Review application document for selected-row CSV only; keep
-   canonical Case order, raw numeric evidence, provenance, and issues without a
-   new mutable export schema.
-8. **Agent Work-Contract Audit — required after CSV v1 Close:** read-only review
-   of repository-specific AGENTS/router/workflow/validation/change-gate ownership
-   and duplicated generic workflow rules. Meaningful drift may authorize a
-   separate Contract Improvement; no drift may pass without rewrite.
+7. **Result Review CSV v1 — merged and closed:** selected-row CSV publication now
+   reuses the canonical Result Review application document, preserving canonical
+   Case order, raw numeric evidence, provenance, issues, and existing copy/pinning
+   ownership without a new mutable export schema or dependency.
+8. **Agent Work-Contract Audit — next:** read-only review of repository-specific
+   AGENTS/router/workflow/validation/change-gate ownership and duplicated generic
+   Engineering Workflow rules. Meaningful drift may authorize a separate Contract
+   Improvement; no drift may pass without rewrite.
 9. **XLSX product/dependency decision — separate approval gate:** keep XLSX out
    of CSV v1 and decide any writer/packaging/runtime dependency before a follow-up
    source slice.

@@ -13,10 +13,10 @@ Projection, Shared Layout B Composition, and Bulk Paste Transaction — are
 independently audited, merged, and closed. The Target applicability Owner Audit,
 Ref Qty-only product decision, focused Lane C source correction, independent
 exact-head audit, merge, and Close are also complete without relaxing full Active
-compatibility. Narrow Viewport Result Review Pinning is also merged and closed.
-The successor sequencing decision is now recorded: Result Review CSV v1 is the
-next authorized source candidate, followed by an Agent Work-Contract read-only
-audit and the remaining separately approved export/integration decision gates.
+compatibility. Narrow Viewport Result Review Pinning and Result Review CSV v1 are
+also merged and closed. The next milestone is the read-only Agent Work-Contract
+Audit, followed by the remaining separately approved export/integration decision
+gates.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -139,13 +139,20 @@ copy, and generation rebind owners without reopening Target applicability or
 Active compatibility. Future export, Predict-to-Calculate, training, or schema
 work remains separately authorized.
 
+### Closed — Result Review CSV v1
+
+The merged Lane B export slice publishes only selected Result Review rows through
+the existing canonical full-row application document. CSV preserves canonical
+Case order, raw numeric evidence, execution/model/runtime provenance, issues, and
+stale/unavailable semantics while keeping filesystem publication and Qt path
+selection outside canonical Predict state. Existing Result copy, Input copy/paste,
+viewport pinning, shared standalone/embedded composition, and dependency boundaries
+remain unchanged.
+
 ### Next — Predict Successor Sequencing
 
-- Result Review CSV v1 is first. It reuses the canonical Result Review application
-  document for selected rows only and preserves canonical Case order, raw numeric
-  evidence, provenance, and issues without creating a mutable export schema.
-- After CSV v1 Close, perform a read-only Agent Work-Contract audit. Rewrite only
-  if that audit finds meaningful responsibility/navigation drift.
+- Perform the read-only Agent Work-Contract audit next. Rewrite only if that audit
+  finds meaningful responsibility/navigation drift.
 - Keep XLSX behind its own product/dependency approval rather than bundling it
   into CSV v1.
 - Before multi-point source integration, make a separate Predict Case → Standard
@@ -171,9 +178,9 @@ work remains separately authorized.
   wording redesign, model training workflow, ML feature/schema changes,
   Calculator formula changes, and packaging/deployment are not automatically part
   of the first Predict input overhaul scope.
-- Narrow Viewport Result Review Pinning is closed. Result Review CSV v1 is the
-  authorized successor source candidate; XLSX and multi-point Predict-to-Calculate
-  remain separately gated follow-up work and are not implied by that authorization.
+- Narrow Viewport Result Review Pinning and Result Review CSV v1 are closed.
+  XLSX and multi-point Predict-to-Calculate remain separately gated follow-up
+  work and are not implied by the completed CSV slice.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.

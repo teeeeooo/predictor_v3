@@ -61,6 +61,15 @@
   request decision → multi-point implementation. The next gate is a **Result
   Review CSV v1 Lane B Worker**.
 
+### Completion
+
+- Result Review CSV v1 completed its Lane B Gate and guarded merge. Selected-row
+  CSV now reuses the canonical full-row Result Review document, keeps raw numeric
+  evidence/provenance/issues and stale/unavailable semantics, and adds no XLSX,
+  dependency, Calculator, ML/schema, or persisted/public contract change.
+- The next gate is the read-only **Agent Work-Contract Audit** already defined by
+  this sequencing decision.
+
 ## 2026-08-02 — Case-scoped Target applicability source correction
 
 ### Decision
