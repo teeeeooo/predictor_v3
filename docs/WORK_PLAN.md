@@ -57,9 +57,13 @@
 
 ## Next Action
 
-No successor source slice is currently authorized. The next action is a bounded
-product/owner decision over the remaining deferred Predict work before any new
-implementation begins.
+**Result Review CSV v1** is the next authorized source candidate. Its first slice
+reuses the existing Result Review application document as the export source and
+is limited to selected Result Review rows in canonical Case order with canonical
+raw numeric evidence and existing execution/model/runtime provenance and issues.
+No selection does not expand to all rows, and this slice does not introduce a new
+mutable Result/export schema, XLSX support, Calculator integration, or dependency
+changes.
 
 ## Active Decisions / Blockers
 
@@ -117,13 +121,17 @@ implementation begins.
 
 ## Deferred / Hold
 
-- Result graph or Advanced surface, CSV/XLSX file export and export dialogs,
-  Train navigation, lifecycle
-  wording redesign, model training workflow, ML feature/schema changes,
-  calculator formula changes, and packaging/deployment require separate approval
-  or follow-up workstreams.
-- CSPF/HSPF2 requires a future multi-point Predict-to-Calculate contract and is
-  not a current Result Review capability.
+- Result graph or Advanced surface, Train navigation, lifecycle wording redesign,
+  model training workflow, ML feature/schema changes, calculator formula changes,
+  and packaging/deployment require separate approval or follow-up workstreams.
+- XLSX remains in the Result Review Export workstream but is not part of CSV v1.
+  Its product/dependency decision is a separate approval gate; no Excel writer,
+  packaging, or runtime dependency is implied by the CSV slice.
+- Multi-point Predict-to-Calculate source integration remains on hold. Calculator
+  already has a `PredictedPointsEnvelope`/adapter foundation; the missing product
+  decision is how multiple canonical Predict Cases/execution results are assembled
+  with authoritative semantics into one standard operating-point set/request for
+  the existing Calculator envelope/application boundary.
 - Process-restart view-state persistence, a persistent selected-case detail
   panel, a separate Full Context screen, and legacy split-table restoration are
   outside the first implementation.
@@ -147,9 +155,24 @@ implementation begins.
 5. **Fresh independent exact-head Lane C audit and Close — complete.**
 6. **Narrow Viewport Result Review Pinning — merged and closed:** exact
    `Case + 상태` responsive anchor without reopening the closed correctness repair.
-7. **Successor product/owner decision — next:** choose and bound any future work
-   before authorizing a new source slice; CSV/XLSX export and multi-point
-   Predict-to-Calculate remain deferred candidates.
+7. **Result Review CSV v1 — next authorized source candidate:** reuse the
+   canonical Result Review application document for selected-row CSV only; keep
+   canonical Case order, raw numeric evidence, provenance, and issues without a
+   new mutable export schema.
+8. **Agent Work-Contract Audit — required after CSV v1 Close:** read-only review
+   of repository-specific AGENTS/router/workflow/validation/change-gate ownership
+   and duplicated generic workflow rules. Meaningful drift may authorize a
+   separate Contract Improvement; no drift may pass without rewrite.
+9. **XLSX product/dependency decision — separate approval gate:** keep XLSX out
+   of CSV v1 and decide any writer/packaging/runtime dependency before a follow-up
+   source slice.
+10. **Predict Case → Standard Predicted Points / Standard Request decision —
+    mandatory before multi-point source work:** define how canonical Predict
+    Cases/execution evidence become one standard operating-point set/request while
+    reusing Calculator envelope/application ownership.
+11. **Multi-point Predict → Calculate implementation — held** until the preceding
+    decision gates close; Predict must not copy Calculator formulas or replace the
+    Calculator owner.
 
 ## Minimal Anchors
 

@@ -14,8 +14,9 @@ independently audited, merged, and closed. The Target applicability Owner Audit,
 Ref Qty-only product decision, focused Lane C source correction, independent
 exact-head audit, merge, and Close are also complete without relaxing full Active
 compatibility. Narrow Viewport Result Review Pinning is also merged and closed.
-No successor source slice is currently authorized; the next step is a bounded
-product/owner decision over the remaining deferred Predict work.
+The successor sequencing decision is now recorded: Result Review CSV v1 is the
+next authorized source candidate, followed by an Agent Work-Contract read-only
+audit and the remaining separately approved export/integration decision gates.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -138,11 +139,25 @@ copy, and generation rebind owners without reopening Target applicability or
 Active compatibility. Future export, Predict-to-Calculate, training, or schema
 work remains separately authorized.
 
+### Next — Predict Successor Sequencing
+
+- Result Review CSV v1 is first. It reuses the canonical Result Review application
+  document for selected rows only and preserves canonical Case order, raw numeric
+  evidence, provenance, and issues without creating a mutable export schema.
+- After CSV v1 Close, perform a read-only Agent Work-Contract audit. Rewrite only
+  if that audit finds meaningful responsibility/navigation drift.
+- Keep XLSX behind its own product/dependency approval rather than bundling it
+  into CSV v1.
+- Before multi-point source integration, make a separate Predict Case → Standard
+  Predicted Points / Standard Request product-owner decision.
+
 ### Later — Production ML Readiness / Calculator Integration
 
 - Validate production model/data availability, prediction quality, physical
   trends, and feature importance only through an explicitly approved workstream.
-- Define a predicted-points/result envelope for Calculator handoff.
+- Reuse the existing `PredictedPointsEnvelope` and Calculator adapter foundation;
+  the remaining Predict-side gap is authoritative assembly of multiple canonical
+  Case/execution results into one standard operating-point set/request.
 - Expand Calculator input adapters only through approved owner boundaries.
 - Keep seasonal calculation, ranking, and recommendation work separate from the
   Predict input foundation and protected formula ownership.
@@ -156,9 +171,9 @@ work remains separately authorized.
   wording redesign, model training workflow, ML feature/schema changes,
   Calculator formula changes, and packaging/deployment are not automatically part
   of the first Predict input overhaul scope.
-- Narrow Viewport Result Review Pinning is closed. CSV/XLSX export and multi-point
-  Predict-to-Calculate remain later separately approved work; neither is an
-  authorized successor source slice yet.
+- Narrow Viewport Result Review Pinning is closed. Result Review CSV v1 is the
+  authorized successor source candidate; XLSX and multi-point Predict-to-Calculate
+  remain separately gated follow-up work and are not implied by that authorization.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.

@@ -33,6 +33,34 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-04 — Predict successor sequencing decision
+
+### Decision
+
+- Authorize **Result Review CSV v1** as the immediate successor source slice.
+  Reuse the canonical Result Review application document, export selected rows
+  only in canonical Case order, retain raw numeric evidence/provenance/issues,
+  and do not create a mutable Result/export schema. No selection does not imply
+  all-row export.
+- After CSV v1 Close, require a read-only **Agent Work-Contract Audit** over
+  repository-specific AGENTS/router/workflow/validation/change-gate ownership and
+  duplicated generic Engineering Workflow rules. Contract Improvement is a
+  separate follow-up only if meaningful drift is found; no drift may pass without
+  rewrite.
+- Keep XLSX outside CSV v1 behind a separate product/dependency decision and
+  optional follow-up source slice; this decision adds no Excel writer, packaging,
+  or runtime dependency.
+- Keep multi-point Predict-to-Calculate implementation held behind a separate
+  **Predict Case → Standard Predicted Points / Standard Request** product-owner
+  decision. Calculator already provides `PredictedPointsEnvelope` and adapter
+  foundation; the unresolved boundary is authoritative assembly of multiple
+  canonical Predict Case/execution results into one standard operating-point
+  set/request. Predict does not copy Calculator formulas or replace its owner.
+- Sequence near-term work as CSV v1 → Agent Work-Contract Audit → optional
+  Contract Improvement → XLSX decision/optional follow-up → Predict Case/standard
+  request decision → multi-point implementation. The next gate is a **Result
+  Review CSV v1 Lane B Worker**.
+
 ## 2026-08-02 — Case-scoped Target applicability source correction
 
 ### Decision

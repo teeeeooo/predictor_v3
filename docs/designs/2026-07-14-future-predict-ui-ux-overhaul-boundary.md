@@ -1,6 +1,6 @@
 # Predict Input/Result Overhaul — Approved Product and Integration Boundary
 
-Status: approved boundary; Slices 1–6, Case-Scoped Target Applicability correction, and Narrow Viewport Result Review Pinning are merged and closed; no successor source slice is currently authorized
+Status: approved closed boundary; Slices 1–6, Case-Scoped Target Applicability correction, and Narrow Viewport Result Review Pinning are merged and closed; successor sequencing is owned by `docs/WORK_PLAN.md`
 Created: 2026-07-14
 Updated: 2026-08-04
 Prerequisite: Train/Admin Phases 1–5 and Predict Findings #1–#7 complete
