@@ -259,25 +259,34 @@ def test_stale_clipboard_exports_historical_capacity_and_power_not_current_edit(
     )
     case.set_input_value("cooling_capa", 9999)
 
-    grid_row = composition.result_review_projection.clipboard_document(
-        (case.case_id,)
-    ).grid()[1]
+    document = composition.result_review_projection.clipboard_document((case.case_id,))
+    grid_row = document.grid()[1]
+    csv_row = list(csv.reader(StringIO(document.to_csv())))[1]
 
     assert grid_row[2] == 3500.0
     assert grid_row[1] == "완료 · 오래됨 (재실행 필요)"
     assert grid_row[10] == 987.654321
     assert grid_row[12] == "stale"
     assert grid_row[14] == accepted.execution_context.run_id
+    assert csv_row[2] == "3500.0"
+    assert csv_row[10] == "987.654321"
+    assert csv_row[12] == "stale"
+    assert csv_row[14] == accepted.execution_context.run_id
 
 
 def test_unavailable_clipboard_cells_are_blank_not_numeric_placeholders():
     composition = _composition()
     case_id = composition.session.case_order[0]
-    row = composition.result_review_projection.clipboard_document((case_id,)).grid()[1]
+    document = composition.result_review_projection.clipboard_document((case_id,))
+    row = document.grid()[1]
+    csv_row = list(csv.reader(StringIO(document.to_csv())))[1]
 
     assert row[2:4] == ("", "")
     assert row[5:10] == ("", "", "", "", "")
     assert row[10:12] == ("", "")
+    assert csv_row[2:4] == ["", ""]
+    assert csv_row[5:10] == ["", "", "", "", ""]
+    assert csv_row[10:12] == ["", ""]
 
 
 def test_clipboard_tsv_preserves_summary_source_tabs_and_newlines():
@@ -293,3 +302,34 @@ def test_clipboard_tsv_preserves_summary_source_tabs_and_newlines():
     assert len(decoded) == 2
     assert decoded[1][4] == document.source_rows[0].specification_summary
     assert "IDU\tA\nfull" in decoded[1][4]
+
+
+def test_csv_reuses_full_row_grid_and_round_trips_special_text_and_raw_values():
+    composition = _composition(2)
+    first, second = composition.session.case_order
+    for case_id in (first, second):
+        case = composition.session.case_store.get_case(case_id)
+        _fill_case(case, cooling=2835.100025, heating=4200.654321)
+        _accept(
+            composition,
+            case_id,
+            values={"cooling_power": 1000.123456789},
+            message='문제, "quoted"\nnext line' if case_id == first else "",
+        )
+    composition.session.case_store.get_case(first).input_values["idu"] = (
+        '한글, "quoted"\tvalue\nnext line'
+    )
+    document = composition.result_review_projection.clipboard_document((second, first))
+
+    decoded = list(csv.reader(StringIO(document.to_csv())))
+    expected = [
+        ["" if cell is None else str(cell) for cell in row]
+        for row in document.grid()
+    ]
+
+    assert decoded == expected
+    assert [row[0] for row in decoded[1:]] == ["1", "2"]
+    assert decoded[1][5] == str(document.source_rows[0].eer.raw_value)
+    assert '한글, "quoted"\tvalue\nnext line' in decoded[1][4]
+    issue_messages = document.headers.index("issue messages")
+    assert decoded[1][issue_messages] == '문제, "quoted"'

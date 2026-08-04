@@ -55,7 +55,11 @@ class ResultReviewClipboardDocument:
         return (self.headers,) + tuple(_clipboard_row(row) for row in self.source_rows)
 
     def to_tsv(self) -> str:
-        return _format_tsv(self.grid())
+        return _format_delimited(self.grid(), delimiter="\t")
+
+    def to_csv(self) -> str:
+        """Serialize the same logical full-row document as RFC-style CSV."""
+        return _format_delimited(self.grid(), delimiter=",")
 
 
 def _clipboard_row(row: ResultReviewRow) -> tuple[object, ...]:
@@ -125,8 +129,10 @@ def _finite_or_blank(value: object | None) -> object:
     return value
 
 
-def _format_tsv(grid: tuple[tuple[object, ...], ...]) -> str:
+def _format_delimited(
+    grid: tuple[tuple[object, ...], ...], *, delimiter: str
+) -> str:
     stream = StringIO(newline="")
-    writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+    writer = csv.writer(stream, delimiter=delimiter, lineterminator="\n")
     writer.writerows(grid)
     return stream.getvalue()

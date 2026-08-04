@@ -8,6 +8,7 @@ from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 
 from apps.predict.application.result_review import (
     RESULT_REVIEW_COLUMNS,
+    ResultReviewClipboardDocument,
     ResultReviewProjection,
 )
 from apps.predict.application.result_review.presentation import (
@@ -74,11 +75,17 @@ class ResultReviewTableModel(QAbstractTableModel):
             if index in selected
         )
 
-    def copy_rows_tsv(self, row_indexes: list[int]) -> str:
+    def full_row_document_for_rows(
+        self, row_indexes: list[int]
+    ) -> ResultReviewClipboardDocument | None:
         case_ids = self.case_ids_for_rows(row_indexes)
         if not case_ids:
-            return ""
-        return self._projection.clipboard_document(case_ids).to_tsv()
+            return None
+        return self._projection.clipboard_document(case_ids)
+
+    def copy_rows_tsv(self, row_indexes: list[int]) -> str:
+        document = self.full_row_document_for_rows(row_indexes)
+        return "" if document is None else document.to_tsv()
 
     def refresh(self) -> None:
         self.beginResetModel()
