@@ -58,15 +58,17 @@
   publish through the existing full-row application document in canonical Case
   order, retaining raw numeric evidence, provenance, issues, and stale/unavailable
   semantics without a second mutable export schema or new dependency.
+- The Agent Work-Contract Audit and its bounded Active Documentation Contract
+  Restoration follow-up are independently audited, merged, and closed. Generic
+  Engineering Workflow authority and predictor_v3 project-specific authority are
+  separated without weakening domain/UI/mechanical owners.
 
 ## Next Action
 
-**Agent Work-Contract Audit** is next. It is a read-only review of the current
-repository-specific AGENTS/router/workflow/validation/change-gate ownership and
-its overlap with the generic Engineering Workflow contract. It must decide
-whether meaningful responsibility/navigation drift exists before any rewrite is
-authorized; no meaningful drift may close without source or documentation
-contract changes.
+**XLSX product/dependency decision** is next. Decide whether generated Result
+Review XLSX export should proceed, including its writer/runtime/packaging boundary,
+before authorizing any follow-up source slice. Keep multi-point Predict → Calculate
+held behind its separate Predict Case → Standard Request product-owner decision.
 
 ## Active Decisions / Blockers
 
@@ -162,12 +164,11 @@ contract changes.
    reuses the canonical Result Review application document, preserving canonical
    Case order, raw numeric evidence, provenance, issues, and existing copy/pinning
    ownership without a new mutable export schema or dependency.
-8. **Agent Work-Contract Audit — next:** read-only review of repository-specific
-   AGENTS/router/workflow/validation/change-gate ownership and duplicated generic
-   Engineering Workflow rules. Meaningful drift may authorize a separate Contract
-   Improvement; no drift may pass without rewrite.
-9. **XLSX product/dependency decision — separate approval gate:** keep XLSX out
-   of CSV v1 and decide any writer/packaging/runtime dependency before a follow-up
+8. **Agent Work-Contract Audit + bounded Contract Improvement — complete:**
+   responsibility/navigation drift was confirmed, active documentation authority
+   was restored, and the exact repaired head was independently audited and merged.
+9. **XLSX product/dependency decision — next approval gate:** keep XLSX out of
+   CSV v1 and decide any writer/packaging/runtime dependency before a follow-up
    source slice.
 10. **Predict Case → Standard Predicted Points / Standard Request decision —
     mandatory before multi-point source work:** define how canonical Predict

@@ -14,9 +14,10 @@ independently audited, merged, and closed. The Target applicability Owner Audit,
 Ref Qty-only product decision, focused Lane C source correction, independent
 exact-head audit, merge, and Close are also complete without relaxing full Active
 compatibility. Narrow Viewport Result Review Pinning and Result Review CSV v1 are
-also merged and closed. The next milestone is the read-only Agent Work-Contract
-Audit, followed by the remaining separately approved export/integration decision
-gates.
+also merged and closed. The Agent Work-Contract Audit and its bounded Active
+Documentation Contract Restoration follow-up are independently audited, merged,
+and closed. The next milestone is the separately approved XLSX product/dependency
+decision, followed by the remaining Predict-to-Calculate integration decision gate.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -151,10 +152,10 @@ remain unchanged.
 
 ### Next — Predict Successor Sequencing
 
-- Perform the read-only Agent Work-Contract audit next. Rewrite only if that audit
-  finds meaningful responsibility/navigation drift.
-- Keep XLSX behind its own product/dependency approval rather than bundling it
-  into CSV v1.
+- The Agent Work-Contract audit and resulting bounded documentation Contract
+  Improvement are complete and merged.
+- Decide the XLSX product/dependency boundary next rather than bundling it into
+  CSV v1 or assuming a writer/runtime/packaging dependency.
 - Before multi-point source integration, make a separate Predict Case → Standard
   Predicted Points / Standard Request product-owner decision.
 
