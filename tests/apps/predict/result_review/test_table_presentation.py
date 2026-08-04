@@ -3,10 +3,14 @@
 import os
 
 from PySide6.QtCore import QItemSelectionModel, Qt
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QHeaderView
 
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.ui.result_review import ResultReviewTableModel, ResultReviewTableView
+
+
+RESULT_WIDTHS = (64, 100, 100, 100, 360, 72, 72, 112, 112, 90)
 
 
 def _app() -> QApplication:
@@ -86,3 +90,81 @@ def test_composition_exposes_same_projection_seam_for_shared_shell_consumers():
 
     assert composition.result_review_projection.session is composition.session
     assert ResultReviewTableModel(composition.result_review_projection).rowCount() == 1
+
+
+def test_narrow_view_pins_only_case_and_status_with_shared_native_interactions():
+    app = _app()
+    composition = build_predict_workspace_composition(initial_empty_rows=20)
+    model = ResultReviewTableModel(composition.result_review_projection)
+    view = ResultReviewTableView()
+    view.setModel(model)
+    view.verticalHeader().setDefaultSectionSize(34)
+    view.pinned_anchor_view.verticalHeader().setDefaultSectionSize(34)
+    for column, width in enumerate(RESULT_WIDTHS):
+        view.setColumnWidth(column, width)
+    view.resize(620, 260)
+    view.show()
+    app.processEvents()
+
+    anchor = view.pinned_anchor_view
+    assert view.pinned_columns_active
+    assert anchor.isVisible()
+    assert view.isColumnHidden(0) and view.isColumnHidden(1)
+    assert not anchor.isColumnHidden(0) and not anchor.isColumnHidden(1)
+    assert all(anchor.isColumnHidden(column) for column in range(2, 10))
+    assert anchor.model() is model
+    assert anchor.selectionModel() is view.selectionModel()
+
+    anchored_status = anchor.visualRect(model.index(2, 1))
+    QTest.mouseClick(anchor.viewport(), Qt.LeftButton, pos=anchored_status.center())
+    app.processEvents()
+    assert view.selectionModel().currentIndex().row() == 2
+    assert [index.row() for index in view.selectionModel().selectedRows()] == [2]
+    expected_copy = view.copy_selected_rows_tsv()
+    assert expected_copy.splitlines()[1].split("\t")[0] == "3"
+    QApplication.clipboard().clear()
+    QTest.keyClick(anchor, Qt.Key_C, Qt.ControlModifier)
+    assert QApplication.clipboard().text() == expected_copy
+
+    view.horizontalScrollBar().setValue(view.horizontalScrollBar().maximum())
+    assert view.horizontalScrollBar().value() > 0
+    assert anchor.horizontalScrollBar().value() == 0
+    assert anchor.visualRect(model.index(2, 0)).isValid()
+
+    view.verticalScrollBar().setValue(view.verticalScrollBar().maximum())
+    app.processEvents()
+    assert anchor.verticalScrollBar().value() == view.verticalScrollBar().value()
+    anchor.verticalScrollBar().setValue(3)
+    app.processEvents()
+    assert view.verticalScrollBar().value() == 3
+    assert anchor.visualRect(model.index(3, 0)).top() == view.visualRect(
+        model.index(3, 2)
+    ).top()
+
+    anchor.setColumnWidth(1, 128)
+    app.processEvents()
+    assert anchor.columnWidth(1) == 128
+    assert anchor.rowHeight(3) == view.rowHeight(3)
+    view.resize(sum(RESULT_WIDTHS) + 200, 260)
+    app.processEvents()
+    assert not view.pinned_columns_active
+    assert view.columnWidth(1) == 128
+
+
+def test_wide_view_uses_original_single_surface_without_blank_anchor_region():
+    app = _app()
+    composition = build_predict_workspace_composition(initial_empty_rows=3)
+    model = ResultReviewTableModel(composition.result_review_projection)
+    view = ResultReviewTableView()
+    view.setModel(model)
+    for column, width in enumerate(RESULT_WIDTHS):
+        view.setColumnWidth(column, width)
+    view.resize(sum(RESULT_WIDTHS) + 160, 260)
+    view.show()
+    app.processEvents()
+
+    assert not view.pinned_columns_active
+    assert not view.pinned_anchor_view.isVisible()
+    assert all(not view.isColumnHidden(column) for column in range(10))
+    assert view.horizontalScrollBar().maximum() == 0
+    assert view.visualRect(model.index(0, 0)).left() == 0
