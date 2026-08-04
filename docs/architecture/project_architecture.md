@@ -119,7 +119,13 @@ Migration principles:
 
 ### Data Leakage 주의사항
 - CSPF, HSPF 등 계산 결과값은 피처 풀에서 제외합니다.
-- 특정 모델(예: 전력) 학습 시 다른 타겟(예: 냉매량)이 입력으로 포함되지 않도록 `core/ml/registry.py`에서 타겟별 Leakage 리스트를 엄격히 관리합니다.
+- 특정 Target 입력에서 다른 Target leakage를 막는 target별 input policy는 canonical
+  Data Definition `TargetDefinition.policy_mode` / `policy_owner_identities`가 소유한다.
+  Generation-bound `RuntimeTarget` / `ModelRegistrySnapshot`이 owner identity를
+  projected ML name policy로 투영하고 Train/runtime이
+  `core/data_definition/target_registry` 경계에서 적용한다.
+  `core/ml/registry.py::MODEL_REGISTRY`는 canonical bootstrap snapshot에서 생성되는
+  legacy compatibility facade이며 production Target/leakage policy owner가 아니다.
 
 ### 전처리 전략
 - **냉매/팽창장치 One-hot 변환**: UI에서 선택된 냉매 및 팽창장치는
