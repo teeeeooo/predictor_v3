@@ -33,6 +33,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-05 — Result Review XLSX product-owner decision
+
+### Decision
+
+- Result Review CSV v1 remains the sufficient canonical review/evidence export;
+  its behavior and existing Result Review contract are unchanged.
+- Set **Result Review XLSX source implementation to DEFER**. This is neither
+  `DONE` nor `SKIP`, and it does not authorize an XLSX source slice.
+- Reopen the XLSX decision only when an actual workbook-specific requirement is
+  demonstrated: CSV Excel import/locale/encoding friction, typed numeric cells,
+  repeated filter/freeze/column-sizing workflow, separate Evidence / Issues /
+  Metadata sheets, or an official shared-workbook artifact.
+- `openpyxl` availability is already a resolved technical condition and is not
+  by itself a product-priority reason to implement XLSX.
+- The next product gate is **Predict Case → Standard Predicted Points / Standard
+  Request Product-Owner Decision**. Multi-point Predict → Calculate source
+  implementation remains held until that decision closes.
+
 ## 2026-08-05 — Engineering Workflow / repository authority boundary
 
 ### Decision

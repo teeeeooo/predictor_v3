@@ -16,8 +16,10 @@ exact-head audit, merge, and Close are also complete without relaxing full Activ
 compatibility. Narrow Viewport Result Review Pinning and Result Review CSV v1 are
 also merged and closed. The Agent Work-Contract Audit and its bounded Active
 Documentation Contract Restoration follow-up are independently audited, merged,
-and closed. The next milestone is the separately approved XLSX product/dependency
-decision, followed by the remaining Predict-to-Calculate integration decision gate.
+and closed. The Result Review XLSX Product/Owner Decision is complete with source
+implementation `DEFER`. The next milestone is the Predict Case → Standard Predicted
+Points / Standard Request Product-Owner Decision; multi-point Predict → Calculate
+source work remains held until that gate closes.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -154,10 +156,15 @@ remain unchanged.
 
 - The Agent Work-Contract audit and resulting bounded documentation Contract
   Improvement are complete and merged.
-- Decide the XLSX product/dependency boundary next rather than bundling it into
-  CSV v1 or assuming a writer/runtime/packaging dependency.
-- Before multi-point source integration, make a separate Predict Case → Standard
-  Predicted Points / Standard Request product-owner decision.
+- The Result Review XLSX Product/Owner Decision is complete with source
+  implementation `DEFER`; CSV v1 remains the sufficient canonical review/evidence
+  export and its existing behavior/contract is unchanged.
+- Reopen XLSX only for a demonstrated workbook-specific workflow need recorded in
+  `docs/WORK_PLAN.md`; resolved `openpyxl` availability alone is not priority
+  evidence.
+- The exact next gate is the Predict Case → Standard Predicted Points / Standard
+  Request Product-Owner Decision. Multi-point Predict → Calculate source
+  integration remains held until that decision closes.
 
 ### Later — Production ML Readiness / Calculator Integration
 
@@ -180,8 +187,10 @@ remain unchanged.
   Calculator formula changes, and packaging/deployment are not automatically part
   of the first Predict input overhaul scope.
 - Narrow Viewport Result Review Pinning and Result Review CSV v1 are closed.
-  XLSX and multi-point Predict-to-Calculate remain separately gated follow-up
-  work and are not implied by the completed CSV slice.
+  Result Review XLSX source implementation is `DEFER` pending demonstrated
+  workbook-specific need; multi-point Predict-to-Calculate remains separately
+  held behind the Standard Request Product-Owner Decision. Neither is implied by
+  the completed CSV slice.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.

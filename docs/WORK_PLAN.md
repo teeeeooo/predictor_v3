@@ -58,6 +58,10 @@
   publish through the existing full-row application document in canonical Case
   order, retaining raw numeric evidence, provenance, issues, and stale/unavailable
   semantics without a second mutable export schema or new dependency.
+- The Result Review XLSX Product/Owner Decision is complete. XLSX source
+  implementation is `DEFER`; this changes neither CSV behavior nor the
+  existing Result Review contract and authorizes no writer/runtime/dependency
+  slice.
 - The Agent Work-Contract Audit and its bounded Active Documentation Contract
   Restoration follow-up are independently audited, merged, and closed. Generic
   Engineering Workflow authority and predictor_v3 project-specific authority are
@@ -65,10 +69,12 @@
 
 ## Next Action
 
-**XLSX product/dependency decision** is next. Decide whether generated Result
-Review XLSX export should proceed, including its writer/runtime/packaging boundary,
-before authorizing any follow-up source slice. Keep multi-point Predict → Calculate
-held behind its separate Predict Case → Standard Request product-owner decision.
+**Predict Case → Standard Predicted Points / Standard Request Product-Owner
+Decision** is the exact next product gate. Define the authoritative product
+semantics for assembling canonical Predict Case/execution evidence into one
+standard operating-point request while preserving Calculator envelope/application
+ownership. Multi-point Predict → Calculate source implementation remains held
+until this decision closes.
 
 ## Active Decisions / Blockers
 
@@ -129,9 +135,12 @@ held behind its separate Predict Case → Standard Request product-owner decisio
 - Result graph or Advanced surface, Train navigation, lifecycle wording redesign,
   model training workflow, ML feature/schema changes, calculator formula changes,
   and packaging/deployment require separate approval or follow-up workstreams.
-- XLSX remains in the Result Review Export workstream but is not part of CSV v1.
-  Its product/dependency decision is a separate approval gate; no Excel writer,
-  packaging, or runtime dependency is implied by the CSV slice.
+- Result Review XLSX source implementation is `DEFER` after the completed
+  Product/Owner Decision. Reopen only for demonstrated workbook-specific need:
+  CSV Excel import/locale/encoding friction, typed numeric cells, repeated
+  filter/freeze/column-sizing workflow, separate Evidence / Issues / Metadata
+  sheets, or an official shared-workbook artifact. `openpyxl` availability is a
+  resolved technical condition, not implementation priority evidence.
 - Multi-point Predict-to-Calculate source integration remains on hold. Calculator
   already has a `PredictedPointsEnvelope`/adapter foundation; the missing product
   decision is how multiple canonical Predict Cases/execution results are assembled
@@ -167,16 +176,17 @@ held behind its separate Predict Case → Standard Request product-owner decisio
 8. **Agent Work-Contract Audit + bounded Contract Improvement — complete:**
    responsibility/navigation drift was confirmed, active documentation authority
    was restored, and the exact repaired head was independently audited and merged.
-9. **XLSX product/dependency decision — next approval gate:** keep XLSX out of
-   CSV v1 and decide any writer/packaging/runtime dependency before a follow-up
-   source slice.
-10. **Predict Case → Standard Predicted Points / Standard Request decision —
-    mandatory before multi-point source work:** define how canonical Predict
-    Cases/execution evidence become one standard operating-point set/request while
-    reusing Calculator envelope/application ownership.
-11. **Multi-point Predict → Calculate implementation — held** until the preceding
-    decision gates close; Predict must not copy Calculator formulas or replace the
-    Calculator owner.
+9. **Result Review XLSX Product/Owner Decision — complete:** source
+   implementation is `DEFER`; reopen only for demonstrated workbook-specific
+   workflow need. CSV behavior and the existing Result Review contract remain
+   unchanged.
+10. **Predict Case → Standard Predicted Points / Standard Request Product-Owner
+    Decision — next approval gate:** define how canonical Predict Cases/execution
+    evidence become one standard operating-point set/request while reusing
+    Calculator envelope/application ownership.
+11. **Multi-point Predict → Calculate implementation — held** until the Standard
+    Request decision closes; Predict must not copy Calculator formulas or replace
+    the Calculator owner.
 
 ## Minimal Anchors
 
