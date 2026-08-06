@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 import os
 import stat
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from .errors import LifecycleFilesystemError
 from .durability_errors import PostRenameDurabilityError
+from .windows_filesystem import WindowsFilesystemPrimitives
 
 
 class LifecycleFilesystem:
@@ -18,6 +19,11 @@ class LifecycleFilesystem:
     def __init__(self, root: str | Path) -> None:
         self.root = Path(os.path.abspath(root))
         self._resolved_root = self.root.resolve(strict=False)
+        self.platform_name = _platform_name()
+        self._windows = (
+            WindowsFilesystemPrimitives(self)
+            if self.platform_name == "nt" else None
+        )
 
     def ensure_directory(self, path: Path) -> None:
         self._require_lexical_owner(path, allow_root=True)
@@ -26,28 +32,37 @@ class LifecycleFilesystem:
         else:
             self.ensure_directory(path.parent)
             try:
-                path.mkdir()
+                if self._windows is not None:
+                    self._windows.create_child_directory(path.parent, path)
+                else:
+                    path.mkdir()
             except FileExistsError:
                 pass
         self.require_directory(path)
 
     def create_child_directory(self, parent: Path, name: str) -> Path:
         self.ensure_directory(parent)
-        with self._directory_fd(parent) as parent_fd:
-            os.mkdir(name, dir_fd=parent_fd)
         path = parent / name
+        if self._windows is not None:
+            self._windows.create_child_directory(parent, path)
+        else:
+            with self._directory_fd(parent) as parent_fd:
+                os.mkdir(name, dir_fd=parent_fd)
         self.require_directory(path)
         return path
 
     def require_directory(self, path: Path) -> os.stat_result:
         self._require_lexical_owner(path, allow_root=True)
         entry = path.lstat()
-        if stat.S_ISLNK(entry.st_mode) or not stat.S_ISDIR(entry.st_mode):
+        if self._is_link_like(entry) or not stat.S_ISDIR(entry.st_mode):
             raise LifecycleFilesystemError(
                 f"lifecycle directory is not an owned regular directory: {path.name}"
             )
         resolved = path.resolve(strict=True)
         self._require_resolved_owner(resolved, allow_root=True)
+        if self._windows is not None:
+            self._require_unchanged_directory(path, entry)
+            return entry
         with self._directory_fd(path) as descriptor:
             opened = os.fstat(descriptor)
         if (entry.st_dev, entry.st_ino) != (opened.st_dev, opened.st_ino):
@@ -57,7 +72,7 @@ class LifecycleFilesystem:
     def require_regular_file(self, path: Path) -> os.stat_result:
         self._require_lexical_owner(path)
         entry = path.lstat()
-        if stat.S_ISLNK(entry.st_mode) or not stat.S_ISREG(entry.st_mode):
+        if self._is_link_like(entry) or not stat.S_ISREG(entry.st_mode):
             raise LifecycleFilesystemError(
                 f"lifecycle artifact is not an owned regular file: {path.name}"
             )
@@ -67,29 +82,41 @@ class LifecycleFilesystem:
         return entry
 
     @contextmanager
-    def open_regular(self, path: Path):
-        self._require_lexical_owner(path)
-        entry = path.lstat()
-        if stat.S_ISLNK(entry.st_mode) or not stat.S_ISREG(entry.st_mode):
-            raise LifecycleFilesystemError(
-                f"lifecycle artifact is not an owned regular file: {path.name}"
+    def open_regular(self, path: Path, *, writable: bool = False):
+        guard = (
+            self._windows.guard_directories(path.parent)
+            if self._windows is not None else nullcontext()
+        )
+        with guard:
+            self._require_lexical_owner(path)
+            entry = path.lstat()
+            if self._is_link_like(entry) or not stat.S_ISREG(entry.st_mode):
+                raise LifecycleFilesystemError(
+                    f"lifecycle artifact is not an owned regular file: {path.name}"
+                )
+            self._require_resolved_owner(path.resolve(strict=True))
+            flags = (os.O_RDWR if writable else os.O_RDONLY)
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            flags |= getattr(os, "O_BINARY", 0)
+            descriptor = (
+                self._windows.open_file_descriptor(path, flags)
+                if self._windows is not None else os.open(path, flags)
             )
-        self._require_resolved_owner(path.resolve(strict=True))
-        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-        descriptor = os.open(path, flags)
-        try:
-            opened = os.fstat(descriptor)
-            if not stat.S_ISREG(opened.st_mode):
-                raise LifecycleFilesystemError(
-                    f"lifecycle artifact is not a regular file: {path.name}"
-                )
-            if (entry.st_dev, entry.st_ino) != (opened.st_dev, opened.st_ino):
-                raise LifecycleFilesystemError(
-                    "lifecycle artifact changed during validation"
-                )
-            yield os.fdopen(descriptor, "rb", closefd=False)
-        finally:
-            os.close(descriptor)
+            try:
+                opened = os.fstat(descriptor)
+                if not stat.S_ISREG(opened.st_mode):
+                    raise LifecycleFilesystemError(
+                        f"lifecycle artifact is not a regular file: {path.name}"
+                    )
+                if (entry.st_dev, entry.st_ino) != (opened.st_dev, opened.st_ino):
+                    raise LifecycleFilesystemError(
+                        "lifecycle artifact changed during validation"
+                    )
+                mode = "r+b" if writable else "rb"
+                with os.fdopen(descriptor, mode, closefd=False) as source:
+                    yield source
+            finally:
+                os.close(descriptor)
 
     def read_json(self, path: Path) -> dict[str, object]:
         self.require_regular_file(path)
@@ -107,21 +134,11 @@ class LifecycleFilesystem:
     def open_exclusive(self, path: Path):
         self._require_lexical_owner(path)
         self.require_directory(path.parent)
-        with self._directory_fd(path.parent) as parent_fd:
-            flags = (
-                os.O_WRONLY
-                | os.O_CREAT
-                | os.O_EXCL
-                | getattr(os, "O_NOFOLLOW", 0)
-            )
-            descriptor = os.open(path.name, flags, 0o600, dir_fd=parent_fd)
-            try:
-                with os.fdopen(descriptor, "wb", closefd=False) as target:
-                    yield target
-                    target.flush()
-                    os.fsync(descriptor)
-            finally:
-                os.close(descriptor)
+        with self._exclusive_descriptor(path) as descriptor:
+            with os.fdopen(descriptor, "wb", closefd=False) as target:
+                yield target
+                target.flush()
+                os.fsync(descriptor)
 
     def entry_exists(self, path: Path) -> bool:
         self._require_lexical_owner(path, allow_root=True)
@@ -153,6 +170,14 @@ class LifecycleFilesystem:
             raise LifecycleFilesystemError(
                 f"final Candidate path already exists: {final.name}"
             )
+        if self._windows is not None:
+            self._windows.publish_directory(
+                staging,
+                final,
+                stage_entry,
+                after_replace,
+            )
+            return
         with self._directory_fd(staging.parent) as source_fd, (
             self._directory_fd(final.parent)
         ) as target_fd:
@@ -191,6 +216,13 @@ class LifecycleFilesystem:
         self.require_directory(temporary.parent)
         if self.entry_exists(destination):
             self.require_regular_file(destination)
+        if self._windows is not None:
+            self._windows.replace_file(
+                temporary,
+                destination,
+                after_replace,
+            )
+            return
         with self._directory_fd(temporary.parent) as parent_fd:
             os.replace(
                 temporary.name,
@@ -221,6 +253,14 @@ class LifecycleFilesystem:
                 "exclusive file publication requires one directory"
             )
         self.require_directory(temporary.parent)
+        if self._windows is not None:
+            self._windows.publish_file_exclusive(
+                temporary,
+                destination,
+                temporary_entry,
+                after_publish,
+            )
+            return
         with self._directory_fd(temporary.parent) as parent_fd:
             current = os.stat(
                 temporary.name,
@@ -272,6 +312,9 @@ class LifecycleFilesystem:
             raise LifecycleFilesystemError(
                 f"Candidate rollback staging already exists: {staging.name}"
             )
+        if self._windows is not None:
+            self._windows.rollback_directory(final, staging)
+            return
         with self._directory_fd(final.parent) as source_fd, (
             self._directory_fd(staging.parent)
         ) as target_fd:
@@ -288,6 +331,9 @@ class LifecycleFilesystem:
     def remove_file(self, path: Path, *, missing_ok: bool = False) -> None:
         self._require_lexical_owner(path)
         self.require_directory(path.parent)
+        if self._windows is not None:
+            self._windows.remove_file(path, missing_ok=missing_ok)
+            return
         with self._directory_fd(path.parent) as parent_fd:
             try:
                 current = os.stat(
@@ -311,6 +357,13 @@ class LifecycleFilesystem:
             while chunk := source_file.read(1024 * 1024):
                 target.write(chunk)
 
+    @contextmanager
+    def open_windows_lock_descriptor(self, path: Path, flags: int):
+        if self._windows is None:
+            raise LifecycleFilesystemError("Windows lock descriptor requested on POSIX")
+        with self._windows.open_lock_descriptor(path, flags) as descriptor:
+            yield descriptor
+
     def fsync_tree(self, path: Path) -> None:
         self.require_directory(path)
         for item in sorted(path.rglob("*")):
@@ -320,7 +373,10 @@ class LifecycleFilesystem:
                 )
             if item.is_file():
                 self.require_regular_file(item)
-                with self.open_regular(item) as source:
+                with self.open_regular(
+                    item,
+                    writable=self.platform_name == "nt",
+                ) as source:
                     os.fsync(source.fileno())
             elif item.is_dir():
                 self.require_directory(item)
@@ -328,14 +384,100 @@ class LifecycleFilesystem:
                 raise LifecycleFilesystemError(
                     f"unsupported Candidate filesystem object: {item.name}"
                 )
-        with self._directory_fd(path) as descriptor:
-            os.fsync(descriptor)
+        if self.platform_name != "nt":
+            with self._directory_fd(path) as descriptor:
+                os.fsync(descriptor)
+
+    @contextmanager
+    def _exclusive_descriptor(self, path: Path):
+        flags = (
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_BINARY", 0)
+        )
+        if self._windows is not None:
+            with self._windows.open_exclusive_descriptor(
+                path,
+                flags,
+            ) as descriptor:
+                yield descriptor
+            return
+        with self._directory_fd(path.parent) as parent_fd:
+            descriptor = os.open(path.name, flags, 0o600, dir_fd=parent_fd)
+            try:
+                self._require_opened_regular(path, descriptor)
+                yield descriptor
+            finally:
+                os.close(descriptor)
+
+    def _require_opened_regular(self, path: Path, descriptor: int) -> None:
+        opened = os.fstat(descriptor)
+        current = path.lstat()
+        if (
+            self._is_link_like(current)
+            or not stat.S_ISREG(current.st_mode)
+            or (current.st_dev, current.st_ino)
+            != (opened.st_dev, opened.st_ino)
+        ):
+            raise LifecycleFilesystemError(
+                "exclusive lifecycle artifact changed during creation"
+            )
+        self._require_resolved_owner(path.resolve(strict=True))
+
+    def _require_unchanged_directory(
+        self,
+        path: Path,
+        expected: os.stat_result,
+    ) -> None:
+        current = path.lstat()
+        if (
+            self._is_link_like(current)
+            or not stat.S_ISDIR(current.st_mode)
+            or (current.st_dev, current.st_ino)
+            != (expected.st_dev, expected.st_ino)
+        ):
+            raise LifecycleFilesystemError(
+                "lifecycle directory changed during validation"
+            )
+        self._require_resolved_owner(
+            path.resolve(strict=True),
+            allow_root=path == self.root,
+        )
+
+    def _require_unchanged_regular(
+        self,
+        path: Path,
+        expected: os.stat_result,
+    ) -> None:
+        current = path.lstat()
+        if (
+            self._is_link_like(current)
+            or not stat.S_ISREG(current.st_mode)
+            or (current.st_dev, current.st_ino)
+            != (expected.st_dev, expected.st_ino)
+        ):
+            raise LifecycleFilesystemError(
+                "lifecycle artifact changed during validation"
+            )
+        self._require_resolved_owner(path.resolve(strict=True))
+
+    @staticmethod
+    def _is_link_like(entry: os.stat_result) -> bool:
+        reparse = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        attributes = getattr(entry, "st_file_attributes", 0)
+        return stat.S_ISLNK(entry.st_mode) or bool(reparse and attributes & reparse)
 
     @contextmanager
     def _directory_fd(self, path: Path):
+        if self.platform_name == "nt":
+            raise LifecycleFilesystemError(
+                "Windows lifecycle persistence does not use directory descriptors"
+            )
         self._require_lexical_owner(path, allow_root=True)
         entry = path.lstat()
-        if stat.S_ISLNK(entry.st_mode) or not stat.S_ISDIR(entry.st_mode):
+        if self._is_link_like(entry) or not stat.S_ISDIR(entry.st_mode):
             raise LifecycleFilesystemError(
                 f"lifecycle directory is not an owned regular directory: {path.name}"
             )
@@ -385,3 +527,7 @@ class LifecycleFilesystem:
             ) from exc
         if not allow_root and not relative.parts:
             raise LifecycleFilesystemError("resolved artifact cannot be workspace root")
+
+
+def _platform_name() -> str:
+    return os.name
