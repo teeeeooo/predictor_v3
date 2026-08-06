@@ -243,7 +243,8 @@ class DataDefinitionGenerationRepository:
 
     @staticmethod
     def _fsync_file(path: Path) -> None:
-        with path.open("rb") as handle:
+        mode = "r+b" if _platform_name() == "nt" else "rb"
+        with path.open(mode) as handle:
             os.fsync(handle.fileno())
 
     @staticmethod
