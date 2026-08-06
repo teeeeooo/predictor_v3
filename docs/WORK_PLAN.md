@@ -67,18 +67,18 @@
   Engineering Workflow authority and predictor_v3 project-specific authority are
   separated without weakening domain/UI/mechanical owners.
 - PR #53 closed the Windows first-run Data Definition runtime-generation file-sync
-  defect, and PR #54 closed the shared Model Lifecycle Core Windows persistence
-  and path-substitution safety defect. **Windows Compatibility Stabilization**
-  remains the current workstream with Deployment Export as the next separate
-  Windows publication owner.
+  defect, PR #54 closed the shared Model Lifecycle Core Windows persistence and
+  path-substitution safety defect, and PR #55 closed the separate Deployment
+  Export Windows publication owner. **Windows Compatibility Stabilization** now
+  advances to native Windows 11 Enterprise source-runtime acceptance.
 
 ## Next Action
 
-**Deployment Export Windows Portability** is the exact next source gate within
-**Windows Compatibility Stabilization**. The separate publication owner still
-uses Windows-incompatible read-only file `fsync`, directory open/`fsync`, and its
-own rename/durability path; repair it without broadening back into the now-closed
-shared Model Lifecycle Core owner.
+**Native Windows 11 Enterprise source-runtime acceptance** is the exact next gate
+within **Windows Compatibility Stabilization**. Exercise Train, Predict,
+Experiment, Calculator, and the repaired Deployment Export path on native
+Windows; Train must complete real training through Candidate publication rather
+than merely start successfully.
 
 The Predict Case → Standard Predicted Points / Standard Request Product-Owner
 Decision is held, not cancelled, until source-runtime Windows acceptance closes.
@@ -159,10 +159,10 @@ product decision.
   cancelled. Multi-point Predict-to-Calculate source integration remains held
   behind that decision. Calculator already has a `PredictedPointsEnvelope`/adapter
   foundation, and neither held item authorizes source work during stabilization.
-- Deployment Export Windows portability is the current next source gate. Direct
-  post-PR #54 owner inspection confirms that its separate publication path still
-  uses Windows-incompatible file/directory durability primitives, so it remains a
-  bounded source slice before native Windows source-runtime acceptance.
+- Deployment Export Windows portability is complete through independently audited
+  PR #55. Native Windows 11 Enterprise source-runtime acceptance is now the
+  remaining stabilization gate; macOS-hosted Windows simulation is not native
+  acceptance evidence.
 - PyInstaller/frozen Train child-process execution, Windows reserved filename/path
   identity hardening, long-path behavior, and packaging-specific DLL/runtime
   concerns are later Windows/packaging risks under separate owner/approval; they
@@ -207,13 +207,13 @@ product decision.
     closed Candidate/run-evidence publication, Active mutation/recovery, shared
     durability/atomic-publication, and audited path-substitution safety on the
     shared lifecycle filesystem owner.
-12. **Deployment Export Windows portability — next source gate:** repair its
-    separate publication/durability path before native Windows source-runtime
-    acceptance.
-13. **Native Windows source-runtime acceptance — required external evidence:** on
-    Windows 11 Enterprise exercise Train, Predict, Experiment, and Calculator;
-    Train must complete real training through Candidate publication, not merely
-    start successfully.
+12. **Deployment Export Windows portability — complete:** PR #55 closed the
+    separate Windows durability/publication path while preserving immutable
+    no-clobber export semantics and POSIX behavior.
+13. **Native Windows source-runtime acceptance — exact next gate:** on Windows 11
+    Enterprise exercise Train, Predict, Experiment, Calculator, and Deployment
+    Export; Train must complete real training through Candidate publication, not
+    merely start successfully.
 14. **Predict Case → Standard Predicted Points / Standard Request Product-Owner
     Decision — held, not cancelled** until source-runtime Windows acceptance
     closes.
