@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import stat
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from .errors import LifecycleFilesystemError
@@ -32,7 +32,10 @@ class LifecycleFilesystem:
         else:
             self.ensure_directory(path.parent)
             try:
-                path.mkdir()
+                if self._windows is not None:
+                    self._windows.create_child_directory(path.parent, path)
+                else:
+                    path.mkdir()
             except FileExistsError:
                 pass
         self.require_directory(path)
@@ -80,32 +83,40 @@ class LifecycleFilesystem:
 
     @contextmanager
     def open_regular(self, path: Path, *, writable: bool = False):
-        self._require_lexical_owner(path)
-        entry = path.lstat()
-        if self._is_link_like(entry) or not stat.S_ISREG(entry.st_mode):
-            raise LifecycleFilesystemError(
-                f"lifecycle artifact is not an owned regular file: {path.name}"
+        guard = (
+            self._windows.guard_directories(path.parent)
+            if self._windows is not None else nullcontext()
+        )
+        with guard:
+            self._require_lexical_owner(path)
+            entry = path.lstat()
+            if self._is_link_like(entry) or not stat.S_ISREG(entry.st_mode):
+                raise LifecycleFilesystemError(
+                    f"lifecycle artifact is not an owned regular file: {path.name}"
+                )
+            self._require_resolved_owner(path.resolve(strict=True))
+            flags = (os.O_RDWR if writable else os.O_RDONLY)
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            flags |= getattr(os, "O_BINARY", 0)
+            descriptor = (
+                self._windows.open_file_descriptor(path, flags)
+                if self._windows is not None else os.open(path, flags)
             )
-        self._require_resolved_owner(path.resolve(strict=True))
-        flags = (os.O_RDWR if writable else os.O_RDONLY)
-        flags |= getattr(os, "O_NOFOLLOW", 0)
-        flags |= getattr(os, "O_BINARY", 0)
-        descriptor = os.open(path, flags)
-        try:
-            opened = os.fstat(descriptor)
-            if not stat.S_ISREG(opened.st_mode):
-                raise LifecycleFilesystemError(
-                    f"lifecycle artifact is not a regular file: {path.name}"
-                )
-            if (entry.st_dev, entry.st_ino) != (opened.st_dev, opened.st_ino):
-                raise LifecycleFilesystemError(
-                    "lifecycle artifact changed during validation"
-                )
-            mode = "r+b" if writable else "rb"
-            with os.fdopen(descriptor, mode, closefd=False) as source:
-                yield source
-        finally:
-            os.close(descriptor)
+            try:
+                opened = os.fstat(descriptor)
+                if not stat.S_ISREG(opened.st_mode):
+                    raise LifecycleFilesystemError(
+                        f"lifecycle artifact is not a regular file: {path.name}"
+                    )
+                if (entry.st_dev, entry.st_ino) != (opened.st_dev, opened.st_ino):
+                    raise LifecycleFilesystemError(
+                        "lifecycle artifact changed during validation"
+                    )
+                mode = "r+b" if writable else "rb"
+                with os.fdopen(descriptor, mode, closefd=False) as source:
+                    yield source
+            finally:
+                os.close(descriptor)
 
     def read_json(self, path: Path) -> dict[str, object]:
         self.require_regular_file(path)
@@ -345,6 +356,13 @@ class LifecycleFilesystem:
         ) as target:
             while chunk := source_file.read(1024 * 1024):
                 target.write(chunk)
+
+    @contextmanager
+    def open_windows_lock_descriptor(self, path: Path, flags: int):
+        if self._windows is None:
+            raise LifecycleFilesystemError("Windows lock descriptor requested on POSIX")
+        with self._windows.open_lock_descriptor(path, flags) as descriptor:
+            yield descriptor
 
     def fsync_tree(self, path: Path) -> None:
         self.require_directory(path)

@@ -46,8 +46,11 @@ def _lifecycle_lock(
     flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
     platform_name = filesystem.platform_name
     if platform_name == "nt":
-        filesystem.require_directory(absolute_root)
-        descriptor = _open_windows_lock(absolute_path, flags)
+        lock_context = filesystem.open_windows_lock_descriptor(
+            absolute_path,
+            flags,
+        )
+        descriptor = lock_context.__enter__()
         root_descriptor = None
     else:
         root_context = filesystem.trusted_directory(absolute_root)
@@ -90,22 +93,11 @@ def _lifecycle_lock(
         if locked:
             os.lseek(descriptor, 0, os.SEEK_SET)
             _unlock(descriptor, platform_name=platform_name)
-        os.close(descriptor)
-        if root_descriptor is not None:
+        if root_descriptor is None:
+            lock_context.__exit__(None, None, None)
+        else:
+            os.close(descriptor)
             root_context.__exit__(None, None, None)
-
-
-def _open_windows_lock(path: Path, flags: int) -> int:
-    """Retain the existing Windows lock path while validating its object type."""
-    try:
-        entry = path.lstat()
-    except FileNotFoundError:
-        entry = None
-    if entry is not None and (
-        stat.S_ISLNK(entry.st_mode) or not stat.S_ISREG(entry.st_mode)
-    ):
-        raise LifecycleFilesystemError("lifecycle lock is not a regular file")
-    return os.open(path, flags, 0o600)
 
 
 def _lock(descriptor: int, *, blocking: bool, platform_name: str) -> None:
