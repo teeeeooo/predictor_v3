@@ -215,15 +215,28 @@ class ResultReviewTableView(QTableView):
             self._anchor_view.columnWidth(column)
             for column in range(PINNED_RESULT_COLUMNS)
         )
-        self.setViewportMargins(anchor_width if active else 0, 0, 0, 0)
+        vertical_header_width = (
+            self.verticalHeader().width() if self.verticalHeader().isVisible() else 0
+        )
+        horizontal_header_height = (
+            self.horizontalHeader().height() if self.horizontalHeader().isVisible() else 0
+        )
+        self.setViewportMargins(
+            vertical_header_width + (anchor_width if active else 0),
+            horizontal_header_height,
+            0,
+            0,
+        )
         if not active:
             self._anchor_view.hide()
             return
         self._anchor_view.setGeometry(
-            self.verticalHeader().width() + self.frameWidth(),
-            self.frameWidth(),
+            vertical_header_width + self.frameWidth(),
+            0,
             anchor_width,
-            self.viewport().height() + self.horizontalHeader().height(),
+            self.viewport().height()
+            + horizontal_header_height
+            + (2 * self.frameWidth()),
         )
         self._anchor_view.horizontalHeader().setFixedHeight(
             self.horizontalHeader().height()
