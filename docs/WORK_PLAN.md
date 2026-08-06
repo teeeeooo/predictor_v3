@@ -66,15 +66,23 @@
   Restoration follow-up are independently audited, merged, and closed. Generic
   Engineering Workflow authority and predictor_v3 project-specific authority are
   separated without weakening domain/UI/mechanical owners.
+- PR #53 closed the Windows first-run Data Definition runtime-generation file-sync
+  defect. Follow-up repository-wide inspection identified separate Windows
+  portability risk in Model Lifecycle persistence and adjacent runtime surfaces,
+  so **Windows Compatibility Stabilization** is now the current workstream.
 
 ## Next Action
 
-**Predict Case → Standard Predicted Points / Standard Request Product-Owner
-Decision** is the exact next product gate. Define the authoritative product
-semantics for assembling canonical Predict Case/execution evidence into one
-standard operating-point request while preserving Calculator envelope/application
-ownership. Multi-point Predict → Calculate source implementation remains held
-until this decision closes.
+**Model Lifecycle Core Windows Persistence Compatibility** is the exact next
+source gate within **Windows Compatibility Stabilization**. The separate Lane C
+source work must cover Candidate publication, terminal/run evidence persistence,
+Active mutation/recovery, and shared filesystem durability/atomic-publication
+semantics without changing the existing lifecycle ownership model.
+
+The Predict Case → Standard Predicted Points / Standard Request Product-Owner
+Decision is held, not cancelled, until source-runtime Windows acceptance closes.
+Multi-point Predict → Calculate source implementation remains held behind that
+product decision.
 
 ## Active Decisions / Blockers
 
@@ -129,6 +137,10 @@ until this decision closes.
   correctness repair without separate approval.
 - Use repository fixtures or mock data only. Do not infer production readiness or
   mutate production data or models.
+- Windows source repair implementation and automated regression evidence are
+  owned from macOS. Native Windows 11 Enterprise execution is external/manual
+  acceptance evidence; if it is not executed, record it as `NOT RUN` or
+  `NOT AVAILABLE` rather than promoting macOS simulation to native PASS.
 
 ## Deferred / Hold
 
@@ -141,11 +153,18 @@ until this decision closes.
   filter/freeze/column-sizing workflow, separate Evidence / Issues / Metadata
   sheets, or an official shared-workbook artifact. `openpyxl` availability is a
   resolved technical condition, not implementation priority evidence.
-- Multi-point Predict-to-Calculate source integration remains on hold. Calculator
-  already has a `PredictedPointsEnvelope`/adapter foundation; the missing product
-  decision is how multiple canonical Predict Cases/execution results are assembled
-  with authoritative semantics into one standard operating-point set/request for
-  the existing Calculator envelope/application boundary.
+- The Predict Case → Standard Predicted Points / Standard Request Product-Owner
+  Decision is held during Windows Compatibility Stabilization; it is not
+  cancelled. Multi-point Predict-to-Calculate source integration remains held
+  behind that decision. Calculator already has a `PredictedPointsEnvelope`/adapter
+  foundation, and neither held item authorizes source work during stabilization.
+- Deployment Export Windows portability follows Model Lifecycle Core repair. Keep
+  it as a separate bounded source slice only if the core owner repair does not
+  resolve its portability risk naturally.
+- PyInstaller/frozen Train child-process execution, Windows reserved filename/path
+  identity hardening, long-path behavior, and packaging-specific DLL/runtime
+  concerns are later Windows/packaging risks under separate owner/approval; they
+  are not part of source-runtime stabilization acceptance.
 - Process-restart view-state persistence, a persistent selected-case detail
   panel, a separate Full Context screen, and legacy split-table restoration are
   outside the first implementation.
@@ -180,13 +199,29 @@ until this decision closes.
    implementation is `DEFER`; reopen only for demonstrated workbook-specific
    workflow need. CSV behavior and the existing Result Review contract remain
    unchanged.
-10. **Predict Case → Standard Predicted Points / Standard Request Product-Owner
-    Decision — next approval gate:** define how canonical Predict Cases/execution
-    evidence become one standard operating-point set/request while reusing
-    Calculator envelope/application ownership.
-11. **Multi-point Predict → Calculate implementation — held** until the Standard
-    Request decision closes; Predict must not copy Calculator formulas or replace
-    the Calculator owner.
+10. **Windows runtime-generation first-run compatibility — complete:** PR #53
+    closed the Data Definition runtime-generation file-sync defect.
+11. **Model Lifecycle Core Windows Persistence Compatibility — next source gate:**
+    repair Candidate publication, terminal/run evidence persistence, Active
+    mutation/recovery, and shared durability/atomic-publication semantics as one
+    separate Lane C source slice.
+12. **Deployment Export Windows portability — conditional follow-up:** keep a
+    separate bounded source slice only if the Model Lifecycle Core repair does
+    not resolve it naturally.
+13. **Native Windows source-runtime acceptance — required external evidence:** on
+    Windows 11 Enterprise exercise Train, Predict, Experiment, and Calculator;
+    Train must complete real training through Candidate publication, not merely
+    start successfully.
+14. **Predict Case → Standard Predicted Points / Standard Request Product-Owner
+    Decision — held, not cancelled** until source-runtime Windows acceptance
+    closes.
+15. **Multi-point Predict → Calculate implementation — held** behind the Standard
+    Request decision; Predict must not copy Calculator formulas or replace the
+    Calculator owner.
+16. **Later Windows/packaging risks — separately gated:** frozen Train
+    child-process execution, reserved filename/path identity, long-path behavior,
+    and packaging-specific DLL/runtime concerns remain outside source-runtime
+    stabilization unless separately approved.
 
 ## Minimal Anchors
 

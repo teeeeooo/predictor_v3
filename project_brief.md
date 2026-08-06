@@ -17,9 +17,12 @@ compatibility. Narrow Viewport Result Review Pinning and Result Review CSV v1 ar
 also merged and closed. The Agent Work-Contract Audit and its bounded Active
 Documentation Contract Restoration follow-up are independently audited, merged,
 and closed. The Result Review XLSX Product/Owner Decision is complete with source
-implementation `DEFER`. The next milestone is the Predict Case → Standard Predicted
-Points / Standard Request Product-Owner Decision; multi-point Predict → Calculate
-source work remains held until that gate closes.
+implementation `DEFER`. PR #53 also closed the Windows first-run Data Definition
+runtime-generation file-sync defect. The current milestone is **Windows
+Compatibility Stabilization**, with **Model Lifecycle Core Windows Persistence
+Compatibility** as the exact next source gate. The Standard Request Product-Owner
+Decision is held, not cancelled, until source-runtime Windows acceptance closes;
+multi-point Predict → Calculate remains held behind that decision.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -152,19 +155,28 @@ selection outside canonical Predict state. Existing Result copy, Input copy/past
 viewport pinning, shared standalone/embedded composition, and dependency boundaries
 remain unchanged.
 
-### Next — Predict Successor Sequencing
+### Next — Windows Compatibility Stabilization
 
-- The Agent Work-Contract audit and resulting bounded documentation Contract
-  Improvement are complete and merged.
-- The Result Review XLSX Product/Owner Decision is complete with source
-  implementation `DEFER`; CSV v1 remains the sufficient canonical review/evidence
-  export and its existing behavior/contract is unchanged.
-- Reopen XLSX only for a demonstrated workbook-specific workflow need recorded in
-  `docs/WORK_PLAN.md`; resolved `openpyxl` availability alone is not priority
-  evidence.
-- The exact next gate is the Predict Case → Standard Predicted Points / Standard
-  Request Product-Owner Decision. Multi-point Predict → Calculate source
-  integration remains held until that decision closes.
+- PR #53 completed the Windows first-run Data Definition runtime-generation
+  compatibility repair.
+- The exact next source gate is **Model Lifecycle Core Windows Persistence
+  Compatibility**, covering Candidate publication, terminal/run evidence
+  persistence, Active mutation/recovery, and shared filesystem
+  durability/atomic-publication semantics.
+- Deployment Export Windows portability is a conditional follow-up only if the
+  core lifecycle repair does not resolve it naturally.
+- Source-runtime stabilization closes only after external native Windows 11
+  Enterprise acceptance of Train, Predict, Experiment, and Calculator. Train
+  acceptance includes real training completion through Candidate publication.
+- Agent source repair and automated regression evidence are produced on macOS;
+  native Windows execution is external/manual evidence and must remain `NOT RUN`
+  or `NOT AVAILABLE` when absent.
+- The Predict Case → Standard Predicted Points / Standard Request Product-Owner
+  Decision is held, not cancelled, until that source-runtime acceptance closes.
+  Multi-point Predict → Calculate remains held behind the Standard Request gate.
+- Frozen/PyInstaller Train child-process execution, reserved path identity,
+  long-path behavior, and packaging DLL/runtime risks remain separately gated
+  later work rather than part of this source-runtime stabilization milestone.
 
 ### Later — Production ML Readiness / Calculator Integration
 

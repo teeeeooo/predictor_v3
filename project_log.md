@@ -33,6 +33,35 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-06 — Windows compatibility stabilization sequencing
+
+### Decision
+
+- Treat PR #53 as complete for the Windows first-run Data Definition
+  runtime-generation file-sync defect, but not as repository-wide Windows
+  portability closure.
+- Make **Windows Compatibility Stabilization** the current workstream. The exact
+  next source gate is **Model Lifecycle Core Windows Persistence Compatibility**,
+  covering Candidate publication, terminal/run evidence persistence, Active
+  mutation/recovery, and shared filesystem durability/atomic-publication
+  semantics under the existing lifecycle owner.
+- Sequence Deployment Export Windows portability after the core lifecycle repair
+  and keep it as a separate bounded source slice only when the core repair does
+  not resolve it naturally.
+- Require external native Windows 11 Enterprise source-runtime acceptance across
+  Train, Predict, Experiment, and Calculator before stabilization closes. Train
+  acceptance includes real training completion through Candidate publication,
+  not startup alone.
+- Keep agent implementation and automated regression evidence on macOS. Native
+  Windows execution is user-owned external/manual evidence and remains `NOT RUN`
+  or `NOT AVAILABLE` when absent; macOS simulation is not native Windows PASS.
+- Hold, rather than cancel, the Predict Case → Standard Predicted Points /
+  Standard Request Product-Owner Decision until source-runtime Windows acceptance
+  closes. Multi-point Predict → Calculate remains held behind that decision.
+  Frozen/PyInstaller Train child-process execution, reserved filename/path
+  identity, long-path behavior, and packaging-specific DLL/runtime concerns remain
+  separately gated later Windows/packaging work.
+
 ## 2026-08-05 — Result Review XLSX product-owner decision
 
 ### Decision
