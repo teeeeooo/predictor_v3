@@ -8,6 +8,10 @@ from apps.train.application.data_mapping import DataMappingNavigationRequest
 from apps.train.application.data_mapping.handoff import build_saved_mapping_handoffs
 from apps.train.application.data_definition import PreparedFeatureCommand
 from apps.train.application.data_definition import GenerationSnapshot
+from apps.train.application.data_definition.training_contract_export import (
+    TrainingContractExportContext,
+    build_training_contract_export,
+)
 from apps.train.controllers.data_definition_state_builder import (
     DRAFT_FIELDS,
     DRAFT_HEADERS,
@@ -89,6 +93,15 @@ class DataDefinitionController:
             draft.base_generation_id if draft is not None else "",
             self._draft_revision,
             bool(draft is not None and draft.is_changed),
+        )
+
+    def training_contract_export_context(self) -> TrainingContractExportContext:
+        """Return saved runtime-generation onboarding data without reading the draft as truth."""
+        if self._runtime_snapshot is None:
+            raise RuntimeError("saved Train generation is unavailable for export")
+        return TrainingContractExportContext(
+            document=build_training_contract_export(self._runtime_snapshot),
+            draft_dirty=bool(self._draft is not None and self._draft.is_changed),
         )
 
     def bind_runtime_generation(self, snapshot: GenerationSnapshot) -> None:

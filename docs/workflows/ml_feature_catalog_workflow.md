@@ -186,9 +186,11 @@ When reviewing with Numbers or Excel:
 - keep the comma delimiter;
 - use a disposable review copy if UTF-8-SIG is needed for spreadsheet
   auto-detection; keep the canonical file UTF-8 without BOM;
-- do not expect a Train/Admin catalog import or export surface;
-- do not rename headers in the training export unless the same `ml_name` change
-  is made in `features.csv`;
+- do not expect a writable/importable Train/Admin Feature Catalog surface;
+- Data Definition may export disposable saved-generation Training Header and
+  Definition Reference onboarding aids; those files are not Feature Catalog SSOTs;
+- do not rename exported training headers manually. Change `ml_name` through
+  Data Definition, then save/apply the generation that production Train consumes;
 - do not add visual presentation fields such as width or color.
 
 ## Quick Checks

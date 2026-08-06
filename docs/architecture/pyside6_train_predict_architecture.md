@@ -672,6 +672,14 @@ ML Move, dependency Impact Preview, Reset Draft, and canonical Save. Selection
 uses stable Feature identity; the view does not insert, delete, reorder, or
 persist rows directly.
 
+Training onboarding exports are disposable, read-only views of the generation
+currently applied to production Train. The header template writes exactly that
+generation's ordered `training_headers` row with no data rows; the Definition
+Reference crosswalk exposes canonical Definition identity, label, `column_key`,
+`ml_name`, and raw-Train participation for review. Unsaved Data Definition draft
+changes are explicitly excluded. These user exports may use UTF-8-SIG for Windows
+spreadsheet usability without changing canonical repository projection encoding.
+
 ### 7.6 Data Mapping tab
 
 The Data Mapping tab includes:

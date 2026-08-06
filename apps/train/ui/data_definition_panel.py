@@ -51,6 +51,10 @@ from apps.train.ui.data_definition import DataDefinitionHandoffPanel
 from apps.train.ui.data_definition.filter_bar import DataDefinitionFilterBar
 from apps.train.ui.data_definition.inventory_view import DataDefinitionInventoryView
 from apps.train.ui.data_definition.task_header import DataDefinitionTaskHeader
+from apps.train.ui.data_definition.training_contract_export import (
+    export_definition_reference,
+    export_training_header_template,
+)
 from apps.train.ui.data_definition.workspace_behavior import (
     DataDefinitionWorkspaceBehavior,
 )
@@ -155,6 +159,12 @@ class DataDefinitionPanel(QWidget):
             on_preview=self._review_current_state,
             on_save=self._save_schema,
             on_review=self._review_current_state,
+            on_export_training_headers=lambda: export_training_header_template(
+                self, self._controller
+            ),
+            on_export_definition_reference=lambda: export_definition_reference(
+                self, self._controller
+            ),
             on_refresh=self.refresh,
             on_reset=self._reset_draft,
             on_diagnostics=self._toggle_diagnostics,
