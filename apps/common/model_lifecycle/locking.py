@@ -44,7 +44,9 @@ def _lifecycle_lock(
     if len(relative.parts) != 1:
         raise LifecycleFilesystemError("lifecycle lock must be workspace-owned")
     flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
-    if os.name == "nt":
+    platform_name = filesystem.platform_name
+    if platform_name == "nt":
+        filesystem.require_directory(absolute_root)
         descriptor = _open_windows_lock(absolute_path, flags)
         root_descriptor = None
     else:
@@ -76,7 +78,7 @@ def _lifecycle_lock(
             os.fsync(descriptor)
         os.lseek(descriptor, 0, os.SEEK_SET)
         try:
-            _lock(descriptor, blocking=blocking)
+            _lock(descriptor, blocking=blocking, platform_name=platform_name)
         except OSError as exc:
             if blocking or exc.errno not in {EACCES, EAGAIN, EDEADLK}:
                 raise
@@ -87,7 +89,7 @@ def _lifecycle_lock(
     finally:
         if locked:
             os.lseek(descriptor, 0, os.SEEK_SET)
-            _unlock(descriptor)
+            _unlock(descriptor, platform_name=platform_name)
         os.close(descriptor)
         if root_descriptor is not None:
             root_context.__exit__(None, None, None)
@@ -106,8 +108,8 @@ def _open_windows_lock(path: Path, flags: int) -> int:
     return os.open(path, flags, 0o600)
 
 
-def _lock(descriptor: int, *, blocking: bool) -> None:
-    if os.name == "nt":
+def _lock(descriptor: int, *, blocking: bool, platform_name: str) -> None:
+    if platform_name == "nt":
         import msvcrt
 
         mode = msvcrt.LK_LOCK if blocking else msvcrt.LK_NBLCK
@@ -121,8 +123,8 @@ def _lock(descriptor: int, *, blocking: bool) -> None:
         fcntl.flock(descriptor, flags)
 
 
-def _unlock(descriptor: int) -> None:
-    if os.name == "nt":
+def _unlock(descriptor: int, *, platform_name: str) -> None:
+    if platform_name == "nt":
         import msvcrt
 
         msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
