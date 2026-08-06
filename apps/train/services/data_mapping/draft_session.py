@@ -62,6 +62,18 @@ class DataMappingDraftSession:
         self._revision += 1
         return draft
 
+    def install_unsaved(
+        self,
+        draft: MappingEditorDraft,
+        baseline: MappingEditorDraft,
+    ) -> MappingEditorDraft:
+        """Install a reviewed onboarding draft against a non-saved baseline."""
+        self._draft = draft
+        self._baseline = baseline
+        self._undo_history.clear()
+        self._revision += 1
+        return draft
+
     def store_command(
         self,
         previous: MappingEditorDraft,

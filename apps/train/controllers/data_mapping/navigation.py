@@ -41,7 +41,10 @@ def open_mapping_requirement(
         state = (
             _state(service, snapshot, current_group_key, resource_status="missing")
             if snapshot is not None
-            else missing_state(source_label=display_source_label(service.source_label))
+            else missing_state(
+                source_label=display_source_label(service.source_label),
+                bootstrap_enabled=service.legacy_bootstrap_available,
+            )
         )
         return state, _result(
             request,

@@ -21,6 +21,7 @@ from apps.train.application.confirmation import (
     TrustedUserAuthorityIssuer,
 )
 from apps.train.adapters.data_definition_generation_repository import DataDefinitionGenerationRepository
+from apps.train.adapters.mapping import parse_legacy_mapping_csv
 from apps.train.adapters.one_hot_vocabulary import load_persisted_mapping_vocabulary_snapshots
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
 from apps.train.application.runtime_generation import (
@@ -82,7 +83,7 @@ def create_shell(
         lifecycle_repository=lifecycle_repository,
         model_resolution=resolution,
     )
-    mapping_service = DataMappingService()
+    mapping_service = DataMappingService(legacy_bootstrap_parser=parse_legacy_mapping_csv)
     definition_controller = DataDefinitionController(DataDefinitionService(
         generation_repository=repository,
         vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),

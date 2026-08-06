@@ -68,6 +68,7 @@ DETAILS_INITIAL_HEIGHT = 210
 EXPORT_FILTERS = "JSON Files (*.json);;Excel Workbook (*.xlsx)"
 EXCHANGE_EXPORT_FILTERS = "CSV Files (*.csv);;All files (*)"
 EXCHANGE_IMPORT_FILTERS = "Mapping Bundle CSV (*.csv);;All files (*)"
+LEGACY_BOOTSTRAP_FILTERS = "Legacy Mapping CSV (*.csv);;All files (*)"
 
 
 class DataMappingPanel(QWidget):
@@ -120,6 +121,7 @@ class DataMappingPanel(QWidget):
                 "delete_row": self._delete_row,
                 "export_csv_v2": self._export,
                 "export_mapping_exchange": self._export_exchange,
+                "bootstrap_legacy_csv": self._bootstrap_legacy_mapping,
                 "import_mapping_bundle": self._import_exchange,
                 "save_mapping_json": self._save,
                 "refresh_view": self.refresh,
@@ -557,6 +559,43 @@ class DataMappingPanel(QWidget):
                 QMessageBox.No,
             )
             == QMessageBox.Yes
+        )
+
+    def _bootstrap_legacy_mapping(self) -> None:
+        path, _selected_filter = QFileDialog.getOpenFileName(
+            self,
+            "Bootstrap Legacy Mapping CSV",
+            "",
+            LEGACY_BOOTSTRAP_FILTERS,
+        )
+        if not path:
+            return
+        preview = self._controller.preview_legacy_bootstrap(path)
+        if not preview.can_apply:
+            detail = "\n".join(issue.message for issue in preview.blockers[:8])
+            QMessageBox.warning(
+                self,
+                "Legacy Mapping Bootstrap Failed",
+                detail or "The legacy Mapping CSV could not be validated.",
+            )
+            return
+        if preview.replacement_required:
+            confirmed = QMessageBox.question(
+                self,
+                "Replace Current Data Mapping Draft",
+                "The current Data Mapping draft will be replaced by the validated legacy CSV. "
+                "This does not write mapping.json. Continue?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if confirmed != QMessageBox.Yes:
+                return
+        self._apply_state(
+            self._controller.apply_legacy_bootstrap(
+                preview,
+                self._selected_group_key,
+                allow_replace_current=preview.replacement_required,
+            )
         )
 
     def _import_exchange(self) -> None:

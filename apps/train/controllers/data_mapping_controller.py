@@ -22,6 +22,7 @@ from apps.train.controllers.data_mapping.presentation import (
     project_snapshot,
 )
 from apps.train.services.data_mapping_service import DataMappingService
+from apps.train.services.data_mapping.legacy_bootstrap import DataMappingLegacyBootstrapPreview
 from apps.train.services.data_mapping_types import (
     DataMappingCellEdit,
     DataMappingImportPreview,
@@ -50,6 +51,7 @@ class DataMappingController:
             if resource_status == "missing":
                 return missing_state(
                     source_label=display_source_label(self._service.source_label),
+                    bootstrap_enabled=self._service.legacy_bootstrap_available,
                 )
             return error_state(
                 "Unable to load mapping data.",
@@ -156,6 +158,7 @@ class DataMappingController:
             if self._service.resource_status() == "missing":
                 return missing_state(
                     source_label=display_source_label(self._service.source_label),
+                    bootstrap_enabled=self._service.legacy_bootstrap_available,
                 )
             return error_state(
                 "Unable to reload mapping data.",
@@ -244,6 +247,76 @@ class DataMappingController:
                 "destination",
                 result.message,
             )),
+        )
+
+    def preview_legacy_bootstrap(
+        self,
+        source: str | Path,
+    ) -> DataMappingLegacyBootstrapPreview:
+        """Prepare a strict legacy-wide candidate without mutating Mapping state."""
+        return self._service.preview_legacy_bootstrap(source)
+
+    def apply_legacy_bootstrap(
+        self,
+        preview: DataMappingLegacyBootstrapPreview,
+        selected_group_key: str = "",
+        *,
+        allow_replace_current: bool = False,
+    ) -> DataMappingControllerState:
+        """Install a fresh bootstrap candidate as an Unsaved Data Mapping draft."""
+        snapshot, result = self._service.apply_legacy_bootstrap(
+            preview, allow_replace_current=allow_replace_current
+        )
+        if result.success and snapshot is not None:
+            return self._state_from_snapshot(
+                snapshot,
+                selected_group_key,
+                message=result.message,
+            )
+        issue_code = (
+            "legacy_bootstrap_stale"
+            if result.stale
+            else (
+                "legacy_bootstrap_confirmation_required"
+                if result.confirmation_required
+                else "legacy_bootstrap_blocked"
+            )
+        )
+        issue = operation_issue(
+            issue_code,
+            "Legacy Bootstrap",
+            "source",
+            result.message,
+        )
+        if snapshot is not None:
+            return self._state_from_snapshot(
+                snapshot,
+                selected_group_key,
+                status="error",
+                message="Legacy bootstrap was not applied.",
+                extra_issues=(issue,),
+            )
+        if self._service.resource_status() == "missing":
+            return missing_state(
+                source_label=display_source_label(self._service.source_label),
+                bootstrap_enabled=self._service.legacy_bootstrap_available,
+                message="Legacy bootstrap was not applied.",
+                extra_issues=(issue,),
+            )
+        try:
+            current = self._service.load_snapshot()
+        except Exception as exc:
+            return error_state(
+                "Legacy bootstrap was not applied.",
+                source_label=display_source_label(self._service.source_label),
+                detail_message=exception_summary(exc),
+            )
+        return self._state_from_snapshot(
+            current,
+            selected_group_key,
+            status="error",
+            message="Legacy bootstrap was not applied.",
+            extra_issues=(issue,),
         )
 
     def preview_exchange_import(

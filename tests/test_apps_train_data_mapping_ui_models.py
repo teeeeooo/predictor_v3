@@ -179,13 +179,15 @@ def test_data_mapping_panel_builds_editable_manager_surface():
         assert [button.text() for button in panel._buttons.values()] == [
             "Add",
             "Duplicate",
-                "Delete",
-                "Export",
-                "Import",
-                "Save mapping",
+            "Delete",
+            "Export",
+            "Legacy Bootstrap",
+            "Import",
+            "Save mapping",
             "Refresh",
             "Reload",
         ]
+        assert not panel._buttons["bootstrap_legacy_csv"].isEnabled()
         assert panel.status_label.text() == "Ready."
         group_header = panel.entity_table.horizontalHeader()
         attribute_header = panel.attribute_table.horizontalHeader()
