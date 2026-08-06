@@ -9,8 +9,9 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtWidgets import QApplication, QLabel, QMessageBox
 
+from apps.train.adapters.mapping import parse_legacy_mapping_csv
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import DataMappingService, RuntimeMappingCatalogProvider
 from apps.train.ui.data_mapping.import_preview_dialog import DataMappingImportPreviewDialog
@@ -479,3 +480,84 @@ def test_save_reload_round_trip_preserves_dynamic_pfc_and_hidden_payload(tmp_pat
     assert cond.rows[4].value_for("Pi") == ""
     persisted = json.loads(mapping_file.read_text(encoding="utf-8"))
     assert persisted["idu"]["MOT1"]["Internal Calibration"] == {"synthetic": True}
+
+
+
+def test_missing_mapping_panel_exposes_legacy_bootstrap_separately_from_bundle_import(tmp_path):
+    _app()
+    mapping_file = tmp_path / "mapping.json"
+    service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file)),
+        legacy_bootstrap_parser=parse_legacy_mapping_csv,
+    )
+    panel = DataMappingPanel(controller=DataMappingController(service))
+    QApplication.processEvents()
+
+    assert panel._buttons["bootstrap_legacy_csv"].text() == "Legacy Bootstrap"
+    assert panel._buttons["bootstrap_legacy_csv"].isEnabled()
+    assert not panel._buttons["import_mapping_bundle"].isEnabled()
+    assert "legacy-wide CSV" in panel._buttons["bootstrap_legacy_csv"].toolTip()
+    assert not mapping_file.exists()
+
+
+def test_legacy_bootstrap_file_picker_cancel_preserves_missing_state(tmp_path, monkeypatch):
+    _app()
+    mapping_file = tmp_path / "mapping.json"
+    service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file)),
+        legacy_bootstrap_parser=parse_legacy_mapping_csv,
+    )
+    controller = DataMappingController(service)
+    panel = DataMappingPanel(controller=controller)
+    calls = []
+    monkeypatch.setattr(
+        "apps.train.ui.data_mapping_panel.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: ("", ""),
+    )
+    monkeypatch.setattr(
+        controller,
+        "preview_legacy_bootstrap",
+        lambda source: calls.append(source),
+    )
+
+    panel._bootstrap_legacy_mapping()
+
+    assert calls == []
+    assert service.current_snapshot() is None
+    assert not mapping_file.exists()
+    assert panel.status_label.text() == "Mapping resource not found."
+
+
+def test_legacy_bootstrap_replacement_cancel_preserves_unsaved_draft(tmp_path, monkeypatch):
+    _app()
+    mapping_file = tmp_path / "mapping.json"
+    shutil.copy2(RUNTIME_FIXTURE, mapping_file)
+    service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file)),
+        legacy_bootstrap_parser=parse_legacy_mapping_csv,
+    )
+    controller = DataMappingController(service)
+    panel = DataMappingPanel(controller=controller)
+    controller.edit_cell("idu", 0, "ID Volume", "123.5")
+    mapping_file.unlink()
+    panel.refresh()
+    before = service.current_snapshot()
+    monkeypatch.setattr(
+        "apps.train.ui.data_mapping_panel.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: (
+            str(Path("tests/fixtures/mapping/mapping_tables_legacy_wide.csv")),
+            "Legacy Mapping CSV (*.csv)",
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.train.ui.data_mapping_panel.QMessageBox.question",
+        lambda *args, **kwargs: QMessageBox.No,
+    )
+
+    panel._bootstrap_legacy_mapping()
+
+    after = service.current_snapshot()
+    assert after.draft == before.draft
+    assert after.dirty
+    assert after.draft.group("idu").rows[0].value_for("ID Volume") == 123.5
+    assert not mapping_file.exists()

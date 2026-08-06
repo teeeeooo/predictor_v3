@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 import hashlib
 
@@ -53,6 +54,12 @@ from apps.train.services.data_mapping_types import (
     MappingDraftProvider,
 )
 from apps.train.services.data_mapping.draft_session import DataMappingDraftSession
+from apps.train.services.data_mapping.legacy_bootstrap import (
+    DataMappingLegacyBootstrapApplyResult,
+    DataMappingLegacyBootstrapPreview,
+    evaluate_legacy_bootstrap_apply,
+    prepare_legacy_bootstrap_preview,
+)
 from core.mapping.condenser_identity import condenser_requires_pi
 from core.mapping.value_policy import canonicalize_mapping_cell_input
 
@@ -141,6 +148,7 @@ class DataMappingService:
         self,
         provider: MappingDraftProvider | None = None,
         mapping_requirement_provider: DataDefinitionMappingRequirementProvider | None = None,
+        legacy_bootstrap_parser: Callable[[str | Path], MappingEditorDraft] | None = None,
     ) -> None:
         self._provider = provider or RuntimeMappingCatalogProvider()
         default_requirement_provider = (
@@ -148,13 +156,19 @@ class DataMappingService:
             if provider is None else EmptyMappingRequirementProvider()
         )
         self._mapping_requirement_provider = mapping_requirement_provider or default_requirement_provider
+        self._legacy_bootstrap_parser = legacy_bootstrap_parser
         self._session = DataMappingDraftSession()
         self._runtime_requirements: tuple[MappingRequirement, ...] | None = None
+        self._draft_source_label: str | None = None
 
     @property
     def source_label(self) -> str:
-        """Return the configured provider source label before loading."""
-        return self._provider.source_label
+        """Return the concrete resource plus any active Unsaved draft lineage."""
+        return self._draft_source_label or self._provider.source_label
+
+    @property
+    def legacy_bootstrap_available(self) -> bool:
+        return self._legacy_bootstrap_parser is not None
 
     def resource_status(self) -> str:
         """Return whether the configured runtime mapping resource exists."""
@@ -247,6 +261,54 @@ class DataMappingService:
         """Explicit reconciliation action that reloads concrete values."""
         return self.reload_snapshot()
 
+    def preview_legacy_bootstrap(
+        self,
+        source: str | Path,
+    ) -> DataMappingLegacyBootstrapPreview:
+        """Prepare one strict legacy-wide candidate without mutating Mapping state."""
+        return prepare_legacy_bootstrap_preview(
+            source,
+            parser=self._legacy_bootstrap_parser,
+            resource_status=self.resource_status(),
+            resource_revision=self.mapping_resource_revision(),
+            base_draft=self._session.draft,
+            base_revision=self._session.revision,
+            base_dirty=self._session.dirty,
+            load_requirements=self._load_mapping_requirements,
+            validate_draft=self._validate_draft,
+        )
+
+    def apply_legacy_bootstrap(
+        self,
+        preview: DataMappingLegacyBootstrapPreview,
+        *,
+        allow_replace_current: bool = False,
+    ) -> tuple[DataMappingSnapshot | None, DataMappingLegacyBootstrapApplyResult]:
+        """Install one fresh valid bootstrap candidate as an Unsaved Mapping draft."""
+        candidate, result = evaluate_legacy_bootstrap_apply(
+            preview,
+            resource_status=self.resource_status(),
+            resource_revision=self.mapping_resource_revision(),
+            current_draft=self._session.draft,
+            draft_revision=self._session.revision,
+            load_requirements=self._load_mapping_requirements,
+            validate_draft=self._validate_draft,
+            allow_replace_current=allow_replace_current,
+        )
+        if candidate is None:
+            return self._current_snapshot_without_mutation(), result
+        requirements = self._load_mapping_requirements()
+        resolution = resolve_mapping_requirement_contracts(requirements)
+        missing_baseline = MappingEditorDraft(
+            groups=(),
+            source_label=f"Missing runtime Mapping baseline: {self._provider.source_label}",
+        )
+        self._session.install_unsaved(candidate, missing_baseline)
+        self._draft_source_label = (
+            f"{self._provider.source_label} | Unsaved legacy bootstrap: {preview.source_path}"
+        )
+        return self._snapshot(candidate, requirements, resolution), result
+
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
         requirements = self._load_mapping_requirements()
@@ -323,6 +385,7 @@ class DataMappingService:
             resolution.contracts,
         )
         self._session.reset(draft)
+        self._draft_source_label = None
         return self._snapshot(draft, requirements, resolution)
 
     def edit_cell(
@@ -422,6 +485,7 @@ class DataMappingService:
         result = save_mapping_editor_draft(draft, mapping_file)
         if result.success:
             self._session.mark_saved()
+            self._draft_source_label = None
         return result, self._snapshot(draft, self._load_mapping_requirements())
 
     def export_snapshot(
@@ -560,6 +624,14 @@ class DataMappingService:
             message="Imported into the Unsaved draft. Review the changes, then use Save.",
         )
 
+    def _current_snapshot_without_mutation(self) -> DataMappingSnapshot | None:
+        """Return current draft presentation without changing draft/history revision."""
+        draft = self._session.draft
+        if draft is None:
+            return None
+        requirements = self._load_mapping_requirements()
+        return self._snapshot(draft, requirements)
+
     def _store_command_result(
         self,
         previous: MappingEditorDraft,
@@ -587,6 +659,10 @@ class DataMappingService:
                 exchange_enabled=(
                     validation_result.save_enabled
                     and not exchange_draft_structure_issues(draft)
+                ),
+                bootstrap_available=self.legacy_bootstrap_available,
+                bootstrap_enabled=(
+                    self.legacy_bootstrap_available and self.resource_status() == "missing"
                 ),
             ),
             dirty=self._session.dirty,
@@ -681,6 +757,8 @@ def _future_actions(
     *,
     can_save: bool = False,
     exchange_enabled: bool | None = None,
+    bootstrap_available: bool = False,
+    bootstrap_enabled: bool = False,
 ) -> tuple[DataMappingAction, ...]:
     if exchange_enabled is None:
         exchange_enabled = save_enabled
@@ -704,6 +782,23 @@ def _future_actions(
             "Import Bundle…",
             True,
             "Import a sectioned mapping_bundle_v1 as an Unsaved draft after preview.",
+        ),
+        *(
+            (
+                DataMappingAction(
+                    "bootstrap_legacy_csv",
+                    "Bootstrap Legacy CSV…",
+                    bootstrap_enabled,
+                    (
+                        "Choose a legacy-wide CSV to create an Unsaved Mapping draft. "
+                        "Save remains explicit."
+                        if bootstrap_enabled
+                        else "Available only while the runtime Mapping resource is missing."
+                    ),
+                ),
+            )
+            if bootstrap_available
+            else ()
         ),
         DataMappingAction(
             "save_mapping_json",

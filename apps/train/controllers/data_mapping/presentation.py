@@ -193,11 +193,31 @@ def error_state(
     )
 
 
-def missing_state(*, source_label: str) -> DataMappingControllerState:
+def missing_state(
+    *,
+    source_label: str,
+    bootstrap_enabled: bool = False,
+    message: str = "Mapping resource not found.",
+    extra_issues: tuple[MappingValidationError, ...] = (),
+) -> DataMappingControllerState:
+    actions = []
+    if bootstrap_enabled:
+        actions.append(DataMappingAction(
+            "bootstrap_legacy_csv",
+            "Bootstrap Legacy CSV…",
+            True,
+            "Choose a legacy-wide CSV to create an Unsaved Mapping draft. Save remains explicit.",
+        ))
+    actions.append(DataMappingAction(
+        "reload_runtime",
+        "Reload",
+        True,
+        "Read the mapping source again.",
+    ))
     return DataMappingControllerState(
         source_label=source_label,
-        status="missing",
-        message="Mapping resource not found.",
+        status="missing" if not extra_issues else "error",
+        message=message,
         selected_group_key="",
         entities=(),
         attributes=(),
@@ -209,15 +229,9 @@ def missing_state(*, source_label: str) -> DataMappingControllerState:
                 message="The configured mapping file does not exist.",
                 field="source",
             ),
+            *extra_issues,
         ),
-        actions=(
-            DataMappingAction(
-                "reload_runtime",
-                "Reload",
-                True,
-                "Read the mapping source again.",
-            ),
-        ),
+        actions=tuple(actions),
         resource_status="missing",
     )
 

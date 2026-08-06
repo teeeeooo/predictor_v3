@@ -370,6 +370,27 @@ production readiness. Phase 3 may audit and implement Data Definition UX only
 after this phase is merged to `main`; it must preserve existing projection,
 validation, persistence, readiness, mapping-value, and Predict/ML boundaries.
 
+### Post-Phase 2 — Missing-resource legacy bootstrap onboarding
+
+The missing-runtime-Mapping onboarding path is intentionally separate from
+`mapping_bundle_v1` Import. When the configured `mapping.json` is absent, the
+Data Mapping surface may invoke the existing strict legacy-wide CSV adapter to
+prepare a candidate. The candidate is reconciled with the current saved Data
+Definition Mapping Requirements and must pass the ordinary editor validation
+before it can replace the workspace draft.
+
+A successful bootstrap installs only a validated **Unsaved** draft. It does not
+write `mapping.json`; review export, Mapping Exchange export/import, editing and
+validation continue through their existing owners, and only explicit Save
+publishes the runtime Mapping resource. Preview/apply is guarded by the Mapping
+resource revision, draft revision/content, and current Mapping Requirements. A
+resource appearing, a changed draft/requirements set, invalid legacy input, or a
+cancelled replacement leaves the current draft/history and runtime file
+unchanged. Any existing draft requires an explicit replacement decision.
+
+The legacy-wide CSV remains bootstrap/migration-only. It is not accepted by the
+normal Import action and does not become a second round-trip Mapping format.
+
 ## 11. Acceptance Scenarios
 
 - Editing one value marks the draft dirty and Save clears it after success.
