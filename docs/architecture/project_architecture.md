@@ -194,13 +194,18 @@ root(`%LOCALAPPDATA%` 또는 `$XDG_STATE_HOME`/`~/.local/state`)에 저장한다
 Persisted bundle file identity는 host path syntax와 무관한 `/`-separated relative
 identity를 사용하며, reader는 fixed file-set/hash validation 전에 separator-only
 legacy Windows metadata만 같은 canonical identity로 해석한다. Generation ID는
-POSIX와 Windows 모두에서 단일 안전 path component여야 하며 active pointer와
-직접 generation read가 같은 검증을 사용한다. Parentless bootstrap candidate가
+POSIX와 Windows 모두에서 단일 안전 filesystem component여야 하며 active pointer와
+직접 generation read가 같은 검증을 사용한다. Windows device/reserved alias,
+trailing dot/space, stream/colon, wildcard/forbidden character, control-character
+form도 persisted generation identity로 거부한다. Parentless bootstrap candidate가
 이미 같은 active ID를 가리키는 경우에도 complete immutable bundle은 그대로
-reuse하고, `bundle.json`이 없는 residue만 기존 파일이 동일 candidate bytes와
-일치할 때 missing files와 bundle marker를 마지막에 복구한다. 기존 bundle의
-hash/fingerprint/semantic conflict 또는 residue conflict는 overwrite하지 않고
-fail closed한다.
+reuse한다. `bundle.json`이 없는 matching residue만 복구하며, recovery mutation은
+POSIX에서 validated generation directory descriptor-relative I/O를 사용하고 Windows에서는
+reparse/junction을 거부한 뒤 root-to-generation directory를 no-delete-sharing handle로
+pin한다. 검증 후 path substitution이 발생해도 workspace 밖 filesystem은 수정하지
+않으며, missing files를 exclusive create한 뒤 bundle marker를 마지막에 publish한다.
+기존 bundle의 hash/fingerprint/semantic conflict 또는 residue conflict는 overwrite하지
+않고 fail closed한다.
 
 Runtime activation은 application-level generation coordinator가 소유한다.
 Coordinator는 검증된 immutable snapshot 하나만 candidate로 고정하고 Data

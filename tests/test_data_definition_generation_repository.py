@@ -3,14 +3,17 @@
 import hashlib
 import json
 import multiprocessing
+import os
 import sys
 import threading
+from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path, PureWindowsPath
 from types import SimpleNamespace
 
 import pytest
 
+from apps.common.runtime_generation import recovery_containment as recovery_module
 from apps.common.runtime_generation import repository as repository_module
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
@@ -342,6 +345,7 @@ def test_windows_lock_backend_supports_publication_stale_rejection_and_rollback(
     )
     monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
     monkeypatch.setattr(repository_module, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(recovery_module, "_platform_name", lambda: "nt")
     monkeypatch.setattr(Path, "open", tracked_path_open)
     monkeypatch.setattr(repository_module.os, "fsync", windows_restricted_fsync)
     repository = DataDefinitionGenerationRepository(tmp_path / "windows-store")
@@ -623,3 +627,231 @@ def test_bootstrap_recovery_does_not_repair_corrupt_complete_bundle(tmp_path):
 
     assert schema_path.read_text(encoding="utf-8") == "corrupt\n"
     assert (generation_path / "bundle.json").read_bytes() == before_bundle
+
+
+def _filesystem_tree_state(root: Path) -> dict[str, bytes | None]:
+    return {
+        str(path.relative_to(root)): path.read_bytes() if path.is_file() else None
+        for path in sorted(root.rglob("*"))
+    }
+
+
+def test_bootstrap_recovery_rejects_generation_root_symlink_without_external_mutation(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    external = tmp_path / "external"
+    external.mkdir()
+    (external / "sentinel.txt").write_text("outside\n", encoding="utf-8")
+    before = _filesystem_tree_state(external)
+    repository.generations_path.mkdir(parents=True)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    generation_path.symlink_to(external, target_is_directory=True)
+    repository.active_pointer_path.write_text(
+        json.dumps({"generation_id": manifest.generation.generation_id}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="owned regular directory|reparse|link"):
+        repository.publish(manifest)
+
+    assert _filesystem_tree_state(external) == before
+    assert not (external / "manifest.json").exists()
+    assert not (external / "bundle.json").exists()
+
+
+def test_bootstrap_recovery_rejects_windows_reparse_equivalent_without_mutation(
+    tmp_path,
+    monkeypatch,
+):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    (generation_path / "bundle.json").unlink()
+    before = _filesystem_tree_state(generation_path)
+    real_lstat = Path.lstat
+    reparse_flag = 0x400
+
+    def reparse_generation_lstat(path: Path):  # noqa: ANN202
+        entry = real_lstat(path)
+        if path == generation_path:
+            return SimpleNamespace(
+                st_mode=entry.st_mode,
+                st_dev=entry.st_dev,
+                st_ino=entry.st_ino,
+                st_file_attributes=reparse_flag,
+            )
+        return entry
+
+    monkeypatch.setattr(recovery_module, "_windows_reparse_attribute", lambda: reparse_flag)
+    monkeypatch.setattr(Path, "lstat", reparse_generation_lstat)
+
+    with pytest.raises(ValueError, match="owned regular directory|reparse|link"):
+        repository.publish(manifest)
+
+    assert _filesystem_tree_state(generation_path) == before
+    assert not (generation_path / "bundle.json").exists()
+
+
+@pytest.mark.parametrize(
+    "generation_id",
+    (
+        "CON",
+        "con.txt",
+        "PRN",
+        "AUX.json",
+        "NUL",
+        "COM1",
+        "com9.log",
+        "LPT1",
+        "lpt9.txt",
+        "CONIN$",
+        "CONOUT$",
+        "CON .txt",
+        "COM¹.txt",
+        "LPT³.log",
+        "generation.",
+        "generation ",
+        "generation:stream",
+        "generation<alias",
+        "generation>alias",
+        'generation"alias',
+        "generation|alias",
+        "generation?alias",
+        "generation*alias",
+        "generation\x01alias",
+    ),
+)
+def test_generation_identity_rejects_windows_reserved_or_alias_forms(generation_id):
+    with pytest.raises(ValueError, match="safe immutable bundle name"):
+        repository_module._require_safe_generation_id(generation_id)
+
+
+def test_generated_semantic_generation_id_remains_portable():
+    generation_id = bootstrap_manifest().generation.generation_id
+    assert repository_module._require_safe_generation_id(generation_id) == generation_id
+
+
+@pytest.mark.parametrize("substitution", ("generation", "generations"))
+def test_bootstrap_recovery_substitution_cannot_mutate_external_tree(
+    tmp_path,
+    substitution,
+):
+    manifest = bootstrap_manifest()
+    external = tmp_path / "external"
+    external.mkdir()
+    (external / "sentinel.txt").write_text("outside\n", encoding="utf-8")
+    before = _filesystem_tree_state(external)
+    root = tmp_path / "store"
+    repository = DataDefinitionGenerationRepository(root)
+    repository.publish(manifest)
+    generation = repository.generations_path / manifest.generation.generation_id
+    (generation / "bundle.json").unlink()
+    (generation / "projections" / "schema.csv").unlink()
+    preserved = tmp_path / f"preserved-{substitution}"
+
+    def attack(stage: str) -> None:
+        if stage != "before_recovery_mutation":
+            return
+        target = generation if substitution == "generation" else repository.generations_path
+        target.rename(preserved)
+        target.symlink_to(external, target_is_directory=True)
+
+    attacked = DataDefinitionGenerationRepository(root, failure_hook=attack)
+    with pytest.raises((FileNotFoundError, ValueError)):
+        attacked.publish(manifest)
+
+    assert _filesystem_tree_state(external) == before
+    assert not (external / "bundle.json").exists()
+    assert not (external / "manifest.json").exists()
+
+
+@pytest.mark.parametrize("substitution", ("generation", "generations"))
+def test_windows_recovery_guard_blocks_substitution_before_mutation(
+    tmp_path,
+    monkeypatch,
+    substitution,
+):
+    guarded: set[Path] = set()
+    blocked: list[Path] = []
+
+    @contextmanager
+    def fake_hold(path: Path):
+        absolute = Path(os.path.abspath(path))
+        guarded.add(absolute)
+        try:
+            yield
+        finally:
+            guarded.remove(absolute)
+
+    monkeypatch.setattr(recovery_module, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(recovery_module, "_hold_windows_directory", fake_hold)
+    manifest = bootstrap_manifest()
+    root = tmp_path / "store"
+    repository = DataDefinitionGenerationRepository(root)
+    repository.publish(manifest)
+    generation = repository.generations_path / manifest.generation.generation_id
+    (generation / "bundle.json").unlink()
+    (generation / "projections" / "schema.csv").unlink()
+    external = tmp_path / "external"
+    external.mkdir()
+    before = _filesystem_tree_state(external)
+    preserved = tmp_path / f"preserved-windows-{substitution}"
+
+    def attack(stage: str) -> None:
+        if stage != "before_recovery_mutation":
+            return
+        target = generation if substitution == "generation" else repository.generations_path
+        absolute = Path(os.path.abspath(target))
+        if absolute in guarded:
+            blocked.append(absolute)
+            return
+        target.rename(preserved)
+        target.symlink_to(external, target_is_directory=True)
+
+    attacked = DataDefinitionGenerationRepository(root, failure_hook=attack)
+    attacked.publish(manifest)
+
+    expected = generation if substitution == "generation" else repository.generations_path
+    assert blocked == [Path(os.path.abspath(expected))]
+    assert _filesystem_tree_state(external) == before
+    assert attacked.read_active().manifest == manifest
+
+
+def test_windows_recovery_directory_guard_denies_delete_share_and_opens_reparse_point(
+    monkeypatch,
+):
+    calls: list[tuple[object, ...]] = []
+
+    class NativeCall:
+        argtypes = None
+        restype = None
+
+        def __init__(self, name: str, result: int):
+            self.name = name
+            self.result = result
+
+        def __call__(self, *args):  # noqa: ANN002, ANN202
+            calls.append((self.name, *args))
+            return self.result
+
+    kernel32 = SimpleNamespace(
+        CreateFileW=NativeCall("create", 101),
+        CloseHandle=NativeCall("close", 1),
+    )
+    monkeypatch.setattr(recovery_module.os, "name", "nt")
+    monkeypatch.setattr(
+        recovery_module.ctypes,
+        "WinDLL",
+        lambda *_args, **_kwargs: kernel32,
+        raising=False,
+    )
+
+    with recovery_module._hold_windows_directory(Path("generation")):
+        pass
+
+    opened, closed = calls
+    assert opened[0] == "create"
+    assert opened[3] == 0x1 | 0x2
+    assert opened[6] == 0x02000000 | 0x00200000
+    assert closed == ("close", 101)

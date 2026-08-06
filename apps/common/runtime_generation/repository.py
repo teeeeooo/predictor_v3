@@ -9,9 +9,13 @@ import shutil
 from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
+from tempfile import TemporaryDirectory
 from typing import Callable, Iterator
 from uuid import uuid4
 
+from apps.common.runtime_generation.recovery_containment import (
+    reconstruct_matching_residue,
+)
 from apps.common.runtime_generation.repository_contract import (
     GenerationPublishResult,
     GenerationSnapshot,
@@ -42,6 +46,13 @@ _REQUIRED_BUNDLE_FILES = frozenset({
     "projections/target_registry.json",
     "projections/mapping_requirements.json",
 })
+_WINDOWS_RESERVED_GENERATION_STEMS = frozenset({
+    "CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$",
+    "COM¹", "COM²", "COM³", "LPT¹", "LPT²", "LPT³",
+    *(f"COM{index}" for index in range(1, 10)),
+    *(f"LPT{index}" for index in range(1, 10)),
+})
+_WINDOWS_FORBIDDEN_NAME_CHARS = frozenset('<>:"/\\|?*')
 
 
 class DataDefinitionGenerationRepository:
@@ -222,52 +233,24 @@ class DataDefinitionGenerationRepository:
         if not final_path.exists():
             self._stage_and_publish(manifest, projections, fingerprints, final_path)
             return self.read_generation(manifest.generation.generation_id)
-        if not final_path.is_dir() or (final_path / "bundle.json").exists():
+        if (final_path / "bundle.json").exists():
             raise ValueError("existing immutable generation is incomplete or corrupt")
 
-        staging = self.generations_path / f".recovery-{uuid4().hex}"
-        bundle_tmp = self.generations_path / f".bundle-{uuid4().hex}.tmp"
-        try:
-            self._write_bundle_tree(staging, manifest, projections, fingerprints)
+        with TemporaryDirectory(prefix="predictor-v3-generation-recovery-") as temporary:
+            expected_root = Path(temporary)
+            self._write_bundle_tree(expected_root, manifest, projections, fingerprints)
             expected_files = {
-                _bundle_file_identity(item, staging): item
-                for item in staging.rglob("*") if item.is_file()
+                _bundle_file_identity(item, expected_root): item.read_bytes()
+                for item in expected_root.rglob("*")
+                if item.is_file()
             }
-            expected_dirs = {
-                _bundle_file_identity(item, staging)
-                for item in staging.rglob("*") if item.is_dir()
-            }
-            for item in final_path.rglob("*"):
-                relative = _bundle_file_identity(item, final_path)
-                if item.is_symlink():
-                    raise ValueError("recoverable generation residue contains a link")
-                if item.is_dir():
-                    if relative not in expected_dirs:
-                        raise ValueError("recoverable generation residue has unknown directories")
-                    continue
-                if not item.is_file() or relative not in expected_files or relative == "bundle.json":
-                    raise ValueError("recoverable generation residue has unknown files")
-                if item.read_bytes() != expected_files[relative].read_bytes():
-                    raise ValueError(
-                        f"recoverable generation residue conflicts with bootstrap: {relative}"
-                    )
-
-            for relative, source in expected_files.items():
-                if relative == "bundle.json":
-                    continue
-                destination = final_path / relative
-                if destination.exists():
-                    continue
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes(source.read_bytes())
-                self._fsync_file(destination)
-            bundle_tmp.write_bytes(expected_files["bundle.json"].read_bytes())
-            self._fsync_file(bundle_tmp)
-            os.replace(bundle_tmp, final_path / "bundle.json")
-            self._fsync_directory(final_path)
-        finally:
-            bundle_tmp.unlink(missing_ok=True)
-            shutil.rmtree(staging, ignore_errors=True)
+        reconstruct_matching_residue(
+            self.root,
+            self.generations_path,
+            final_path,
+            expected_files,
+            before_mutation=lambda: self._failure_hook("before_recovery_mutation"),
+        )
         return self.read_generation(manifest.generation.generation_id)
 
     def _replace_active_pointer(self, generation_id: str) -> None:
@@ -343,12 +326,17 @@ def _require_safe_generation_id(value: object) -> str:
         raise ValueError("generation_id is not a safe immutable bundle name")
     posix = PurePosixPath(value)
     windows = PureWindowsPath(value)
+    windows_stem = value.split(".", 1)[0].rstrip(" ").upper()
     if (
         posix.is_absolute()
         or windows.is_absolute()
         or windows.drive
         or len(posix.parts) != 1
         or len(windows.parts) != 1
+        or value[-1] in {".", " "}
+        or any(character in _WINDOWS_FORBIDDEN_NAME_CHARS for character in value)
+        or any(ord(character) < 32 for character in value)
+        or windows_stem in _WINDOWS_RESERVED_GENERATION_STEMS
     ):
         raise ValueError("generation_id is not a safe immutable bundle name")
     return value
