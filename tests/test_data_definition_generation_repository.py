@@ -6,6 +6,7 @@ import multiprocessing
 import sys
 import threading
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -291,6 +292,49 @@ def test_windows_lock_backend_supports_publication_stale_rejection_and_rollback(
     monkeypatch,
 ):
     calls: list[int] = []
+    synced_paths: list[Path] = []
+    open_files: dict[int, tuple[Path, str]] = {}
+    real_path_open = Path.open
+    real_fsync = repository_module.os.fsync
+
+    class TrackedBinaryFile:
+        def __init__(self, handle, path: Path, mode: str) -> None:  # noqa: ANN001
+            self._handle = handle
+            self._descriptor = handle.fileno()
+            open_files[self._descriptor] = (path, mode)
+
+        def __enter__(self):  # noqa: ANN204
+            return self
+
+        def __exit__(self, *args) -> None:  # noqa: ANN002
+            try:
+                self._handle.close()
+            finally:
+                open_files.pop(self._descriptor, None)
+
+        def __getattr__(self, name: str):  # noqa: ANN204
+            return getattr(self._handle, name)
+
+    def tracked_path_open(
+        path: Path,
+        mode: str = "r",
+        *args,
+        **kwargs,
+    ):  # noqa: ANN002, ANN003, ANN202
+        handle = real_path_open(path, mode, *args, **kwargs)
+        if "b" not in mode:
+            return handle
+        return TrackedBinaryFile(handle, path, mode)
+
+    def windows_restricted_fsync(descriptor: int) -> None:
+        tracked = open_files.get(descriptor)
+        if tracked is not None:
+            path, mode = tracked
+            if "+" not in mode and not any(flag in mode for flag in "wax"):
+                raise OSError(9, "Bad file descriptor")
+            synced_paths.append(path)
+        real_fsync(descriptor)
+
     fake_msvcrt = SimpleNamespace(
         LK_LOCK=1,
         LK_UNLCK=2,
@@ -298,6 +342,8 @@ def test_windows_lock_backend_supports_publication_stale_rejection_and_rollback(
     )
     monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
     monkeypatch.setattr(repository_module, "_platform_name", lambda: "nt")
+    monkeypatch.setattr(Path, "open", tracked_path_open)
+    monkeypatch.setattr(repository_module.os, "fsync", windows_restricted_fsync)
     repository = DataDefinitionGenerationRepository(tmp_path / "windows-store")
     initial = bootstrap_manifest()
 
@@ -312,6 +358,11 @@ def test_windows_lock_backend_supports_publication_stale_rejection_and_rollback(
     assert repository.read_active().manifest == initial
     assert calls.count(fake_msvcrt.LK_LOCK) == calls.count(fake_msvcrt.LK_UNLCK)
     assert calls.count(fake_msvcrt.LK_LOCK) >= 4
+    assert any(
+        any(part.startswith(".staging-") for part in path.parts)
+        for path in synced_paths
+    )
+    assert any(path.name.startswith(".active-generation-") for path in synced_paths)
     assert not list(repository.generations_path.glob(".staging-*"))
     assert not list(repository.root.glob(".active-generation-*.tmp"))
 
