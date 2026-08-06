@@ -68,17 +68,21 @@
   separated without weakening domain/UI/mechanical owners.
 - PR #53 closed the Windows first-run Data Definition runtime-generation file-sync
   defect, PR #54 closed the shared Model Lifecycle Core Windows persistence and
-  path-substitution safety defect, and PR #55 closed the separate Deployment
-  Export Windows publication owner. **Windows Compatibility Stabilization** now
-  advances to native Windows 11 Enterprise source-runtime acceptance.
+  path-substitution safety defect, PR #55 closed the separate Deployment Export
+  Windows publication owner, and PR #56 closed Runtime Generation portable
+  bundle/generation identity plus contained incomplete-bootstrap recovery.
+  **Windows Compatibility Stabilization** now resumes native Windows 11 Enterprise
+  source-runtime acceptance.
 
 ## Next Action
 
 **Native Windows 11 Enterprise source-runtime acceptance** is the exact next gate
-within **Windows Compatibility Stabilization**. Exercise Train, Predict,
-Experiment, Calculator, and the repaired Deployment Export path on native
-Windows; Train must complete real training through Candidate publication rather
-than merely start successfully.
+within **Windows Compatibility Stabilization**. If the previously affected
+Windows runtime-generation state is still available, verify legacy separator and
+incomplete-bootstrap recovery before deleting or resetting it. Then exercise a
+clean-state Train, Predict, Experiment, Calculator, and repaired Deployment Export
+path; Train must complete real training through Candidate publication rather than
+merely start successfully.
 
 The Predict Case → Standard Predicted Points / Standard Request Product-Owner
 Decision is held, not cancelled, until source-runtime Windows acceptance closes.
@@ -160,13 +164,15 @@ product decision.
   behind that decision. Calculator already has a `PredictedPointsEnvelope`/adapter
   foundation, and neither held item authorizes source work during stabilization.
 - Deployment Export Windows portability is complete through independently audited
-  PR #55. Native Windows 11 Enterprise source-runtime acceptance is now the
-  remaining stabilization gate; macOS-hosted Windows simulation is not native
-  acceptance evidence.
-- PyInstaller/frozen Train child-process execution, Windows reserved filename/path
-  identity hardening, long-path behavior, and packaging-specific DLL/runtime
-  concerns are later Windows/packaging risks under separate owner/approval; they
-  are not part of source-runtime stabilization acceptance.
+  PR #55, and Runtime Generation bundle/generation identity plus contained
+  incomplete-bootstrap recovery is complete through independently audited PR #56.
+  Native Windows 11 Enterprise source-runtime acceptance is now the remaining
+  stabilization gate; macOS-hosted Windows simulation is not native acceptance
+  evidence.
+- PyInstaller/frozen Train child-process execution, packaging-specific reserved
+  filename/path identity, long-path behavior, and DLL/runtime concerns are later
+  Windows/packaging risks under separate owner/approval; they are not part of
+  source-runtime stabilization acceptance.
 - Process-restart view-state persistence, a persistent selected-case detail
   panel, a separate Full Context screen, and legacy split-table restoration are
   outside the first implementation.
@@ -210,19 +216,23 @@ product decision.
 12. **Deployment Export Windows portability — complete:** PR #55 closed the
     separate Windows durability/publication path while preserving immutable
     no-clobber export semantics and POSIX behavior.
-13. **Native Windows source-runtime acceptance — exact next gate:** on Windows 11
-    Enterprise exercise Train, Predict, Experiment, Calculator, and Deployment
-    Export; Train must complete real training through Candidate publication, not
-    merely start successfully.
-14. **Predict Case → Standard Predicted Points / Standard Request Product-Owner
+13. **Runtime Generation Windows identity/bootstrap recovery — complete:** PR #56
+    closed canonical bundle/generation identity, legacy separator compatibility,
+    Windows-safe generation naming, and contained incomplete-bootstrap recovery.
+14. **Native Windows source-runtime acceptance — exact next gate:** preserve and
+    verify the previously affected Windows state first when available, then run a
+    clean-state Train, Predict, Experiment, Calculator, and Deployment Export;
+    Train must complete real training through Candidate publication, not merely
+    start successfully.
+15. **Predict Case → Standard Predicted Points / Standard Request Product-Owner
     Decision — held, not cancelled** until source-runtime Windows acceptance
     closes.
-15. **Multi-point Predict → Calculate implementation — held** behind the Standard
+16. **Multi-point Predict → Calculate implementation — held** behind the Standard
     Request decision; Predict must not copy Calculator formulas or replace the
     Calculator owner.
-16. **Later Windows/packaging risks — separately gated:** frozen Train
-    child-process execution, reserved filename/path identity, long-path behavior,
-    and packaging-specific DLL/runtime concerns remain outside source-runtime
+17. **Later Windows/packaging risks — separately gated:** frozen Train
+    child-process execution, packaging-specific reserved filename/path identity,
+    long-path behavior, and DLL/runtime concerns remain outside source-runtime
     stabilization unless separately approved.
 
 ## Minimal Anchors
