@@ -13,5 +13,14 @@ required output for every task.
 Do not read report bodies broadly. Search `REPORT_INDEX.md`, memory topics, or
 stable keywords first, then open only the required record or legacy evidence.
 
+For fast record discovery, filter the index before opening bodies:
+
+- date/month: `rg '^\| 2026-08' result_reports/REPORT_INDEX.md`
+- topic/tag: `rg -i 'result-review|windows|data-mapping' result_reports/REPORT_INDEX.md`
+- combine filters: `rg '^\| 2026-08' result_reports/REPORT_INDEX.md | rg -i 'windows'`
+
+The index row is the discovery unit; record directories are storage, not a topic
+navigation hierarchy.
+
 Legacy report and summary bodies preserve historical paths and commands and
 must not be blanket-rewritten.

@@ -4,6 +4,13 @@ This index covers records created under the new conditional-report policy.
 Pre-cutover summaries remain the discovery layer under
 `result_reports/legacy/summaries/`.
 
+Search this table before opening record bodies. Date/month narrows chronology;
+Topic and Tags are the stable discovery keys. Typical filters are
+`rg '^\| 2026-08' result_reports/REPORT_INDEX.md` and
+`rg -i 'result-review|windows|data-mapping' result_reports/REPORT_INDEX.md`.
+Combine them when a month still has many records. Physical record folders remain
+date-based append-only storage and are not a topic hierarchy.
+
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
 | 2026-08-06 | Windows runtime-generation containment correction | runtime-generation, windows, bootstrap-recovery, containment, substitution, generation-id, correction | Bind incomplete-bootstrap mutation to an owned generation directory so substitution cannot touch external state, and reject Windows reserved/alias Generation IDs. | `result_reports/records/2026-08/2026-08-06-windows-runtime-generation-containment-correction.md` |
