@@ -10,43 +10,31 @@
 
 ## Current Slice
 
-**Windows Compatibility Stabilization** remains active. The independently audited
-source repairs through PR #56 are closed, and Native Windows 11 Enterprise
-source-runtime acceptance has resumed.
+**Windows Compatibility Stabilization** remains active. Source repairs through
+PR #56 are closed, and PR #57 has now closed the Native Windows-discovered
+Predict Result Review alignment and tooltip defects.
 
-That acceptance exposed two Predict Result Review defects and two Train/Admin
-onboarding gaps. The defects are handled before acceptance continues; onboarding
-follows acceptance as a separate bounded workstream.
+The exact next gate returns to Native Windows 11 Enterprise source-runtime
+acceptance. The separate Data Definition / Data Mapping onboarding gaps remain
+ordered immediately after that acceptance.
 
 ## Exact Next Action
 
-**Predict Result Review bounded repair**
+**Native Windows 11 Enterprise source-runtime acceptance**
 
-Repair only the current Result Review presentation/error paths needed for:
-
-1. narrow/pinned Result Review alignment: the `Case + 상태` anchor and the
-   right-side result table must keep horizontal headers and the first data row
-   vertically aligned; and
-2. unavailable cooling/heating `ReviewSourceValue` tooltip handling: do not assume
-   a generic outcome owns `reason_code/message` when that source value shape does
-   not, and eliminate the resulting `AttributeError`.
-
-Preserve the canonical Result Review session/projection, pinned-column ownership,
-raw source/provenance evidence, copy/CSV behavior, typed Target outcomes, and
-existing stale/unavailable semantics.
+- If the previously affected runtime-generation state still exists, verify its
+  recovery before deleting or resetting it.
+- Then exercise clean-state Train, Predict, Experiment, Calculator, and Deployment
+  Export.
+- Train must complete real training through Candidate publication rather than only
+  launching or reaching a pre-training state.
+- Native Windows evidence remains user-owned manual acceptance; macOS simulation
+  does not substitute for it.
 
 ## Ordered Follow-ups
 
-1. **Predict Result Review bounded repair** — exact next source gate.
-2. **Exact-head Gate / merge / Close** for that repair.
-3. **Resume Native Windows 11 Enterprise source-runtime acceptance**:
-   - inspect/recover the previously affected runtime-generation state first when
-     it is still available;
-   - then exercise clean-state Train, Predict, Experiment, Calculator, and
-     Deployment Export;
-   - Train must complete real training through Candidate publication, not merely
-     launch or reach pre-training state.
-4. **Data Definition / Data Mapping onboarding workstream**:
+1. **Native Windows 11 Enterprise source-runtime acceptance** — exact next gate.
+2. **Data Definition / Data Mapping onboarding workstream**:
    - expose the current generation's actual Train-required `ml_name` headers as a
      user-facing Training Header Template/reference workflow;
    - when `data/mapping.json` is missing, bootstrap the legacy wide mapping source
@@ -66,8 +54,8 @@ existing stale/unavailable semantics.
   bootstrap-only; normal Data Mapping exchange/import behavior is not replaced by
   a second permanent wide-CSV contract.
 - Predict remains a consumer of saved Data Definition, Mapping, compatible model,
-  and canonical session contracts; Result Review repair must not move domain or
-  persistence ownership into UI code.
+  and canonical session contracts. The closed Result Review repair does not move
+  domain or persistence ownership into UI code.
 - Preserve full Active Target compatibility, Case-scoped requested Target
   applicability, execution provenance, row isolation, cancellation, partial
   results, EER/COP applicability, generation migration, and no-hot-swap behavior.
