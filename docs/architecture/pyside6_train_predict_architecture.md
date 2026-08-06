@@ -966,9 +966,13 @@ workspace places this seam into both standalone and Train-embedded Predict.
 
 `PredictLayoutBSurfaces` keeps Input Authoring and Result Review as two cached
 pages in one stack and displays one page across the full main-table area. The
-surface buttons make the current page and manual transition explicit. There is
-no split-table synchronization and no frozen-column auxiliary view; each table
-keeps its own cell/multi-selection, focus, and horizontal scroll state.
+surface buttons make the current page and manual transition explicit. Input
+Authoring remains an ordinary single table. Result Review remains one logical
+read-only table surface, but when its canonical columns overflow its own viewport
+it presents the approved `Case + 상태` anchor through a second Qt viewport over
+the same model and selection model; the two viewports synchronize vertical and
+row/header geometry while only the result region scrolls horizontally. When the
+content fits, Result Review returns to its ordinary single-view presentation.
 
 `WorkspaceCaseSelectionBridge` maps only each table's current row to the shared
 stable `case_id`. Applying that identity to the other table changes its current

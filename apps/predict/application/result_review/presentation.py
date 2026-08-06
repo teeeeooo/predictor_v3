@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from math import isfinite
 
+from apps.predict.application.result_enrichment import DerivedMetricOutcome
+from apps.predict.application.target_outcome import TargetOutcome
+
 from .contracts import ResultReviewRow
 
 
@@ -56,12 +59,25 @@ def tooltip_value(row: ResultReviewRow, key: str) -> str:
             if item.owner not in {"row", "freshness"}
         )
         return "\n".join(details)
-    outcome = getattr(row, key, None)
-    if outcome is not None and getattr(outcome, "status", "") != "available":
-        return " / ".join(
-            part for part in (outcome.reason_code, outcome.message) if part
-        )
+    if key in {
+        "eer",
+        "cop",
+        "cooling_frequency",
+        "heating_frequency",
+        "refrigerant_quantity",
+    }:
+        return _outcome_tooltip(getattr(row, key))
     return ""
+
+
+def _outcome_tooltip(
+    outcome: TargetOutcome | DerivedMetricOutcome | None,
+) -> str:
+    if outcome is None or outcome.status == "available":
+        return ""
+    return " / ".join(
+        part for part in (outcome.reason_code, outcome.message) if part
+    )
 
 
 def _display_source(value) -> str:  # noqa: ANN001

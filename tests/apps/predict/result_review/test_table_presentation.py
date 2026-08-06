@@ -1,11 +1,15 @@
 """Shared PySide Result Review model/view behavior."""
 
 import os
+from dataclasses import replace
 
-from PySide6.QtCore import QItemSelectionModel, Qt
+from PySide6.QtCore import QItemSelectionModel, QPoint, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QHeaderView
 
+from apps.predict.application.result_enrichment import DerivedMetricOutcome
+from apps.predict.application.result_review.presentation import tooltip_value
+from apps.predict.application.target_outcome import TargetOutcome
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.ui.result_review import ResultReviewTableModel, ResultReviewTableView
 
@@ -16,6 +20,18 @@ RESULT_WIDTHS = (64, 100, 100, 100, 360, 72, 72, 112, 112, 90)
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+def _header_top_in_owner(owner: ResultReviewTableView, table: QAbstractItemView) -> int:
+    return table.horizontalHeader().mapTo(owner, QPoint(0, 0)).y()
+
+
+def _row_top_in_owner(
+    owner: ResultReviewTableView,
+    table: QAbstractItemView,
+    index,
+) -> int:
+    return table.viewport().mapTo(owner, table.visualRect(index).topLeft()).y()
 
 
 def test_model_is_exact_readonly_projection_and_summary_tooltip_is_full_text():
@@ -40,6 +56,59 @@ def test_model_is_exact_readonly_projection_and_summary_tooltip_is_full_text():
     assert model.flags(summary) == Qt.ItemIsEnabled | Qt.ItemIsSelectable
     assert model.data(summary, Qt.DisplayRole) == model.data(summary, Qt.ToolTipRole)
     assert "A very long indoor unit value" in model.data(summary, Qt.ToolTipRole)
+
+
+def test_tooltip_role_handles_source_values_and_preserves_typed_outcome_detail():
+    _app()
+    composition = build_predict_workspace_composition(initial_empty_rows=1)
+    model = ResultReviewTableModel(composition.result_review_projection)
+
+    tooltips = [
+        model.data(model.index(0, column), Qt.ToolTipRole)
+        for column in range(model.columnCount())
+    ]
+    assert all(isinstance(value, str) for value in tooltips)
+    assert tooltips[2] == ""
+    assert tooltips[3] == ""
+
+    row = composition.result_review_projection.rows()[0]
+    target = TargetOutcome(
+        "target-frequency",
+        "result-frequency",
+        "cooling_hz",
+        "Hz",
+        "unavailable",
+        reason_code="target_unavailable",
+        message="Target detail remains available.",
+    )
+    metric = DerivedMetricOutcome(
+        "eer",
+        "unavailable",
+        "capacity-feature",
+        "power-target",
+        reason_code="metric_unavailable",
+        message="Metric detail remains available.",
+    )
+    typed_row = replace(
+        row,
+        cooling_frequency=target,
+        eer=metric,
+        status="partial",
+        message="Row detail remains available.",
+        freshness="stale",
+        stale_reason="Generation changed.",
+    )
+
+    assert tooltip_value(typed_row, "cooling_frequency") == (
+        "target_unavailable / Target detail remains available."
+    )
+    assert tooltip_value(typed_row, "eer") == (
+        "metric_unavailable / Metric detail remains available."
+    )
+    assert tooltip_value(typed_row, "status") == (
+        "Row detail remains available.\n재실행 필요: Generation changed."
+    )
+    assert tooltip_value(typed_row, "specification_summary") == row.specification_summary
 
 
 def test_view_elides_only_visually_and_copies_selected_full_rows_with_headers():
@@ -114,6 +183,14 @@ def test_narrow_view_pins_only_case_and_status_with_shared_native_interactions()
     assert all(anchor.isColumnHidden(column) for column in range(2, 10))
     assert anchor.model() is model
     assert anchor.selectionModel() is view.selectionModel()
+    assert _header_top_in_owner(view, anchor) == _header_top_in_owner(view, view)
+    assert anchor.horizontalHeader().height() == view.horizontalHeader().height()
+    assert _row_top_in_owner(view, anchor, model.index(0, 0)) == _row_top_in_owner(
+        view, view, model.index(0, 2)
+    )
+    assert _row_top_in_owner(view, anchor, model.index(2, 0)) == _row_top_in_owner(
+        view, view, model.index(2, 2)
+    )
 
     anchored_status = anchor.visualRect(model.index(2, 1))
     QTest.mouseClick(anchor.viewport(), Qt.LeftButton, pos=anchored_status.center())
@@ -137,14 +214,20 @@ def test_narrow_view_pins_only_case_and_status_with_shared_native_interactions()
     anchor.verticalScrollBar().setValue(3)
     app.processEvents()
     assert view.verticalScrollBar().value() == 3
-    assert anchor.visualRect(model.index(3, 0)).top() == view.visualRect(
-        model.index(3, 2)
-    ).top()
+    assert _row_top_in_owner(view, anchor, model.index(3, 0)) == _row_top_in_owner(
+        view, view, model.index(3, 2)
+    )
+
+    view.setRowHeight(3, 51)
+    app.processEvents()
+    assert anchor.rowHeight(3) == view.rowHeight(3) == 51
+    assert _row_top_in_owner(view, anchor, model.index(4, 0)) == _row_top_in_owner(
+        view, view, model.index(4, 2)
+    )
 
     anchor.setColumnWidth(1, 128)
     app.processEvents()
     assert anchor.columnWidth(1) == 128
-    assert anchor.rowHeight(3) == view.rowHeight(3)
     view.resize(sum(RESULT_WIDTHS) + 200, 260)
     app.processEvents()
     assert not view.pinned_columns_active
