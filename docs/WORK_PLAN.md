@@ -10,66 +10,75 @@
 
 ## Current Slice
 
-**Windows Compatibility Stabilization** remains active. Source repairs through
-PR #56 are closed, and PR #57 has now closed the Native Windows-discovered
-Predict Result Review alignment and tooltip defects.
+**Windows Compatibility Stabilization** remains active, but native acceptance is
+currently paused on a user-data onboarding prerequisite rather than a Windows
+runtime defect.
 
-The exact next gate returns to Native Windows 11 Enterprise source-runtime
-acceptance. The separate Data Definition / Data Mapping onboarding gaps remain
-ordered immediately after that acceptance.
+Native Windows 11 Enterprise evidence now confirms the previously affected
+runtime-generation state recovers successfully, clean-state Train startup succeeds,
+and the PR #57 Result Review pinned-table alignment renders correctly. Full Train
+acceptance cannot continue through real training/Candidate publication until the
+user can prepare training headers and local Mapping through supported product flows.
 
 ## Exact Next Action
 
-**Native Windows 11 Enterprise source-runtime acceptance**
+**Data Definition / Data Mapping onboarding workstream**
 
-- If the previously affected runtime-generation state still exists, verify its
-  recovery before deleting or resetting it.
-- Then exercise clean-state Train, Predict, Experiment, Calculator, and Deployment
-  Export.
-- Train must complete real training through Candidate publication rather than only
-  launching or reaching a pre-training state.
-- Native Windows evidence remains user-owned manual acceptance; macOS simulation
-  does not substitute for it.
+Close the user-data preparation gap needed to resume native Train acceptance:
+
+1. expose the current generation's exact Train-required `ml_name` headers as a
+   user-facing Training Header Template/reference export;
+2. provide enough Definition reference information to map those headers back to
+   current Feature meaning without making generated compatibility projections
+   writable SSOTs;
+3. when `data/mapping.json` is absent, allow the legacy wide mapping source to
+   bootstrap only a validated **unsaved** Data Mapping draft;
+4. preserve the existing review/exchange/import/Save path so the user can enter
+   real local Mapping values and explicitly create the local runtime mapping; and
+5. audit the remaining `config/ml/features.csv` static compatibility dependencies
+   before any source mutation that retires or redirects that projection.
 
 ## Ordered Follow-ups
 
-1. **Native Windows 11 Enterprise source-runtime acceptance** — exact next gate.
-2. **Data Definition / Data Mapping onboarding workstream**:
-   - expose the current generation's actual Train-required `ml_name` headers as a
-     user-facing Training Header Template/reference workflow;
-   - when `data/mapping.json` is missing, bootstrap the legacy wide mapping source
-     only into a validated **unsaved** Data Mapping draft, then use explicit
-     review/export/import/Save workflow to create the local runtime mapping;
-   - keep `config/ml/features.csv` as a compatibility projection rather than the
-     canonical user-owned definition surface;
-   - audit remaining static compatibility dependencies before authorizing source
-     mutation that would retire or redirect them.
+1. **Data Definition / Data Mapping onboarding** — exact next source gate.
+2. **Resume Native Windows 11 Enterprise source-runtime acceptance**:
+   - perform real Train execution through Candidate publication using prepared
+     user data;
+   - continue Predict, Experiment, Calculator, and Deployment Export acceptance;
+   - reuse the already confirmed native runtime-generation recovery, clean startup,
+     and Result Review alignment evidence unless later source changes invalidate it.
+3. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
+   Decision** after native Windows source-runtime acceptance closes.
+4. **Multi-point Predict → Calculate** remains behind that product decision.
 
 ## Active Constraints
 
 - Data Definition / canonical runtime generation remains the Feature/Target and
   Train contract owner. Generated/static projections do not become independent
   writable SSOTs.
+- Train-required raw headers are the current generation's active `ml_name`
+  contract; onboarding must expose that contract rather than invent a second
+  training-header schema.
 - Data Mapping owns concrete `mapping.json` values. Legacy-wide conversion remains
-  bootstrap-only; normal Data Mapping exchange/import behavior is not replaced by
-  a second permanent wide-CSV contract.
-- Predict remains a consumer of saved Data Definition, Mapping, compatible model,
-  and canonical session contracts. The closed Result Review repair does not move
-  domain or persistence ownership into UI code.
-- Preserve full Active Target compatibility, Case-scoped requested Target
-  applicability, execution provenance, row isolation, cancellation, partial
-  results, EER/COP applicability, generation migration, and no-hot-swap behavior.
-- Windows automated repair evidence remains macOS-owned. Native Windows 11
-  Enterprise execution is external/manual acceptance evidence and must remain
-  `NOT RUN`/`NOT AVAILABLE` when not actually executed.
-- Use repository fixtures/mock data only for repository validation. Do not mutate
-  production mapping, training data, models, Active state, promotion state, or
-  retention/migration state as part of these planning/source slices.
+  bootstrap-only and must not become a permanent general import contract or
+  silently auto-write runtime Mapping state.
+- Preserve Data Mapping draft/review/exchange/import/Save ownership and existing
+  runtime-generation/persistence behavior.
+- Keep `config/ml/features.csv` as a compatibility projection unless a bounded
+  owner audit proves its remaining static dependency can be safely retired or
+  redirected.
+- Native Windows evidence remains external/manual evidence. Already confirmed
+  native checks may be reused only while their relevant source/runtime contracts
+  remain uninvalidated.
+- Use repository fixtures/mock data for repository validation; do not commit or
+  infer company-local mapping values, training data, or model quality evidence.
 
 ## Holds
 
-- **Predict Case → Standard Predicted Points / Standard Request Product/Owner
-  Decision** remains held until Native Windows source-runtime acceptance closes.
+- Native Windows acceptance is **paused, not failed or cancelled**, pending the
+  onboarding source prerequisite above.
+- **Standard Request Product/Owner Decision** remains held until Native Windows
+  source-runtime acceptance closes.
 - **Multi-point Predict → Calculate** remains held behind that product decision;
   Predict does not copy Calculator formulas or replace Calculator ownership.
 - **Result Review XLSX** source implementation remains `DEFER` until a concrete
@@ -81,11 +90,11 @@ ordered immediately after that acceptance.
 ## Minimal Anchors
 
 - Product/phase map: `project_brief.md`
-- Predict architecture: `docs/architecture/pyside6_train_predict_architecture.md`
+- Train/Predict architecture: `docs/architecture/pyside6_train_predict_architecture.md`
 - Train/Admin canonical owner direction:
   `docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md`
 - Data Mapping bootstrap boundary:
   `docs/designs/2026-07-14-train-admin-phase-1-mapping-data-foundation.md`
 - ML training-header compatibility:
   `docs/workflows/ml_feature_catalog_workflow.md`
-- Result Review evidence discovery: `result_reports/REPORT_INDEX.md`
+- Native acceptance evidence discovery: `result_reports/REPORT_INDEX.md`

@@ -35,37 +35,33 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
-## 2026-08-06 — Native Windows acceptance defect follow-up sequencing
+## 2026-08-06 — Native Windows acceptance / onboarding sequencing
 
 ### Decision
 
-- Native Windows 11 Enterprise source-runtime acceptance resumed after the
-  independently audited Windows compatibility repairs through PR #56 and exposed
-  two Predict Result Review defects plus Data Definition / Data Mapping onboarding
-  gaps. Treat these as follow-up work, not as evidence that the closed Windows
-  persistence/publication repairs regressed.
-- Make **Predict Result Review bounded repair** the exact next source gate. Repair
-  the narrow/pinned `Case + 상태` anchor versus right-side result-table header/first
-  row alignment and the unavailable cooling/heating `ReviewSourceValue` tooltip
-  path that assumes generic `reason_code/message` fields and raises
-  `AttributeError`.
-- After that repair receives its exact-head Gate, merge, and Close, resume native
-  Windows acceptance. Preserve and inspect the previously affected runtime state
-  first when available, then exercise clean-state Train, Predict, Experiment,
-  Calculator, and Deployment Export; Train must complete real training through
-  Candidate publication.
-- Follow native acceptance with a bounded **Data Definition / Data Mapping
-  onboarding workstream**: expose the current generation's actual Train-required
-  `ml_name` headers as a user Training Header Template/reference workflow, and
-  bootstrap missing `data/mapping.json` from the legacy wide mapping source only
-  into a validated unsaved Data Mapping draft that is reviewed/exported/imported
-  and explicitly Saved to create local runtime mapping. Keep
-  `config/ml/features.csv` a compatibility projection rather than the canonical
-  user owner; audit remaining static compatibility dependencies before source
-  mutation.
-- Keep the Standard Request Product/Owner Decision and Multi-point Predict →
-  Calculate on hold until native Windows acceptance closes. Result Review XLSX
-  implementation remains `DEFER`.
+- Native Windows 11 Enterprise source-runtime acceptance has now directly verified
+  three previously blocking paths: affected runtime-generation state recovery,
+  clean-state Train application startup, and the repaired Result Review pinned-table
+  alignment. These are accepted native evidence unless later source changes
+  materially invalidate the same contracts.
+- Do not close Windows acceptance from startup evidence alone. Real Train execution
+  through Candidate publication remains required, followed by the remaining
+  Predict, Experiment, Calculator, and Deployment Export acceptance paths.
+- Real Train acceptance is currently blocked by a product onboarding gap rather
+  than a Windows runtime failure: the user cannot yet export the current
+  generation's exact Train-required `ml_name` headers or bootstrap a missing local
+  `mapping.json` from the legacy wide mapping source through the supported Data
+  Mapping draft/review/Save workflow.
+- Make **Data Definition / Data Mapping onboarding** the exact next source gate.
+  Expose a Training Header Template/reference workflow; allow legacy-wide Mapping
+  input only to seed a validated unsaved draft; preserve explicit review/exchange/
+  import/Save ownership; and audit remaining `config/ml/features.csv` static
+  compatibility dependencies before retiring or redirecting them.
+- After onboarding closes, resume Native Windows acceptance at real Train execution
+  rather than repeating already-valid recovery/startup/alignment checks without
+  invalidation. Keep Standard Request and Multi-point Predict → Calculate held until
+  native Windows source-runtime acceptance closes; Result Review XLSX remains
+  `DEFER`.
 
 ## 2026-08-05 — Engineering Workflow / repository authority boundary
 
