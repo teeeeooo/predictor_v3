@@ -191,6 +191,16 @@ Draft는 로드한 base generation에 바인딩되며, filesystem adapter는 POS
 generation을 비교한 후 pointer를 교체하여 stale Save를 차단한다. Runtime
 generation history와 active pointer는 source config가 아니라 사용자별 state
 root(`%LOCALAPPDATA%` 또는 `$XDG_STATE_HOME`/`~/.local/state`)에 저장한다.
+Persisted bundle file identity는 host path syntax와 무관한 `/`-separated relative
+identity를 사용하며, reader는 fixed file-set/hash validation 전에 separator-only
+legacy Windows metadata만 같은 canonical identity로 해석한다. Generation ID는
+POSIX와 Windows 모두에서 단일 안전 path component여야 하며 active pointer와
+직접 generation read가 같은 검증을 사용한다. Parentless bootstrap candidate가
+이미 같은 active ID를 가리키는 경우에도 complete immutable bundle은 그대로
+reuse하고, `bundle.json`이 없는 residue만 기존 파일이 동일 candidate bytes와
+일치할 때 missing files와 bundle marker를 마지막에 복구한다. 기존 bundle의
+hash/fingerprint/semantic conflict 또는 residue conflict는 overwrite하지 않고
+fail closed한다.
 
 Runtime activation은 application-level generation coordinator가 소유한다.
 Coordinator는 검증된 immutable snapshot 하나만 candidate로 고정하고 Data

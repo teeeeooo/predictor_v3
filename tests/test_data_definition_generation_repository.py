@@ -6,7 +6,7 @@ import multiprocessing
 import sys
 import threading
 from dataclasses import replace
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from types import SimpleNamespace
 
 import pytest
@@ -348,14 +348,29 @@ def test_windows_lock_backend_supports_publication_stale_rejection_and_rollback(
     initial = bootstrap_manifest()
 
     repository.publish(initial)
+    bundle_path = repository.generations_path / initial.generation.generation_id / "bundle.json"
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    assert set(bundle["files"]) == repository_module._REQUIRED_BUNDLE_FILES
+    assert all("\\" not in identity for identity in bundle["files"])
     first = _candidate(initial, "generation-windows-first", label="Windows")
     repository.publish(first)
     with pytest.raises(ValueError, match="stale generation parent"):
         repository.publish(_candidate(initial, "generation-windows-stale"))
     restored = repository.rollback(initial.generation.generation_id)
+    bundle_path.unlink()
+    recovery_schema = (
+        repository.generations_path
+        / initial.generation.generation_id
+        / "projections"
+        / "schema.csv"
+    )
+    recovery_schema.unlink()
+    repository.publish(initial)
 
     assert restored.manifest == initial
     assert repository.read_active().manifest == initial
+    assert bundle_path.is_file()
+    assert recovery_schema.is_file()
     assert calls.count(fake_msvcrt.LK_LOCK) == calls.count(fake_msvcrt.LK_UNLCK)
     assert calls.count(fake_msvcrt.LK_LOCK) >= 4
     assert any(
@@ -363,7 +378,9 @@ def test_windows_lock_backend_supports_publication_stale_rejection_and_rollback(
         for path in synced_paths
     )
     assert any(path.name.startswith(".active-generation-") for path in synced_paths)
+    assert any(path.name.startswith(".bundle-") for path in synced_paths)
     assert not list(repository.generations_path.glob(".staging-*"))
+    assert not list(repository.generations_path.glob(".recovery-*"))
     assert not list(repository.root.glob(".active-generation-*.tmp"))
 
 
@@ -391,3 +408,218 @@ def test_bundle_read_rejects_projection_from_a_different_generation(tmp_path):
 
     with pytest.raises(ValueError, match="generated projection does not match manifest"):
         repository.read_generation(manifest.generation.generation_id)
+
+
+
+def test_windows_bundle_identity_is_persisted_with_posix_separators():
+    root = PureWindowsPath(r"C:\\state\\generations\\staging")
+    path = root / "projections" / "schema.csv"
+
+    assert repository_module._bundle_file_identity(path, root) == "projections/schema.csv"
+
+
+def test_new_bundle_metadata_uses_canonical_file_identities(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+
+    bundle_path = (
+        repository.generations_path / manifest.generation.generation_id / "bundle.json"
+    )
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+
+    assert set(bundle["files"]) == repository_module._REQUIRED_BUNDLE_FILES
+    assert all("\\" not in identity for identity in bundle["files"])
+    assert repository.read_active().manifest == manifest
+
+
+def test_reader_recovers_separator_only_legacy_windows_bundle_metadata(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    bundle_path = (
+        repository.generations_path / manifest.generation.generation_id / "bundle.json"
+    )
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    bundle["files"] = {
+        identity.replace("/", "\\"): digest
+        for identity, digest in bundle["files"].items()
+    }
+    bundle_path.write_text(
+        json.dumps(bundle, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    recovered = repository.read_active()
+
+    assert recovered.manifest == manifest
+    persisted = json.loads(bundle_path.read_text(encoding="utf-8"))
+    assert any("\\" in identity for identity in persisted["files"])
+
+
+def test_legacy_windows_separator_compatibility_preserves_hash_fail_closed(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    bundle_path = generation_path / "bundle.json"
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    bundle["files"] = {
+        identity.replace("/", "\\"): digest
+        for identity, digest in bundle["files"].items()
+    }
+    bundle_path.write_text(
+        json.dumps(bundle, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    schema_path = generation_path / "projections" / "schema.csv"
+    schema_path.write_text("corrupt\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="generation bundle hash mismatch"):
+        repository.read_active()
+
+
+@pytest.mark.parametrize(
+    "unsafe_identity",
+    (
+        r"..\\manifest.json",
+        r"\\absolute\\manifest.json",
+        r"C:\\outside\\manifest.json",
+        r"projections\\..\\manifest.json",
+        "projections//schema.csv",
+    ),
+)
+def test_bundle_reader_rejects_unsafe_or_noncanonical_file_identity(
+    tmp_path,
+    unsafe_identity,
+):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    bundle_path = (
+        repository.generations_path / manifest.generation.generation_id / "bundle.json"
+    )
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    digest = bundle["files"].pop("projections/schema.csv")
+    bundle["files"][unsafe_identity] = digest
+    bundle_path.write_text(
+        json.dumps(bundle, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="file set|file identity"):
+        repository.read_active()
+
+
+@pytest.mark.parametrize(
+    "generation_id",
+    (
+        "../escape",
+        r"..\\escape",
+        r"\\absolute",
+        r"C:\\absolute",
+        "nested/generation",
+    ),
+)
+def test_generation_identity_rejects_posix_and_windows_path_forms(
+    tmp_path,
+    generation_id,
+):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+
+    with pytest.raises(ValueError, match="safe immutable bundle name"):
+        repository.read_generation(generation_id)
+
+
+def test_active_pointer_rejects_unsafe_windows_generation_identity(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    repository.root.mkdir(parents=True)
+    repository.active_pointer_path.write_text(
+        json.dumps({"generation_id": r"..\\outside"}), encoding="utf-8"
+    )
+
+    with pytest.raises(ValueError, match="active generation pointer is invalid"):
+        repository.active_generation_id()
+
+
+def test_bootstrap_reconstructs_pointer_to_missing_same_generation(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.root.mkdir(parents=True)
+    repository.active_pointer_path.write_text(
+        json.dumps({"generation_id": manifest.generation.generation_id}),
+        encoding="utf-8",
+    )
+
+    result = repository.publish(manifest)
+
+    assert result.generation_id == manifest.generation.generation_id
+    assert repository.read_active().manifest == manifest
+
+
+def test_bootstrap_reconstructs_matching_residue_without_bundle_marker(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    (generation_path / "bundle.json").unlink()
+    (generation_path / "projections" / "schema.csv").unlink()
+
+    repository.publish(manifest)
+
+    assert repository.read_active().manifest == manifest
+    assert (generation_path / "bundle.json").is_file()
+    assert (generation_path / "projections" / "schema.csv").is_file()
+    assert not list(repository.generations_path.glob(".recovery-*"))
+
+
+def test_bootstrap_recovery_rejects_conflicting_residue_without_overwrite(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    bundle_path = generation_path / "bundle.json"
+    bundle_path.unlink()
+    manifest_path = generation_path / "manifest.json"
+    manifest_path.write_text("conflicting-residue\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="conflicts with bootstrap"):
+        repository.publish(manifest)
+
+    assert manifest_path.read_text(encoding="utf-8") == "conflicting-residue\n"
+    assert not bundle_path.exists()
+    assert not list(repository.generations_path.glob(".recovery-*"))
+
+
+def test_bootstrap_recovery_rejects_unknown_residue_without_publication(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    bundle_path = generation_path / "bundle.json"
+    bundle_path.unlink()
+    unexpected = generation_path / "unexpected.txt"
+    unexpected.write_text("external residue\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="unknown files"):
+        repository.publish(manifest)
+
+    assert unexpected.read_text(encoding="utf-8") == "external residue\n"
+    assert not bundle_path.exists()
+    assert not list(repository.generations_path.glob(".recovery-*"))
+
+
+def test_bootstrap_recovery_does_not_repair_corrupt_complete_bundle(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    schema_path = generation_path / "projections" / "schema.csv"
+    before_bundle = (generation_path / "bundle.json").read_bytes()
+    schema_path.write_text("corrupt\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="generation bundle hash mismatch"):
+        repository.publish(manifest)
+
+    assert schema_path.read_text(encoding="utf-8") == "corrupt\n"
+    assert (generation_path / "bundle.json").read_bytes() == before_bundle

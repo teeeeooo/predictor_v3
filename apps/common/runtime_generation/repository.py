@@ -8,7 +8,7 @@ import os
 import shutil
 from contextlib import contextmanager
 from dataclasses import asdict
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import Callable, Iterator
 from uuid import uuid4
 
@@ -33,6 +33,16 @@ from core.data_definition.contract import (
 
 FailureHook = Callable[[str], None]
 
+_REQUIRED_BUNDLE_FILES = frozenset({
+    "manifest.json",
+    "projections/schema.csv",
+    "projections/features.csv",
+    "projections/derived.json",
+    "projections/one_hot.json",
+    "projections/target_registry.json",
+    "projections/mapping_requirements.json",
+})
+
 
 class DataDefinitionGenerationRepository:
     """Publish complete same-filesystem bundles, then atomically replace a pointer."""
@@ -47,15 +57,20 @@ class DataDefinitionGenerationRepository:
     def publish(self, manifest: UnifiedFeatureManifest) -> GenerationPublishResult:
         projections = require_valid_contract(manifest)
         fingerprints = scoped_fingerprints(manifest)
-        generation_id = manifest.generation.generation_id
-        if not generation_id or "/" in generation_id or generation_id.startswith("."):
-            raise ValueError("generation_id is not a safe immutable bundle name")
+        generation_id = _require_safe_generation_id(manifest.generation.generation_id)
         with self._single_writer():
             previous = self.active_generation_id(optional=True)
             parent = manifest.generation.parent_generation_id
             if parent != previous:
                 if parent == "" and previous == generation_id:
-                    existing = self.read_generation(generation_id)
+                    self.generations_path.mkdir(parents=True, exist_ok=True)
+                    final_path = self.generations_path / generation_id
+                    try:
+                        existing = self.read_generation(generation_id)
+                    except FileNotFoundError:
+                        existing = self._recover_incomplete_initial_generation(
+                            manifest, projections, fingerprints, final_path
+                        )
                     if existing.fingerprints.combined == fingerprints.combined:
                         return GenerationPublishResult(
                             generation_id,
@@ -88,30 +103,21 @@ class DataDefinitionGenerationRepository:
             if optional:
                 return ""
             raise
-        if not isinstance(generation_id, str) or not generation_id:
-            raise ValueError("active generation pointer is invalid")
-        return generation_id
+        try:
+            return _require_safe_generation_id(generation_id)
+        except ValueError as exc:
+            raise ValueError("active generation pointer is invalid") from exc
 
     def read_active(self) -> GenerationSnapshot:
         return self.read_generation(self.active_generation_id())
 
     def read_generation(self, generation_id: str) -> GenerationSnapshot:
+        generation_id = _require_safe_generation_id(generation_id)
         path = self.generations_path / generation_id
         metadata = json.loads((path / "bundle.json").read_text(encoding="utf-8"))
         if metadata.get("generation_id") != generation_id:
             raise ValueError("bundle generation metadata mismatch")
-        files = metadata.get("files", {})
-        required = {
-            "manifest.json",
-            "projections/schema.csv",
-            "projections/features.csv",
-            "projections/derived.json",
-            "projections/one_hot.json",
-            "projections/target_registry.json",
-            "projections/mapping_requirements.json",
-        }
-        if set(files) != required:
-            raise ValueError("generation bundle file set is incomplete")
+        files = _canonical_bundle_files(metadata.get("files"))
         for relative, expected_hash in files.items():
             actual_hash = hashlib.sha256((path / relative).read_bytes()).hexdigest()
             if actual_hash != expected_hash:
@@ -162,27 +168,7 @@ class DataDefinitionGenerationRepository:
     def _stage_and_publish(self, manifest, projections, fingerprints, final_path) -> None:  # noqa: ANN001
         staging = self.generations_path / f".staging-{uuid4().hex}"
         try:
-            projection_path = staging / "projections"
-            projection_path.mkdir(parents=True)
-            dump_manifest(manifest, staging / "manifest.json")
-            (projection_path / "schema.csv").write_text(predict_csv_text(projections), encoding="utf-8")
-            (projection_path / "features.csv").write_text(ml_csv_text(projections), encoding="utf-8")
-            self._write_projection_json(projection_path / "derived.json", projections.generation_id, projections.derived)
-            self._write_projection_json(projection_path / "one_hot.json", projections.generation_id, projections.one_hot)
-            self._write_projection_json(projection_path / "target_registry.json", projections.generation_id, projections.target_registry)
-            self._write_projection_json(projection_path / "mapping_requirements.json", projections.generation_id, projections.mapping_requirements)
-            files = {
-                str(path.relative_to(staging)): hashlib.sha256(path.read_bytes()).hexdigest()
-                for path in sorted(staging.rglob("*")) if path.is_file()
-            }
-            bundle = {
-                "bundle_version": "unified_feature_generation_bundle.v1",
-                "generation_id": manifest.generation.generation_id,
-                "contract_version": manifest.contract_version,
-                "fingerprints": asdict(fingerprints),
-                "files": files,
-            }
-            (staging / "bundle.json").write_text(_json(bundle), encoding="utf-8")
+            self._write_bundle_tree(staging, manifest, projections, fingerprints)
             self._fsync_tree(staging)
             self._failure_hook("after_staging")
             os.replace(staging, final_path)
@@ -191,7 +177,101 @@ class DataDefinitionGenerationRepository:
             shutil.rmtree(staging, ignore_errors=True)
             raise
 
+    def _write_bundle_tree(self, root, manifest, projections, fingerprints) -> None:  # noqa: ANN001
+        projection_path = root / "projections"
+        projection_path.mkdir(parents=True)
+        dump_manifest(manifest, root / "manifest.json")
+        (projection_path / "schema.csv").write_text(
+            predict_csv_text(projections), encoding="utf-8"
+        )
+        (projection_path / "features.csv").write_text(
+            ml_csv_text(projections), encoding="utf-8"
+        )
+        self._write_projection_json(
+            projection_path / "derived.json", projections.generation_id, projections.derived
+        )
+        self._write_projection_json(
+            projection_path / "one_hot.json", projections.generation_id, projections.one_hot
+        )
+        self._write_projection_json(
+            projection_path / "target_registry.json",
+            projections.generation_id,
+            projections.target_registry,
+        )
+        self._write_projection_json(
+            projection_path / "mapping_requirements.json",
+            projections.generation_id,
+            projections.mapping_requirements,
+        )
+        files = {
+            _bundle_file_identity(path, root): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(root.rglob("*")) if path.is_file()
+        }
+        bundle = {
+            "bundle_version": "unified_feature_generation_bundle.v1",
+            "generation_id": manifest.generation.generation_id,
+            "contract_version": manifest.contract_version,
+            "fingerprints": asdict(fingerprints),
+            "files": files,
+        }
+        (root / "bundle.json").write_text(_json(bundle), encoding="utf-8")
+
+    def _recover_incomplete_initial_generation(
+        self, manifest, projections, fingerprints, final_path
+    ) -> GenerationSnapshot:  # noqa: ANN001
+        if not final_path.exists():
+            self._stage_and_publish(manifest, projections, fingerprints, final_path)
+            return self.read_generation(manifest.generation.generation_id)
+        if not final_path.is_dir() or (final_path / "bundle.json").exists():
+            raise ValueError("existing immutable generation is incomplete or corrupt")
+
+        staging = self.generations_path / f".recovery-{uuid4().hex}"
+        bundle_tmp = self.generations_path / f".bundle-{uuid4().hex}.tmp"
+        try:
+            self._write_bundle_tree(staging, manifest, projections, fingerprints)
+            expected_files = {
+                _bundle_file_identity(item, staging): item
+                for item in staging.rglob("*") if item.is_file()
+            }
+            expected_dirs = {
+                _bundle_file_identity(item, staging)
+                for item in staging.rglob("*") if item.is_dir()
+            }
+            for item in final_path.rglob("*"):
+                relative = _bundle_file_identity(item, final_path)
+                if item.is_symlink():
+                    raise ValueError("recoverable generation residue contains a link")
+                if item.is_dir():
+                    if relative not in expected_dirs:
+                        raise ValueError("recoverable generation residue has unknown directories")
+                    continue
+                if not item.is_file() or relative not in expected_files or relative == "bundle.json":
+                    raise ValueError("recoverable generation residue has unknown files")
+                if item.read_bytes() != expected_files[relative].read_bytes():
+                    raise ValueError(
+                        f"recoverable generation residue conflicts with bootstrap: {relative}"
+                    )
+
+            for relative, source in expected_files.items():
+                if relative == "bundle.json":
+                    continue
+                destination = final_path / relative
+                if destination.exists():
+                    continue
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(source.read_bytes())
+                self._fsync_file(destination)
+            bundle_tmp.write_bytes(expected_files["bundle.json"].read_bytes())
+            self._fsync_file(bundle_tmp)
+            os.replace(bundle_tmp, final_path / "bundle.json")
+            self._fsync_directory(final_path)
+        finally:
+            bundle_tmp.unlink(missing_ok=True)
+            shutil.rmtree(staging, ignore_errors=True)
+        return self.read_generation(manifest.generation.generation_id)
+
     def _replace_active_pointer(self, generation_id: str) -> None:
+        generation_id = _require_safe_generation_id(generation_id)
         self.root.mkdir(parents=True, exist_ok=True)
         temporary = self.root / f".active-generation-{uuid4().hex}.tmp"
         try:
@@ -256,6 +336,50 @@ class DataDefinitionGenerationRepository:
             os.fsync(descriptor)
         finally:
             os.close(descriptor)
+
+
+def _require_safe_generation_id(value: object) -> str:
+    if not isinstance(value, str) or not value or value.startswith("."):
+        raise ValueError("generation_id is not a safe immutable bundle name")
+    posix = PurePosixPath(value)
+    windows = PureWindowsPath(value)
+    if (
+        posix.is_absolute()
+        or windows.is_absolute()
+        or windows.drive
+        or len(posix.parts) != 1
+        or len(windows.parts) != 1
+    ):
+        raise ValueError("generation_id is not a safe immutable bundle name")
+    return value
+
+
+def _bundle_file_identity(path: PurePath, root: PurePath) -> str:
+    """Persist one OS-independent relative bundle identity."""
+    return path.relative_to(root).as_posix()
+
+
+def _canonical_bundle_files(value: object) -> dict[str, str]:
+    if not isinstance(value, dict):
+        raise ValueError("generation bundle file set is incomplete")
+    keys = tuple(value)
+    if any(not isinstance(key, str) for key in keys):
+        raise ValueError("generation bundle file identity is invalid")
+    has_backslash = any("\\" in key for key in keys)
+    if has_backslash and any("/" in key for key in keys):
+        raise ValueError("generation bundle file identity mixes separators")
+
+    canonical: dict[str, str] = {}
+    for stored_identity, expected_hash in value.items():
+        if not isinstance(expected_hash, str):
+            raise ValueError("generation bundle hash metadata is invalid")
+        identity = stored_identity.replace("\\", "/")
+        if identity in canonical:
+            raise ValueError("generation bundle file identity is ambiguous")
+        canonical[identity] = expected_hash
+    if set(canonical) != _REQUIRED_BUNDLE_FILES:
+        raise ValueError("generation bundle file set is incomplete")
+    return canonical
 
 
 def _json(payload: object, *, default=None) -> str:  # noqa: ANN001
