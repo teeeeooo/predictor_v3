@@ -9,12 +9,14 @@ import json
 import os
 import shutil
 import sys
+from contextlib import nullcontext
 from dataclasses import asdict
 from pathlib import Path
 from uuid import uuid4
 
 from .active_contracts import ActiveModelReference
 from .repository_contracts import CandidateSnapshot
+from . import deployment_export_windows
 
 EXPORT_SCHEMA_VERSION = "deployment_export_manifest.v1"
 
@@ -28,8 +30,54 @@ def publish_deployment_export(
     candidate: CandidateSnapshot,
 ) -> None:
     stage = parent / f".{export_id}.{uuid4().hex}.staging"
-    try:
-        stage.mkdir(mode=0o700)
+    parent_guard = (
+        deployment_export_windows.hold_export_parent(parent)
+        if _platform_name() == "nt" else nullcontext()
+    )
+    with parent_guard:
+        try:
+            stage_identity = _stage_export(
+                stage,
+                export_id,
+                active,
+                candidate,
+            )
+            if target.exists() or target.is_symlink():
+                raise FileExistsError(f"immutable export already exists: {export_id}")
+            _rename_directory_no_replace(stage, target)
+            stage = None
+            try:
+                if stage_identity is not None:
+                    deployment_export_windows.require_directory_identity(
+                        target,
+                        stage_identity,
+                    )
+                _fsync_directory(parent)
+            except Exception:
+                _remove_export_path(target)
+                _fsync_directory(parent)
+                raise
+        finally:
+            if stage is not None:
+                _remove_export_path(stage)
+
+
+def _stage_export(
+    stage: Path,
+    export_id: str,
+    active: ActiveModelReference,
+    candidate: CandidateSnapshot,
+) -> tuple[int, int] | None:
+    stage.mkdir(mode=0o700)
+    stage_identity = (
+        deployment_export_windows.directory_identity(stage)
+        if _platform_name() == "nt" else None
+    )
+    stage_guard = (
+        deployment_export_windows.hold_export_parent(stage)
+        if _platform_name() == "nt" else nullcontext()
+    )
+    with stage_guard:
         shutil.copyfile(candidate.model_path, stage / "model.pkl")
         model_sha256 = _sha256(stage / "model.pkl")
         if model_sha256 != candidate.manifest.model_sha256:
@@ -55,22 +103,18 @@ def publish_deployment_export(
         )
         _verify_export(stage, checksums, manifest, summary)
         _fsync_tree(stage)
-        if target.exists() or target.is_symlink():
-            raise FileExistsError(f"immutable export already exists: {export_id}")
-        _rename_directory_no_replace(stage, target)
-        stage = None
-        try:
-            _fsync_directory(parent)
-        except Exception:
-            shutil.rmtree(target)
-            _fsync_directory(parent)
-            raise
-    finally:
-        if stage is not None and stage.exists():
-            if stage.is_symlink():
-                stage.unlink()
-            else:
-                shutil.rmtree(stage)
+    return stage_identity
+
+
+def _remove_export_path(path: Path) -> None:
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return
+    if path.is_symlink() or (hasattr(path, "is_junction") and path.is_junction()):
+        path.unlink()
+    else:
+        shutil.rmtree(path)
 
 
 def _export_manifest(
@@ -134,12 +178,17 @@ def _verify_export(
 def _fsync_tree(path: Path) -> None:
     for item in path.iterdir():
         if item.is_file():
-            with item.open("rb") as source:
-                os.fsync(source.fileno())
+            if _platform_name() == "nt":
+                deployment_export_windows.fsync_regular_file(item)
+            else:
+                with item.open("rb") as source:
+                    os.fsync(source.fileno())
     _fsync_directory(path)
 
 
 def _fsync_directory(path: Path) -> None:
+    if _platform_name() == "nt":
+        return
     descriptor = os.open(path, os.O_RDONLY)
     try:
         os.fsync(descriptor)
@@ -148,8 +197,8 @@ def _fsync_directory(path: Path) -> None:
 
 
 def _rename_directory_no_replace(source: Path, target: Path) -> None:
-    if sys.platform == "win32":
-        os.rename(source, target)
+    if _platform_name() == "nt":
+        deployment_export_windows.rename_directory_no_replace(source, target)
         return
     libc = ctypes.CDLL(None, use_errno=True)
     if sys.platform == "darwin":
@@ -182,3 +231,7 @@ def _rename_directory_no_replace(source: Path, target: Path) -> None:
     if error == errno.EEXIST:
         raise FileExistsError(error, os.strerror(error), str(target))
     raise OSError(error, os.strerror(error), str(target))
+
+
+def _platform_name() -> str:
+    return os.name
