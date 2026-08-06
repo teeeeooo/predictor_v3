@@ -81,7 +81,8 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
             "Rename Feature", "Duplicate Feature", "Remove Feature", "Disable Feature",
             "Move Up — Predict Order", "Move Down — Predict Order",
             "Move Up — ML Order", "Move Down — ML Order",
-            "Details", "Refresh", "Reset Draft", "Advanced Diagnostics",
+            "Details", "Export Training Header Template", "Export Definition Reference",
+            "Refresh", "Reset Draft", "Advanced Diagnostics",
         ]
 
         panel.diagnostics.toggle_button.click()

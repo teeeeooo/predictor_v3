@@ -52,6 +52,8 @@ class DataDefinitionTaskHeader(QFrame):
         on_preview: Callable[[], None],
         on_save: Callable[[], None],
         on_review: Callable[[], None],
+        on_export_training_headers: Callable[[], None],
+        on_export_definition_reference: Callable[[], None],
         on_refresh: Callable[[], None],
         on_reset: Callable[[], None],
         on_diagnostics: Callable[[], None],
@@ -183,6 +185,21 @@ class DataDefinitionTaskHeader(QFrame):
             "Open read-only Details for the selected Definition",
             on_details,
         )
+        self.more_menu.addSeparator()
+        self.export_training_headers_action = _menu_action(
+            self.more_menu,
+            "Export Training Header Template",
+            "Export the exact saved Train generation header row; "
+            "unsaved draft changes are excluded",
+            on_export_training_headers,
+        )
+        self.export_definition_reference_action = _menu_action(
+            self.more_menu,
+            "Export Definition Reference",
+            "Export a read-only saved-generation crosswalk for training column review",
+            on_export_definition_reference,
+        )
+        self.more_menu.addSeparator()
         self.refresh_action = _menu_action(
             self.more_menu,
             "Refresh",
