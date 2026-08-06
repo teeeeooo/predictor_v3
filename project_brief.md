@@ -17,12 +17,14 @@ compatibility. Narrow Viewport Result Review Pinning and Result Review CSV v1 ar
 also merged and closed. The Agent Work-Contract Audit and its bounded Active
 Documentation Contract Restoration follow-up are independently audited, merged,
 and closed. The Result Review XLSX Product/Owner Decision is complete with source
-implementation `DEFER`. PR #53 also closed the Windows first-run Data Definition
-runtime-generation file-sync defect. The current milestone is **Windows
-Compatibility Stabilization**, with **Model Lifecycle Core Windows Persistence
-Compatibility** as the exact next source gate. The Standard Request Product-Owner
-Decision is held, not cancelled, until source-runtime Windows acceptance closes;
-multi-point Predict → Calculate remains held behind that decision.
+implementation `DEFER`. PR #53 closed the Windows first-run Data Definition
+runtime-generation file-sync defect, and PR #54 closed the shared Model Lifecycle
+Core Windows persistence and path-substitution safety defect. The current
+milestone remains **Windows Compatibility Stabilization**, with **Deployment Export
+Windows Portability** as the exact next source gate. The Standard Request
+Product-Owner Decision is held, not cancelled, until source-runtime Windows
+acceptance closes; multi-point Predict → Calculate remains held behind that
+decision.
 
 `docs/designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md` is the
 authoritative product, owner, compatibility, and independent-slice boundary for
@@ -158,13 +160,11 @@ remain unchanged.
 ### Next — Windows Compatibility Stabilization
 
 - PR #53 completed the Windows first-run Data Definition runtime-generation
-  compatibility repair.
-- The exact next source gate is **Model Lifecycle Core Windows Persistence
-  Compatibility**, covering Candidate publication, terminal/run evidence
-  persistence, Active mutation/recovery, and shared filesystem
-  durability/atomic-publication semantics.
-- Deployment Export Windows portability is a conditional follow-up only if the
-  core lifecycle repair does not resolve it naturally.
+  compatibility repair, and PR #54 completed the shared Model Lifecycle Core
+  Windows persistence/path-substitution safety repair.
+- The exact next source gate is **Deployment Export Windows Portability**. Its
+  separate publication owner still requires Windows-compatible file/directory
+  durability and publication semantics before native source-runtime acceptance.
 - Source-runtime stabilization closes only after external native Windows 11
   Enterprise acceptance of Train, Predict, Experiment, and Calculator. Train
   acceptance includes real training completion through Candidate publication.

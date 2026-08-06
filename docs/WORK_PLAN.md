@@ -67,17 +67,18 @@
   Engineering Workflow authority and predictor_v3 project-specific authority are
   separated without weakening domain/UI/mechanical owners.
 - PR #53 closed the Windows first-run Data Definition runtime-generation file-sync
-  defect. Follow-up repository-wide inspection identified separate Windows
-  portability risk in Model Lifecycle persistence and adjacent runtime surfaces,
-  so **Windows Compatibility Stabilization** is now the current workstream.
+  defect, and PR #54 closed the shared Model Lifecycle Core Windows persistence
+  and path-substitution safety defect. **Windows Compatibility Stabilization**
+  remains the current workstream with Deployment Export as the next separate
+  Windows publication owner.
 
 ## Next Action
 
-**Model Lifecycle Core Windows Persistence Compatibility** is the exact next
-source gate within **Windows Compatibility Stabilization**. The separate Lane C
-source work must cover Candidate publication, terminal/run evidence persistence,
-Active mutation/recovery, and shared filesystem durability/atomic-publication
-semantics without changing the existing lifecycle ownership model.
+**Deployment Export Windows Portability** is the exact next source gate within
+**Windows Compatibility Stabilization**. The separate publication owner still
+uses Windows-incompatible read-only file `fsync`, directory open/`fsync`, and its
+own rename/durability path; repair it without broadening back into the now-closed
+shared Model Lifecycle Core owner.
 
 The Predict Case → Standard Predicted Points / Standard Request Product-Owner
 Decision is held, not cancelled, until source-runtime Windows acceptance closes.
@@ -158,9 +159,10 @@ product decision.
   cancelled. Multi-point Predict-to-Calculate source integration remains held
   behind that decision. Calculator already has a `PredictedPointsEnvelope`/adapter
   foundation, and neither held item authorizes source work during stabilization.
-- Deployment Export Windows portability follows Model Lifecycle Core repair. Keep
-  it as a separate bounded source slice only if the core owner repair does not
-  resolve its portability risk naturally.
+- Deployment Export Windows portability is the current next source gate. Direct
+  post-PR #54 owner inspection confirms that its separate publication path still
+  uses Windows-incompatible file/directory durability primitives, so it remains a
+  bounded source slice before native Windows source-runtime acceptance.
 - PyInstaller/frozen Train child-process execution, Windows reserved filename/path
   identity hardening, long-path behavior, and packaging-specific DLL/runtime
   concerns are later Windows/packaging risks under separate owner/approval; they
@@ -201,13 +203,13 @@ product decision.
    unchanged.
 10. **Windows runtime-generation first-run compatibility — complete:** PR #53
     closed the Data Definition runtime-generation file-sync defect.
-11. **Model Lifecycle Core Windows Persistence Compatibility — next source gate:**
-    repair Candidate publication, terminal/run evidence persistence, Active
-    mutation/recovery, and shared durability/atomic-publication semantics as one
-    separate Lane C source slice.
-12. **Deployment Export Windows portability — conditional follow-up:** keep a
-    separate bounded source slice only if the Model Lifecycle Core repair does
-    not resolve it naturally.
+11. **Model Lifecycle Core Windows Persistence Compatibility — complete:** PR #54
+    closed Candidate/run-evidence publication, Active mutation/recovery, shared
+    durability/atomic-publication, and audited path-substitution safety on the
+    shared lifecycle filesystem owner.
+12. **Deployment Export Windows portability — next source gate:** repair its
+    separate publication/durability path before native Windows source-runtime
+    acceptance.
 13. **Native Windows source-runtime acceptance — required external evidence:** on
     Windows 11 Enterprise exercise Train, Predict, Experiment, and Calculator;
     Train must complete real training through Candidate publication, not merely
