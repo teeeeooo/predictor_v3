@@ -15,8 +15,8 @@ is paused, not failed or cancelled, while the confirmed repair sequence is
 completed.
 
 PR #58 and PR #59 closed the Data Definition / Data Mapping onboarding source
-prerequisite, and PR #60 closed the DRM-sensitive legacy Mapping acquisition
-repair while preserving strict parsing, Unsaved-draft, and explicit-Save ownership.
+prerequisite, PR #60 closed the DRM-sensitive legacy Mapping acquisition repair,
+and PR #61 closed the shared Train child structured-event UTF-8 transport repair.
 Native Windows still preserves PASS evidence for affected runtime-generation
 recovery, clean-state Train startup, and corrected Result Review alignment unless
 later source changes materially invalidate those contracts.
@@ -30,11 +30,10 @@ slices:
    direction for this bootstrap-only acquisition while strict parsing, validation,
    Unsaved-draft, exchange/edit/import, and explicit-Save ownership remain intact.
    Native protected-file smoke remains external acceptance evidence.
-2. **Shared Train Child Structured-Event Encoding — Lane C:** repair the shared
-   `train_job` producer contract used by both GUI `QProcessTrainingRunner` and
-   headless/Experiment `SubprocessTrainingRunner`. The defect is a producer/
-   consumer encoding-contract mismatch, not an emoji-content defect; preserve
-   the structured event protocol and process lifecycle.
+2. **Shared Train Child Structured-Event Encoding — Lane C: closed.**
+   PR #61 makes the shared child stdin/stdout/stderr UTF-8 before protocol
+   activity while preserving both existing consumers, structured event meanings,
+   confirmation transport, and process lifecycle.
 3. **Model Lifecycle Windows Handle Compatibility — Lane C:** repair the shared
    Windows handle/filesystem primitive used by Candidate publication/read,
    Active lifecycle mutation/read and writer-lock paths, closeout persistence,
@@ -52,34 +51,32 @@ later acceptance prerequisite only for its dependent headless/Experiment surface
 
 ## Exact Next Action
 
-**Shared Train Child Structured-Event Encoding Repair — Lane C**
+**Slice 3 — Model Lifecycle Windows Handle Compatibility — Lane C**
 
-Repair the shared `train_job` structured-event producer boundary so both GUI
-`QProcessTrainingRunner` and headless/Experiment `SubprocessTrainingRunner` receive
-the existing JSON event contract without depending on the Windows locale/default
-stdout encoding. Preserve process isolation, event schema, status/log content,
-cancellation, and terminal arbitration.
+Repair the shared Windows handle/filesystem primitive used by Candidate
+publication/read, Active lifecycle mutation/read and writer-lock paths, closeout
+persistence, and Deployment Export file durability. Preserve the existing
+lifecycle identity, atomicity, containment, durability, recovery, and publication
+contracts while removing the demonstrated Windows handle incompatibility.
 
-Do not fold the separate Headless CLI public stdout contract or the Model Lifecycle
-Windows-handle repair into this slice.
+Do not reopen Runtime Generation recovery or fold the separate Headless CLI public
+stdout contract into this slice.
 
 ## Ordered Follow-ups
 
-1. **Slice 2 — Shared Train Child Structured-Event Encoding** — Lane C, exact next
+1. **Slice 3 — Model Lifecycle Windows Handle Compatibility** — Lane C, exact next
    repair gate.
-2. **Slice 3 — Model Lifecycle Windows Handle Compatibility** — Lane C, after
-   Slice 2 closes.
-3. **Resume Native Windows acceptance** at real Train execution → Candidate
+2. **Resume Native Windows acceptance** at real Train execution → Candidate
    publication after Slices 1-3 close.
-4. **Slice 4 — Headless CLI JSON Output Encoding Compatibility** — Lane C; finish
+3. **Slice 4 — Headless CLI JSON Output Encoding Compatibility** — Lane C; finish
    before closing the dependent Experiment/headless acceptance surface, but do
    not treat it as a prerequisite for Candidate publication.
-5. **Continue Native Windows application acceptance** across Predict / Experiment /
+4. **Continue Native Windows application acceptance** across Predict / Experiment /
    Calculator / Deployment Export as applicable after each blocking repair is
    closed.
-6. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
+5. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
    Decision** after Native Windows source-runtime acceptance closes.
-7. **Multi-point Predict → Calculate** remains behind that product decision.
+6. **Multi-point Predict → Calculate** remains behind that product decision.
 
 This is a sequential repair/acceptance plan, not authorization to create all four
 repair branches concurrently.
