@@ -28,9 +28,28 @@ from core.mapping.editor_projection import (
 )
 from core.mapping.editor_validation import validate_mapping_editor_draft
 
+
 def parse_legacy_mapping_csv(source: str | Path) -> MappingEditorDraft:
-    """Parse the fixed legacy-wide layout into a validated editor-owned draft."""
-    rows = _read_rows(Path(source))
+    """Read and parse the fixed legacy-wide CSV contract."""
+    return parse_legacy_mapping_rows(_read_rows(Path(source)))
+
+
+def parse_legacy_mapping_rows(rows: list[list[str]]) -> MappingEditorDraft:
+    """Parse already-acquired legacy text rows through the strict legacy contract."""
+    if not rows:
+        raise LegacyMappingBootstrapError("legacy layout is empty", block="layout")
+    headers = tuple(cell.strip() for cell in rows[0])
+    if headers != EXPECTED_HEADERS:
+        mismatch = next(
+            (index for index, pair in enumerate(zip(headers, EXPECTED_HEADERS)) if pair[0] != pair[1]),
+            min(len(headers), len(EXPECTED_HEADERS)),
+        )
+        raise LegacyMappingBootstrapError(
+            "legacy header/layout does not match the required wide-table contract",
+            legacy_row=1,
+            block="layout",
+            field=f"column {mismatch + 1}",
+        )
     parsed: dict[str, list[MappingEditorRow]] = {
         block.group_key: [] for block in LEGACY_BLOCKS
     }
@@ -69,24 +88,9 @@ def parse_legacy_mapping_csv(source: str | Path) -> MappingEditorDraft:
 def _read_rows(source: Path) -> list[list[str]]:
     try:
         with source.open(newline="", encoding="utf-8-sig") as csv_file:
-            rows = list(csv.reader(csv_file))
+            return list(csv.reader(csv_file))
     except (OSError, UnicodeError, csv.Error) as exc:
         raise LegacyMappingBootstrapError(str(exc), block="layout") from exc
-    if not rows:
-        raise LegacyMappingBootstrapError("legacy layout is empty", block="layout")
-    headers = tuple(cell.strip() for cell in rows[0])
-    if headers != EXPECTED_HEADERS:
-        mismatch = next(
-            (index for index, pair in enumerate(zip(headers, EXPECTED_HEADERS)) if pair[0] != pair[1]),
-            min(len(headers), len(EXPECTED_HEADERS)),
-        )
-        raise LegacyMappingBootstrapError(
-            "legacy header/layout does not match the required wide-table contract",
-            legacy_row=1,
-            block="layout",
-            field=f"column {mismatch + 1}",
-        )
-    return rows
 
 
 def _parse_block(
