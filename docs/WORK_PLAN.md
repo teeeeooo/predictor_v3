@@ -10,80 +10,46 @@
 
 ## Current Slice
 
-**Windows Compatibility Stabilization** remains active for one final already-audited
-source repair before Native Windows source-runtime acceptance resumes. Slices 1–3
-are closed; Native Windows acceptance is paused, not failed or cancelled, until
-Slice 4 closes so the known repair set can be completed before one continuous
-acceptance pass.
+**Native Windows source-runtime acceptance** is active again. The complete
+pre-acceptance Windows repair set is closed: PR #58/#59 closed the Data Definition
+/ Data Mapping onboarding prerequisite, PR #60 closed DRM-sensitive legacy Mapping
+acquisition, PR #61 closed shared Train child structured-event UTF-8 transport,
+PR #62 closed shared Model Lifecycle Windows handle compatibility, and PR #63
+closed the separate versioned Experiment/headless JSON stdout encoding gap.
 
-PR #58 and PR #59 closed the Data Definition / Data Mapping onboarding source
-prerequisite, PR #60 closed the DRM-sensitive legacy Mapping acquisition repair,
-PR #61 closed the shared Train child structured-event UTF-8 transport repair, and
-PR #62 closed the shared Model Lifecycle Windows handle compatibility repair.
-Native Windows still preserves PASS evidence for affected runtime-generation
-recovery, clean-state Train startup, and corrected Result Review alignment unless
-later source changes materially invalidate those contracts.
-
-The completed Native Windows Equivalent-Defect Repository Audit resolved the
-three observed blockers and materially equivalent sibling gaps into four repair
-slices:
-
-1. **Data Mapping DRM-sensitive Legacy Bootstrap Acquisition — Lane B: closed.**
-   Windows production now uses the established Excel automation / `xlwings`
-   direction for this bootstrap-only acquisition while strict parsing, validation,
-   Unsaved-draft, exchange/edit/import, and explicit-Save ownership remain intact.
-   Native protected-file smoke remains external acceptance evidence.
-2. **Shared Train Child Structured-Event Encoding — Lane C: closed.**
-   PR #61 makes the shared child stdin/stdout/stderr UTF-8 before protocol
-   activity while preserving both existing consumers, structured event meanings,
-   confirmation transport, and process lifecycle.
-3. **Model Lifecycle Windows Handle Compatibility — Lane C: closed.**
-   PR #62 repairs the shared native Windows handle access-mode primitive used by
-   Candidate publication/read, Active lifecycle mutation/read and writer-lock
-   paths, closeout persistence, and Deployment Export file durability without
-   changing lifecycle/publication identity or persistence contracts.
-4. **Headless CLI JSON Output Encoding Compatibility — Lane C: open.** Repair the
-   separate versioned machine-readable Experiment/headless CLI stdout contract.
-   It remains distinct from the internal Train child-process protocol repaired by
-   Slice 2.
-
-The audit gives no reason to reopen Runtime Generation recovery, Slices 1–3, or
-unrelated Windows cleanup. Because Slice 4 is already a confirmed compatibility
-gap on a later acceptance surface, close it before resuming Native Windows
-acceptance rather than intentionally interrupting that acceptance for a known
-source repair.
+No known Windows source-repair gate remains. Previously accepted native evidence
+for affected runtime-generation recovery, clean-state Train startup, and corrected
+Result Review alignment remains reusable unless a later source change materially
+invalidates the same owner or contract. Native protected Mapping acquisition and
+all still-unexecuted application paths remain acceptance evidence, not new source
+work by default.
 
 ## Exact Next Action
 
-**Slice 4 — Headless CLI JSON Output Encoding Compatibility Repair — Lane C**
+**Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 
-Repair the separate versioned machine-readable Experiment/headless CLI stdout
-contract without reopening the internal Train child protocol or broadening into
-generic console/encoding cleanup. After Slice 4 merge/Close, resume Native Windows
-source-runtime acceptance as one continuous pass.
+Continue from the first still-required native acceptance point rather than
+repeating uninvalidated PASS evidence. Do not create another Windows repair or
+audit gate unless new native acceptance evidence demonstrates a concrete defect.
 
 ## Ordered Follow-ups
 
-1. **Slice 4 — Headless CLI JSON Output Encoding Compatibility Repair** — Lane C,
-   the sole exact next source repair.
-2. **Resume Native Windows source-runtime acceptance** after Slice 4 closes and
-   progress continuously through:
-   1. real protected DRM-sensitive legacy Mapping bootstrap confirmation as needed;
+1. **Native Windows continuous source-runtime acceptance**, in this order:
+   1. protected DRM-sensitive legacy Mapping bootstrap confirmation as needed;
    2. real Train execution through successful Candidate publication;
    3. Predict;
-   4. Experiment, including the dependent headless CLI surface;
+   4. Experiment, including the headless CLI;
    5. Calculator;
    6. Deployment Export.
    Reuse prior PASS evidence for Runtime Generation recovery, clean Train startup,
-   and Result Review alignment unless a later source change materially invalidates
-   the relevant owner or contract.
-3. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
+   and Result Review alignment while those contracts remain uninvalidated.
+2. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
    Decision** after Native Windows source-runtime acceptance closes.
-4. **Multi-point Predict → Calculate** remains behind that product decision.
+3. **Multi-point Predict → Calculate** remains behind that product decision.
 
-This sequencing change completes the already-audited repair set before acceptance;
-it does not authorize another repository-wide audit, generic Windows cleanup, or
-new repair slices.
+The completed repair set does not authorize another repository-wide Windows audit,
+generic compatibility cleanup, or speculative repair slice absent new acceptance
+evidence.
 
 ## Active Constraints
 

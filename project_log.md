@@ -59,15 +59,15 @@
   both QProcess and Subprocess consumers; one separate Headless CLI JSON stdout
   compatibility repair; and one centralized Model Lifecycle Windows-handle repair.
   Runtime Generation recovery and unrelated Windows cleanup are not reopened.
-- Native acceptance remains paused until the complete already-audited repair set
-  is closed: Data Mapping DRM acquisition (Lane B) → shared Train child-event
-  encoding (Lane C) → Model Lifecycle Windows handle compatibility (Lane C) →
-  Headless CLI JSON output compatibility (Lane C). Slices 1–3 are closed; Slice 4
-  is the sole remaining source repair. After it closes, resume one continuous
-  native acceptance pass through protected Mapping bootstrap confirmation as
-  needed, real Train → Candidate publication, Predict, Experiment/headless,
-  Calculator, and Deployment Export. Standard Request stays held, Multi-point
-  Predict → Calculate remains behind it, and Result Review XLSX remains `DEFER`.
+- The complete already-audited Windows repair set is now closed through PR #63:
+  Data Mapping DRM acquisition (Lane B), shared Train child-event encoding
+  (Lane C), Model Lifecycle Windows handle compatibility (Lane C), and Headless
+  CLI JSON output compatibility (Lane C). Resume one continuous native acceptance
+  pass through protected Mapping bootstrap confirmation as needed, real Train →
+  Candidate publication, Predict, Experiment/headless, Calculator, and Deployment
+  Export. Do not create another Windows repair/audit gate absent new native
+  acceptance evidence. Standard Request stays held, Multi-point Predict → Calculate
+  remains behind it, and Result Review XLSX remains `DEFER`.
 
 ## 2026-08-06 — Native Windows acceptance / onboarding sequencing
 

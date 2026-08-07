@@ -20,8 +20,9 @@ and closed. The Result Review XLSX Product/Owner Decision is complete with sourc
 implementation `DEFER`. PR #53 closed the Windows first-run Data Definition
 runtime-generation file-sync defect, and PR #54 closed the shared Model Lifecycle
 Core Windows persistence and path-substitution safety defect. The current
-milestone remains **Windows Compatibility Stabilization**, with **Deployment Export
-Windows Portability** as the exact next source gate. The Standard Request
+milestone is now **Native Windows source-runtime acceptance**, resumed as one
+continuous acceptance pass after the bounded Windows repair set closed through
+PR #63. The Standard Request
 Product-Owner Decision is held, not cancelled, until source-runtime Windows
 acceptance closes; multi-point Predict → Calculate remains held behind that
 decision.
@@ -157,26 +158,26 @@ selection outside canonical Predict state. Existing Result copy, Input copy/past
 viewport pinning, shared standalone/embedded composition, and dependency boundaries
 remain unchanged.
 
-### Next — Windows Compatibility Stabilization
+### Current — Native Windows Source-Runtime Acceptance
 
-- PR #53 completed the Windows first-run Data Definition runtime-generation
-  compatibility repair, and PR #54 completed the shared Model Lifecycle Core
-  Windows persistence/path-substitution safety repair.
-- The exact next source gate is **Deployment Export Windows Portability**. Its
-  separate publication owner still requires Windows-compatible file/directory
-  durability and publication semantics before native source-runtime acceptance.
-- Source-runtime stabilization closes only after external native Windows 11
-  Enterprise acceptance of Train, Predict, Experiment, and Calculator. Train
-  acceptance includes real training completion through Candidate publication.
-- Agent source repair and automated regression evidence are produced on macOS;
-  native Windows execution is external/manual evidence and must remain `NOT RUN`
-  or `NOT AVAILABLE` when absent.
+- The bounded Windows Compatibility Stabilization repair set is closed through
+  PR #63. No additional Windows source-repair or repository-audit gate is active.
+- Resume one continuous native Windows 11 Enterprise acceptance pass through:
+  protected legacy Mapping bootstrap confirmation as needed, real Train through
+  successful Candidate publication, Predict, Experiment/headless CLI, Calculator,
+  and Deployment Export.
+- Previously accepted runtime-generation recovery, clean Train startup, and Result
+  Review alignment evidence remains reusable unless later source changes materially
+  invalidate the same owner or contract.
+- Agent source repair and automated regression evidence were produced on macOS;
+  native Windows execution remains external/manual evidence and must remain
+  `NOT RUN` or `NOT AVAILABLE` where it has not actually been performed.
 - The Predict Case → Standard Predicted Points / Standard Request Product-Owner
-  Decision is held, not cancelled, until that source-runtime acceptance closes.
-  Multi-point Predict → Calculate remains held behind the Standard Request gate.
+  Decision remains held until native source-runtime acceptance closes. Multi-point
+  Predict → Calculate remains behind that gate.
 - Frozen/PyInstaller Train child-process execution, reserved path identity,
   long-path behavior, and packaging DLL/runtime risks remain separately gated
-  later work rather than part of this source-runtime stabilization milestone.
+  later work rather than part of this source-runtime acceptance milestone.
 
 ### Later — Production ML Readiness / Calculator Integration
 

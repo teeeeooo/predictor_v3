@@ -89,8 +89,8 @@ entries:
 
   - type: procedure
     topic: current execution resume point
-    content: Exact next gate is Data Definition / Data Mapping onboarding because native Windows acceptance cannot reach real Train execution/Candidate publication until the user can prepare the exact current-generation `ml_name` headers and local Mapping through supported product flows. Native affected-state recovery, clean-state Train startup, and Result Review alignment are already confirmed and should not be repeated without invalidation. After onboarding closes, resume native Windows acceptance at real Train execution, then continue Predict, Experiment, Calculator, and Deployment Export. Standard Request Product/Owner Decision and Multi-point Predict → Calculate remain held until native Windows acceptance closes; Result Review XLSX remains DEFER.
-    keywords: [resume point, Result Review repair, Windows acceptance, onboarding, Standard Request, Multi-point Predict Calculate]
+    content: The bounded Windows repair set is closed through PR #63, so the exact next gate is one continuous Native Windows source-runtime acceptance pass: protected legacy Mapping bootstrap confirmation as needed, real Train through successful Candidate publication, Predict, Experiment/headless CLI, Calculator, then Deployment Export. Native affected-state recovery, clean-state Train startup, and Result Review alignment are already confirmed and should not be repeated without material invalidation. Do not create another Windows repair/audit gate absent new acceptance evidence. Standard Request Product/Owner Decision and Multi-point Predict → Calculate remain held until native Windows acceptance closes; Result Review XLSX remains DEFER.
+    keywords: [resume point, Windows acceptance, Candidate publication, headless CLI, Standard Request, Multi-point Predict Calculate]
     assertionStatus: verified
     source: docs/WORK_PLAN.md; project_log.md
 ```
