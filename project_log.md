@@ -35,7 +35,7 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
-## 2026-08-07 — Native Windows equivalent-defect audit sequencing
+## 2026-08-07 — Native Windows equivalent-defect audit / repair sequencing
 
 ### Decision
 
@@ -53,12 +53,20 @@
   failure family may recur across acquisition, process/text transport, or
   persistence/publication boundaries. Similar grep matches are not themselves
   confirmed defects.
-- Pause native acceptance until a read-only **Native Windows Equivalent-Defect
-  Repository Audit** identifies affected owners/dependency direction and evidence
-  for appropriately separated repair slices. After those repairs, resume at real
-  Train execution → Candidate publication → remaining app paths. Standard Request
-  stays held, Multi-point Predict → Calculate remains behind it, and Result Review
-  XLSX remains `DEFER`.
+- The read-only **Native Windows Equivalent-Defect Repository Audit** is complete.
+  It found no additional DRM-sensitive production acquisition defect beyond
+  Mapping bootstrap; one shared Train child structured-event encoding repair for
+  both QProcess and Subprocess consumers; one separate Headless CLI JSON stdout
+  compatibility repair; and one centralized Model Lifecycle Windows-handle repair.
+  Runtime Generation recovery and unrelated Windows cleanup are not reopened.
+- Native acceptance remains paused for the repair sequence: Data Mapping DRM
+  acquisition (Lane B) → shared Train child-event encoding (Lane C) → Model
+  Lifecycle Windows handle compatibility (Lane C) → resume real Train execution
+  through Candidate publication. Headless CLI JSON output compatibility (Lane C)
+  is not a Candidate-publication prerequisite but must close before its dependent
+  Experiment/headless acceptance surface closes. Then continue remaining native
+  app acceptance. Standard Request stays held, Multi-point Predict → Calculate
+  remains behind it, and Result Review XLSX remains `DEFER`.
 
 ## 2026-08-06 — Native Windows acceptance / onboarding sequencing
 
