@@ -4,6 +4,12 @@
 `predictor_v3.experiment.v1` contract. It uses JSON input and emits exactly one
 `predictor_v3.experiment_output.v1` JSON object on stdout.
 
+The stdout transport is locale-independent: non-ASCII values may be represented
+with standard JSON escapes so inherited console encodings do not change command
+success or failure. Callers consume parsed JSON semantics; parsed Unicode values,
+schema keys, exit classes, and command meanings remain authoritative. The
+interface emits no BOM, preamble, or additional human-readable stdout line.
+
 ## Commands
 
 ```text
