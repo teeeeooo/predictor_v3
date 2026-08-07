@@ -21,6 +21,10 @@ from apps.common.model_lifecycle import windows_filesystem as windows_module
 from .conftest import publish_candidate
 
 
+def _access_mode(flags: int) -> int:
+    return flags & (os.O_WRONLY | os.O_RDWR)
+
+
 @pytest.fixture
 def windows_filesystem_semantics(monkeypatch):
     """Reject POSIX-only calls instead of letting the macOS host accept them."""
@@ -47,7 +51,7 @@ def windows_filesystem_semantics(monkeypatch):
         opened = open_descriptors.get(descriptor)
         if opened is not None:
             path, flags = opened
-            if flags & os.O_ACCMODE == os.O_RDONLY:
+            if _access_mode(flags) == os.O_RDONLY:
                 raise OSError(9, "Bad file descriptor")
             if os.path.isdir(path):
                 raise AssertionError("Windows simulation forbids directory fsync")

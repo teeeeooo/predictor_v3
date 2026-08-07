@@ -63,7 +63,7 @@ def open_file_descriptor(path: Path, flags: int, mode: int) -> int:
         ctypes.c_void_p,
     )
     create_file.restype = ctypes.c_void_p
-    access_mode = flags & os.O_ACCMODE
+    access_mode = flags & (os.O_WRONLY | os.O_RDWR)
     access = 0
     if access_mode in {os.O_RDONLY, os.O_RDWR}:
         access |= 0x80000000  # GENERIC_READ
@@ -88,13 +88,12 @@ def open_file_descriptor(path: Path, flags: int, mode: int) -> int:
             raise FileExistsError(error, "lifecycle artifact already exists", path)
         raise ctypes.WinError(error)
     try:
-        crt_flags = flags & (
-            os.O_ACCMODE
-            | getattr(os, "O_APPEND", 0)
+        crt_flags = access_mode | (flags & (
+            getattr(os, "O_APPEND", 0)
             | getattr(os, "O_BINARY", 0)
             | getattr(os, "O_TEXT", 0)
             | getattr(os, "O_NOINHERIT", 0)
-        )
+        ))
         return msvcrt.open_osfhandle(handle, crt_flags)
     except Exception:
         ctypes.WinDLL("kernel32", use_last_error=True).CloseHandle(handle)
