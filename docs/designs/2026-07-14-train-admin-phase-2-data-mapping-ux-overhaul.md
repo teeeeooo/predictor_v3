@@ -391,6 +391,18 @@ unchanged. Any existing draft requires an explicit replacement decision.
 The legacy-wide CSV remains bootstrap/migration-only. It is not accepted by the
 normal Import action and does not become a second round-trip Mapping format.
 
+On Windows production Train composition, that user-selected bootstrap source is
+acquired through a dedicated `xlwings` / installed-Excel automation session before
+the same strict legacy interpretation and validation run. Excel delimiter/quote
+parsing is disabled and the file is acquired as one raw Text cell per physical
+line; those lines then use the existing Python CSV interpretation, preserving
+header/row-width and value semantics before strict validation. The operation does
+not save or rewrite the source and closes only the workbook/application it
+created. Non-text or unexpectedly split Excel acquisition fails closed instead of
+changing legacy semantics or falling back to direct parsing. Non-Windows
+development keeps the direct strict CSV adapter, and ordinary Train CSV reads are
+outside this bootstrap-only acquisition boundary.
+
 ## 11. Acceptance Scenarios
 
 - Editing one value marks the draft dirty and Save clears it after success.

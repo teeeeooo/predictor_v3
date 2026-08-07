@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
@@ -21,7 +22,10 @@ from apps.train.application.confirmation import (
     TrustedUserAuthorityIssuer,
 )
 from apps.train.adapters.data_definition_generation_repository import DataDefinitionGenerationRepository
-from apps.train.adapters.mapping import parse_legacy_mapping_csv
+from apps.train.adapters.mapping import (
+    parse_legacy_mapping_csv,
+    parse_legacy_mapping_csv_with_excel,
+)
 from apps.train.adapters.one_hot_vocabulary import load_persisted_mapping_vocabulary_snapshots
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
 from apps.train.application.runtime_generation import (
@@ -46,6 +50,14 @@ from core.ml.artifacts import MODEL_FILE
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DEFINITION_ROOT = PROJECT_ROOT / "config" / "data_definition"
 DEFAULT_BOOTSTRAP_MANIFEST_PATH = DEFAULT_DEFINITION_ROOT / "manifest.json"
+
+
+def _legacy_bootstrap_parser_for_platform(platform: str):  # noqa: ANN202
+    return (
+        parse_legacy_mapping_csv_with_excel
+        if platform == "win32"
+        else parse_legacy_mapping_csv
+    )
 
 
 def create_shell(
@@ -83,7 +95,9 @@ def create_shell(
         lifecycle_repository=lifecycle_repository,
         model_resolution=resolution,
     )
-    mapping_service = DataMappingService(legacy_bootstrap_parser=parse_legacy_mapping_csv)
+    mapping_service = DataMappingService(
+        legacy_bootstrap_parser=_legacy_bootstrap_parser_for_platform(sys.platform)
+    )
     definition_controller = DataDefinitionController(DataDefinitionService(
         generation_repository=repository,
         vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),

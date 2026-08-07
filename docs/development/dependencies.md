@@ -46,15 +46,20 @@ python3 -m pip install -r requirements/dev.txt
 
 ## Excel Dependency Rule
 
-Existing user-provided Excel workbook reads and generated XLSX writes are
-different workflows and use different dependency rules.
+Existing user-file reads that require Excel automation and generated XLSX writes
+are different workflows and use different dependency rules.
 
-For existing user Excel files:
+For existing user files that require Excel automation:
 
 - Windows user environments may use `xlwings`.
 - DRM-sensitive workbook read workflows use Excel automation through
   `xlwings`; they must not read user-provided workbook files directly with
   `openpyxl`.
+- Data Mapping legacy bootstrap uses the same Windows Excel-automation direction
+  for its user-selected DRM-sensitive CSV. Excel acquires one raw text line per
+  row with delimiter parsing disabled; the existing CSV interpretation and
+  strict legacy parser remain authoritative. Ordinary Train/data CSV reads are
+  not part of this rule.
 - macOS development checks for `xlwings` are optional/manual because they
   depend on local Excel installation, permissions, and license state.
 
