@@ -15,6 +15,10 @@ from apps.common.model_lifecycle import deployment_export_windows as windows
 from tests.apps.common.model_lifecycle.conftest import publish_candidate
 
 
+def _access_mode(flags: int) -> int:
+    return flags & (os.O_WRONLY | os.O_RDWR)
+
+
 def _active_export_source(repository, registry_snapshot):  # noqa: ANN001
     candidate = publish_candidate(repository, registry_snapshot, "candidate-export")
     active = repository.replace_active(
@@ -65,7 +69,7 @@ def windows_export_semantics(monkeypatch):
         @staticmethod
         def fsync(descriptor):
             flags = opened[descriptor]
-            if flags & os.O_ACCMODE == os.O_RDONLY:
+            if _access_mode(flags) == os.O_RDONLY:
                 raise OSError(9, "Bad file descriptor")
             synced_flags.append(flags)
             real_fsync(descriptor)
@@ -152,7 +156,7 @@ def test_windows_export_uses_writable_file_sync_and_no_directory_sync(
     assert windows_export_semantics.opened == {}
     assert len(windows_export_semantics.synced_flags) == 4
     assert all(
-        flags & os.O_ACCMODE != os.O_RDONLY
+        _access_mode(flags) != os.O_RDONLY
         for flags in windows_export_semantics.synced_flags
     )
 
