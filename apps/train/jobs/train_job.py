@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import signal
+import sys
 import time
 from pathlib import Path
 
@@ -41,6 +42,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start-permit-timeout-seconds", type=float, default=30.0)
     parser.add_argument("--actual-work-marker-path", default="")
     return parser.parse_args()
+
+
+def _configure_process_stdio_utf8() -> None:
+    """Use UTF-8 for the internal child-process transport on every locale."""
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8", errors="strict")
 
 
 def emit(event: dict) -> None:
@@ -107,6 +116,7 @@ def emit_result(
 
 
 def main() -> int:
+    _configure_process_stdio_utf8()
     signal.signal(signal.SIGTERM, _handle_signal)
     args = parse_args()
     registry_payload = json.loads(args.registry_payload_json) if args.registry_payload_json else {}

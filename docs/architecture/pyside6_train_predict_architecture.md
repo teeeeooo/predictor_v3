@@ -1228,6 +1228,10 @@ Responsibility:
 - let the `QProcessTrainingRunner` adapter own `QProcess`, Qt signal wiring,
   cancellation escalation, and Qt resource disposal
 - run real core training only in the child-process job
+- define the internal child-process stdio transport as UTF-8 independent of the
+  inherited OS locale: the child configures stdin/stdout/stderr before protocol
+  activity while both process adapters keep the existing UTF-8 event/grant wire
+  semantics and structured payload meanings unchanged
 - write the completed bundle only to the caller-provided Candidate staging path
   and remove process-owned temporary output on cancellation or failure
 - compose the production adapter in `apps/train/app.py`
