@@ -15,20 +15,21 @@ is paused, not failed or cancelled, while the confirmed repair sequence is
 completed.
 
 PR #58 and PR #59 closed the Data Definition / Data Mapping onboarding source
-prerequisite. Native Windows still preserves PASS evidence for affected runtime-
-generation recovery, clean-state Train startup, and corrected Result Review
-alignment unless later source changes materially invalidate those contracts.
+prerequisite, and PR #60 closed the DRM-sensitive legacy Mapping acquisition
+repair while preserving strict parsing, Unsaved-draft, and explicit-Save ownership.
+Native Windows still preserves PASS evidence for affected runtime-generation
+recovery, clean-state Train startup, and corrected Result Review alignment unless
+later source changes materially invalidate those contracts.
 
 The completed Native Windows Equivalent-Defect Repository Audit resolved the
 three observed blockers and materially equivalent sibling gaps into four repair
 slices:
 
-1. **Data Mapping DRM-sensitive Legacy Bootstrap Acquisition — Lane B:** repair
-   only user-selected legacy Mapping CSV acquisition by reusing the established
-   Windows Excel automation / `xlwings` dependency direction. Existing parser,
-   validation, Unsaved-draft, exchange/edit/import, and explicit-Save ownership
-   remains unchanged. No additional DRM-sensitive production acquisition defect
-   was found, and ordinary Train CSV reads are not part of this repair.
+1. **Data Mapping DRM-sensitive Legacy Bootstrap Acquisition — Lane B: closed.**
+   Windows production now uses the established Excel automation / `xlwings`
+   direction for this bootstrap-only acquisition while strict parsing, validation,
+   Unsaved-draft, exchange/edit/import, and explicit-Save ownership remain intact.
+   Native protected-file smoke remains external acceptance evidence.
 2. **Shared Train Child Structured-Event Encoding — Lane C:** repair the shared
    `train_job` producer contract used by both GUI `QProcessTrainingRunner` and
    headless/Experiment `SubprocessTrainingRunner`. The defect is a producer/
@@ -51,37 +52,34 @@ later acceptance prerequisite only for its dependent headless/Experiment surface
 
 ## Exact Next Action
 
-**Data Mapping DRM-sensitive Legacy Bootstrap Acquisition Repair — Lane B**
+**Shared Train Child Structured-Event Encoding Repair — Lane C**
 
-Repair only DRM-sensitive user-selected legacy Mapping CSV acquisition by reusing
-the existing Windows Excel automation / `xlwings` dependency direction. Feed the
-acquired legacy-wide data into the existing parser/validation flow as a validated
-Unsaved Data Mapping draft, preserving review/exchange/edit/import and explicit
-Save as the only publication owner for local `mapping.json`.
+Repair the shared `train_job` structured-event producer boundary so both GUI
+`QProcessTrainingRunner` and headless/Experiment `SubprocessTrainingRunner` receive
+the existing JSON event contract without depending on the Windows locale/default
+stdout encoding. Preserve process isolation, event schema, status/log content,
+cancellation, and terminal arbitration.
 
-Do not broaden this repair to ordinary Train CSV or general CSV acquisition, do
-not change parser/validation semantics, and do not implement any later Windows
-repair slice in the same branch.
+Do not fold the separate Headless CLI public stdout contract or the Model Lifecycle
+Windows-handle repair into this slice.
 
 ## Ordered Follow-ups
 
-1. **Slice 1 — Data Mapping DRM-sensitive Legacy Bootstrap Acquisition** — Lane B,
-   exact next repair gate.
-2. **Slice 2 — Shared Train Child Structured-Event Encoding** — Lane C, after
-   Slice 1 closes.
-3. **Slice 3 — Model Lifecycle Windows Handle Compatibility** — Lane C, after
+1. **Slice 2 — Shared Train Child Structured-Event Encoding** — Lane C, exact next
+   repair gate.
+2. **Slice 3 — Model Lifecycle Windows Handle Compatibility** — Lane C, after
    Slice 2 closes.
-4. **Resume Native Windows acceptance** at real Train execution → Candidate
+3. **Resume Native Windows acceptance** at real Train execution → Candidate
    publication after Slices 1-3 close.
-5. **Slice 4 — Headless CLI JSON Output Encoding Compatibility** — Lane C; finish
+4. **Slice 4 — Headless CLI JSON Output Encoding Compatibility** — Lane C; finish
    before closing the dependent Experiment/headless acceptance surface, but do
    not treat it as a prerequisite for Candidate publication.
-6. **Continue Native Windows application acceptance** across Predict / Experiment /
+5. **Continue Native Windows application acceptance** across Predict / Experiment /
    Calculator / Deployment Export as applicable after each blocking repair is
    closed.
-7. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
+6. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
    Decision** after Native Windows source-runtime acceptance closes.
-8. **Multi-point Predict → Calculate** remains behind that product decision.
+7. **Multi-point Predict → Calculate** remains behind that product decision.
 
 This is a sequential repair/acceptance plan, not authorization to create all four
 repair branches concurrently.
