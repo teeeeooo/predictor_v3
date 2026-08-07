@@ -10,13 +10,15 @@
 
 ## Current Slice
 
-**Windows Compatibility Stabilization** remains active. Native Windows acceptance
-is paused, not failed or cancelled, while the confirmed repair sequence is
-completed.
+**Native Windows source-runtime acceptance** is active again. The source blockers
+required before real Train → Candidate publication are closed through PR #62;
+Windows Compatibility Stabilization remains only for later surface-specific work
+that is not a Candidate-publication prerequisite.
 
 PR #58 and PR #59 closed the Data Definition / Data Mapping onboarding source
 prerequisite, PR #60 closed the DRM-sensitive legacy Mapping acquisition repair,
-and PR #61 closed the shared Train child structured-event UTF-8 transport repair.
+PR #61 closed the shared Train child structured-event UTF-8 transport repair, and
+PR #62 closed the shared Model Lifecycle Windows handle compatibility repair.
 Native Windows still preserves PASS evidence for affected runtime-generation
 recovery, clean-state Train startup, and corrected Result Review alignment unless
 later source changes materially invalidate those contracts.
@@ -34,11 +36,11 @@ slices:
    PR #61 makes the shared child stdin/stdout/stderr UTF-8 before protocol
    activity while preserving both existing consumers, structured event meanings,
    confirmation transport, and process lifecycle.
-3. **Model Lifecycle Windows Handle Compatibility — Lane C:** repair the shared
-   Windows handle/filesystem primitive used by Candidate publication/read,
-   Active lifecycle mutation/read and writer-lock paths, closeout persistence,
-   and Deployment Export file durability. Runtime Generation and Experiment
-   persistence do not share this failure mechanism.
+3. **Model Lifecycle Windows Handle Compatibility — Lane C: closed.**
+   PR #62 repairs the shared native Windows handle access-mode primitive used by
+   Candidate publication/read, Active lifecycle mutation/read and writer-lock
+   paths, closeout persistence, and Deployment Export file durability without
+   changing lifecycle/publication identity or persistence contracts.
 4. **Headless CLI JSON Output Encoding Compatibility — Lane C:** repair the
    separate versioned public CLI stdout contract. It is related to the encoding
    family but is not required to unblock real Train → Candidate publication; it
@@ -51,32 +53,28 @@ later acceptance prerequisite only for its dependent headless/Experiment surface
 
 ## Exact Next Action
 
-**Slice 3 — Model Lifecycle Windows Handle Compatibility — Lane C**
+**Resume Native Windows source-runtime acceptance — real Train execution → Candidate publication**
 
-Repair the shared Windows handle/filesystem primitive used by Candidate
-publication/read, Active lifecycle mutation/read and writer-lock paths, closeout
-persistence, and Deployment Export file durability. Preserve the existing
-lifecycle identity, atomicity, containment, durability, recovery, and publication
-contracts while removing the demonstrated Windows handle incompatibility.
+Run the real Train workflow on native Windows through successful Candidate
+publication. Reuse the already accepted Runtime Generation recovery, clean Train
+startup, and Result Review alignment evidence unless new evidence materially
+invalidates those contracts; do not repeat them merely because Slice 3 closed.
 
-Do not reopen Runtime Generation recovery or fold the separate Headless CLI public
-stdout contract into this slice.
+Do not route to Slice 4 before this Candidate-publication acceptance step.
 
 ## Ordered Follow-ups
 
-1. **Slice 3 — Model Lifecycle Windows Handle Compatibility** — Lane C, exact next
-   repair gate.
-2. **Resume Native Windows acceptance** at real Train execution → Candidate
-   publication after Slices 1-3 close.
-3. **Slice 4 — Headless CLI JSON Output Encoding Compatibility** — Lane C; finish
+1. **Resume Native Windows acceptance** at real Train execution → Candidate
+   publication, now that Slices 1-3 are closed.
+2. **Slice 4 — Headless CLI JSON Output Encoding Compatibility** — Lane C; finish
    before closing the dependent Experiment/headless acceptance surface, but do
    not treat it as a prerequisite for Candidate publication.
-4. **Continue Native Windows application acceptance** across Predict / Experiment /
+3. **Continue Native Windows application acceptance** across Predict / Experiment /
    Calculator / Deployment Export as applicable after each blocking repair is
    closed.
-5. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
+4. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
    Decision** after Native Windows source-runtime acceptance closes.
-6. **Multi-point Predict → Calculate** remains behind that product decision.
+5. **Multi-point Predict → Calculate** remains behind that product decision.
 
 This is a sequential repair/acceptance plan, not authorization to create all four
 repair branches concurrently.
