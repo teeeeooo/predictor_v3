@@ -10,44 +10,70 @@
 
 ## Current Slice
 
-**Windows Compatibility Stabilization** remains active and native acceptance may
-now resume.
+**Windows Compatibility Stabilization** remains active. Native Windows acceptance
+is paused, not failed or cancelled, until newly confirmed source-runtime blockers
+and the repository-wide equivalent-pattern audit are closed.
 
-Native Windows already confirms runtime-generation recovery, clean-state Train
-startup, and corrected Result Review alignment. PR #58 added saved-generation
-Training Header Template / Definition Reference export, and PR #59 completed the
-remaining Data Mapping onboarding path from strict legacy-wide CSV to a validated
-Unsaved draft with explicit Save ownership.
+PR #58 and PR #59 closed the Data Definition / Data Mapping onboarding source
+prerequisite. Native Windows still preserves PASS evidence for affected runtime-
+generation recovery, clean-state Train startup, and corrected Result Review
+alignment unless later source changes materially invalidate those contracts.
 
-The user-data onboarding prerequisite is therefore closed at source level. The
-remaining gate is native Windows end-to-end source-runtime acceptance using the
-supported onboarding workflow and real local training data.
+Acceptance resumed far enough into the real user workflow to confirm three new
+Windows blockers:
+
+1. **Data Mapping Legacy Bootstrap — DRM-sensitive CSV acquisition:** the user
+   legacy Mapping CSV is not accessible through the ordinary direct file-read
+   path in the DRM environment, while native evidence shows access through
+   Windows Excel automation / `xlwings`. Existing dependency policy already
+   directs DRM-sensitive user Excel reads through that Windows automation path;
+   this plan does not preselect the concrete adapter repair.
+2. **Train child-process status/log encoding:** real Train execution exposed a
+   `cp949` encoding failure in training status/event output. The child-job text/
+   event transport and Windows console/stdout encoding boundary are materially
+   involved; this plan does not choose emoji removal, encoding coercion, or a
+   transport repair.
+3. **Model Lifecycle Windows handle compatibility:** native Windows fails on an
+   `os.O_ACCMODE` availability assumption in the lifecycle file-handle path.
+   Candidate/Active and materially adjacent persistence/publication safety paths
+   must be inspected before fixing an isolated call site.
+
+Real Train execution through Candidate publication, followed by Predict,
+Experiment, Calculator, and Deployment Export acceptance, resumes only after the
+confirmed repairs are selected from audit evidence and completed.
 
 ## Exact Next Action
 
-**Resume Native Windows 11 Enterprise source-runtime acceptance**
+**Native Windows Equivalent-Defect Repository Audit — read-only**
 
-Use the newly completed onboarding workflow to prepare local inputs, then verify
-Train through its existing lifecycle boundary:
+Audit the repository for materially equivalent Windows patterns before any
+source repair:
 
-1. export the saved-generation Training Header Template / Definition Reference;
-2. bootstrap the user-selected legacy-wide Mapping CSV into a validated Unsaved
-   Data Mapping draft, review/edit as needed, then explicitly Save local
-   `mapping.json`;
-3. prepare the real training CSV against the exported `ml_name` header contract;
-4. run real Train execution through successful Candidate publication; and
-5. continue Predict, Experiment, Calculator, and Deployment Export acceptance.
+- DRM-sensitive user-file acquisition that still bypasses the established
+  Windows Excel-automation dependency direction through direct filesystem/parser
+  reads;
+- locale-dependent encoding assumptions at child process, subprocess, QProcess,
+  CLI, protocol, stdout/stderr, or other text/event transport boundaries; and
+- POSIX-only or platform-dependent `os` flags/constants/file-descriptor semantics
+  used by Windows persistence/publication paths.
 
-Previously confirmed native runtime-generation recovery, clean startup, and Result
-Review alignment remain reusable unless later source changes invalidate those
-specific contracts.
+The audit must distinguish confirmed defects from merely similar patterns,
+identify the affected owners and dependency direction, determine which findings
+can safely share a repair slice versus require independent owners, and produce
+evidence for the appropriate lane and validation purpose of each follow-up.
+It must not mutate source, tests, dependencies, or runtime state.
 
 ## Ordered Follow-ups
 
-1. **Native Windows 11 Enterprise source-runtime acceptance** — exact next gate.
-2. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
+1. **Native Windows Equivalent-Defect Repository Audit** — exact next gate,
+   read-only.
+2. **Confirmed Windows repair slice(s)** — owner/lane/order selected only after
+   Orchestrator review of the audit evidence.
+3. **Resume Native Windows acceptance** at real Train execution → Candidate
+   publication → Predict / Experiment / Calculator / Deployment Export.
+4. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
    Decision** after native Windows source-runtime acceptance closes.
-3. **Multi-point Predict → Calculate** remains behind that product decision.
+5. **Multi-point Predict → Calculate** remains behind that product decision.
 
 ## Active Constraints
 

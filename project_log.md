@@ -35,6 +35,31 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-08-07 — Native Windows equivalent-defect audit sequencing
+
+### Decision
+
+- PR #58/#59 closed the Data Definition / Data Mapping onboarding source gap, but
+  resumed native Windows acceptance exposed three new source-runtime blockers:
+  DRM-sensitive legacy Mapping CSV acquisition through an ordinary direct-read
+  path, `cp949` failure at the Train child-process status/event text boundary,
+  and a Model Lifecycle Windows handle path that assumes `os.O_ACCMODE` exists.
+- Preserve the already accepted native runtime-generation recovery, clean Train
+  startup, and Result Review alignment evidence unless later source changes
+  materially invalidate those contracts. Candidate publication remains the real
+  Train acceptance endpoint rather than a new implementation milestone.
+- Durable lesson: before patching a confirmed platform defect in isolation,
+  inspect materially equivalent repository patterns and sibling owners when the
+  failure family may recur across acquisition, process/text transport, or
+  persistence/publication boundaries. Similar grep matches are not themselves
+  confirmed defects.
+- Pause native acceptance until a read-only **Native Windows Equivalent-Defect
+  Repository Audit** identifies affected owners/dependency direction and evidence
+  for appropriately separated repair slices. After those repairs, resume at real
+  Train execution → Candidate publication → remaining app paths. Standard Request
+  stays held, Multi-point Predict → Calculate remains behind it, and Result Review
+  XLSX remains `DEFER`.
+
 ## 2026-08-06 — Native Windows acceptance / onboarding sequencing
 
 ### Decision
