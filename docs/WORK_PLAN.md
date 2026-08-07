@@ -10,10 +10,11 @@
 
 ## Current Slice
 
-**Native Windows source-runtime acceptance** is active again. The source blockers
-required before real Train → Candidate publication are closed through PR #62;
-Windows Compatibility Stabilization remains only for later surface-specific work
-that is not a Candidate-publication prerequisite.
+**Windows Compatibility Stabilization** remains active for one final already-audited
+source repair before Native Windows source-runtime acceptance resumes. Slices 1–3
+are closed; Native Windows acceptance is paused, not failed or cancelled, until
+Slice 4 closes so the known repair set can be completed before one continuous
+acceptance pass.
 
 PR #58 and PR #59 closed the Data Definition / Data Mapping onboarding source
 prerequisite, PR #60 closed the DRM-sensitive legacy Mapping acquisition repair,
@@ -41,43 +42,48 @@ slices:
    Candidate publication/read, Active lifecycle mutation/read and writer-lock
    paths, closeout persistence, and Deployment Export file durability without
    changing lifecycle/publication identity or persistence contracts.
-4. **Headless CLI JSON Output Encoding Compatibility — Lane C:** repair the
-   separate versioned public CLI stdout contract. It is related to the encoding
-   family but is not required to unblock real Train → Candidate publication; it
-   must close before the dependent Experiment/headless acceptance surface closes.
+4. **Headless CLI JSON Output Encoding Compatibility — Lane C: open.** Repair the
+   separate versioned machine-readable Experiment/headless CLI stdout contract.
+   It remains distinct from the internal Train child-process protocol repaired by
+   Slice 2.
 
-The audit gives no reason to reopen Runtime Generation recovery or broaden this
-slice into unrelated Windows cleanup. Native acceptance resumes at real Train
-execution → Candidate publication after Slices 1-3 are closed; Slice 4 remains a
-later acceptance prerequisite only for its dependent headless/Experiment surface.
+The audit gives no reason to reopen Runtime Generation recovery, Slices 1–3, or
+unrelated Windows cleanup. Because Slice 4 is already a confirmed compatibility
+gap on a later acceptance surface, close it before resuming Native Windows
+acceptance rather than intentionally interrupting that acceptance for a known
+source repair.
 
 ## Exact Next Action
 
-**Resume Native Windows source-runtime acceptance — real Train execution → Candidate publication**
+**Slice 4 — Headless CLI JSON Output Encoding Compatibility Repair — Lane C**
 
-Run the real Train workflow on native Windows through successful Candidate
-publication. Reuse the already accepted Runtime Generation recovery, clean Train
-startup, and Result Review alignment evidence unless new evidence materially
-invalidates those contracts; do not repeat them merely because Slice 3 closed.
-
-Do not route to Slice 4 before this Candidate-publication acceptance step.
+Repair the separate versioned machine-readable Experiment/headless CLI stdout
+contract without reopening the internal Train child protocol or broadening into
+generic console/encoding cleanup. After Slice 4 merge/Close, resume Native Windows
+source-runtime acceptance as one continuous pass.
 
 ## Ordered Follow-ups
 
-1. **Resume Native Windows acceptance** at real Train execution → Candidate
-   publication, now that Slices 1-3 are closed.
-2. **Slice 4 — Headless CLI JSON Output Encoding Compatibility** — Lane C; finish
-   before closing the dependent Experiment/headless acceptance surface, but do
-   not treat it as a prerequisite for Candidate publication.
-3. **Continue Native Windows application acceptance** across Predict / Experiment /
-   Calculator / Deployment Export as applicable after each blocking repair is
-   closed.
-4. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
+1. **Slice 4 — Headless CLI JSON Output Encoding Compatibility Repair** — Lane C,
+   the sole exact next source repair.
+2. **Resume Native Windows source-runtime acceptance** after Slice 4 closes and
+   progress continuously through:
+   1. real protected DRM-sensitive legacy Mapping bootstrap confirmation as needed;
+   2. real Train execution through successful Candidate publication;
+   3. Predict;
+   4. Experiment, including the dependent headless CLI surface;
+   5. Calculator;
+   6. Deployment Export.
+   Reuse prior PASS evidence for Runtime Generation recovery, clean Train startup,
+   and Result Review alignment unless a later source change materially invalidates
+   the relevant owner or contract.
+3. **Predict Case → Standard Predicted Points / Standard Request Product/Owner
    Decision** after Native Windows source-runtime acceptance closes.
-5. **Multi-point Predict → Calculate** remains behind that product decision.
+4. **Multi-point Predict → Calculate** remains behind that product decision.
 
-This is a sequential repair/acceptance plan, not authorization to create all four
-repair branches concurrently.
+This sequencing change completes the already-audited repair set before acceptance;
+it does not authorize another repository-wide audit, generic Windows cleanup, or
+new repair slices.
 
 ## Active Constraints
 
