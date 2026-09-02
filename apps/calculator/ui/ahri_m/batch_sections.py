@@ -24,7 +24,9 @@ from apps.calculator.ui.layout_constants import (
     CONTROL_ROW_PADY,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
+    METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
 )
+from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
 
@@ -70,10 +72,12 @@ class _BaseBatchSection:
             ttk.Button(row, text=label, command=command).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Label(row, textvariable=self.status_var).pack(side=tk.LEFT, padx=(6, 0))
 
-    def _apply_results(self, handler) -> None:
+    def _apply_results(self, handler):
         valid = pending = errors = 0
+        results = []
         for index, case in enumerate(self.table.cases):
             result = handler.calculate_row(case)
+            results.append(result)
             self.table.set_result(index, result.values)
             if result.state is BatchRowState.OK:
                 valid += 1
@@ -82,6 +86,7 @@ class _BaseBatchSection:
             else:
                 pending += 1
         self.status_var.set(f"{valid} valid / {pending} pending" + (f" / {errors} invalid" if errors else ""))
+        return tuple(results)
 
     def _export_csv(self) -> None:
         headers, rows = self.table.table_export_data()
@@ -122,21 +127,59 @@ class AhriMHspfBatchSection(_BaseBatchSection):
             "h1n_same_speed": "0", "automatic_cutout": "1", "demand_defrost": "0",
         }
         defaults.update(saved)
-        self._vars = {key: tk.StringVar(master=self._frame, value=value) for key, value in defaults.items()}
+        self._vars = {
+            key: tk.StringVar(master=self._frame, value=defaults[key])
+            for key in ("h1n_same_speed", "automatic_cutout", "demand_defrost")
+        }
         for key, label in (("h1n_same_speed", "H1N=H32 Hz"), ("automatic_cutout", "Automatic Cutout"), ("demand_defrost", "Demand Defrost")):
             ttk.Checkbutton(self._common_frame, text=label, variable=self._vars[key], onvalue="1", offvalue="0").pack(side=tk.LEFT, padx=(CONTROL_ROW_PADY, 0), pady=CONTROL_ROW_PADY)
-        for key, label in (("cd", "CDh"), ("defrost_test_minutes", "Defrost Test"), ("defrost_max_minutes", "Defrost Max"), ("cut_out_c", "Cut Out °C"), ("cut_in_c", "Cut In °C")):
-            ttk.Label(self._common_frame, text=label).pack(side=tk.LEFT, padx=(CONTROL_ROW_PADY, CONTROL_COMPACT_GAP), pady=CONTROL_ROW_PADY)
-            ttk.Entry(self._common_frame, textvariable=self._vars[key], width=CONTROL_NUMERIC_ENTRY_WIDTH_CHARS).pack(side=tk.LEFT, pady=CONTROL_ROW_PADY)
+        self.numeric_table = MetricInputTable(
+            self._common_frame,
+            columns=(("cd", "CDh"), ("defrost_credit", "Defrost Credit"), ("defrost_test_minutes", "Defrost Test [min]"), ("defrost_max_minutes", "Defrost Max [min]"), ("cut_out_c", "Cut Out [°C]"), ("cut_in_c", "Cut In [°C]")),
+            rows=(("value", "Value"),),
+            editable_cells={("value", key): key for key in ("cd", "defrost_test_minutes", "defrost_max_minutes", "cut_out_c", "cut_in_c")},
+            data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
+            visual_style="shared",
+        )
+        self.numeric_table.pack(side=tk.LEFT, padx=(CONTROL_ROW_PADY, 0), pady=CONTROL_ROW_PADY)
+        self.numeric_table.set_values_batch({key: defaults[key] for key in ("cd", "defrost_test_minutes", "defrost_max_minutes", "cut_out_c", "cut_in_c")})
+        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(text="1.000")
+        self.numeric_table.set_values_changed_callback(lambda: getattr(self, "_auto_calc", None) and self._auto_calc.schedule())
         for variable in self._vars.values():
-            variable.trace_add("write", lambda *_args: getattr(self, "_auto_calc", None) and self._auto_calc.schedule())
+            variable.trace_add("write", lambda *_args: self._on_option_changed())
+        self._apply_option_state()
 
     @staticmethod
     def _bool(value: str) -> bool:
         return value == "1"
 
     def common_values(self) -> dict[str, str]:
-        return {key: variable.get() for key, variable in self._vars.items()}
+        values = self.numeric_table.get_text_values()
+        values.update({key: variable.get() for key, variable in self._vars.items()})
+        return values
+
+    def _on_option_changed(self) -> None:
+        self._apply_option_state()
+        auto_calc = getattr(self, "_auto_calc", None)
+        if auto_calc is not None:
+            auto_calc.schedule()
+
+    def _apply_option_state(self) -> None:
+        readonly = []
+        display_values = {}
+        if not self._bool(self._vars["demand_defrost"].get()):
+            for address in (("value", "defrost_test_minutes"), ("value", "defrost_max_minutes")):
+                readonly.append(address)
+                display_values[address] = "N/A"
+        if not self._bool(self._vars["automatic_cutout"].get()):
+            for address in (("value", "cut_out_c"), ("value", "cut_in_c")):
+                readonly.append(address)
+                display_values[address] = "No cutout"
+        self.numeric_table.set_readonly_addresses(readonly, display_values=display_values)
+        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(
+            text="계산 대기" if self._bool(self._vars["demand_defrost"].get()) else "1.000"
+        )
+
     def _recalculate_now(self) -> None:
         values = self.common_values()
         common = AhriMHspfBatchCommon(
@@ -149,4 +192,7 @@ class AhriMHspfBatchSection(_BaseBatchSection):
             automatic_cutout=self._bool(values["automatic_cutout"]),
             demand_defrost=self._bool(values["demand_defrost"]),
         )
-        self._apply_results(AhriMHspfBatchHandler(common))
+        results = self._apply_results(AhriMHspfBatchHandler(common))
+        credits = [result.defrost_credit for result in results if result.defrost_credit is not None]
+        if credits:
+            self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(text=f"{credits[0]:.3f}")

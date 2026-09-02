@@ -146,7 +146,7 @@ class AhriMHspfSection:
         )
         self.result_panel.set_summaries((ResultSummary(
             title="HSPF",
-            fields=(("Raw HSPF", f"{summary.raw_hspf:.5f}"), ("Published HSPF", f"{summary.published_hspf:.2f}"), ("DHRmin [Btu/h]", f"{summary.dhr_min_standardized:.0f}"), ("기간 난방부하비율", f"{summary.heating_load_aggregate:.1f}"), ("기간 난방 입력 비율", f"{summary.compressor_energy_aggregate:.1f}"), ("보조 난방 입력 비율", f"{summary.resistance_energy_aggregate:.1f}")),
+            fields=(("Raw HSPF", f"{summary.raw_hspf:.5f}"), ("Published HSPF", f"{summary.published_hspf:.2f}"), ("DHRmin [Btu/h]", f"{summary.dhr_min_standardized:.0f}"), ("Heating Load [Btu/h]", f"{summary.heating_load_aggregate:.1f}"), ("Compressor Input [W]", f"{summary.compressor_energy_aggregate:.1f}"), ("Auxiliary Input [W]", f"{summary.resistance_energy_aggregate:.1f}")),
             status=f"자동 계산 완료 · H12 {summary.h12_source} · H22 {summary.h22_source}",
         ),))
         self.detail_panel.set_sources({"HSPF": BinDetailSource(rows=summary.bin_details, summary=(("Raw", f"{summary.raw_hspf:.5f}"), ("Published", f"{summary.published_hspf:.2f}"), ("DHRmin", f"{summary.dhr_min_standardized:.0f}")))})
@@ -157,7 +157,7 @@ class AhriMHspfSection:
             self.heating_table.static_cell_labels[("cop", point)].configure(text=f"{cops[point]:.2f}" if point in cops else "")
 
     def _show_placeholder(self, status):
-        self.result_panel.show_placeholder(title="HSPF", field_labels=("Raw HSPF", "Published HSPF", "DHRmin [Btu/h]", "기간 난방부하비율", "기간 난방 입력 비율", "보조 난방 입력 비율"), status=status)
+        self.result_panel.show_placeholder(title="HSPF", field_labels=("Raw HSPF", "Published HSPF", "DHRmin [Btu/h]", "Heating Load [Btu/h]", "Compressor Input [W]", "Auxiliary Input [W]"), status=status)
 
     def _apply_errors(self, errors):
         self._clear_errors()

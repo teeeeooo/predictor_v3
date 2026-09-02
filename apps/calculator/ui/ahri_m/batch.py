@@ -7,7 +7,10 @@ from types import MappingProxyType
 from collections.abc import Mapping
 
 from apps.calculator.application.ahri_m import AhriHspfAdapter, AhriHspfOptions, AhriSeerAdapter
-from apps.calculator.ui.ahri_m.points import ahri_m_hspf_ui_point_label
+from apps.calculator.ui.ahri_m.points import (
+    ahri_m_hspf_ui_point_label,
+    ahri_m_seer_ui_point_label,
+)
 from apps.calculator.ui.batch.matrix_models import BatchMatrixSpec, MatrixMeasurementPointSpec, MatrixPhysicalRowType
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import BATCH_MATRIX_POINT_WIDTH_CHARS, BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS, BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS
@@ -27,7 +30,10 @@ def _point(point: str, label: str | None = None) -> MatrixMeasurementPointSpec:
 AHRI_M_SEER_BATCH_SPEC = BatchMatrixSpec(
     profile_key="ahri_m_seer", title="AHRI 210/240 M SEER Batch Matrix",
     physical_rows=_ROWS, row_type_labels=_ROW_LABELS,
-    measurement_points=tuple(_point(point) for point in ("A2", "B2", "EV", "B1", "F1")),
+    measurement_points=tuple(
+        _point(point, ahri_m_seer_ui_point_label(point))
+        for point in ("A2", "B2", "EV", "B1", "F1")
+    ),
     result_metrics=(("seer", "SEER", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS), ("cstl", "CSTL", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS), ("csec", "CSEC", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS)),
 )
 AHRI_M_HSPF_BATCH_SPEC = BatchMatrixSpec(
@@ -40,8 +46,9 @@ AHRI_M_HSPF_BATCH_SPEC = BatchMatrixSpec(
     result_metrics=(
         ("hspf", "HSPF", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
         ("dhr", "DHRmin", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS),
-        ("comp", "Comp Input", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS),
-        ("aux", "Aux Input", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS),
+        ("load", "Heating Load [Btu/h]", max(BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS, len("Heating Load [Btu/h]"))),
+        ("comp", "Compressor Input [W]", max(BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS, len("Compressor Input [W]"))),
+        ("aux", "Auxiliary Input [W]", max(BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS, len("Auxiliary Input [W]"))),
     ),
 )
 
@@ -50,6 +57,7 @@ AHRI_M_HSPF_BATCH_SPEC = BatchMatrixSpec(
 class BatchRowResult:
     values: dict[str, str]
     state: BatchRowState
+    defrost_credit: float | None = None
 
 
 def _blank(spec: BatchMatrixSpec, state: BatchRowState) -> BatchRowResult:
@@ -130,10 +138,12 @@ class AhriMHspfBatchHandler:
                 {
                     "hspf": f"{summary.published_hspf:.2f}",
                     "dhr": f"{summary.dhr_min_standardized:.0f}",
+                    "load": f"{summary.heating_load_aggregate:.1f}",
                     "comp": f"{summary.compressor_energy_aggregate:.1f}",
                     "aux": f"{summary.resistance_energy_aggregate:.1f}",
                 },
                 BatchRowState.OK,
+                defrost_credit=summary.defrost_credit,
             )
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
             return _blank(AHRI_M_HSPF_BATCH_SPEC, BatchRowState.ERROR)

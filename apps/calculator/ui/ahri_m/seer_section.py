@@ -11,6 +11,7 @@ from apps.calculator.application.ahri_m import (
     AhriSeerAdapter, AhriSeerInputError,
 )
 from apps.calculator.ui.ahri_m.batch_dialog import AhriMBatchAccess
+from apps.calculator.ui.ahri_m.points import ahri_m_seer_ui_point_label
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX, METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS, METRIC_TABLE_HEATING_DATA_COLUMN_CHARS
 from apps.calculator.ui.metric_input_table import MetricInputTable
@@ -35,7 +36,10 @@ class AhriMSeerSection:
         self.numeric_table.grid(row=0, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(ISO_SECTION_BLOCK_GAP, 6))
         self.input_table = MetricInputTable(
             self._frame,
-            columns=tuple((point, point) for point in AHRI_M_SEER_POINT_ORDER),
+            columns=tuple(
+                (point, ahri_m_seer_ui_point_label(point))
+                for point in AHRI_M_SEER_POINT_ORDER
+            ),
             rows=(("condition_temp", "Condition / Temp"), ("capacity", "Capacity [Btu/h]"), ("power", "Power [W]"), ("eer", "EER")),
             editable_cells={(kind, point): f"{kind}_{point}" for point in AHRI_M_SEER_POINT_ORDER for kind in ("capacity", "power")},
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,

@@ -7,6 +7,7 @@ from apps.calculator.application.ahri_m import (
     AhriHspfAdapter, AhriHspfInputError, AhriHspfOptions, AhriSeerAdapter,
 )
 from apps.calculator.ui.batch.models import BatchRowState
+from apps.calculator.ui.table.roles import CellRole
 
 SEER_VALUES = {
     "cd": "0.25", "capacity_A2": "15000", "power_A2": "1200",
@@ -57,6 +58,8 @@ def test_m_batch_handlers_reproduce_single_surface_goldens():
     seer = AhriMSeerBatchHandler("0.25").calculate_row(seer_row)
     assert seer.state is BatchRowState.OK
     assert seer.values == {"seer": "18.05", "cstl": "5349.7", "csec": "296.4"}
+    from apps.calculator.ui.ahri_m.batch import AHRI_M_SEER_BATCH_SPEC
+    assert {point.key: point.label for point in AHRI_M_SEER_BATCH_SPEC.measurement_points}["EV"] == "Ev"
 
     hspf_row = {key: value for key, value in HSPF_VALUES.items() if key.startswith(("capacity_", "power_"))}
     common = AhriMHspfBatchCommon(
@@ -66,7 +69,7 @@ def test_m_batch_handlers_reproduce_single_surface_goldens():
     )
     hspf = AhriMHspfBatchHandler(common).calculate_row(hspf_row)
     assert hspf.state is BatchRowState.OK
-    assert hspf.values == {"hspf": "10.45", "dhr": "15000", "comp": "359.5", "aux": "80.7"}
+    assert hspf.values == {"hspf": "10.45", "dhr": "15000", "load": "4605.6", "comp": "359.5", "aux": "80.7"}
     labels = {point.key: point.label for point in AHRI_M_HSPF_BATCH_SPEC.measurement_points}
     assert labels["H2V"] == "H2v"
     assert labels["H1N"] == "H1N(STD)"
@@ -94,6 +97,7 @@ def test_m_sections_use_exact_scope_and_render_goldens(tk_root):
     from apps.calculator.ui.ahri_m import AhriMSeerSection, AhriMHspfSection
     seer = AhriMSeerSection(tk_root); seer.pack()
     assert tuple(key for key, _ in seer.input_table.columns) == AHRI_M_SEER_POINT_ORDER
+    assert dict(seer.input_table.columns)["EV"] == "Ev"
     assert seer.batch_button.cget("text") == "일괄 입력"
     seer.input_table.set_values_batch({k: v for k, v in SEER_VALUES.items() if k != "cd"})
     seer._auto_calc.flush_now()
@@ -117,6 +121,9 @@ def test_m_sections_use_exact_scope_and_render_goldens(tk_root):
     hspf._auto_calc.flush_now()
     values = [label.cget("text") for label in hspf.result_panel.summary_value_labels["HSPF"]]
     assert values == ["10.46286", "10.45", "15000", "4605.6", "359.5", "80.7"]
+    assert hspf.result_panel._summary_shapes["HSPF"][1] == (
+        "Raw HSPF", "Published HSPF", "DHRmin [Btu/h]", "Heating Load [Btu/h]", "Compressor Input [W]", "Auxiliary Input [W]"
+    )
     assert hspf.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.000"
 
     hspf.demand_defrost_var.set(True)
@@ -138,7 +145,18 @@ def test_m_batch_buttons_open_appendix_m_matrix_dialogs(tk_root):
     hspf = AhriMHspfSection(tk_root); hspf.pack()
     hspf.batch_button.invoke(); tk_root.update_idletasks()
     assert hspf._batch_access.dialog is not None
-    assert hspf._batch_access.dialog.section.table.spec is AHRI_M_HSPF_BATCH_SPEC
+    section = hspf._batch_access.dialog.section
+    assert section.table.spec is AHRI_M_HSPF_BATCH_SPEC
+    assert section.numeric_table.cell_role((0, 2)) is CellRole.READONLY
+    assert section.numeric_table.cell_role((0, 3)) is CellRole.READONLY
+    assert section.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.000"
+    section._vars["demand_defrost"].set("1")
+    assert section.numeric_table.cell_role((0, 2)) is CellRole.EDITABLE
+    assert section.numeric_table.cell_role((0, 3)) is CellRole.EDITABLE
+    section.numeric_table.set_values_batch({"defrost_test_minutes": "180", "defrost_max_minutes": "720"})
+    section.table.restore_snapshot([{key: value for key, value in HSPF_VALUES.items() if key.startswith(("capacity_", "power_"))}])
+    section._auto_calc.flush_now()
+    assert section.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.026"
     hspf._batch_access.dialog.close()
 
 
