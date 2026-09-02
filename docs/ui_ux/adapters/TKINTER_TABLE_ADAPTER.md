@@ -82,7 +82,7 @@ Tkinter is the implementation, not an excuse to drop UX baseline.
 New Tkinter table surfaces must pass this checklist before being treated as
 complete:
 
-- Reuse `MetricInputTable` + `ExcelLikeTableController` when the shape fits.
+- Reuse `MetricInputTable` + the current common `TkTableController` when the shape fits.
 - If that shape does not fit, introduce or reuse an equivalent common Tk
   adapter that exposes cell metadata and implements the same Excel-like
   interaction contract.
@@ -155,10 +155,16 @@ editing pieces.
 ### Predictor_v3 Tkinter calculator binding
 
 The ISO Hong Kong Tkinter calculator attaches a separate
-`ExcelLikeTableController` to each rated and trial `MetricInputTable`.
+`TkTableController` to each rated and trial `MetricInputTable`.
 The table surface exposes metadata plus grouped mutation hooks; the
 controller owns rectangular selection, TSV clipboard actions, grouped
 clear/undo, navigation, and type-to-replace without creating cells.
+
+When an option changes which cells are editable or changes a cell's
+read-only presentation, update the table metadata/display values first and
+call the controller's `refresh()` so the existing selection/edit state is
+reconciled with the new cell roles. This applies to the Appendix M single and
+batch table surfaces as well as the shared calculator binding.
 
 For this numeric auto-calculation surface, a paste is validated as one
 action before applying any values. If any pasted numeric cell is invalid,

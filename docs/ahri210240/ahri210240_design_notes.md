@@ -2,13 +2,13 @@
 
 ## 1. Purpose
 
-이 문서는 AHRI 210/240의 HSPF2와 SEER2가 실제 히트펌프와 에어컨 제품 설계에 주는 의미를 정리한다. HSPF2는 Region IV 난방 성능을 중심으로 깊게 다루고, SEER2는 현재 확인 가능한 냉방 부분부하 구조까지만 다룬다.
+이 문서는 AHRI 210/240 Appendix M의 SEER/HSPF와 Appendix M1의 HSPF2/SEER2가 실제 히트펌프와 에어컨 제품 설계에 주는 의미를 정리한다. M과 M1은 서로 다른 standard edition과 시험점/계절 계산 경로이므로 설계 해석을 분리한다. M HSPF는 Region IV 난방 성능을 중심으로 다루고, M1 HSPF2/SEER2는 현재 확인 가능한 범위까지만 다룬다.
 
-핵심 관점은 단일 정격점의 높은 효율보다, 계절 중 자주 발생하는 외기온에서 건물 부하를 얼마나 낮은 전력으로 안정적으로 따라가는지가 최종 등급을 좌우한다는 점이다. 근거: AHRI 210/240-2026 Table 16, Section 11.
+핵심 관점은 단일 정격점의 높은 효율보다, 계절 중 자주 발생하는 외기온에서 건물 부하를 얼마나 낮은 전력으로 안정적으로 따라가는지가 최종 등급을 좌우한다는 점이다. M과 M1의 등급은 bin table, 부하선, 보간/제상 규칙이 다르므로 숫자만으로 직접 비교하지 않는다. 근거: AHRI 210/240-2017 Appendix M Tables 19/20 및 AHRI 210/240-2026 Table 16, Section 11.
 
 ## 2. Quick Glossary
 
-전체 용어 및 기호 정의는 `glossary.md`를 참조하라.
+전체 용어 및 기호 정의는 `ahri210240_glossary.md`를 참조하라.
 
 | 용어 | 간략 의미 | 설계상 핵심 |
 | --- | --- | --- |
@@ -23,6 +23,19 @@
 | H32/H42 | 저온 full-load 난방 시험점 | 17°F 및 5°F 주변 저온 용량 유지 능력을 나타낸다. |
 | Fdef | 제상 보정계수 | frost 조건의 제상 시간과 회복 손실 영향을 추적한다. |
 
+### Appendix M / M1 distinction
+
+| 구분 | Appendix M | Appendix M1 |
+| --- | --- | --- |
+| 표준 계열 | AHRI 210/240-2017 Appendix M; HSPF는 Addendum 1 포함 | AHRI 210/240-2026 |
+| 지표 | SEER / HSPF | SEER2 / HSPF2 |
+| 현재 제품 범위 | variable-speed, non-ducted, single-split; HSPF는 Region IV | current variable-capacity 경로; HSPF2는 Region IV 중심 |
+| 냉방 시험점 | A2, B2, EV, B1, F1 | A/B/E/F 계열의 M1 schema |
+| 난방 시험점 | H01, H11, H1N, H2V, H32; H12/H22 optional | H01, H11, H1N, H2Int, H32; H12/H22/H42 및 product policy |
+| 해석 규칙 | M 전용 bin, intermediate 및 defrost semantics | M1 전용 bin, Case 및 product/region policy |
+
+M의 `H2V`와 M1의 `H2Int`, M의 `HSPF`와 M1의 `HSPF2`는 이름이 비슷해도 같은 입력 또는 같은 성능 지점을 뜻하지 않는다.
+
 ## 3. Metric Structure
 
 | 지표 | 구성 | 설계상 의미 | 근거 |
@@ -30,6 +43,8 @@
 | HSPF2 | Region IV 계절 난방 부하 / 압축기 에너지와 보조열 에너지 합 | 저온 용량, 부분부하 효율, 보조열 사용이 함께 반영된다. | AHRI 210/240-2026 Section 11, Table 16 |
 | 난방 bin 부하 | 외기온별 건물 부하선 | 온도가 낮아질수록 부하가 커지고, 용량 부족 시 보조열이 증가한다. | AHRI 210/240-2026 Equation 11.104 |
 | SEER2 | 냉방 bin별 냉방량 / 냉방 에너지 합 | 중간 외기온의 저속 및 중간속 효율이 중요하다. | AHRI 210/240 cooling rating sections |
+| HSPF | Appendix M Region IV 계절 난방 부하 / 압축기 및 저항 보조열 에너지 합 | H2V intermediate 위치, 저온 용량, 제상 credit이 함께 반영된다. | AHRI 210/240-2017 Appendix M Addendum 1, Table 20 |
+| SEER | Appendix M cooling bin별 냉방량 / 냉방 에너지 합 | EV intermediate 위치와 A2/B2/F1/B1 curve가 계절 효율을 좌우한다. | AHRI 210/240-2017 Appendix M, Table 19 |
 
 왜 중요한가: 계절 등급은 시험점 효율의 단순 평균이 아니다. 외기온 bin의 시간 가중치와 부하선이 결합되므로, 자주 나타나는 온도에서의 운전 안정성과 효율이 최종 지표에 더 큰 영향을 준다.
 
@@ -120,6 +135,24 @@ SEER2는 현재 확인 가능한 범위에서 A full, B full, B low, E intermedi
 | A/B full 효율 | 높은 외기온과 high-load 구간을 담당한다. | 고온 응축 조건에서 전력 상승을 억제한다. | AHRI 210/240 cooling rating sections |
 | fan power | 모든 냉방 운전점의 소비전력에 반영된다. | 열교환 이득과 팬 전력 증가의 균형을 맞춘다. | AHRI 210/240 cooling rating sections |
 
+## 11.1 Appendix M Design Implications
+
+### M SEER
+
+- A2/B2는 full-capacity curve의 기준이고 F1/B1은 low-capacity curve의 기준이다. EV는 두 curve 사이의 intermediate 위치를 정하므로, 한 정격점의 EER만 올리는 것보다 curve 전 구간의 용량·전력 연속성이 중요하다.
+- M cooling bins는 Appendix M Table 19를 사용한다. M1 SEER2의 bin weighting이나 A/B/E/F 명칭을 M SEER의 설계 판단에 그대로 적용하지 않는다.
+
+### M HSPF
+
+- H01/H11은 low-speed 난방 성능, H2V는 intermediate COP 위치, H32는 저온 full-speed 성능을 대표한다. H12/H22가 실측되면 해당 full-load 정보를 우선하며, 비어 있으면 M 전용 fallback 해석을 적용한다.
+- M HSPF의 minimum DHR과 Region IV Table 20 bin weighting은 M1 HSPF2의 DHR/Region IV 해석과 동일하다고 가정하지 않는다.
+- Demand Defrost가 꺼진 제품은 Defrost Test/Max를 성능 입력으로 해석하지 않고 credit 1.0 조건으로 본다. 켜진 제품은 timing과 제상 회복 손실을 함께 평가한다.
+- M HSPF에는 현재 H42 저온 anchor를 사용하지 않는다. H42가 필요한 제품 범위를 추가하려면 M HSPF의 point schema와 별도 golden을 먼저 확정해야 한다.
+
+### Cross-metric comparison
+
+M SEER/HSPF와 M1 SEER2/HSPF2의 수치는 standard edition, 시험점, bin table, rounding이 다르므로 제품 간 단순 우열 비교나 변환식의 입력으로 사용하지 않는다. 비교가 필요하면 동일 standard path 안에서 동일한 config와 시험점 조건을 사용한다.
+
 ## 12. Practical Design Checklist
 
 | Check | 질문 | 관련 지표 | 근거 |
@@ -136,6 +169,9 @@ SEER2는 현재 확인 가능한 범위에서 A full, B full, B low, E intermedi
 
 | Reference | Usage |
 | --- | --- |
+| AHRI 210/240-2017 Appendix M, Table 19 | M SEER cooling test points and seasonal bins |
+| AHRI 210/240-2017 Appendix M, Table 20 | M HSPF Region IV bin data and design/load basis |
+| AHRI 210/240-2017 Addendum 1 | M HSPF defrost and rating interpretation |
 | AHRI 210/240-2026 Section 11 | HSPF2 seasonal calculation structure |
 | AHRI 210/240-2026 Table 16 | Region IV fractional heating bin hours and load line parameters |
 | AHRI 210/240-2026 Equation 11.104 | 난방 건물 부하선 |

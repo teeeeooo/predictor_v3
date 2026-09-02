@@ -1,6 +1,6 @@
 # AHRI 210/240 Glossary
 
-이 문서는 AHRI 210/240 HSPF2/SEER2 문서에서 사용하는 도메인 용어, 수식 기호, 코드 변수명 정의의 단일 용어 사전이다. 설계 엔지니어가 보는 물리적 의미와 Coding Agent 및 SW 엔지니어가 확인해야 하는 변수/스키마 정보를 분리하여 관리한다.
+이 문서는 AHRI 210/240 Appendix M SEER/HSPF와 Appendix M1 SEER2/HSPF2 문서에서 사용하는 도메인 용어, 수식 기호, 코드 변수명 정의의 단일 용어 사전이다. 설계 엔지니어가 보는 물리적 의미와 Coding Agent 및 SW 엔지니어가 확인해야 하는 변수/스키마 정보를 분리하여 관리한다. M과 M1은 같은 용어처럼 보이는 지표도 standard edition과 시험점/계절 계산 경로가 다르므로 별도 항목으로 관리한다.
 
 ## 1. HVAC 설계 엔지니어용
 
@@ -8,6 +8,10 @@
 | --- | --- | --- | --- |
 | HSPF2 | 난방 계절 성능 계수 2 | AHRI 210/240-2026 Section 11 | 계절 난방 부하를 압축기 에너지와 보조열 에너지 합으로 나눈 지표다. 저온 용량, 부분부하 효율, 보조열 사용량이 함께 반영된다. |
 | SEER2 | 냉방 계절 에너지 효율 2 | AHRI 210/240 cooling rating sections | 냉방 seasonal bin에서 전달 냉방량을 소비전력 합으로 나눈 지표다. 저속 및 중간속 냉방 효율이 계절값에 영향을 준다. |
+| HSPF | Appendix M 난방 계절 성능 계수 | AHRI 210/240-2017 Appendix M Addendum 1 | Region IV 계절 난방 부하를 압축기와 저항 보조열 에너지 합으로 나눈 M 지표다. HSPF2와 직접 치환하지 않는다. |
+| SEER | Appendix M 냉방 계절 에너지 효율 | AHRI 210/240-2017 Appendix M | Appendix M cooling bin의 전달 냉방량을 소비전력 합으로 나눈 M 지표다. SEER2와 직접 치환하지 않는다. |
+| Appendix M | 2017 M rating path | AHRI 210/240-2017 Appendix M | 현재 프로젝트의 variable-speed, non-ducted, single-split SEER/HSPF 경로다. M HSPF는 Region IV로 한정한다. |
+| Appendix M1 | 2026 M1 rating path | AHRI 210/240-2026 | 현재 프로젝트의 SEER2/HSPF2 경로다. M의 point/config/rounding을 공유하지 않는다. |
 | BL(tj) | bin별 건물 부하 | AHRI 210/240-2026 Equation 11.104 | 외기온 bin `tj`에서 요구되는 난방 부하다. 장비 용량선과 만나는 위치가 Case I/II/III 분기를 결정한다. |
 | tj | bin 외기온 | AHRI 210/240-2026 Table 16 | 계절 계산에서 사용하는 외기온 대표값이다. 온도별 시간 가중치와 함께 계절 부하 및 에너지 합산에 사용된다. |
 | fractional bin hours | 분수 빈 시간 | AHRI 210/240-2026 Table 16 | Table 16의 시간 가중치다. HLH와 곱해 absolute bin hours로 변환해야 계절 합산에 사용할 수 있다. |
@@ -38,11 +42,34 @@
 | CLF | 냉방 부하율 | Project current implementation | SEER2 low cycling에서 저속 냉방 용량 대비 냉방 부하 비율로 사용된다. |
 | 보조열 | 전기 저항 보조열 | AHRI 210/240-2026 Case III path | heat pump 용량 부족분을 보충하는 열원이다. COP 1.0 기준으로 처리되며 계절 에너지 denominator를 크게 늘린다. |
 | demand defrost | 수요 제상 | AHRI 210/240-2026 Equation 11.107 | frost 조건에서 필요한 시점에 제상을 수행하는 제어 방식이다. 제상 시간과 회복 손실은 난방 계절 성능에 영향을 준다. |
+| DHRmin | minimum design heating requirement | AHRI 210/240-2017 Appendix M Table 20 | M HSPF Region IV에서 표준화한 최소 설계 난방 요구량이다. M1 HSPF2의 같은 이름의 값과 혼동하지 않는다. |
+| CSTL | seasonal cooling total load | AHRI 210/240-2017 Appendix M | M SEER의 계절 냉방량 numerator 표시다. 현재 UI 표시는 `CSTL [Btu/h]`다. |
+| CSEC | seasonal cooling seasonal energy consumption | AHRI 210/240-2017 Appendix M | M SEER의 계절 에너지 denominator 표시다. 현재 UI 표시는 `CSEC [W]`다. |
 
 ## 2. Coding Agent & SW 엔지니어용
 
 | 코드 변수명 또는 키 | 데이터 타입 | 위치 | 정의 및 구현상 주의 |
 | --- | --- | --- | --- |
+| `AppendixMSeerEngine` | class | `core/calculators/standards/_ahri_m/seer_variable.py` | Appendix M SEER seasonal engine이다. M1 SEER2 curve/schema와 직접 교환하지 않는다. |
+| `AppendixMHspfEngine` | class | `core/calculators/standards/_ahri_m/hspf_variable.py` | Appendix M HSPF Region IV seasonal engine이다. M1 HSPF2 fallback/schema와 직접 교환하지 않는다. |
+| `AhriSeerAdapter` | class | `apps/calculator/application/ahri_m/seer_adapter.py` | M SEER input validation과 `AhriSeerSummary` mapping을 소유한다. |
+| `AhriHspfAdapter` | class | `apps/calculator/application/ahri_m/hspf_adapter.py` | M HSPF required/optional point pair와 option validation을 소유한다. |
+| `AHRI_M_SEER_POINT_ORDER` | tuple | M SEER application adapter | canonical order는 `A2`, `B2`, `EV`, `B1`, `F1`이다. UI `Ev`는 display-only label이다. |
+| `AHRI_M_HSPF_POINT_ORDER` | tuple | M HSPF application adapter | canonical order는 `H01`, `H11`, `H1N`, `H2V`, `H32`, `H12`, `H22`이며 H12/H22는 optional pair다. |
+| `AHRI_M_HSPF_REQUIRED_POINTS` | tuple | M HSPF application adapter | 필수 M HSPF point는 `H01`, `H11`, `H1N`, `H2V`, `H32`다. |
+| `AHRI_M_HSPF_OPTIONAL_POINTS` | tuple | M HSPF application adapter | 선택 M HSPF point는 `H12`, `H22`다. M HSPF에는 `H42`가 없다. |
+| `data/region_configs/usa_m_seer.json` | JSON | `data/region_configs/usa_m_seer.json` | Appendix M Table 19 cooling bins, sizing factor, CDc default를 담는다. |
+| `data/region_configs/usa_m_hspf.json` | JSON | `data/region_configs/usa_m_hspf.json` | Appendix M Table 20 Region IV bins, design/load constants, CDh default를 담는다. |
+| `raw_seer`, `published_seer` | number | M SEER result / summary | 반올림 전/후 M SEER다. `SEER2` key로 변환하지 않는다. |
+| `raw_hspf`, `published_hspf` | number | M HSPF result / summary | 반올림 전/후 M HSPF다. `HSPF2` key로 변환하지 않는다. |
+| `seasonal_cooling_numerator`, `seasonal_energy_denominator` | number | M SEER result / summary | M SEER의 CSTL/CSEC 표시 기반 aggregate다. |
+| `heating_load_aggregate` | number | M HSPF result / summary | M HSPF의 `Heating Load [Btu/h]` 표시 기반 aggregate다. |
+| `compressor_energy_aggregate`, `resistance_energy_aggregate` | number | M HSPF result / summary | M HSPF batch/single surface의 Compressor/Auxiliary Input 표시 기반 aggregate다. |
+| `defrost_credit` / `f_def` | number | M HSPF summary / result | demand defrost timing으로 계산되는 M credit이다. disabled 상태에서는 1.0이다. |
+| `h12_source`, `h22_source` | string | M HSPF summary metadata | M HSPF optional pair의 tested/fallback source trace다. M1 source vocabulary와 합치지 않는다. |
+| `H2V` / `H2v` | canonical/display label | M HSPF input/UI | domain key는 `H2V`, M UI display label은 `H2v`다. |
+| `H1N` / `H1N(STD)` | canonical/display label | M HSPF input/UI | domain key는 `H1N`, M UI display label은 `H1N(STD)`다. |
+| `EV` / `Ev` | canonical/display label | M SEER input/UI | domain key는 `EV`, M UI display label은 `Ev`다. |
 | `calculate_hspf2()` | function | `core/calculators/standards/ahri_hspf2.py` | HSPF2 생산 entry point다. 현재 v3 AHRI path로 연결되며 명시 지시 없이 수정하지 않는다. |
 | `_calculate_hspf2_v3_ahri()` | function | `core/calculators/standards/ahri_hspf2.py` | AHRI 210/240-2026 variable-capacity heating 계산의 핵심 내부 경로다. |
 | `calculate_seer2()` | function | `core/calculators/standards/ahri_seer2.py` | 현재 구현 확인 가능한 SEER2 냉방 bin 계산 entry point다. |

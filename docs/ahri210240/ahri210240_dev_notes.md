@@ -2,11 +2,15 @@
 
 ## 1. Purpose
 
-이 문서는 AHRI 210/240 HSPF2/SEER2 계산 자산을 수정하거나 검증하는 개발자와 AI Agent를 위한 작업 지침이다. 현재 프로젝트에서는 HSPF2 v3가 가장 중요한 생산 경로이며, SEER2는 현재 계산 코드에서 확인 가능한 범위만 다룬다.
+이 문서는 AHRI 210/240 Appendix M SEER/HSPF와 Appendix M1 SEER2/HSPF2 계산 자산을 수정하거나 검증하는 개발자와 AI Agent를 위한 작업 지침이다. 현재 프로젝트에서는 HSPF2 v3가 가장 중요한 M1 생산 경로이며, Appendix M은 별도의 2017/Addendum 1 variable-speed 경로로 다룬다.
 
-Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calculators/standards/ahri_hspf2.py`, `core/calculators/standards/ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, 관련 AHRI 테스트다. 현재 테스트의 variable-capacity HSPF2/SEER2 입력과 expected 결과는 사용자가 AHRI 공식 계산기로 검증한 official-calculator golden이며, refactor를 맞추기 위해 변경하지 않는다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
+Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, Appendix M/M1 standard engine과 application adapter, `data/region_configs/usa_m_seer.json`, `data/region_configs/usa_m_hspf.json`, `data/region_configs/usa_hspf2.json`, 관련 AHRI 테스트다. 현재 테스트의 variable-capacity HSPF2/SEER2 입력과 expected 결과 및 Appendix M project golden은 각 standard path의 계약을 보호하며, refactor를 맞추기 위해 변경하지 않는다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다. 근거: AHRI 210/240-2017 Appendix M Tables 19/20, Addendum 1, AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
 
-도메인 용어 및 코드 변수명 정의는 `glossary.md`를 참조하라.
+도메인 용어 및 코드 변수명 정의는 `ahri210240_glossary.md`를 참조하라.
+
+### M/M1 boundary
+
+M과 M1은 이름이 비슷해도 standard edition, 시험점, bin/config, fallback, 결과 지표가 다르다. M 문서나 코드 작업에서 M1 `H2Int`/`H42` schema, M1 Region IV table, M1 SEER2/HSPF2 rounding 또는 product policy를 재사용하지 않는다. 공통 UI table interaction은 공용 table contract를 따르되, M/M1 계산 의미와 result schema는 각 owner가 유지한다.
 
 ## 2. Top Implementation Pitfalls
 
@@ -48,6 +52,14 @@ Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calcu
 5. building load를 계산하고 Case 1, 2.1, 2.2, 3으로 분기한다.
 6. bin별 cooling amount와 energy를 합산해 SEER2를 산출한다.
 
+### Appendix M SEER/HSPF
+
+1. M SEER는 Appendix M Table 19의 `A2`, `B2`, `EV`, `B1`, `F1` 다섯 point pair를 사용한다. `EV`는 canonical key이고 UI display label만 `Ev`다.
+2. M SEER는 F1→B1 low curve, B2→A2 full curve, EV에서 계산한 intermediate slope와 three-anchor quadratic EER path를 사용한다. M1 SEER2의 A/B/E/F schema로 변환하지 않는다.
+3. M HSPF는 Appendix M Table 20 Region IV bin data와 필수 `H01`, `H11`, `H1N`, `H2V`, `H32`를 사용한다. `H12`, `H22`는 독립 optional pair이며 `H42`는 현재 M schema에 없다.
+4. M HSPF는 H2V의 low/full envelope 위치를 기준으로 intermediate COP를 계산하고, Case I/II/III seasonal accumulation과 resistance auxiliary를 적용한다.
+5. M HSPF demand defrost가 꺼져 있으면 timing input은 `N/A` presentation이고 credit은 `1.0`; 켜져 있으면 Defrost Test/Max 입력을 사용해 M 2017 defrost factor를 계산한다.
+
 ## 4. Data Model Notes
 
 | Data | Location | Meaning | Validation |
@@ -57,12 +69,18 @@ Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calcu
 | HSPF2 public aliases | `data/region_configs/usa_hspf2.json` | accepted public names to canonical names | conflicting value fail-fast |
 | HSPF2 bin details | HSPF2 return dict | bin별 case, BL, q/p low/int/full, COP, auxiliary | smoke and case tests inspect |
 | SEER2 config | `core/calculators/standards/ahri_seer2.py` current config block and external config path | cooling bin and point temperatures | limited validation |
+| Appendix M SEER config | `data/region_configs/usa_m_seer.json` | Appendix M Table 19 cooling bins, sizing factor, CDc default | point order and fractional-hour sum |
+| Appendix M HSPF config | `data/region_configs/usa_m_hspf.json` | Appendix M Table 20 Region IV bins, design/load constants, CDh default | point order, bin lengths, standardized DHR |
+| Appendix M SEER point schema | `apps/calculator/application/ahri_m/seer_adapter.py` | A2/B2/EV/B1/F1 capacity/power pairs | all pairs > 0; EV UI alias is display-only |
+| Appendix M HSPF point schema | `apps/calculator/application/ahri_m/hspf_adapter.py` | required H01/H11/H1N/H2V/H32 and optional H12/H22 pairs | optional pairs are both blank or both populated |
 
 `data/region_configs/usa_hspf2.json`은 canonical Region IV table, active point schema,
 `A_Full -> A2` public alias, production defaults만 HSPF2 runtime contract로
 유지한다. retired v2 `bin_data`, point temperatures, constants는 제거됐다.
 
 현재 `data/region_configs/usa.json`은 SEER2/cooling flat config이고, `data/region_configs/usa_hspf2.json`은 HSPF2/heating flat config이다. 두 계산기 모두 top-level key를 직접 읽으므로 단순 병합은 금지한다. 완전 통합은 `cooling` / `heating` namespace schema migration 이후 별도 검토한다.
+
+Appendix M의 `usa_m_seer.json`과 `usa_m_hspf.json`도 각각 독립적인 flat/config shape와 standard scope를 가진다. M config를 `usa.json` 또는 `usa_hspf2.json`에 병합하거나 M point를 M1 alias로 승격하지 않는다.
 
 ## 5. Interpolation / Extrapolation Rules
 
@@ -77,6 +95,11 @@ Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calcu
 | Low speed minimum-limiting | H01/H11/H2Int/int path piecewise | 47°F, 35°F 기준 분기 | AHRI 210/240-2026 Equation 11.189~11.194 |
 | Intermediate speed | Eq.11.199~11.204 slope | envelope 밖이면 ValueError | AHRI 210/240-2026 Equation 11.199~11.204 |
 | SEER2 low/full/int | F/B/A/E points로 온도 선형 계산 | 현재 구현 범위 | Project current implementation |
+| M SEER low/full | F1→B1 및 B2→A2 선형 curve | Appendix M cooling bins | Appendix M Table 19 |
+| M SEER intermediate | EV의 87°F envelope 위치에서 capacity/power slope를 계산하고 three-anchor quadratic EER를 사용 | `NQ`, `NE`는 0~1 | Appendix M Table 19 |
+| M HSPF H1Full | H12 measured, H1N same-speed, 또는 H32 slope fallback | source를 `h12_source`에 기록 | Appendix M Addendum 1 |
+| M HSPF H2Full | H22 measured 또는 H32/H1Full 기반 fallback | source를 `h22_source`에 기록 | Appendix M Addendum 1 |
+| M HSPF intermediate | H2V와 35°F low/full 값으로 capacity/power slope를 만들고 delivered load 기준 COP를 보간 | `NQ`, `NE`는 0~1 | Appendix M Addendum 1 |
 
 ## 6. Degradation / Correction Factor Rules
 
@@ -153,6 +176,8 @@ Naming policy note:
 | H2Int 경로 변경 | H2Int power sensitivity test 필수 |
 | Case I/II/III 변경 | conservation test와 case activation test 필수 |
 | SEER2 변경 | 기존 official-calculator golden과 deep characterization을 먼저 실행한 뒤 변경 |
+| Appendix M 문서/label/batch 변경 | `tests/test_apps_calculator_ui_ahri_m.py`의 adapter, UI, batch golden과 display contract를 확인 |
+| Appendix M calculation path 변경 | M SEER 18.05 / M HSPF 10.45 project golden, optional H12/H22 pair semantics, defrost and Region IV boundary를 확인 |
 
 권장 명령:
 
@@ -175,6 +200,8 @@ python3 -B test_hspf2_v3_bincheck.py
 | H2Int sensitivity | intermediate power가 Case II COP에 영향을 주는지 확인 | `test_hspf2_v3_h2int.py` |
 | Case activation | Case I/II/III, fractional availability 확인 | `test_hspf2_v3_low_cases.py` |
 
+Appendix M project golden은 `tests/test_apps_calculator_ui_ahri_m.py`와 active design spec에 고정한다. 기준 fixture에서 M SEER는 published 18.05, M HSPF는 raw 10.46286 및 published 10.45이며, 이 값은 M1 official-calculator golden과 섞지 않는다. M HSPF 결과 표시는 DHRmin 15000, Heating Load 4605.6, Compressor Input 359.5, Auxiliary Input 80.7을 사용한다.
+
 SEER2의 현재 variable-capacity 테스트 입력과 expected는 사용자가 AHRI 공식 계산기로 검증한 golden이다. 다만 이 결정은 현재 지표와 결과를 보호하며, off-mode나 추가 standard parity를 검증했다는 의미는 아니다.
 
 ## 10. Future Refactor Notes
@@ -186,6 +213,8 @@ SEER2의 현재 variable-capacity 테스트 입력과 expected는 사용자가 A
 | Region expansion | Region IV 외 table 검증 전까지 | region parameterized table 구조 | AHRI 210/240-2026 Table 16 |
 | SEER2 config | config/schema migration 승인 전까지 | external JSON schema와 tests 정비 | AHRI 210/240 cooling sections |
 | SEER2 off-mode | 공식 요구와 입력 단위 확인 전까지 | `p_w_off` 실제 seasonal denominator 반영 검토 | AHRI 210/240 cooling sections |
+| Appendix M/M1 boundary | 두 standard edition의 schema와 golden이 분리되어 있는 동안 | 공통 adapter가 필요해도 metric/point/config owner는 분리 유지 | Project design spec |
+| Appendix M region expansion | M HSPF Region IV Table 20 외 검증 전까지 | region parameterized table과 별도 golden을 Design Gate로 추가 | Appendix M Table 20 |
 
 계산기 파일은 Lite 규칙상 명시 지시 없이 수정하지 않는다. Production `calculate_hspf2()`는 보호 대상이며 retired v2 public method는 제공하지 않는다.
 
@@ -244,6 +273,8 @@ Two-stage/triple-capacity는 현재 variable formula body에 조건문으로 누
 ```text
 AGENTS.md의 Lite 규칙만 따르고 docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC_TEMPLATE.md, docs/FORMULA_REFERENCE_GUIDE.md를 먼저 읽어라. AHRI 문서는 docs/ahri210240/ahri210240_notes.md, docs/ahri210240/ahri210240_dev_notes.md, AHRI HSPF2/SEER2 계산 코드, 관련 tests를 Primary로 삼고, AHRI PDF는 Section/Table/Equation 확인용 Secondary로만 사용하라. 과거 HSPF2 구현 상세 원본은 필요할 때만 docs/archive/standards_legacy/ahri_hspf2.md를 historical source로 참조하라. 문서 작업이면 docs/ahri210240/ 하위만 수정하라.
 ```
+
+이 snippet의 기존 `docs/ahri210240/` 한정 문구는 표준 owner 문서에 대한 기본값이다. M UI adapter 또는 조건부 Result Record의 직접 정합성 보정이 필요한 경우에는 active design spec과 Result Record Workflow가 허용하는 직접 참조 문서까지 명시적으로 포함한다.
 
 ### HSPF2 계산 작업
 
