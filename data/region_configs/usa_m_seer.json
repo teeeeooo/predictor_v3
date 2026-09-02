@@ -1,0 +1,14 @@
+{
+  "standard": "AHRI 210/240-2017 Appendix M",
+  "metric": "SEER",
+  "mode": "cooling",
+  "unit_system": "imperial",
+  "scope": "variable-speed non-ducted single-split",
+  "bin_data": {
+    "source": "Appendix M Table 19",
+    "bin_temps_f": [67, 72, 77, 82, 87, 92, 97, 102],
+    "fractional_bin_hours": [0.214, 0.231, 0.216, 0.161, 0.104, 0.052, 0.018, 0.004]
+  },
+  "constants": {"sizing_factor": 1.1},
+  "defaults": {"c_d_cooling": 0.25}
+}

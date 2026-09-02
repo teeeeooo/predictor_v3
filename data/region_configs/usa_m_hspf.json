@@ -1,0 +1,21 @@
+{
+  "standard": "AHRI 210/240-2017 Appendix M",
+  "metric": "HSPF",
+  "mode": "heating",
+  "unit_system": "imperial",
+  "scope": "variable-speed non-ducted single-split Region IV",
+  "region_iv": {
+    "source": "Appendix M Table 20",
+    "heating_load_hours": 2250,
+    "outdoor_design_temp_f": 5,
+    "building_load_factor": 0.77,
+    "bin_temps_f": [62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2, -3, -8],
+    "fractional_bin_hours": [0.132, 0.111, 0.103, 0.093, 0.100, 0.109, 0.126, 0.087, 0.055, 0.036, 0.026, 0.013, 0.006, 0.002, 0.001]
+  },
+  "constants": {
+    "split_capacity_slope_factor": 0.0204,
+    "power_slope_factor": 0.00455,
+    "standardized_dhr_btu_per_h": [5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 130000]
+  },
+  "defaults": {"c_d_heating": 0.25}
+}

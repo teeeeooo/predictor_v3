@@ -129,6 +129,8 @@ def test_list_calculator_profiles_returns_enabled_profiles_only():
     profiles = list_calculator_profiles()
 
     assert {profile.profile_id for profile in profiles} == {
+        "ahri_usa_m_seer",
+        "ahri_usa_m_hspf",
         "ahri_usa_seer2",
         "ahri_usa_hspf2",
         "en14825_scop",

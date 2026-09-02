@@ -44,6 +44,8 @@ def create_calculator_for_profile(
 
     - ``ks_c9306`` → ``core.calculators.standards.ks_c9306.KSC9306Calculator.from_config_path(profile.config_path)``
     - ``iso16358`` → ``core.calculators.standards.iso16358.ISO16358Calculator(profile.config_path)``
+    - ``ahri_seer`` → ``core.calculators.standards.ahri_seer.AHRISeerCalculator(profile.config_path)``
+    - ``ahri_hspf`` → ``core.calculators.standards.ahri_hspf.AHRIHspfCalculator(profile.config_path)``
     - ``ahri_seer2`` → ``core.calculators.standards.ahri_seer2.AHRICalculator(profile.config_path)``
     - ``ahri_hspf2`` → ``core.calculators.standards.ahri_hspf2.AHRIHSPF2Calculator(profile.config_path)``
     - ``en14825`` → ``core.calculators.standards.en14825.EN14825Calculator(profile.config_path)``
@@ -74,6 +76,16 @@ def create_calculator_for_profile(
         from core.calculators.standards.iso16358 import ISO16358Calculator
 
         return ISO16358Calculator(resolved_config_path)
+
+    if calculator_id == "ahri_seer":
+        from core.calculators.standards.ahri_seer import AHRISeerCalculator
+
+        return AHRISeerCalculator(resolved_config_path)
+
+    if calculator_id == "ahri_hspf":
+        from core.calculators.standards.ahri_hspf import AHRIHspfCalculator
+
+        return AHRIHspfCalculator(resolved_config_path)
 
     if calculator_id == "ahri_seer2":
         from core.calculators.standards.ahri_seer2 import AHRICalculator

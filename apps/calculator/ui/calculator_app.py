@@ -25,6 +25,7 @@ from apps.calculator.ui.layout_constants import TOP_NOTEBOOK_SELECTED_FG
 from apps.calculator.ui.theme import apply_calculator_theme
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 from apps.calculator.ui.tabs.en14825_tab import En14825Tab
+from apps.calculator.ui.ahri_m import Ahri210240MTab
 from apps.calculator.ui.tabs.ahri210240_tab import Ahri210240Tab
 from apps.calculator.ui.tabs.korea_tab import KoreaTab
 from apps.calculator.ui.window_geometry import center_window
@@ -59,8 +60,11 @@ class CalculatorTkApp:
         self.en14825_tab = En14825Tab(self.notebook)
         self.notebook.add(self.en14825_tab, text="EN14825")
 
+        self.ahri210240_m_tab = Ahri210240MTab(self.notebook)
+        self.notebook.add(self.ahri210240_m_tab, text="AHRI 210/240 M")
+
         self.ahri210240_tab = Ahri210240Tab(self.notebook)
-        self.notebook.add(self.ahri210240_tab, text="AHRI 210/240")
+        self.notebook.add(self.ahri210240_tab, text="AHRI 210/240 M1")
 
         self.korea_tab = KoreaTab(self.notebook)
         self.notebook.add(self.korea_tab, text="KS C 9306")

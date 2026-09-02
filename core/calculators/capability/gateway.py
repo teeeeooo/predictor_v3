@@ -14,7 +14,8 @@ from core.calculators.capability.errors import (
     StandardCalculationCapabilityError,
 )
 from core.calculators.capability.requests import (
-    AhriHspf2Request, AhriSeer2Request, En14825ScopRequest, En14825SeerRequest,
+    AhriHspfRequest, AhriHspf2Request, AhriSeerRequest, AhriSeer2Request,
+    En14825ScopRequest, En14825SeerRequest,
     BrazilCspfComplianceRequest,
     Iso16358CspfRequest, Iso16358HspfRequest, KsC9306CspfRequest, KsC9306HspfRequest,
 )
@@ -126,6 +127,16 @@ def _invoke_calculator(request, calculator, method_name: str):
         if method is None and method_name == "calculate_seer_with_details":
             method = calculator.calculate_seer
         return method(**dict(request.parameters))
+    if isinstance(request, AhriSeerRequest):
+        return calculator.calculate_seer(
+            request.test_points,
+            c_d_cooling=request.c_d_cooling,
+        )
+    if isinstance(request, AhriHspfRequest):
+        return calculator.calculate_hspf(
+            request.test_points,
+            **dict(request.parameters),
+        )
     if isinstance(request, AhriSeer2Request):
         return calculator.calculate_seer2(
             request.test_points,
@@ -155,6 +166,8 @@ def build_builtin_capability_registry() -> CapabilityRegistry:
         ("ks_c9306.hspf", KsC9306HspfRequest, "calculate_hspf", "ks_c9306", ("HSPF",), "heating", "KS_C_9306"),
         ("en14825.seer", En14825SeerRequest, "calculate_seer_with_details", "en14825", ("SEER",), "cooling", "EN_14825"),
         ("en14825.scop", En14825ScopRequest, "calculate_scop", "en14825", ("SCOP",), "heating", "EN_14825"),
+        ("ahri210240.seer", AhriSeerRequest, "calculate_seer", "ahri_seer", ("SEER",), "cooling", "AHRI_210_240"),
+        ("ahri210240.hspf", AhriHspfRequest, "calculate_hspf", "ahri_hspf", ("HSPF",), "heating", "AHRI_210_240"),
         ("ahri210240.seer2", AhriSeer2Request, "calculate_seer2", "ahri_seer2", ("SEER2",), "cooling", "AHRI_210_240"),
         ("ahri210240.hspf2", AhriHspf2Request, "calculate_hspf2", "ahri_hspf2", ("HSPF2",), "heating", "AHRI_210_240"),
     )

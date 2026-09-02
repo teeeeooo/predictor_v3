@@ -17,6 +17,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
+| `2026-09-01-ahri-210-240-m-seer-hspf-audit-design-spec.md` | Active governing audit/design for adding Appendix M SEER/HSPF while preserving Appendix M1 SEER2/HSPF2 ownership and compatibility. | Implementing or reviewing AHRI 210/240 Appendix M calculator, M/M1 UI separation, formula/golden validation, or related owner boundaries. |
 | `2026-07-14-train-admin-ui-ux-overhaul-document-set.md` | Navigation index for the Train/Admin overhaul, including the authoritative Phase 5 lifecycle design and the supporting Phase 5 UI/UX design. | Locating the correct Train/Admin phase design before implementation. |
 | `2026-07-14-train-admin-ui-ux-overhaul-governing-design.md` | Governing product direction, owner boundaries, fixture/mock policy, mapping exchange contract, and delivery model for the Train/Admin overhaul. | Planning or reviewing any Train/Admin overhaul phase. |
 | `2026-07-14-train-admin-phase-1-mapping-data-foundation.md` | Phase 1 design; repository-automated implementation, final audit, and merge complete. | Historical or boundary review for Train/Admin Phase 1. |

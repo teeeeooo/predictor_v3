@@ -17,6 +17,26 @@ class CalculatorProfile:
 
 _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
     CalculatorProfile(
+        profile_id="ahri_usa_m_seer",
+        standard="AHRI_210_240",
+        region="usa",
+        metric="SEER",
+        mode="cooling",
+        calculator_id="ahri_seer",
+        config_path="data/region_configs/usa_m_seer.json",
+        enabled=True,
+    ),
+    CalculatorProfile(
+        profile_id="ahri_usa_m_hspf",
+        standard="AHRI_210_240",
+        region="usa",
+        metric="HSPF",
+        mode="heating",
+        calculator_id="ahri_hspf",
+        config_path="data/region_configs/usa_m_hspf.json",
+        enabled=True,
+    ),
+    CalculatorProfile(
         profile_id="ahri_usa_seer2",
         standard="AHRI_210_240",
         region="usa",

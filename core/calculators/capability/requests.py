@@ -53,6 +53,20 @@ class En14825ScopRequest:
 
 
 @dataclass(frozen=True)
+class AhriSeerRequest:
+    test_points: MeasuredPoints
+    c_d_cooling: float | None = None
+    profile_id: str = "ahri_usa_m_seer"
+
+
+@dataclass(frozen=True)
+class AhriHspfRequest:
+    test_points: MeasuredPoints
+    parameters: Mapping[str, object] = field(default_factory=dict)
+    profile_id: str = "ahri_usa_m_hspf"
+
+
+@dataclass(frozen=True)
 class AhriSeer2Request:
     test_points: MeasuredPoints
     system_type: str = "HP"

@@ -40,10 +40,10 @@ entries:
 
   - type: decision
     topic: calculator standard ownership and unresolved ASNZS evidence
-    content: ISO 16358, KS C 9306, EN 14825, AHRI 210/240, Brazil composite capability, and compatibility routes remain separate calculator responsibilities with profile/config behavior owned locally; unsupported selectors/schemas fail fast rather than silently selecting another engine. Historical AS/NZS case3 full-dump exact parity remains unresolved until matching workbook or full component-row reference evidence exists.
-    keywords: [calculator, ISO16358, KS C 9306, EN14825, AHRI210240, Brazil CSPF, ASNZS]
+    content: ISO 16358, KS C 9306, EN 14825, AHRI 210/240, Brazil composite capability, and compatibility routes remain separate calculator responsibilities with profile/config behavior owned locally; unsupported selectors/schemas fail fast rather than silently selecting another engine. Within AHRI 210/240, Appendix M SEER/HSPF and Appendix M1 SEER2/HSPF2 are physically separate seasonal-calculation owners with distinct profiles, typed capabilities, configs, and top-level Calculator surfaces. Initial Appendix M support is variable-speed non-ducted single-split; HSPF is Region IV minimum-DHR and follows the AHRI 210/240-2017 with Addendum 1 bin-by-bin COP path, with accepted published golden 10.45 and H42 excluded from the initial M surface. Historical AS/NZS case3 full-dump exact parity remains unresolved until matching workbook or full component-row reference evidence exists.
+    keywords: [calculator, ISO16358, KS C 9306, EN14825, AHRI210240, Appendix M, Appendix M1, SEER, HSPF, Brazil CSPF, ASNZS]
     assertionStatus: verified
-    source: docs/agent_workflows/CALCULATOR_WORKFLOW.md; docs/architecture/project_architecture.md; result_reports/legacy/summaries/054_summary-calculator-ui-iso-separation.md; result_reports/legacy/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md
+    source: docs/agent_workflows/CALCULATOR_WORKFLOW.md; docs/architecture/project_architecture.md; result_reports/records/2026-09/2026-09-02-ahri-210-240-m-seer-hspf.md; result_reports/legacy/summaries/054_summary-calculator-ui-iso-separation.md; result_reports/legacy/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md
 
   - type: decision
     topic: Train Predict runtime and application boundary

@@ -82,6 +82,8 @@ def test_builtin_registry_exposes_all_active_operations():
         "ks_c9306.hspf",
         "en14825.seer",
         "en14825.scop",
+        "ahri210240.seer",
+        "ahri210240.hspf",
         "ahri210240.seer2",
         "ahri210240.hspf2",
         "brazil.cspf_compliance",

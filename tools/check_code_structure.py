@@ -510,6 +510,7 @@ def check_ui_package_registry(relpath: str) -> List[Finding]:
         subdir = path_parts[3]
         allowed_packages = {
             "ahri",
+            "ahri_m",
             "batch",
             "batch_dialogs",
             "brazil_cspf",
