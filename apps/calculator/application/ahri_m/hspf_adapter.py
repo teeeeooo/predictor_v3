@@ -48,6 +48,7 @@ class AhriHspfSummary:
     heating_load_aggregate: float
     compressor_energy_aggregate: float
     resistance_energy_aggregate: float
+    defrost_credit: float
     h12_source: str
     h22_source: str
     bin_details: tuple[Mapping[str, object], ...]
@@ -125,6 +126,7 @@ class AhriHspfAdapter:
             heating_load_aggregate=self._float(result, "seasonal_heating_load_numerator"),
             compressor_energy_aggregate=self._float(result, "seasonal_compressor_energy_denominator"),
             resistance_energy_aggregate=self._float(result, "seasonal_resistance_energy_denominator"),
+            defrost_credit=self._float(result, "f_def"),
             h12_source=str(metadata["h12_source"]), h22_source=str(metadata["h22_source"]),
             bin_details=self._rows(result),
         )

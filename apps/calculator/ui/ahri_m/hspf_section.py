@@ -10,6 +10,8 @@ from apps.calculator.application.ahri_m import (
     AHRI_M_HSPF_POINT_ORDER, AHRI_M_HSPF_TEMPERATURES_C,
     AhriHspfAdapter, AhriHspfInputError, AhriHspfOptions,
 )
+from apps.calculator.ui.ahri_m.batch_dialog import AhriMBatchAccess
+from apps.calculator.ui.ahri_m.points import ahri_m_hspf_ui_point_label
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.layout_constants import CONTROL_COMPACT_GAP, CONTROL_GROUP_GAP, CONTROL_ROW_PADY, ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX, METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS, METRIC_TABLE_HEATING_DATA_COLUMN_CHARS, METRIC_TABLE_POINT_DATA_COLUMN_CHARS
 from apps.calculator.ui.metric_input_table import MetricInputTable
@@ -30,7 +32,7 @@ class AhriMHspfSection:
         self._build_options()
         self.numeric_table = MetricInputTable(
             self._frame,
-            columns=(("cd", "CDh"), ("defrost_test_minutes", "Defrost Test [min]"), ("defrost_max_minutes", "Defrost Max [min]"), ("cut_out_c", "Cut Out [°C]"), ("cut_in_c", "Cut In [°C]")),
+            columns=(("cd", "CDh"), ("defrost_credit", "Defrost Credit"), ("defrost_test_minutes", "Defrost Test [min]"), ("defrost_max_minutes", "Defrost Max [min]"), ("cut_out_c", "Cut Out [°C]"), ("cut_in_c", "Cut In [°C]")),
             rows=(("value", "Value"),),
             editable_cells={("value", key): key for key in ("cd", "defrost_test_minutes", "defrost_max_minutes", "cut_out_c", "cut_in_c")},
             data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS, visual_style="shared",
@@ -38,13 +40,14 @@ class AhriMHspfSection:
         self.numeric_table.grid(row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6))
         self.heating_table = MetricInputTable(
             self._frame,
-            columns=tuple((point, point) for point in AHRI_M_HSPF_POINT_ORDER),
+            columns=tuple((point, ahri_m_hspf_ui_point_label(point)) for point in AHRI_M_HSPF_POINT_ORDER),
             rows=(("condition_temp", "Condition / Temp"), ("capacity", "Capacity [Btu/h]"), ("power", "Power [W]"), ("cop", "COP")),
             editable_cells={(kind, point): f"{kind}_{point}" for point in AHRI_M_HSPF_POINT_ORDER for kind in ("capacity", "power")},
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS, data_column_chars=METRIC_TABLE_HEATING_DATA_COLUMN_CHARS, visual_style="shared",
         )
         self.heating_table.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         self.numeric_table.set_values_batch({"cd": "0.25", "defrost_test_minutes": "90", "defrost_max_minutes": "720", "cut_out_c": "-17.8", "cut_in_c": "-15.0"})
+        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(text="1.000")
         for point in AHRI_M_HSPF_POINT_ORDER:
             self.heating_table.static_cell_labels[("condition_temp", point)].configure(text=f"{AHRI_M_HSPF_TEMPERATURES_C[point]:.1f} °C")
             self.heating_table.static_cell_labels[("cop", point)].configure(text="")
@@ -52,6 +55,8 @@ class AhriMHspfSection:
         self.result_panel.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         action_row = ttk.Frame(self._frame)
         action_row.grid(row=4, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
+        self._batch_access = AhriMBatchAccess(action_row, metric="HSPF", shell_parent=self._frame)
+        self.batch_button = self._batch_access.button
         self.detail_toggle = ttk.Button(action_row, text="상세 보기 ↓", command=self._toggle_detail)
         self.detail_toggle.pack(side=tk.LEFT)
         self.result_actions = add_result_actions(action_row, parent=self._frame, result_owner=self.result_panel, csv_filename="ahri_m_hspf_result.csv", surface_prefix="ahri_m_hspf_result")
@@ -122,6 +127,9 @@ class AhriMHspfSection:
             numeric_readonly,
             display_values=display_values,
         )
+        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(
+            text="계산 대기" if self.demand_defrost_var.get() else "1.000"
+        )
 
     def recalculate_now(self) -> None:
         values = {**self.numeric_table.get_text_values(), **self.heating_table.get_text_values()}
@@ -133,6 +141,9 @@ class AhriMHspfSection:
         if summary is None:
             self._clear_errors(); self._show_placeholder("입력 대기"); self.detail_panel.set_status("입력 대기"); return
         self._clear_errors()
+        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(
+            text=f"{summary.defrost_credit:.3f}"
+        )
         self.result_panel.set_summaries((ResultSummary(
             title="HSPF",
             fields=(("Raw HSPF", f"{summary.raw_hspf:.5f}"), ("Published HSPF", f"{summary.published_hspf:.2f}"), ("DHRmin [Btu/h]", f"{summary.dhr_min_standardized:.0f}"), ("기간 난방부하비율", f"{summary.heating_load_aggregate:.1f}"), ("기간 난방 입력 비율", f"{summary.compressor_energy_aggregate:.1f}"), ("보조 난방 입력 비율", f"{summary.resistance_energy_aggregate:.1f}")),
@@ -155,4 +166,6 @@ class AhriMHspfSection:
             if own: table.set_invalid_fields(own)
     def _clear_errors(self): self.numeric_table.clear_invalid_fields(); self.heating_table.clear_invalid_fields()
     def _on_destroy(self, event):
-        if event.widget is self._frame: self._auto_calc.dispose()
+        if event.widget is self._frame:
+            self._auto_calc.dispose()
+            self._batch_access.dispose()

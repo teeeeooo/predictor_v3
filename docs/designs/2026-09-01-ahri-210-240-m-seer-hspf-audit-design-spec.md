@@ -46,6 +46,18 @@ Seasonal Efficiency Calculator
 
 이 resolution은 아래 audit 단계의 open checkpoint 또는 더 넓은 current-regulation exploration보다 이번 implementation/acceptance에 우선한다.
 
+## 1.2 2026-09-02 UI / batch follow-up
+
+최초 implementation 확인 후 사용자 검토에서 다음 UI contract를 추가 확정했다.
+
+- M HSPF의 canonical domain key는 그대로 유지하되 user-visible point header는 M1과 동일하게 `H2v`, `H1N(STD)`를 사용한다.
+- M SEER result의 seasonal aggregate 표시는 `CSTL [Btu/h]`, `CSEC [W]`로 통일한다. 내부 result key와 계산 의미는 변경하지 않는다.
+- 초기 설계의 **M-specific batch 제외**는 이 follow-up에서 supersede한다. M SEER와 HSPF 모두 기존 공용 `BatchMatrixTable` / `BatchDialogShell` / `BatchDialogHandle` lifecycle을 재사용하고, M 전용 matrix spec/row handler를 통해 기존 M application adapter/capability를 호출한다. M1 seasonal engine 또는 M1 product policy를 batch 계산 owner로 재사용하지 않는다.
+- HSPF `Defrost Credit`은 editable override가 아니다. `Demand Defrost`가 꺼져 있으면 `F_def=1.0`, 켜져 있으면 `Defrost Test` / `Defrost Max` 입력을 M domain의 2017 식으로 계산하고 UI에는 계산된 값을 read-only로 표시한다.
+- H12/H22 optional pair semantics는 batch에서도 single surface와 동일하게 `둘 다 blank=fallback`, `둘 다 populated=measured`, `half-filled=invalid`를 유지한다.
+
+따라서 아래 본문의 초기 no-batch 범위 문구는 최초 audit 시점의 경계로 보존하되, production implementation과 acceptance에는 이 follow-up이 우선한다.
+
 ---
 
 # 2. Audit 결론

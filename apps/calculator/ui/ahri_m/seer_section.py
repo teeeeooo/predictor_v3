@@ -10,6 +10,7 @@ from apps.calculator.application.ahri_m import (
     AHRI_M_SEER_POINT_ORDER, AHRI_M_SEER_TEMPERATURES_C,
     AhriSeerAdapter, AhriSeerInputError,
 )
+from apps.calculator.ui.ahri_m.batch_dialog import AhriMBatchAccess
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX, METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS, METRIC_TABLE_HEATING_DATA_COLUMN_CHARS
 from apps.calculator.ui.metric_input_table import MetricInputTable
@@ -50,6 +51,8 @@ class AhriMSeerSection:
         self.result_panel.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         action_row = ttk.Frame(self._frame)
         action_row.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
+        self._batch_access = AhriMBatchAccess(action_row, metric="SEER", shell_parent=self._frame)
+        self.batch_button = self._batch_access.button
         self.detail_toggle = ttk.Button(action_row, text="상세 보기 ↓", command=self._toggle_detail)
         self.detail_toggle.pack(side=tk.LEFT)
         self.result_actions = add_result_actions(action_row, parent=self._frame, result_owner=self.result_panel, csv_filename="ahri_m_seer_result.csv", surface_prefix="ahri_m_seer_result")
@@ -88,13 +91,13 @@ class AhriMSeerSection:
             self.input_table.static_cell_labels[("eer", point)].configure(text=f"{eer:.2f}")
         self.result_panel.set_summaries((ResultSummary(
             title="SEER",
-            fields=(("Raw SEER", f"{summary.raw_seer:.5f}"), ("Published SEER", f"{summary.published_seer:.2f}"), ("기간냉방능력비율 [Btu/h]", f"{summary.seasonal_cooling_numerator:.1f}"), ("기간냉방입력비율 [W]", f"{summary.seasonal_energy_denominator:.1f}")),
+            fields=(("Raw SEER", f"{summary.raw_seer:.5f}"), ("Published SEER", f"{summary.published_seer:.2f}"), ("CSTL [Btu/h]", f"{summary.seasonal_cooling_numerator:.1f}"), ("CSEC [W]", f"{summary.seasonal_energy_denominator:.1f}")),
             status="자동 계산 완료",
         ),))
         self.detail_panel.set_sources({"SEER": BinDetailSource(rows=summary.bin_details, summary=(("Raw", f"{summary.raw_seer:.5f}"), ("Published", f"{summary.published_seer:.2f}")))})
 
     def _show_placeholder(self, status):
-        self.result_panel.show_placeholder(title="SEER", field_labels=("Raw SEER", "Published SEER", "기간냉방능력비율 [Btu/h]", "기간냉방입력비율 [W]"), status=status)
+        self.result_panel.show_placeholder(title="SEER", field_labels=("Raw SEER", "Published SEER", "CSTL [Btu/h]", "CSEC [W]"), status=status)
 
     def _apply_errors(self, errors):
         self._clear_errors()
@@ -106,4 +109,6 @@ class AhriMSeerSection:
         self.numeric_table.clear_invalid_fields(); self.input_table.clear_invalid_fields()
 
     def _on_destroy(self, event):
-        if event.widget is self._frame: self._auto_calc.dispose()
+        if event.widget is self._frame:
+            self._auto_calc.dispose()
+            self._batch_access.dispose()
