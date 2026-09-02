@@ -132,6 +132,70 @@ def test_m_sections_use_exact_scope_and_render_goldens(tk_root):
     assert hspf.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.026"
 
 
+def test_m_main_tables_reuse_common_excel_interaction_controller(tk_root):
+    from apps.calculator.ui.ahri_m import AhriMSeerSection, AhriMHspfSection
+
+    seer = AhriMSeerSection(tk_root); seer.pack()
+    assert len(seer._controllers) == 2
+    seer_controller = seer._controllers[1]
+    assert seer.input_table.cell_widget((1, 0)).bind("<B1-Motion>")
+    seer.input_table.clipboard_clear()
+    seer.input_table.clipboard_append(
+        "15000\t16000\t6800\t3500\t3400\n1200\t1100\t350\t120\t80"
+    )
+    seer_controller.select((1, 0))
+    seer_controller._paste()
+    seer._auto_calc.flush_now()
+    assert seer.input_table.get_text_values()["capacity_EV"] == "6800"
+    assert seer.result_panel.summary_value_labels["SEER"][1].cget("text") == "18.05"
+    seer_controller.select((1, 0))
+    seer_controller.select((2, 4), extend=True)
+    seer_controller._copy()
+    assert seer.input_table.clipboard_get() == (
+        "15000\t16000\t6800\t3500\t3400\n1200\t1100\t350\t120\t80"
+    )
+
+    hspf = AhriMHspfSection(tk_root); hspf.pack()
+    assert len(hspf._controllers) == 2
+    heating_controller = hspf._controllers[1]
+    hspf.heating_table.clipboard_clear()
+    hspf.heating_table.clipboard_append(
+        "3300\t2200\t14000\t4900\t8200\t14000\t9999\n"
+        "130\t140\t1100\t360\t890\t1100\t999"
+    )
+    heating_controller.select((1, 0))
+    heating_controller._paste()
+    values = hspf.heating_table.get_text_values()
+    assert values["capacity_H32"] == "8200"
+    assert values["capacity_H12"] == ""
+    assert values["capacity_H22"] == ""
+
+    h12_index = AHRI_M_HSPF_POINT_ORDER.index("H12")
+    hspf.h12_var.set(True)
+    h12_widget = hspf.heating_table.cell_widget((1, h12_index))
+    assert h12_widget.bind("<B1-Motion>")
+    assert h12_widget.bind("<Control-v>")
+    hspf.heating_table.clipboard_clear()
+    hspf.heating_table.clipboard_append("14000\n1100")
+    heating_controller.select((1, h12_index))
+    heating_controller._paste()
+    assert hspf.heating_table.get_text_values()["power_H12"] == "1100"
+
+    numeric_controller = hspf._controllers[0]
+    hspf.numeric_table.clipboard_clear()
+    hspf.numeric_table.clipboard_append("180\t720")
+    numeric_controller.select((0, 2))
+    numeric_controller._paste()
+    assert hspf.numeric_table.get_text_values()["defrost_test_minutes"] == "90"
+    hspf.demand_defrost_var.set(True)
+    defrost_widget = hspf.numeric_table.cell_widget((0, 2))
+    assert defrost_widget.bind("<B1-Motion>")
+    assert defrost_widget.bind("<Control-v>")
+    numeric_controller.select((0, 2))
+    numeric_controller._paste()
+    assert hspf.numeric_table.get_text_values()["defrost_test_minutes"] == "180"
+
+
 def test_m_batch_buttons_open_appendix_m_matrix_dialogs(tk_root):
     from apps.calculator.ui.ahri_m import AhriMSeerSection, AhriMHspfSection
     from apps.calculator.ui.ahri_m.batch import AHRI_M_HSPF_BATCH_SPEC, AHRI_M_SEER_BATCH_SPEC
@@ -153,7 +217,12 @@ def test_m_batch_buttons_open_appendix_m_matrix_dialogs(tk_root):
     section._vars["demand_defrost"].set("1")
     assert section.numeric_table.cell_role((0, 2)) is CellRole.EDITABLE
     assert section.numeric_table.cell_role((0, 3)) is CellRole.EDITABLE
-    section.numeric_table.set_values_batch({"defrost_test_minutes": "180", "defrost_max_minutes": "720"})
+    assert section.numeric_table.cell_widget((0, 2)).bind("<B1-Motion>")
+    assert section.numeric_table.cell_widget((0, 2)).bind("<Control-v>")
+    section.numeric_table.clipboard_clear()
+    section.numeric_table.clipboard_append("180\t720")
+    section.numeric_controller.select((0, 2))
+    section.numeric_controller._paste()
     section.table.restore_snapshot([{key: value for key, value in HSPF_VALUES.items() if key.startswith(("capacity_", "power_"))}])
     section._auto_calc.flush_now()
     assert section.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.026"

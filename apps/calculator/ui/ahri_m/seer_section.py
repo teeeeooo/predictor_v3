@@ -20,6 +20,7 @@ from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
+from apps.calculator.ui.table.controller import TkTableController
 from .detail_schema import AHRI_M_SEER_DETAIL_SCHEMA
 
 
@@ -51,6 +52,10 @@ class AhriMSeerSection:
         for point in AHRI_M_SEER_POINT_ORDER:
             self.input_table.static_cell_labels[("condition_temp", point)].configure(text=f"{AHRI_M_SEER_TEMPERATURES_C[point]:.1f} °C")
             self.input_table.static_cell_labels[("eer", point)].configure(text="")
+        self._controllers = (
+            TkTableController(self.numeric_table),
+            TkTableController(self.input_table),
+        )
         self.result_panel = ResultPanel(self._frame, title="AHRI 210/240 M SEER 결과")
         self.result_panel.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         action_row = ttk.Frame(self._frame)

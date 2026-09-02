@@ -20,6 +20,7 @@ from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
+from apps.calculator.ui.table.controller import TkTableController
 from .detail_schema import AHRI_M_HSPF_DETAIL_SCHEMA
 
 
@@ -51,6 +52,10 @@ class AhriMHspfSection:
         for point in AHRI_M_HSPF_POINT_ORDER:
             self.heating_table.static_cell_labels[("condition_temp", point)].configure(text=f"{AHRI_M_HSPF_TEMPERATURES_C[point]:.1f} °C")
             self.heating_table.static_cell_labels[("cop", point)].configure(text="")
+        self._controllers = (
+            TkTableController(self.numeric_table),
+            TkTableController(self.heating_table),
+        )
         self.result_panel = ResultPanel(self._frame, title="AHRI 210/240 M HSPF 결과")
         self.result_panel.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         action_row = ttk.Frame(self._frame)
@@ -130,6 +135,8 @@ class AhriMHspfSection:
         self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(
             text="계산 대기" if self.demand_defrost_var.get() else "1.000"
         )
+        for controller in self._controllers:
+            controller.refresh()
 
     def recalculate_now(self) -> None:
         values = {**self.numeric_table.get_text_values(), **self.heating_table.get_text_values()}

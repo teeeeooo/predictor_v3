@@ -55,6 +55,7 @@ Seasonal Efficiency Calculator
 - 초기 설계의 **M-specific batch 제외**는 이 follow-up에서 supersede한다. M SEER와 HSPF 모두 기존 공용 `BatchMatrixTable` / `BatchDialogShell` / `BatchDialogHandle` lifecycle을 재사용하고, M 전용 matrix spec/row handler를 통해 기존 M application adapter/capability를 호출한다. M1 seasonal engine 또는 M1 product policy를 batch 계산 owner로 재사용하지 않는다.
 - HSPF `Defrost Credit`은 editable override가 아니다. `Demand Defrost`가 꺼져 있으면 `F_def=1.0`이고 `Defrost Test` / `Defrost Max`는 single/batch 모두 read-only `N/A` presentation을 사용한다. 켜져 있으면 두 timing input을 editable로 전환하고 M domain의 2017 식으로 계산한 credit을 single/batch 모두 read-only로 표시한다.
 - H12/H22 optional pair semantics는 batch에서도 single surface와 동일하게 `둘 다 blank=fallback`, `둘 다 populated=measured`, `half-filled=invalid`를 유지한다.
+- M의 `MetricInputTable` 기반 main/batch common-input surface는 M1과 동일한 공용 `TkTableController`를 사용해 drag range selection, TSV copy/paste, grouped undo, keyboard navigation semantics를 공유한다. HSPF처럼 option에 따라 editable/read-only presentation이 바뀌는 table은 상태 전환 직후 controller를 `refresh()`하여 새로 보이는 Entry/Label에도 동일한 interaction binding을 유지한다.
 
 따라서 아래 본문의 초기 no-batch 범위 문구는 최초 audit 시점의 경계로 보존하되, production implementation과 acceptance에는 이 follow-up이 우선한다.
 
