@@ -16,7 +16,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
-| `2026-09-05-astra-agent-harness-migration-design.md` | Governing design for the repo-local Skill cutover, Engineering Workflow retirement, and router compatibility retirement path. | Changing predictor_v3 agent instructions, Skills, governance routing, or retiring `AGENT_TASK_ROUTER.md`. |
+| `2026-09-05-astra-agent-harness-migration-design.md` | Governing design for the repo-local Skill cutover, Engineering Workflow retirement, and final agent-routing topology. | Changing predictor_v3 agent instructions, repository-local Skills, governance routing, or reviewing the completed router retirement. |
 | `2026-09-02-ahri-documentation-sync-plan.md` | Design Gate plan for synchronizing the AHRI Appendix M/M1 standard owners, Tkinter table adapter references, and recent Result Record traceability. | Implementing the documentation corrections identified in the 2026-09-02 AHRI documentation audit. |
 | `2026-09-01-ahri-210-240-m-seer-hspf-audit-design-spec.md` | Active governing audit/design for adding Appendix M SEER/HSPF while preserving Appendix M1 SEER2/HSPF2 ownership and compatibility. | Implementing or reviewing AHRI 210/240 Appendix M calculator, M/M1 UI separation, formula/golden validation, or related owner boundaries. |
 | `2026-07-14-train-admin-ui-ux-overhaul-document-set.md` | Navigation index for the Train/Admin overhaul, including the authoritative Phase 5 lifecycle design and the supporting Phase 5 UI/UX design. | Locating the correct Train/Admin phase design before implementation. |

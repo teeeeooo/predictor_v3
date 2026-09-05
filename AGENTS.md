@@ -38,7 +38,6 @@ Use repository-local skills for task-specific procedure:
 
 Use `ACTIVE_DOCUMENTS.md` when the durable owner/root/index is unclear. Open only the matching owner and the materially adjacent evidence needed for the task.
 
-`AGENT_TASK_ROUTER.md` is a temporary compatibility pointer during the skill migration; it is not an additional authority layer.
 
 ## Design And Architecture Trigger
 

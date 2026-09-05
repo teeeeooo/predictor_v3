@@ -276,11 +276,12 @@ before commit.
 
 ## 14. Relationship to other documents
 
-- AGENTS.md: lite UI guardrail (no QTableWidget, no setCellWidget,
-  blockSignals try/finally, QTimer.singleShot 1-click). AGENTS.md
-  links to this document for the full contract.
-- AGENT_TASK_ROUTER.md UI route: requires reading this document before
-  any table UI create / modify task.
+- `AGENTS.md` is the current always-on repository contract and routes UI work
+  to the repository-local `ui-surface` Skill.
+- `.agents/skills/ui-surface/SKILL.md` routes active table work to the current
+  shared `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`. This legacy PyQt
+  source is historical evidence only when that older implementation context is
+  specifically needed.
 - `docs/architecture/project_architecture.md` §3.3: continues to be the
   owner of background-color conventions, calculator boundary, and
   cascade autofill state-machine rules. The spreadsheet-behavior

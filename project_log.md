@@ -35,6 +35,15 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-09-05 — Agent task router retirement
+
+### Decision
+
+- Delete the temporary `AGENT_TASK_ROUTER.md` compatibility layer after fresh active-reference search confirmed that current owners route directly from `AGENTS.md` to repository-local Skills and durable owners.
+- Preserve historical router references in old logs, records, archived memory, and legacy design evidence rather than rewriting the pre-cutover history.
+- Final active routing is `AGENTS.md` → matching repository-local Skill → owner, with `ACTIVE_DOCUMENTS.md` used only when owner discovery is unclear.
+- Durable source: `result_reports/records/2026-09/2026-09-05-agent-task-router-retirement.md`.
+
 ## 2026-09-05 — Astra agent harness and repo-local Skill cutover
 
 ### Decision

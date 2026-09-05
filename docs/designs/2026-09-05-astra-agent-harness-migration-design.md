@@ -42,9 +42,9 @@ Repository audit found a sound owner model but repeated generic workflow policy 
 - User instructions take precedence over repository-local Skill guidance.
 ## Compatibility And Migration
 
-Slice 1 moves the four task workflows to Skills, rewrites `AGENTS.md`, makes `grill-me` explicit-only, removes Engineering Workflow authority from current active guidance, synchronizes owner references/memory, and leaves `AGENT_TASK_ROUTER.md` as a small compatibility pointer.
+Slice 1 moved the four task workflows to repository-local Skills, rewrote `AGENTS.md`, made `grill-me` explicit-only, removed Engineering Workflow authority from current active guidance, and synchronized owner references/memory.
 
-Slice 2 may delete `AGENT_TASK_ROUTER.md` only after repository search proves that current active owners no longer depend on it. Historical references do not block retirement.
+Slice 2 verified that no current active owner depends on `AGENT_TASK_ROUTER.md` and retires that compatibility pointer. Historical references do not block retirement and remain evidence of the pre-cutover harness.
 
 ## Required Validation
 
@@ -62,6 +62,6 @@ Slice 2 may delete `AGENT_TASK_ROUTER.md` only after repository search proves th
 - No new fixed Worker/Auditor role framework or replacement lane taxonomy.
 - No historical Result Record, archived memory, legacy design, or archived project-log rewrite.
 
-## Next Action
+## Completion State
 
-Complete Slice 1, validate current active references and the repository change gate, then observe the new harness before deciding whether to execute the separate router-retirement Slice 2.
+Both migration slices are complete when the router deletion, active-reference search, focused harness tests, staged change gate, and diff checks pass. Future agent-harness work starts from `AGENTS.md`, repository-local Skills, `ACTIVE_DOCUMENTS.md`, and the matching governance/owner documents.

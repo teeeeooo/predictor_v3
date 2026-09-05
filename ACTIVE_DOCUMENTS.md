@@ -38,5 +38,3 @@ Use it only when ownership is not already clear from the task or matching Skill.
 - Cross-workstream recall starts at `result_reports/memory/project_memory_seed.md`.
 - `docs/archive/` and `result_reports/legacy/` preserve historical evidence and are not default reads.
 - Individual records and design evidence explain one point in time; current behavior remains owned by active source and owner documents.
-
-`AGENT_TASK_ROUTER.md` is a temporary compatibility pointer during this migration and is not part of the target owner hierarchy.
