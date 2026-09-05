@@ -11,8 +11,8 @@ broad overhaul** are complete and merged. Overhaul Slices 1–6 — Stable Ident
 Seam, Typed Result and Execution Context, EER/COP Enrichment, Result Review
 Projection, Shared Layout B Composition, and Bulk Paste Transaction — are
 independently audited, merged, and closed. The Target applicability Owner Audit,
-Ref Qty-only product decision, focused Lane C source correction, independent
-exact-head audit, merge, and Close are also complete without relaxing full Active
+Ref Qty-only product decision, focused source correction, independent exact-head
+audit, merge, and closeout are also complete without relaxing full Active
 compatibility. Narrow Viewport Result Review Pinning and Result Review CSV v1 are
 also merged and closed. The Agent Work-Contract Audit and its bounded Active
 Documentation Contract Restoration follow-up are independently audited, merged,
@@ -141,7 +141,7 @@ copy consume the same subset.
 
 ### Closed — Narrow Viewport Result Review Pinning
 
-The merged Lane B presentation slice keeps exactly `Case + 상태` visible only
+The merged presentation slice keeps exactly `Case + 상태` visible only
 when Result Review content overflows its own viewport. It reuses the existing
 shared standalone/embedded workspace, canonical projection, model, selection,
 copy, and generation rebind owners without reopening Target applicability or
@@ -150,7 +150,7 @@ work remains separately authorized.
 
 ### Closed — Result Review CSV v1
 
-The merged Lane B export slice publishes only selected Result Review rows through
+The merged export slice publishes only selected Result Review rows through
 the existing canonical full-row application document. CSV preserves canonical
 Case order, raw numeric evidence, execution/model/runtime provenance, issues, and
 stale/unavailable semantics while keeping filesystem publication and Qt path

@@ -35,6 +35,16 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-09-05 — Astra agent harness and repo-local Skill cutover
+
+### Decision
+
+- Retire Engineering Workflow, its Worker/Auditor/Orchestrator role model, and Lane A-D terminology as authority for all new predictor_v3 work. Historical entries and records keep their original wording as evidence.
+- Make `AGENTS.md` the single always-on repository contract and move calculator, ML/Predictor, UI, and packaging procedure to repository-local Skills under `.agents/skills/`.
+- Keep `grill-me` explicit-only, `ACTIVE_DOCUMENTS.md` as durable owner discovery, and the four governance documents as repository state/evidence owners rather than task Skills.
+- Keep `AGENT_TASK_ROUTER.md` only as a temporary compatibility pointer until a separate retirement check confirms current active inbound references no longer need it.
+- Durable source: `result_reports/records/2026-09/2026-09-05-astra-agent-harness-migration.md` and `docs/designs/2026-09-05-astra-agent-harness-migration-design.md`.
+
 ## 2026-09-02 — AHRI 210/240 Appendix M calculator ownership
 
 ### Decision

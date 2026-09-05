@@ -26,10 +26,10 @@ wording is preserved under `result_reports/memory/archive/`.
 entries:
   - type: procedure
     topic: agent workflow and documentation lifecycle boundary
-    content: AGENTS.md is the lite repository entrypoint and AGENT_TASK_ROUTER.md routes only to the matching owner. When an Engineering Workflow role contract applies, it owns generic role/lane, Build → Gate → Close, evidence reuse/re-proof, merge/synchronization/hygiene, and role reporting; predictor_v3 owns project-specific boundaries, architecture/domain/UI contracts, conditional Result Record/Memory lifecycle, and repository mechanical enforcement. WORK_PLAN is only the current slice/next action/blockers/constraints/holds; project_log is durable milestone/process history; Result Records are conditional append-only evidence indexed by REPORT_INDEX; memory is compact current recall.
-    keywords: [predictor_v3, Engineering Workflow, AGENTS.md, routing, WORK_PLAN, project_log, Result Record, memory review]
+    content: AGENTS.md is the always-on predictor_v3 repository contract. Task-specific calculator, ML/Predictor, UI, and packaging procedure is progressively loaded from repository-local Skills under `.agents/skills/`; `grill-me` is explicit-only. ACTIVE_DOCUMENTS.md is the durable owner discovery map. Change gates, document lifecycle, Result Records, and project memory remain repository governance owners. Engineering Workflow and its Worker/Auditor/Orchestrator lane model are retired for new predictor_v3 work; historical records that used that model remain historical evidence. WORK_PLAN owns only the current product slice/next action/blockers/constraints/holds; project_log owns durable milestone/process history; Result Records remain conditional append-only evidence indexed by REPORT_INDEX.
+    keywords: [predictor_v3, AGENTS.md, repo-local skills, routing, ACTIVE_DOCUMENTS, WORK_PLAN, project_log, Result Record, memory review]
     assertionStatus: verified
-    source: AGENTS.md; AGENT_TASK_ROUTER.md; docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md; docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md; docs/agent_workflows/RESULT_REPORT_WORKFLOW.md; result_reports/records/2026-08/2026-08-05-active-documentation-contract-restoration-memory-correction.md
+    source: AGENTS.md; ACTIVE_DOCUMENTS.md; .agents/skills/calculator/SKILL.md; .agents/skills/ml-predictor/SKILL.md; .agents/skills/ui-surface/SKILL.md; .agents/skills/packaging/SKILL.md; docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md; docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md; docs/agent_workflows/RESULT_REPORT_WORKFLOW.md; result_reports/records/2026-09/2026-09-05-astra-agent-harness-migration.md
 
   - type: decision
     topic: architecture and UI owner boundary
@@ -43,7 +43,7 @@ entries:
     content: ISO 16358, KS C 9306, EN 14825, AHRI 210/240, Brazil composite capability, and compatibility routes remain separate calculator responsibilities with profile/config behavior owned locally; unsupported selectors/schemas fail fast rather than silently selecting another engine. Within AHRI 210/240, Appendix M SEER/HSPF and Appendix M1 SEER2/HSPF2 are physically separate seasonal-calculation owners with distinct profiles, typed capabilities, configs, and top-level Calculator surfaces. Initial Appendix M support is variable-speed non-ducted single-split; HSPF is Region IV minimum-DHR and follows the AHRI 210/240-2017 with Addendum 1 bin-by-bin COP path, with accepted published golden 10.45 and H42 excluded from the initial M surface. Historical AS/NZS case3 full-dump exact parity remains unresolved until matching workbook or full component-row reference evidence exists.
     keywords: [calculator, ISO16358, KS C 9306, EN14825, AHRI210240, Appendix M, Appendix M1, SEER, HSPF, Brazil CSPF, ASNZS]
     assertionStatus: verified
-    source: docs/agent_workflows/CALCULATOR_WORKFLOW.md; docs/architecture/project_architecture.md; result_reports/records/2026-09/2026-09-02-ahri-210-240-m-seer-hspf.md; result_reports/legacy/summaries/054_summary-calculator-ui-iso-separation.md; result_reports/legacy/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md
+    source: .agents/skills/calculator/SKILL.md; docs/architecture/project_architecture.md; result_reports/records/2026-09/2026-09-02-ahri-210-240-m-seer-hspf.md; result_reports/legacy/summaries/054_summary-calculator-ui-iso-separation.md; result_reports/legacy/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md
 
   - type: decision
     topic: Train Predict runtime and application boundary

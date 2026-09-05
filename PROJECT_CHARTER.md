@@ -74,8 +74,8 @@
 
 ## 5. 문서 운영 원칙
 
-- 규칙은 `AGENTS.md`에 둔다.
-- 상세 작업 라우팅은 `AGENT_TASK_ROUTER.md`에 둔다.
+- 항상 적용되는 agent 규칙은 `AGENTS.md`에 둔다.
+- 작업별 실행 절차는 `.agents/skills/`의 repository-local Skill에 두고, durable owner 탐색은 `ACTIVE_DOCUMENTS.md`가 담당한다.
 - 장기 방향과 Phase 1~5는 `PROJECT_CHARTER.md`에 둔다.
 - Phase / Arc / Milestone 지도는 `project_brief.md`에 둔다.
 - 현재 slice, 다음 action, blocker, active constraints, hold 상태는 `docs/WORK_PLAN.md`에 둔다.

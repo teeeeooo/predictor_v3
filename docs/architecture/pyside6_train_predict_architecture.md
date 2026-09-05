@@ -38,18 +38,8 @@ Boundary note:
 
 - This document owns package, dependency, state, controller, service, adapter,
   worker, and entrypoint boundaries.
-- User-facing UI/UX behavior, spreadsheet table parity, terminology, and
-  input/result surface acceptance are owned by `docs/ui_ux/` and the UI Surface
-  Workflow.
-- This architecture contract does not replace the UI/UX contracts. When a
-  table-shaped or input/result surface is created or modified, apply
-  `docs/agent_workflows/UI_SURFACE_WORKFLOW.md`,
-  `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, and
-  `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` as applicable. If a
-  PySide6 table adapter does not exist yet, preserve that gap in task
-  validation/evidence and use the toolkit-neutral table contract as the
-  acceptance contract. A compact Result Record is created only when the normal
-  repository trigger applies.
+- User-facing UI/UX behavior, spreadsheet table parity, terminology, and input/result surface acceptance are owned by `docs/ui_ux/` and the repository-local `ui-surface` Skill.
+- This architecture contract does not replace the UI/UX contracts. When a table-shaped or input/result surface is created or modified, use `.agents/skills/ui-surface/SKILL.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, and `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` as applicable. If a PySide6 table adapter does not exist yet, preserve that gap in task validation/evidence and use the toolkit-neutral table contract as the acceptance contract. A compact Result Record is created only when the normal repository trigger applies.
 - Current PySide6 Predictor schema/mapping ownership follows
   `docs/architecture/project_architecture.md` and the generation-bound owners
   under `core/predictor_schema`, `core/mapping`, `core/ml`, and
@@ -1592,27 +1582,21 @@ models, legacy UI paths, or pre-package owners. Historical sequencing remains
 discoverable through the governing design record, Git history, and conditional
 Result Records.
 
-Current Train/Predict work is scoped from the active task, the matching
-repository workflow/UI owners, this document's current responsibility sections,
-and current source identity. When those sources disagree with a historical
+Current Train/Predict work is scoped from the active task, the matching repository-local Skill/UI owners, this document's current responsibility sections, and current source identity. When those sources disagree with a historical
 slice description, the current owner contract wins.
 
 ## 15. Validation Boundary
 
 Validation follows the responsibility actually changed:
 
-- Predict table/input/result work uses the current table/session/projection owner
-  tests plus applicable UI Surface Workflow parity evidence.
+- Predict table/input/result work uses the current table/session/projection owner tests plus applicable `.agents/skills/ui-surface/SKILL.md` and `docs/ui_ux/` parity evidence.
 - ML adapter or execution changes use the current generation/input/Target and
   prediction-service owners rather than a historical fixed slice suite.
 - Train changes use the current lifecycle/execution-port/controller owner tests.
 - Manual GUI/platform smoke is selected only when the changed user-facing or
   platform behavior requires it; it is not inherited from an old slice plan.
 
-Generic evidence reuse/re-proof belongs to the active Engineering Workflow role
-when one applies. Repository-specific Result Record creation remains conditional
-under `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`; validation evidence does
-not imply a record by itself.
+Validation follows the changed owner and repository-local Skill. Reuse still-valid evidence rather than repeating it without a concrete invalidation. Repository-specific Result Record creation remains conditional under `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`; validation evidence does not imply a record by itself.
 
 ## 16. Coding Guardrails
 
@@ -1628,14 +1612,8 @@ not imply a record by itself.
 - Do not change public calculator APIs in this workstream.
 - Do not change fixtures/golden expected values in this workstream.
 
-## 17. Result Record And Role Reporting
+## 17. Result Record And Task Reporting
 
-Preserve acceptance, architecture, parity, and validation evidence in the task
-regardless of whether a compact repository Result Record is required. Create a
-Result Record only when the current conditional trigger applies, and keep it in
-the same change as the contract it records.
+Preserve acceptance, architecture, parity, and validation evidence in the task regardless of whether a compact repository Result Record is required. Create a Result Record only when the current conditional trigger applies, and keep it in the same change as the contract it records.
 
-A Result Record is durable repository evidence, not a replacement for
-Engineering Workflow Worker/Auditor/Orchestrator reporting. Role-specific
-identity, exact-head evidence, intentional non-runs, and next-gate reporting
-remain owned by the active role contract.
+A Result Record is durable repository evidence, not a substitute for the final task report. Final reporting follows `AGENTS.md` and states material changes, verification, unresolved risks, and requested Git outcomes.

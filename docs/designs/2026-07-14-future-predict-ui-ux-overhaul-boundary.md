@@ -324,9 +324,7 @@ application transaction slice must own:
 9. rollback on transaction failure; and
 10. one compound undo operation.
 
-Large-paste feedback remains aggregate; single-dropdown edits may retain bounded
-local feedback. Layout B composition and bulk paste are separate Lane C slices
-and must not be bundled in one PR.
+Large-paste feedback remains aggregate; single-dropdown edits may retain bounded local feedback. Layout B composition and bulk paste remain separate implementation slices and must not be bundled in one change without an explicit scope decision.
 
 ### 6.3 Train and Model Lifecycle
 
@@ -418,10 +416,7 @@ contract. The correction boundary is:
 
 This is a requested execution subset for one Case. It must not shrink the Active
 runtime Target registry, change model artifact capability, or weaken full Active
-compatibility. The independently audited and merged Lane C correction consumes
-the established ML policy as this Case-scoped requested Target contract while
-the full runtime Target authority remains unchanged. That correctness slice is
-closed.
+compatibility. The independently audited and merged correction consumes the established ML policy as this Case-scoped requested Target contract while the full runtime Target authority remains unchanged. That correctness slice is closed.
 
 The final execution/validation UX when both cooling and heating capacities are
 blank is resolved as normal Case-scoped Target selection:
@@ -456,10 +451,7 @@ TargetOutcome status. Full compatible Active/runtime Target capability remains
 mandatory. Existing mode-missing policy, target-specific exclude/allowed and
 leakage rules, Ref Qty feature requirements, lifecycle, execution provenance,
 EER/COP formula, Result Review, Layout B, and bulk transaction contracts remain
-closed and unchanged. The Lane C correction now derives this requested-Target
-matrix from canonical raw Case input, pins its stable Target identity order in
-execution provenance, and carries it through inference, acceptance, migration,
-enrichment, and Result Review without changing the full runtime registry.
+closed and unchanged. The merged correction now derives this requested-Target matrix from canonical raw Case input, pins its stable Target identity order in execution provenance, and carries it through inference, acceptance, migration, enrichment, and Result Review without changing the full runtime registry.
 
 ### 6.6 Calculate
 
@@ -575,8 +567,7 @@ applicability controls only the requested execution subset on a compatible
 Active, and actual failure within that requested subset controls
 Complete/Partial status.
 
-The read-only Owner Audit, Ref Qty-only product decision, focused Lane C source
-correction, independent exact-head audit, merge, and Close are complete. Narrow
+The read-only Owner Audit, Ref Qty-only product decision, focused source correction, independent exact-head audit, merge, and closeout are complete. Narrow
 Viewport Result Review Pinning is also merged and closed without reopening the
 correctness repair. The default Result Review order and Layout B full-surface
 direction remain approved. No successor source slice is authorized by this close.

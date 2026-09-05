@@ -18,9 +18,7 @@ Check `ACTIVE_DOCUMENTS.md` when:
 - a top-level owner, root, index, or control document is created or retired;
 - one of those documents changes responsibility or is physically moved.
 
-Do not update the map for every active child document or ordinary multi-document
-wording change. Discover children through the nearest owner README, index, or
-workflow, and use filesystem search when completeness matters.
+Do not update the map for every active child document or ordinary multi-document wording change. Discover children through the nearest owner README, index, repository-local Skill, or owner document, and use filesystem search when completeness matters.
 
 Update the matching design index when a new root active design is created, an
 active decision is absorbed into an owner, an active record moves to legacy,
@@ -78,10 +76,6 @@ Keep the combined read pointers to about 3-7 items. Include one Next Action.
 Do not reconstruct completed report history or use legacy report bodies as
 default first reads.
 
-## Commit/Git Sync Status
+## Git And Final-State Sync
 
-When commit/push is in scope, mention only document-sync judgments that matter to
-the change. `AGENTS.md` defines an optional repository-local compact status
-block; an active Engineering Workflow role contract may require additional
-role-specific reporting and next-gate evidence. This lifecycle owner does not
-redefine generic Git/merge/reporting procedure.
+When commit/push is in scope, synchronize only documents whose owned state actually changed. Final reporting follows `AGENTS.md`: state material document-sync changes, verification, remaining blockers, and the requested Git action/result. This lifecycle owner does not create a separate Git or reporting ceremony.

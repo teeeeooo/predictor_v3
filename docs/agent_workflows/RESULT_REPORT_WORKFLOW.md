@@ -2,15 +2,9 @@
 
 ## Role
 
-This document owns the repository-specific conditional Result Record lifecycle:
-trigger classification, record shape/path, discovery index, append-only history,
-Memory Review coupling, and required same-change atomicity.
+This document owns the repository-specific conditional Result Record lifecycle: trigger classification, record shape/path, discovery index, append-only history, Memory Review coupling, and required same-change atomicity.
 
-It does not own generic Engineering Workflow role reporting, evidence re-proof,
-or merge/synchronization procedure. A compact Result Record is durable repository
-evidence; it is not the Worker/Auditor/Orchestrator final report.
-
-Ordinary tracked-file changes do not require a Result Record.
+A compact Result Record is durable repository evidence. It does not replace source, tests, Git history, or the final task report. Ordinary tracked-file changes do not require a Result Record.
 
 ## Required Record Triggers
 
@@ -121,32 +115,16 @@ explicit handoff, and return to a long-paused workstream. Its owner is
 
 ## Verification Evidence
 
-A Result Record preserves the decision-bearing validation evidence produced by
-the matching workflow/domain owner and, when applicable, the active Engineering
-Workflow role. This document does not create a second generic validation budget
-or require rerunning evidence merely because a record exists. Note a meaningful
-weaker/skipped verification when it changes the confidence of the recorded
-contract decision.
+A Result Record preserves the decision-bearing validation evidence produced by the matching Skill/domain owner. Creating a record does not require rerunning evidence or broadening validation. Note meaningful weaker, skipped, unavailable, or manual-only verification when it changes confidence in the recorded decision.
 
 ## Commit Atomicity
 
-- A required compact record is included in the same commit as its source/docs
-  changes.
-- The Result Record requirement does not itself grant commit/push authority;
-  authorization and generic Git handling come from the active task/role contract.
-- Do not put a commit hash in the record. Git history already associates the
-  record and diff.
+- A required compact record is included in the same commit as its source/docs changes.
+- The record requirement does not grant commit/push authority; follow the user's requested or explicitly approved Git scope.
+- Do not put a commit hash in the record. Git history already associates the record and diff.
 - Use a separate report-only commit only when explicitly required by the task.
 - Do not create self-referential hash update loops.
 
-## Terminal Status
+## Final Reporting
 
-For standalone repository work, the five-field block in `AGENTS.md` is a compact
-local status summary. It is not a complete Worker/Auditor/Orchestrator reporting
-contract and does not suppress successful decision-bearing evidence required by
-an active Engineering Workflow role.
-
-When push is performed, resolve and compare the actual remote branch SHA before
-claiming `OK`. Role-specific final reporting and next-gate evidence follow the
-active role contract; the `report` field only states whether a repository Result
-Record was created.
+The final task report follows `AGENTS.md`. State whether a Result Record was created when that matters to the change. Do not impose a separate fixed terminal template from this document.

@@ -33,7 +33,7 @@ workstream.
 Use this order:
 
 1. current prompt;
-2. `AGENTS.md` and matching route;
+2. `AGENTS.md` and the matching repository-local Skill when task procedure is needed;
 3. active owner docs;
 4. keyword-matched memory entry;
 5. pointed record/legacy evidence only if needed.

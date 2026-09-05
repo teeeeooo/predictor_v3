@@ -4,8 +4,7 @@
 
 `docs/designs/` keeps only current governing, actively referenced, or future
 unabsorbed design decisions. Design records are evidence, not active rule
-owners; repeated rules belong in their architecture, workflow, UI, standard,
-or current-state owner.
+owners; repeated rules belong in their architecture, repository-local Skill, governance, UI, standard, or current-state owner.
 
 ## Read Rule
 
@@ -17,6 +16,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
+| `2026-09-05-astra-agent-harness-migration-design.md` | Governing design for the repo-local Skill cutover, Engineering Workflow retirement, and router compatibility retirement path. | Changing predictor_v3 agent instructions, Skills, governance routing, or retiring `AGENT_TASK_ROUTER.md`. |
 | `2026-09-02-ahri-documentation-sync-plan.md` | Design Gate plan for synchronizing the AHRI Appendix M/M1 standard owners, Tkinter table adapter references, and recent Result Record traceability. | Implementing the documentation corrections identified in the 2026-09-02 AHRI documentation audit. |
 | `2026-09-01-ahri-210-240-m-seer-hspf-audit-design-spec.md` | Active governing audit/design for adding Appendix M SEER/HSPF while preserving Appendix M1 SEER2/HSPF2 ownership and compatibility. | Implementing or reviewing AHRI 210/240 Appendix M calculator, M/M1 UI separation, formula/golden validation, or related owner boundaries. |
 | `2026-07-14-train-admin-ui-ux-overhaul-document-set.md` | Navigation index for the Train/Admin overhaul, including the authoritative Phase 5 lifecycle design and the supporting Phase 5 UI/UX design. | Locating the correct Train/Admin phase design before implementation. |
@@ -28,7 +28,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 | `2026-07-17-train-admin-phase-4a-current-state-contract-audit-closeout.md` | Approved Phase 4A amendment that closes the current-state audit and fixes canonical manifest, stable identity, ordering, generation, reconciliation, Target, and artifact boundaries before Slice 4B. | Starting or auditing Phase 4B and later Unified Feature Manager implementation. |
 | `2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` | Authoritative Phase 5 design for Train/Model UX, model lifecycle, analysis artifacts, shared CLI/campaign execution, and the bounded agent-assisted experiment loop. | Starting or auditing Phase 5B and every later Phase 5 implementation slice. |
 | `2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md` | Supporting Phase 5 Train/Model and shell UI/UX direction. The authoritative lifecycle, CLI, campaign, agent-loop, migration, and implementation-order contract is the 2026-07-22 design. | Reviewing the detailed Train UI/UX flow alongside the authoritative Phase 5 design. |
-| `2026-07-14-future-predict-ui-ux-overhaul-boundary.md` | Approved Layout B product direction, Result Review contract, existing-owner dependency map, missing Predict seams, implementation slices, and open compatibility gates. | Reviewing or preparing any Predict input/result overhaul Lane C slice. |
+| `2026-07-14-future-predict-ui-ux-overhaul-boundary.md` | Approved Layout B product direction, Result Review contract, existing-owner dependency map, missing Predict seams, implementation slices, and open compatibility gates. | Reviewing or preparing a material Predict input/result overhaul change. |
 | `2026-07-13-all-standards-core-refactor-design.md` | Implemented governing inventory, contract, and private-owner design for active non-AHRI Calculator standard cores. | Refactoring or reviewing EN 14825, ISO 16358, KS C 9306, Brazil, or remaining active Calculator core routes. |
 | `2026-07-12-ahri-seer2-hspf2-core-refactor-design.md` | Implemented governing design for the stable AHRI facades and private variable/legacy engines. | Reviewing or extending AHRI SEER2/HSPF2 core ownership, including future multi-capacity sibling engines. |
 | `2026-07-12-calculator-table-architecture-design.md` | Implemented governing design for the three active Calculator table families. | Reviewing or changing Calculator table-family architecture. |

@@ -1489,9 +1489,7 @@ cannot by itself prove containing-directory durability or actual Core work.
 The approved product decision does not add a generic supervisor, child
 adoption, or cross-process transactional coordinator. It replaces the earlier
 actual-compute at-most-once/permanent-permit recovery direction with the
-abandon-and-restart contract below. The bounded Lane C source implementation
-is now complete on the same Draft PR and requires a fresh independent
-exact-head re-audit; source completion does not grant audit acceptance.
+abandon-and-restart contract below. The bounded source implementation was completed on the same Draft PR and historically required a fresh independent exact-head re-audit; source completion alone did not grant audit acceptance.
 
 The persisted owner is
 `apps/common/model_lifecycle/closeout/`. It owns canonical finite JSON
@@ -1776,10 +1774,7 @@ Predict leases are protected, never inferred eligible. Existing deployment
 exports do not yet have a complete lifecycle-root index, so the application
 preview remains intentionally fail-closed.
 
-No delete command exists in Phase 5H source. A future delete apply is Lane D
-and requires an exact preview, explicit user authorization, same-target
-reference/protection revalidation, bounded apply, same-session postcheck,
-immutable deletion receipt, and residual-state confirmation. Automatic
+No delete command exists in Phase 5H source. Any future delete apply is a separately authorized destructive operation and requires an exact preview, explicit user authorization, same-target reference/protection revalidation, one bounded apply, post-apply verification, an immutable deletion receipt, and residual-state confirmation. Automatic
 cleanup, training-success cleanup, agent deletion, and incomplete-reference
 deletion remain prohibited.
 
@@ -1788,9 +1783,7 @@ deletion remain prohibited.
 Real user-data snapshot/confirmation/final-test execution, production
 promotion or deployment replacement, historical migration apply, and
 retention/delete apply are not Phase 5H source acceptance. Each requires its
-own explicit authority and operational evidence. The Phase 5H Draft PR
-requires independent exact-head audit before merge; Worker validation is not
-audit acceptance.
+own explicit authority and operational evidence. The Phase 5H Draft PR historically required an independent exact-head audit before merge; implementation validation alone was not audit acceptance.
 
 ---
 

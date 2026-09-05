@@ -2567,11 +2567,12 @@ AHRI 210/240 M1 → SEER2/HSPF2
 
 ## Repository owners reviewed
 
+The agent-workflow paths below use their current equivalents after the 2026-09-05 repo-local Skill migration; the original audit evidence predates that harness-only move.
+
 ```text
 AGENTS.md
-AGENT_TASK_ROUTER.md
-docs/agent_workflows/CALCULATOR_WORKFLOW.md
-docs/agent_workflows/UI_SURFACE_WORKFLOW.md
+.agents/skills/calculator/SKILL.md
+.agents/skills/ui-surface/SKILL.md
 docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md
 data/region_configs/REGION_CONFIG_RULES.md
 

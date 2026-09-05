@@ -1,140 +1,42 @@
 ---
 name: grill-me
-description: Use before coding to stress-test a predictor_v3 plan, design, architecture, schema, workflow, or implementation strategy. Interview the user one focused question at a time until the global-first design, handler boundaries, invariants, dependencies, risks, and acceptance criteria are clear. Do not edit code while this skill is active.
+description: Explicit-only predictor_v3 design interview for resolving decision-bearing uncertainty before implementation. Use only when the user invokes this skill or directly asks for a design interrogation.
 ---
 
 # Grill Me — predictor_v3 Design Gate
 
-Interview the user relentlessly about the plan until both sides share the same mental model.
+Use this skill only when explicitly invoked. The user's explicit task takes precedence over this skill.
 
-This skill is for pre-coding design clarification. It is especially important when a task might affect:
-- global standard core logic
-- country/region-specific handlers
-- region config schema
-- calculator public API
-- UI-to-core boundaries
-- project documentation structure
-- test/golden sample strategy
+## Purpose
 
-## Hard Rules
+Resolve design uncertainty that would materially change architecture, public or persisted contracts, compatibility, domain behavior, or acceptance. Do not turn routine implementation uncertainty into a question loop.
 
-- Do not edit code while this skill is active.
-- Do not create commits.
-- Do not run broad refactors.
-- Ask exactly one focused question per assistant turn while the grilling session is active.
-- End every grilling turn with that question.
-- Include your recommended answer or default position before the question, with a brief reason.
-- Do not conclude after one or two questions unless the user explicitly says to stop, asks for a final summary, or the plan is genuinely fully resolved.
-- If the user gives a vague, contradictory, hand-wavy, or overly broad answer, ask a sharper follow-up instead of moving on.
-- If the user answers with a new branch or hidden assumption, follow that branch until it is resolved before returning to the previous branch.
-- If a question can be answered by inspecting the codebase, inspect only the relevant files/ranges instead of asking the user.
-- Documentation files under `docs/designs/` may be created only when the user asks for a final summary or Design Gate Summary, unless the user explicitly asks not to create files.
+## Decision gate
 
-## predictor_v3 Design Principles
+Before asking the user:
 
-Default recommendation:
-- Global standard logic should be implemented first as canonical core behavior.
-- Country/region-specific behavior should be added through explicit handlers, adapters, config overrides, or profile branches.
-- National variants must not silently mutate global standard behavior.
-- Public calculator APIs should remain stable unless the user explicitly approves a design change.
-- UI should depend on canonical inputs/outputs, not on country-specific implementation details.
-- Tests must distinguish common-standard behavior from regional override behavior.
-- Documentation should record why a behavior belongs in core vs handler.
+1. Inspect the relevant repository owner if the answer can be recovered from current source or documentation.
+2. If different answers would not materially change behavior, compatibility, authority, destructive scope, or acceptance, choose the most conservative reasonable default and continue.
+3. Ask only when the unresolved choice is genuinely decision-bearing and cannot be resolved from repository evidence.
+4. Ask one focused question at a time when a question is necessary.
 
-## Operating Loop
+Do not ask questions merely to satisfy a process, fill a checklist, or confirm an already-specified boundary.
 
-Maintain an internal map of:
-- confirmed facts
-- unresolved assumptions
-- decision branches
-- dependencies between decisions
-- risks and failure modes
-- terms that need shared definitions
-- core-vs-handler boundary decisions
-- required tests and golden samples
-- migration or refactor path
+## predictor_v3 design defaults
 
-On each turn:
-1. Update the map from the user's latest answer.
-2. Decide the most blocking unresolved item.
-3. State the current working assumption in one or two sentences.
-4. Give your recommended answer/default and why.
-5. Ask one direct question that forces a concrete decision, definition, or constraint.
+- Put common standard behavior in the canonical common owner and region/product specialization behind explicit handlers, adapters, profiles, or config.
+- Do not silently mutate global-standard behavior for a national variant.
+- Keep public calculator APIs stable unless the task explicitly changes them.
+- Keep UI dependent on canonical inputs/outputs rather than specialized implementation details.
+- Keep common behavior and specialized overrides separately testable.
+- Preserve current Model/Service-or-Controller/Shell-or-Adapter/View/Policy ownership and dependency direction unless the design decision explicitly changes responsibility.
 
-## Question Style
+## When to stop
 
-Prefer questions that cannot be answered with "it depends."
+Stop the interview when the decision-bearing tree is resolved enough to implement, the user asks to stop, or the user asks for a summary/plan. Do not prolong the interview for low-value questions.
 
-Ask for concrete boundaries:
-- scope
-- ownership
-- invariants
-- data shape
-- state transitions
-- UX behavior
-- failure handling
-- deployment path
-- migration plan
-- acceptance criteria
-- test strategy
-- core vs handler placement
+When stopping, summarize only the relevant decisions, unresolved risks, owner boundaries, required validation, migration path, non-goals, and next implementation action.
 
-When there are options, name the meaningful alternatives and recommend one.
+## Design persistence
 
-When the plan uses ambiguous words, force definitions before discussing implementation.
-
-When the user says "later", "simple", "automatic", "secure", "fast", "admin", "sync", "global", "handler", "canonical", "fallback", or similar overloaded terms, ask what that means operationally.
-
-## Ending Criteria
-
-Only stop grilling when at least one of these is true:
-- The user explicitly ends the session.
-- The user asks for a summary, implementation plan, or code changes.
-- The core decision tree is resolved enough that further questions would be low-value.
-
-When stopping, summarize:
-- agreed decisions
-- unresolved risks
-- core vs handler boundaries
-- required tests
-- document updates
-- next concrete action
-
-## Design Document Persistence
-
-When the user asks for a final summary, implementation plan, or Design Gate Summary, create a design document under `docs/designs/` unless the user explicitly asks not to create a file.
-
-Before creating the file:
-- Do not edit code.
-- Ensure `docs/designs/` exists.
-- Use a concise kebab-case filename.
-- Prefer the current date if available from the environment or conversation context.
-- Use this filename pattern:
-  - `docs/designs/YYYY-MM-DD-<short-task-name>.md`
-
-The saved document must include the full Design Gate Summary using the Final Output Format below.
-
-After saving the document, report:
-- created file path
-- unresolved risks
-- whether implementation may start or still needs user approval
-
-If the user asks for “summary only”, “출력만”, “파일 만들지 마”, or equivalent, do not create a file and only print the summary.
-
-## Final Output Format
-
-For non-calculator tasks, reinterpret "Core vs Handler Boundary" as the relevant module boundary, such as UI vs Core, Pipeline vs Model, Common vs Specialized, or Document Lifecycle boundary.
-
-When the user asks for the final summary, produce:
-
-# Design Gate Summary
-
-## Goal
-## Confirmed Decisions
-## Core vs Handler Boundary
-## Data Shape / API Boundary
-## Required Tests
-## Migration / Refactor Path
-## Risks
-## Non-goals
-## Next Codex Implementation Prompt
+Create a document under `docs/designs/YYYY-MM-DD-<task>.md` only when the user asks to persist the design or when the current task explicitly includes a governing Design Gate record. Otherwise return the summary in chat without creating a file.
