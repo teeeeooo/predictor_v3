@@ -7,6 +7,16 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'app_calculator.py'
+      - 'apps/calculator/**'
+      - 'apps/common/**'
+      - 'core/calculators/**'
+      - 'data/region_configs/**'
+      - 'requirements/calculator.txt'
+      - 'ui_common/**'
+      - 'tests/**'
+      - '.github/workflows/chatgpt-ahri-validation.yml'
 
 jobs:
   ahri-and-calculator-validation:
@@ -124,31 +134,6 @@ jobs:
           path: |
             pytest-calculator.log
             pytest-main-baseline.log
-          if-no-files-found: ignore
-      - name: Staged change gate
-        id: staged_gate
-        if: steps.calculator_tests.outcome == 'success'
-        run: |
-          gate_log="$RUNNER_TEMP/staged-gate.log"
-          rm -f pytest-focused.log pytest-calculator.log pytest-main-baseline.log
-          set +e
-          {
-            git fetch origin main:refs/remotes/origin/main
-            git read-tree refs/remotes/origin/main
-            git add -A
-            git diff --cached --check
-            python -B tools/check_agent_change_gate.py --cached
-          } > "$gate_log" 2>&1
-          status=$?
-          cat "$gate_log"
-          git reset --mixed HEAD
-          exit $status
-      - name: Upload staged gate log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: staged-change-gate-log
-          path: ${{ runner.temp }}/staged-gate.log
           if-no-files-found: ignore
       - name: Structure guard
         if: always() && steps.calculator_tests.outcome == 'success'

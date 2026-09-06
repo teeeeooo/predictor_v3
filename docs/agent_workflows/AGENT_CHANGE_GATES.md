@@ -69,7 +69,7 @@ git diff --cached --check
 python3 -B tools/check_agent_change_gate.py --cached
 ```
 
-Hooks are active only when the checkout config actually points `core.hooksPath` at `.githooks`.
+Hooks are active only when the checkout config points `core.hooksPath` at `.githooks`. Run `scripts/install_git_hooks.sh` once per checkout to install that repository-local setting.
 
 ## Validation
 

@@ -57,3 +57,38 @@ def test_pre_commit_calls_cached_checker_from_repo_root(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert "checker --cached" in result.stdout
+
+
+def test_hook_installer_configures_repository_hooks_path(tmp_path: Path) -> None:
+    _git(tmp_path, "init", "-q")
+    hooks = tmp_path / ".githooks"
+    hooks.mkdir()
+    hook = hooks / "pre-commit"
+    hook.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    installer = scripts / "install_git_hooks.sh"
+    installer.write_text(
+        (REPO_ROOT / "scripts" / "install_git_hooks.sh").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    installer.chmod(0o755)
+
+    result = subprocess.run(
+        [str(installer)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    configured = subprocess.run(
+        ["git", "config", "--local", "--get", "core.hooksPath"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert configured == ".githooks"
+    assert os.access(hook, os.X_OK)
