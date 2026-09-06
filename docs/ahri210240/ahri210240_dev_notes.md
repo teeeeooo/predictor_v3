@@ -271,19 +271,19 @@ Two-stage/triple-capacity는 현재 variable formula body에 조건문으로 누
 ### AHRI 문서 작업
 
 ```text
-AGENTS.md의 Lite 규칙만 따르고 docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC_TEMPLATE.md, docs/FORMULA_REFERENCE_GUIDE.md를 먼저 읽어라. AHRI 문서는 docs/ahri210240/ahri210240_notes.md, docs/ahri210240/ahri210240_dev_notes.md, AHRI HSPF2/SEER2 계산 코드, 관련 tests를 Primary로 삼고, AHRI PDF는 Section/Table/Equation 확인용 Secondary로만 사용하라. 과거 HSPF2 구현 상세 원본은 필요할 때만 docs/archive/standards_legacy/ahri_hspf2.md를 historical source로 참조하라. 문서 작업이면 docs/ahri210240/ 하위만 수정하라.
+AGENTS.md와 calculator Skill의 현재 경계를 따른다. AHRI owner 문서와 matching 계산 코드/tests를 먼저 사용하고, 규격 문서 구조를 실제로 변경할 때만 DOCS_GUIDELINES/템플릿 가이드를 추가로 연다. AHRI PDF는 Section/Table/Equation 확인용 공식 근거로 사용하고, 과거 HSPF2 구현 원본은 현재 owner가 부족할 때만 historical evidence로 참조한다.
 ```
 
-이 snippet의 기존 `docs/ahri210240/` 한정 문구는 표준 owner 문서에 대한 기본값이다. M UI adapter 또는 조건부 Result Record의 직접 정합성 보정이 필요한 경우에는 active design spec과 Result Record Workflow가 허용하는 직접 참조 문서까지 명시적으로 포함한다.
+이 snippet의 기존 `docs/ahri210240/` 한정 문구는 표준 owner 문서에 대한 기본값이다. M UI adapter 또는 cross-owner 문서 정합성 보정이 필요한 경우에는 matching UI owner와 active design evidence를 필요한 범위에서만 추가한다. 별도 Result Record artifact는 요구하지 않는다.
 
 ### HSPF2 계산 작업
 
 ```text
-AGENTS.md Lite 규칙을 먼저 읽어라. HSPF2는 variable-capacity, dual-stage, triple-capacity-northern production 경로를 보호한다. calculate_hspf2()는 명시 지시 없이 수정하지 말고, 변경 후 active product golden과 product dispatch 테스트를 실행하라.
+AGENTS.md와 calculator Skill의 현재 경계를 따른다. HSPF2는 variable-capacity, dual-stage, triple-capacity-northern production 경로를 보호한다. calculate_hspf2()는 명시 지시 없이 수정하지 말고, 변경 후 active product golden과 product dispatch 테스트를 실행하라.
 ```
 
 ### SEER2 정비 작업
 
 ```text
-AGENTS.md Lite 규칙을 먼저 읽어라. SEER2는 현재 variable-capacity official-calculator golden expected를 변경하지 말고, 현재 구현 확인 범위 밖의 off-mode나 추가 parity를 주장하지 말라. 계산 해석 변경은 별도 golden evidence와 승인 후 진행하라.
+AGENTS.md와 calculator Skill의 현재 경계를 따른다. SEER2는 현재 variable-capacity official-calculator golden expected를 변경하지 말고, 현재 구현 확인 범위 밖의 off-mode나 추가 parity를 주장하지 말라. 계산 해석 변경은 별도 golden evidence와 승인 후 진행하라.
 ```

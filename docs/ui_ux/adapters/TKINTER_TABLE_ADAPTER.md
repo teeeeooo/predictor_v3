@@ -108,8 +108,7 @@ source of truth, owner doc, dependency, vendor target, or copy target for
 table-shaped UI should use that foundation once it exists; until then, a new
 standalone controller must explain why the existing table foundation cannot be
 used and must list controller-level parity tests in task validation/evidence.
-This parity requirement does not itself trigger a compact Result Record. Avoid
-creating independent Entry/Label-grid controllers for each feature.
+This parity requirement does not create a separate report or memory-write artifact. Avoid creating independent Entry/Label-grid controllers for each feature.
 
 ## 4. Implementing the baseline on an Entry grid
 

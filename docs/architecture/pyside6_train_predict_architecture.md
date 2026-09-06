@@ -38,8 +38,8 @@ Boundary note:
 
 - This document owns package, dependency, state, controller, service, adapter,
   worker, and entrypoint boundaries.
-- User-facing UI/UX behavior, spreadsheet table parity, terminology, and input/result surface acceptance are owned by `docs/ui_ux/` and the repository-local `ui-surface` Skill.
-- This architecture contract does not replace the UI/UX contracts. When a table-shaped or input/result surface is created or modified, use `.agents/skills/ui-surface/SKILL.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, and `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` as applicable. If a PySide6 table adapter does not exist yet, preserve that gap in task validation/evidence and use the toolkit-neutral table contract as the acceptance contract. A compact Result Record is created only when the normal repository trigger applies.
+- User-facing UI/UX behavior, spreadsheet table parity, terminology, and input/result surface acceptance are owned by `docs/ui_ux/`; reusable table/window interaction behavior may also use the global `desktop-table-ui` or `desktop-window-lifecycle` Skill.
+- This architecture contract does not replace the UI/UX contracts. When a table-shaped or input/result surface is created or modified, use the matching `docs/ui_ux/` owner and global reusable UI Skill as applicable. If a PySide6 table adapter does not exist yet, preserve that gap in task validation/evidence and use the toolkit-neutral table contract as the acceptance contract.
 - Current PySide6 Predictor schema/mapping ownership follows
   `docs/architecture/project_architecture.md` and the generation-bound owners
   under `core/predictor_schema`, `core/mapping`, `core/ml`, and
@@ -1589,14 +1589,14 @@ slice description, the current owner contract wins.
 
 Validation follows the responsibility actually changed:
 
-- Predict table/input/result work uses the current table/session/projection owner tests plus applicable `.agents/skills/ui-surface/SKILL.md` and `docs/ui_ux/` parity evidence.
+- Predict table/input/result work uses the current table/session/projection owner tests plus applicable `docs/ui_ux/` parity evidence and the global table/window Skill when relevant.
 - ML adapter or execution changes use the current generation/input/Target and
   prediction-service owners rather than a historical fixed slice suite.
 - Train changes use the current lifecycle/execution-port/controller owner tests.
 - Manual GUI/platform smoke is selected only when the changed user-facing or
   platform behavior requires it; it is not inherited from an old slice plan.
 
-Validation follows the changed owner and repository-local Skill. Reuse still-valid evidence rather than repeating it without a concrete invalidation. Repository-specific Result Record creation remains conditional under `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`; validation evidence does not imply a record by itself.
+Validation follows the changed owner and applicable Skill. Reuse still-valid evidence rather than repeating it without a concrete invalidation. Validation evidence does not create a separate report or memory-write requirement.
 
 ## 16. Coding Guardrails
 
@@ -1612,8 +1612,8 @@ Validation follows the changed owner and repository-local Skill. Reuse still-val
 - Do not change public calculator APIs in this workstream.
 - Do not change fixtures/golden expected values in this workstream.
 
-## 17. Result Record And Task Reporting
+## 17. Task Evidence And Reporting
 
-Preserve acceptance, architecture, parity, and validation evidence in the task regardless of whether a compact repository Result Record is required. Create a Result Record only when the current conditional trigger applies, and keep it in the same change as the contract it records.
+Preserve acceptance, architecture, parity, and validation evidence in the current task and current owner documents. When a non-obvious durable reason or failed approach needs future recall, use the focused decision/failure owners described by `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md`.
 
-A Result Record is durable repository evidence, not a substitute for the final task report. Final reporting follows `AGENTS.md` and states material changes, verification, unresolved risks, and requested Git outcomes.
+Historical Result Records remain point-in-time evidence only. Final reporting follows the active agent contract and does not require a repository report artifact.

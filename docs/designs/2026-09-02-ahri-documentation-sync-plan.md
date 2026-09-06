@@ -1,5 +1,7 @@
 # Design Gate Summary
 
+> **Harness V2 note (2026-09-07):** AHRI documentation/owner corrections in this plan remain useful evidence. Instructions to create correction Result Records, update REPORT_INDEX, or perform `memory_review` are superseded by Agent Harness V2; use current owner docs plus selective decision/failure memory instead.
+
 ## Goal
 
 최근 AHRI Appendix M 변경(`f7adcac7..HEAD`)이 predictor_v3의 문서 규칙과

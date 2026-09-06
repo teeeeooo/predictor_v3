@@ -16,7 +16,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
-| `2026-09-05-astra-agent-harness-migration-design.md` | Governing design for the repo-local Skill cutover, Engineering Workflow retirement, and final agent-routing topology. | Changing predictor_v3 agent instructions, repository-local Skills, governance routing, or reviewing the completed router retirement. |
+| `2026-09-07-astra-agent-harness-v2-migration.md` | Governing predictor_v3 delta for the shared operating-envelope harness, bounded recall, global UI/design Skills, and Result Record retirement. | Changing predictor_v3 agent instructions, Skills, recall/memory policy, or mechanical harness gates. |
 | `2026-09-02-ahri-documentation-sync-plan.md` | Design Gate plan for synchronizing the AHRI Appendix M/M1 standard owners, Tkinter table adapter references, and recent Result Record traceability. | Implementing the documentation corrections identified in the 2026-09-02 AHRI documentation audit. |
 | `2026-09-01-ahri-210-240-m-seer-hspf-audit-design-spec.md` | Active governing audit/design for adding Appendix M SEER/HSPF while preserving Appendix M1 SEER2/HSPF2 ownership and compatibility. | Implementing or reviewing AHRI 210/240 Appendix M calculator, M/M1 UI separation, formula/golden validation, or related owner boundaries. |
 | `2026-07-14-train-admin-ui-ux-overhaul-document-set.md` | Navigation index for the Train/Admin overhaul, including the authoritative Phase 5 lifecycle design and the supporting Phase 5 UI/UX design. | Locating the correct Train/Admin phase design before implementation. |
@@ -34,7 +34,6 @@ design discovery starts at `docs/designs/legacy/README.md`.
 | `2026-07-12-calculator-table-architecture-design.md` | Implemented governing design for the three active Calculator table families. | Reviewing or changing Calculator table-family architecture. |
 | `2026-07-11-calculator-ui-ux-unification-slice-0.md` | Active Calculator surface audit, target table policy, and migration Slice design. | Reviewing or implementing Calculator UI/UX unification. |
 | `TEMPLATE_DESIGN_GATE.md` | Template for a new Design Gate record. | Creating a new design record. |
-| `2026-07-10-agent-harness-report-lifecycle-redesign.md` | Current harness report/memory lifecycle redesign evidence. | Reviewing the conditional-record or Memory Review redesign. |
 | `2026-06-27-pyside6-train-predict-rewrite-design-gate.md` | Governing Train/Predict PySide6 rewrite design gate. | Planning or reviewing the active Train/Predict architecture. |
 | `2026-05-17-calculator-result-envelope-ml-adapter.md` | Unabsorbed calculator-result/ML-adapter boundary decision. | Implementing the future adapter or result-envelope boundary. |
 | `2026-07-06-arc15-unified-data-definition-manager-foundation.md` | Historical Unified Data Definition owner/projection foundation extended by Phase 4. | Auditing schema/Feature ownership, projections, or Phase 4 persistence boundaries. |

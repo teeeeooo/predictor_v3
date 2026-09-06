@@ -20,7 +20,7 @@ It must not be used to modify calculator formulas, fixtures, region configs, or 
 
 ## Maintenance Workflow
 
-New content should usually come from grill-me style interviews with the user.
+New content should usually come from explicit design interviews with the user when decision-bearing domain knowledge must be captured.
 
 Capture raw context during the interview, then promote confirmed operational rules into concise guide sections. Keep source interview summaries short and move unresolved assumptions into open questions.
 

@@ -74,15 +74,12 @@
 
 ## 5. 문서 운영 원칙
 
-- 항상 적용되는 agent 규칙은 `AGENTS.md`에 둔다.
-- 작업별 실행 절차는 `.agents/skills/`의 repository-local Skill에 두고, durable owner 탐색은 `ACTIVE_DOCUMENTS.md`가 담당한다.
+- 공통 실행 자세는 user-level global `AGENTS.md`가 소유하고, `predictor_v3/AGENTS.md`에는 repository-wide invariant와 routing만 둔다.
+- predictor 전용 작업 절차는 `.agents/skills/`의 repository-local Skill에 두고, 재사용 가능한 design/table/window workflow는 global Skill을 사용한다. Durable owner 탐색은 `ACTIVE_DOCUMENTS.md`가 담당한다.
 - 장기 방향과 Phase 1~5는 `PROJECT_CHARTER.md`에 둔다.
 - Phase / Arc / Milestone 지도는 `project_brief.md`에 둔다.
 - 현재 slice, 다음 action, blocker, active constraints, hold 상태는 `docs/WORK_PLAN.md`에 둔다.
 - 명시적으로 요청된 다음 세션 handoff pointer는 `docs/WORK_PLAN.md`의 `Session Handoff`에 둔다.
-- milestone decision, durable failure/lesson, process rule는 `project_log.md`에
-  둔다. ordinary 작업 상세는 Git diff/commit history, focused validation,
-  terminal/final output이 소유하고 conditional trigger일 때만 compact
-  record를 남긴다.
+- milestone chronology는 `project_log.md`, 재사용할 decision rationale은 `docs/decisions/`, 반복 방지 failure lesson은 `docs/failures/`가 소유한다. Ordinary 작업 상세는 Git diff/commit history와 focused validation이 소유한다.
 - 리팩토링 후보와 구조 분리 기준은 `docs/REFACTOR_PLAN.md`에 둔다.
 - 같은 내용을 여러 문서에 중복으로 길게 기록하지 않는다.

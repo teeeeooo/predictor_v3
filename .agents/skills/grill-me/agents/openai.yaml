@@ -1,5 +1,0 @@
-interface:
-  display_name: "Grill Me"
-  short_description: "Explicit predictor_v3 design decision interview"
-policy:
-  allow_implicit_invocation: false

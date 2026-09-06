@@ -35,6 +35,17 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-09-07 — Agent Harness V2 global/repo boundary
+
+### Decision
+
+- Generic execution posture and reusable design/table/window workflows move to the user-level `operating-envelope` harness; predictor `AGENTS.md` keeps only repository invariants and routing.
+- Retire repo-local `grill-me` and `ui-surface`; retain calculator, ML/Predictor, and packaging Skills.
+- Retire active Result Record / REPORT_INDEX / mandatory Memory Review coupling. Existing Result Records remain historical evidence; Git and current owner docs own ordinary change provenance.
+- Keep `result_reports/memory/project_memory_seed.md` as the hot recall index and use selective `docs/decisions/` / `docs/failures/` records for durable rationale and no-repeat lessons.
+- Mechanical staged checks remain focused on objective failures; LOC/class/hotspot/structure signals are warning-first rather than documentation gates.
+- Durable rationale: `docs/decisions/2026-09-07-agent-harness-v2.md` and `docs/designs/2026-09-07-astra-agent-harness-v2-migration.md`.
+
 ## 2026-09-05 — Agent task router retirement
 
 ### Decision

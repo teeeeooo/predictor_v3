@@ -1,5 +1,7 @@
 # predictor_v3 — AHRI 210/240 M SEER/HSPF Audit & One-Pass Implementation Design Specification
 
+> **Harness V2 note (2026-09-07):** This design remains authoritative for Appendix M/M1 domain, architecture, formula, UI-separation, and acceptance decisions. References to repo-local `ui-surface`, mandatory/conditional Result Record creation, REPORT_INDEX coupling, or Memory Review are superseded by the current `AGENTS.md`, global UI Skills, and `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md`.
+
 **Repository:** `teeeeooo/predictor_v3`
 **Audit baseline:** `main @ ab9363dac7e9a01947fa3eccd1e9c1bd5042e217`
 **Target:** Calculator에 AHRI 210/240 Appendix M 기반 `SEER` / `HSPF`를 추가하고, 기존 Appendix M1 기반 `SEER2` / `HSPF2`와 UI·domain owner를 명확히 분리한다.

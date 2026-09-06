@@ -54,9 +54,7 @@ Before a new table-shaped UI or table adapter is treated as complete:
 - If a toolkit-specific adapter does not yet exist, use this document
   directly as the acceptance contract and preserve the adapter gap in task
   evidence.
-- These evidence requirements do not by themselves require a compact Result
-  Record; `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md` owns that conditional
-  trigger.
+- These evidence requirements do not create a separate Result Record or memory-write requirement. Preserve durable rationale only when the active memory/decision policy says it is worth keeping.
 - Windows or platform smoke is a final platform check. If a core interaction
   bug is first discovered there, record it as a validation gap and add an
   automated helper/controller-level guard in the next correction slice.

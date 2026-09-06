@@ -24,7 +24,7 @@ Use this skill only for predictor_v3 ML, Train, and Predict work. The user's exp
 - ML feature/data reasoning: `docs/knowledge/README.md` and the matching knowledge owner.
 - Training-header compatibility only: `docs/workflows/ml_feature_catalog_workflow.md`.
 - DEV-only mock smoke: `tools/dev/mock_smoke/README.md`; it cannot prove model accuracy or physical quality.
-- UI changes also use the repo-local `ui-surface` skill and matching `docs/ui_ux/` owner.
+- UI changes use the matching `docs/ui_ux/` owner; apply the global `desktop-table-ui` or `desktop-window-lifecycle` Skill when its reusable contract matches.
 
 ## Work flow
 

@@ -23,7 +23,7 @@ Use this skill only for predictor_v3 calculator and standards work. The user's e
 - Region config: `data/region_configs/REGION_CONFIG_RULES.md`.
 - Shared calculator architecture: `docs/architecture/project_architecture.md`.
 - Project-wide responsibility boundary: `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
-- Calculator UI work also uses the repo-local `ui-surface` skill and matching `docs/ui_ux/` owner.
+- Calculator UI work uses the matching `docs/ui_ux/` owner; apply the global `desktop-table-ui` or `desktop-window-lifecycle` Skill when its reusable contract matches.
 
 ## Formula and golden changes
 

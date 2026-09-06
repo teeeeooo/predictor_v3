@@ -8,7 +8,7 @@ import re
 from typing import Sequence
 
 from tools.agent_change_gate_git import GitIndex, StagedChange
-from tools.agent_change_gate_models import ChangeGate, Finding
+from tools.agent_change_gate_models import Finding
 
 UI_SOURCE_ROOTS = ("apps/calculator/ui/", "ui/", "ui_tk/")
 LAYOUT_TOKEN_OWNER = "apps/calculator/ui/layout_constants.py"
@@ -34,10 +34,10 @@ _NAMED_COLORS = {
 def check_ui_magic_literals(
     index: GitIndex,
     changes: Sequence[StagedChange],
-    gate: ChangeGate | None,
+    exempted: bool,
 ) -> list[Finding]:
     """Reject Phase 1 UI literals and warn on Phase 2 presentation candidates."""
-    if gate is not None and gate.ui_literal_exemption == "approved-for-slice":
+    if exempted:
         return []
     findings: list[Finding] = []
     for change in changes:
@@ -53,10 +53,10 @@ def check_ui_magic_literals(
             if line in added:
                 message = (
                     f"new UI {kind} literal must use a token owner or "
-                    "ui_literal_exemption: approved-for-slice"
+                    "local manifest ui_literal_exemption: approved-for-slice"
                     if severity == "error"
                     else f"new UI {kind} literal should use an existing token, "
-                    "owner helper, or record-local no-reuse reason"
+                    "owner helper, or a deliberate local value"
                 )
                 findings.append(Finding(severity, f"{change.path}:{line}", message))
     return findings

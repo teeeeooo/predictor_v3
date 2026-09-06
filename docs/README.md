@@ -2,7 +2,7 @@
 
 이 폴더는 EN14825, AHRI 210/240, ISO16358 등 HVAC 효율 규격을 프로젝트 안에서 일관되게 축적하기 위한 문서 공간이다. 목표는 단순한 구현 메모가 아니라, AI Agent와 개발자가 재사용할 수 있고 제품 설계 엔지니어도 참고할 수 있는 규격 구현 자산을 만드는 것이다.
 
-문서 작업 Agent는 먼저 `AGENTS.md`를 확인하고, 작업별 절차가 필요하면 matching repository-local Skill을 사용한다. Durable owner가 불명확할 때만 `../ACTIVE_DOCUMENTS.md`에서 시작점을 찾는다.
+문서 작업 Agent는 먼저 `AGENTS.md`를 확인하고, 작업별 절차가 필요하면 matching repository-local 또는 global Skill을 사용한다. Durable owner가 불명확할 때만 `../ACTIVE_DOCUMENTS.md`에서 시작점을 찾는다.
 
 ## 공통 문서
 
@@ -79,7 +79,7 @@ docs/en14825/en14825_glossary.md
 
 ## 새 규격 문서를 추가할 때의 순서
 
-1. `AGENTS.md`를 확인하고 계산기/ML/UI/패키징 절차가 필요한 경우 matching repository-local Skill을 사용한다.
+1. `AGENTS.md`를 확인하고 계산기/ML/패키징 절차는 matching repository-local Skill, reusable UI/design 절차는 applicable global Skill을 사용한다.
 2. top-level owner가 불명하면 `ACTIVE_DOCUMENTS.md`에서 시작점을 찾고 child 문서는 해당 owner의 README/index/Skill에서 확인한다.
 3. 신규 규격 문서 생성 또는 규격 문서 구조 변경이면 `docs/DOCS_GUIDELINES.md`를 확인한다.
 4. 새 standard canonical 문서를 만들 때는 `docs/STANDARD_DOC_TEMPLATE.md`에서 필요한 템플릿을 복사한다.
@@ -97,7 +97,7 @@ docs/en14825/en14825_glossary.md
 | --- | --- | --- |
 | 기본 | `AGENTS.md` | 프로젝트 전체 boundary, execution posture, routing clue를 확인하기 위함 |
 | 조건부 | `.agents/skills/calculator/SKILL.md` | calculator/standard/region/golden 작업 절차가 필요한 경우 |
-| 조건부 | `.agents/skills/ui-surface/SKILL.md` | UI surface/table/window/input-result 작업이 포함되는 경우 |
+| 조건부 | `docs/ui_ux/README.md` + applicable global UI Skill | UI surface/table/window/input-result 작업의 predictor owner와 reusable table/window contract가 필요한 경우 |
 | 조건부 | `docs/DOCS_GUIDELINES.md` | 신규 규격 문서 생성 또는 규격 문서 구조 변경 시 문서 철학, 구조, 근거 표기, 품질 기준을 맞추기 위함 |
 | 조건부 | `docs/STANDARD_DOC_TEMPLATE.md` | 새 standard canonical 문서 생성 시 기본 골격을 통일하기 위함 |
 | 조건부 | `docs/FORMULA_REFERENCE_GUIDE.md` | formula, variable, term, glossary entry 작성 또는 수정 시 형식을 통일하기 위함 |

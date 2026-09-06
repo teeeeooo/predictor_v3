@@ -4,8 +4,7 @@
 
 - Own only the current slice, exact next action, blockers, constraints, holds,
   and short ordered follow-up.
-- Keep phase/owner/milestone direction in `project_brief.md`, durable history in
-  `project_log.md`, and point-in-time evidence in Result Records.
+- Keep phase/owner/milestone direction in `project_brief.md`, durable chronology in `project_log.md`, reusable rationale in focused decision/failure records, and older point-in-time evidence in historical Result Records.
 - Do not reconstruct completed implementation/audit/merge chronology here.
 
 ## Current Slice

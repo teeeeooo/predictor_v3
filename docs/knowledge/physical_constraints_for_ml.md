@@ -92,7 +92,7 @@ Avoid end-to-end monotonic assumptions between point-level COP and seasonal effi
 
 ## Source interview summary
 
-This document summarizes domain knowledge gathered through a grill-me style interview with the user.
+This document summarizes domain knowledge gathered through an explicit design interview with the user.
 
 Key background:
 - HVAC chamber data can contain valid local exceptions caused by control behavior, sensor lag, transient state, wet coil, frosting, and protection logic.

@@ -2,80 +2,51 @@
 
 ## Role
 
-This document owns active owner-map sync, current-state document boundaries,
-session handoff, and legacy-document movement.
+Own active owner-map synchronization, current-state document boundaries, explicit session handoff, and historical-document movement.
 
-## First Judgment
+## First judgment
 
-Use filenames, diff stat, changed-file type, and the user request to decide
-whether any documentation sync is actually needed. Do not read or edit planning
-documents merely because source changed.
+Use the request, changed-file type, and diff scope to decide whether documentation sync is needed. Do not read or edit planning documents merely because source changed.
 
 ## Active Owner Map
 
-Check `ACTIVE_DOCUMENTS.md` when:
+Check `ACTIVE_DOCUMENTS.md` when a top-level owner, root, index, or Skill is created, retired, moved, or changes responsibility.
 
-- a top-level owner, root, index, or control document is created or retired;
-- one of those documents changes responsibility or is physically moved.
+Do not update the map for ordinary child-document changes. Discover children through the nearest owner README, index, Skill, or owner document and use filesystem search when completeness matters.
 
-Do not update the map for every active child document or ordinary multi-document wording change. Discover children through the nearest owner README, index, repository-local Skill, or owner document, and use filesystem search when completeness matters.
+Update a design index only when a root active design is created, changes ownership status, or moves to/from historical storage.
 
-Update the matching design index when a new root active design is created, an
-active decision is absorbed into an owner, an active record moves to legacy,
-or a legacy record is explicitly re-promoted.
+## Document boundaries
 
-## Document Boundaries
-
-- `docs/WORK_PLAN.md`: current slice, next action, blockers, constraints, hold.
-- `project_brief.md`: current Phase / Arc / Milestone map only.
+- `docs/WORK_PLAN.md`: current slice, next action, blockers, constraints, and holds.
+- `project_brief.md`: current Phase / Arc / Milestone map.
 - `docs/REFACTOR_PLAN.md`: refactor candidates and structural triggers.
-- `project_log.md`: milestone decisions, durable failures/lessons, process rules.
-- standard/dev notes: reusable specification interpretation, calculation
-  rationale, and schema meaning.
-- result records: durable change reason/evidence at one point in time.
-- memory seed: compact active recall across workstreams.
+- `project_log.md`: durable chronology, milestone decisions, failures, and lessons.
+- `docs/decisions/`: compact decision rationale whose reason is not obvious from current source.
+- `docs/failures/`: repeated/non-obvious failed approaches and no-repeat guidance.
+- `result_reports/memory/project_memory_seed.md`: compact routing/index for bounded recall.
+- standard/dev notes: reusable specification interpretation, calculation rationale, and schema meaning.
+- historical Result Records: point-in-time evidence only.
 
-Update only the document whose owned state changed.
+Update only the owner whose state actually changed.
 
-## Result Record Lifecycle
+## Historical Result Records
 
-New records are written directly to their final date-based path and indexed.
-They do not move through active/summary/archive stages.
+Existing `result_reports/records/`, `result_reports/legacy/`, `result_reports/REPORT_INDEX.md`, and memory archives remain historical evidence. Do not create a Result Record merely because a change affects architecture, harness policy, schema, calculator behavior, release state, or manual evidence.
 
-Existing `result_reports/active/` remains a legacy input at its historical path.
-Existing archive and summary evidence is read-only under
-`result_reports/legacy/archive/` and `result_reports/legacy/summaries/`.
-Historical report/summary bodies remain unchanged.
+When a new durable reason is needed, prefer the current owner document or a focused decision/failure record. Git history already owns commit-level changed-file provenance.
 
-Do not create cleanup reports, summaries, or memory deltas merely to manage a
-report count.
+## Session handoff
 
-## Session Handoff
-
-Run only when the user explicitly requests a handoff, next-session plan, or
-next-agent read pointer.
+Run only when the user explicitly requests a handoff, next-session plan, or next-agent read pointer.
 
 1. Check whether `project_brief.md` broad state is accurate.
 2. Update `docs/WORK_PLAN.md` only where current execution state changed.
-3. Create or fully replace one `Session Handoff` section.
-4. Perform the Memory Review Gate.
+3. Provide a compact read-first set and one next action.
+4. Update durable memory only when the handoff reveals a genuinely reusable decision, failure, resume clue, or owner relationship.
 
-Use:
+Keep combined read pointers to roughly 3-7 items. Do not reconstruct completed report history or make historical Result Records default first reads.
 
-- Status
-- Updated
-- Reason
-- Read First
-- Task-Specific Pointers
-- Active Blocker / Open Decision
-- Memory Review
-- Next Action
-- Do Not Read Unless Needed
+## Git and final-state sync
 
-Keep the combined read pointers to about 3-7 items. Include one Next Action.
-Do not reconstruct completed report history or use legacy report bodies as
-default first reads.
-
-## Git And Final-State Sync
-
-When commit/push is in scope, synchronize only documents whose owned state actually changed. Final reporting follows `AGENTS.md`: state material document-sync changes, verification, remaining blockers, and the requested Git action/result. This lifecycle owner does not create a separate Git or reporting ceremony.
+When commit/push is in scope, synchronize only documents whose owned state changed. This lifecycle owner does not create an additional approval, report, memory-review, or terminal-report ceremony.

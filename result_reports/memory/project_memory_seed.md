@@ -8,9 +8,9 @@ actual resume points, repeated risks, and unresolved questions.
 
 ## Source Coverage
 
-Active entries point to current owner docs, durable Result Records, project-log
-decisions, and narrowly required legacy evidence. Superseded/resolved/stale entry
-wording is preserved under `result_reports/memory/archive/`.
+Active entries point to current owner docs, focused decision/failure records,
+project-log decisions, and narrowly required historical evidence. Superseded,
+resolved, or stale wording is preserved under `result_reports/memory/archive/`.
 
 ## Scope and Non-goals
 
@@ -25,11 +25,11 @@ wording is preserved under `result_reports/memory/archive/`.
 ```yaml
 entries:
   - type: procedure
-    topic: agent workflow and documentation lifecycle boundary
-    content: AGENTS.md is the always-on predictor_v3 repository contract. Task-specific calculator, ML/Predictor, UI, and packaging procedure is progressively loaded from repository-local Skills under `.agents/skills/`; `grill-me` is explicit-only. ACTIVE_DOCUMENTS.md is the durable owner discovery map. Change gates, document lifecycle, Result Records, and project memory remain repository governance owners. Engineering Workflow and its Worker/Auditor/Orchestrator lane model are retired for new predictor_v3 work; historical records that used that model remain historical evidence. WORK_PLAN owns only the current product slice/next action/blockers/constraints/holds; project_log owns durable milestone/process history; Result Records remain conditional append-only evidence indexed by REPORT_INDEX.
-    keywords: [predictor_v3, AGENTS.md, repo-local skills, routing, ACTIVE_DOCUMENTS, WORK_PLAN, project_log, Result Record, memory review]
+    topic: agent harness v2 recall and routing boundary
+    content: Generic execution behavior and reusable design/table/window workflows come from the deployed operating-envelope global harness. predictor_v3 AGENTS.md now owns only repository invariants and routing; calculator, ML/Predictor, and packaging remain repo-local Skills. Design interrogation/stress-testing uses the global upstream-derived grill-me Skill, while reusable table/window behavior uses global desktop-table-ui or desktop-window-lifecycle with predictor UI ownership under docs/ui_ux. Result Records and REPORT_INDEX are historical evidence, not required change artifacts. This seed is the hot recall index; durable why/no-repeat knowledge belongs in docs/decisions or docs/failures, and current truth is rechecked at the active owner.
+    keywords: [predictor_v3, operating-envelope, AGENTS.md, global skills, grill-me, desktop-table-ui, desktop-window-lifecycle, recall gate, decision record, failure record, historical Result Record]
     assertionStatus: verified
-    source: AGENTS.md; ACTIVE_DOCUMENTS.md; .agents/skills/calculator/SKILL.md; .agents/skills/ml-predictor/SKILL.md; .agents/skills/ui-surface/SKILL.md; .agents/skills/packaging/SKILL.md; docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md; docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md; docs/agent_workflows/RESULT_REPORT_WORKFLOW.md; result_reports/records/2026-09/2026-09-05-astra-agent-harness-migration.md
+    source: AGENTS.md; ACTIVE_DOCUMENTS.md; docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md; docs/agent_workflows/AGENT_CHANGE_GATES.md; docs/decisions/2026-09-07-agent-harness-v2.md; docs/designs/2026-09-07-astra-agent-harness-v2-migration.md
 
   - type: decision
     topic: architecture and UI owner boundary
@@ -107,7 +107,7 @@ entries:
 
 ## Next Maintenance Rule
 
-- Run Memory Review only on its documented triggers or dedicated maintenance.
-- Add/update the smallest durable topic; do not append task history.
+- Update memory only when a durable decision, failure, owner relationship, expensive fact, or long-horizon resume clue justifies it.
+- Add or update the smallest durable topic; do not append task history.
 - Retire stale/superseded state with source trace instead of leaving it active.
-- Report count alone never triggers memory cleanup.
+- Historical report count never triggers memory cleanup.

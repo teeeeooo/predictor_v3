@@ -7,8 +7,7 @@ from typing import Sequence
 
 from tools.agent_change_gate_git import GitIndex, StagedChange
 from tools.agent_change_gate_ui_literals import check_ui_magic_literals
-from tools.agent_change_gate_models import ChangeGate, Finding, TaskManifest, parse_manifest
-from tools.agent_change_gate_records import RECORD_ROOT, validate_records
+from tools.agent_change_gate_models import Finding, TaskManifest, parse_manifest
 
 PRODUCTION_ROOTS = ("core/", "ui/", "apps/", "scripts/")
 
@@ -31,24 +30,22 @@ def evaluate_cached(index: GitIndex) -> list[Finding]:
                 Finding("error", "manifest", f"staged paths not allowed: {outside!r}")
             )
 
-    records = tuple(
-        change for change in changes if change.path.startswith(RECORD_ROOT)
+    ui_exempted = (
+        manifest is not None
+        and manifest.ui_literal_exemption == "approved-for-slice"
     )
-    gate = validate_records(index, changes, records, manifest, findings)
-    findings.extend(check_ui_magic_literals(index, changes, gate))
+    findings.extend(check_ui_magic_literals(index, changes, ui_exempted))
 
     structural = False
     for change in changes:
         if _is_python_source(change.path):
-            structural = _check_source(index, change, gate, findings) or structural
-    if structural and (
-        gate is None or gate.reuse_commonization == "not_required"
-    ):
+            structural = _check_source(index, change, findings) or structural
+    if structural:
         findings.append(
             Finding(
                 "warning",
-                "change_gate",
-                "structural source change should include a reuse/commonization decision",
+                "structure",
+                "structural source change should review existing ownership and reuse/commonization",
             )
         )
     return findings
@@ -72,7 +69,6 @@ def format_findings(findings: Sequence[Finding]) -> str:
 def _check_source(
     index: GitIndex,
     change: StagedChange,
-    gate: ChangeGate | None,
     findings: list[Finding],
 ) -> bool:
     new_source = change.status == "A" and _is_production(change.path)
@@ -84,19 +80,17 @@ def _check_source(
         if loc > 350:
             findings.append(
                 Finding(
-                    "error",
+                    "warning",
                     change.path,
-                    f"new production source exceeds 350 LOC ({loc})",
+                    f"new production source is {loc} LOC; review responsibility and split if ownership becomes clearer",
                 )
             )
-        elif loc > 250 and (
-            gate is None or gate.new_source not in {"split", "justified"}
-        ):
+        elif loc > 250:
             findings.append(
                 Finding(
                     "warning",
                     change.path,
-                    f"new production source is {loc} LOC; split or justify",
+                    f"new production source is {loc} LOC; review whether the responsibility is too broad",
                 )
             )
         if classes > 5:
@@ -107,31 +101,22 @@ def _check_source(
                     f"new source defines {classes} top-level classes",
                 )
             )
-        if classes > 5 and loc > 250 and (
-            gate is None or gate.new_source != "justified"
-        ):
+        if classes > 5 and loc > 250:
             findings.append(
                 Finding(
                     "warning",
                     change.path,
-                    "class-heavy source over 250 LOC should be split or justified",
+                    "class-heavy source over 250 LOC should be reviewed for ownership split",
                 )
             )
     if base is not None and max(_loc(base), loc) > 400 and loc - _loc(base) >= 40:
-        accepted = {
-            "wiring-only",
-            "accepted-for-slice",
-            "split-audit-required",
-            "split-required",
-        }
-        if gate is None or gate.hotspot_delta not in accepted:
-            findings.append(
-                Finding(
-                    "warning",
-                    change.path,
-                    "hotspot net +40 LOC should include a hotspot decision",
-                )
+        findings.append(
+            Finding(
+                "warning",
+                change.path,
+                "hotspot net +40 LOC should trigger an ownership/responsibility review",
             )
+        )
     return _is_structural(change, base, staged)
 
 

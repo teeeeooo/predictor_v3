@@ -10,27 +10,6 @@ import pytest
 from tools.agent_change_gate import evaluate_cached
 from tools.agent_change_gate_git import GitIndex
 
-VALID_GATE = """\
-change_gate:
-  new_source: small
-  hotspot_delta: none
-  ui_literal_exemption: none
-  reuse_commonization: checked
-"""
-
-VALID_RECORD_PREFIX = """\
-# UI Gate
-
-record:
-  date: 2026-07-10
-  topic: focused-ui-literal-gate
-  tags: ui, test
-  memory_review: no-change
-  memory_reason: focused gate fixture has no durable project memory
-
-"""
-
-
 def _git(repo: Path, *args: str) -> None:
     subprocess.run(
         ["git", *args], cwd=repo, check=True, capture_output=True, text=True
@@ -56,19 +35,6 @@ def _stage(repo: Path, path: str, source: str) -> None:
     _git(repo, "add", path)
 
 
-def _stage_report(repo: Path, gate: str = VALID_GATE) -> None:
-    path = (
-        "result_reports/records/2026-07/"
-        "2026-07-10-focused-ui-literal-gate.md"
-    )
-    _stage(repo, path, VALID_RECORD_PREFIX + gate)
-    _stage(
-        repo,
-        "result_reports/REPORT_INDEX.md",
-        f"| {chr(96)}{path}{chr(96)} |\n",
-    )
-
-
 def _errors(repo: Path) -> list[str]:
     return [
         f"{item.path}: {item.message}"
@@ -81,7 +47,7 @@ def _warnings(repo: Path) -> list[str]:
     return [
         f"{item.path}: {item.message}"
         for item in evaluate_cached(GitIndex(repo))
-        if item.severity == "warning"
+        if item.severity == "warning" and item.path != "structure"
     ]
 
 
@@ -91,7 +57,6 @@ def test_row_header_literal_in_production_ui_is_rejected(repo: Path) -> None:
         "apps/calculator/ui/new_surface.py",
         "def build(table):\n    return table(row_header_chars=18)\n",
     )
-    _stage_report(repo)
 
     assert any("row_header_chars" in error for error in _errors(repo))
 
@@ -102,21 +67,18 @@ def test_layout_token_owner_accepts_literal_definitions(repo: Path) -> None:
         "apps/calculator/ui/layout_constants.py",
         'TABLE_ROW_HEADER_CHARS = 18\nTABLE_BG = "#A1B2C3"\n',
     )
-    _stage_report(repo)
 
     assert not _errors(repo)
 
 
 def test_color_literal_in_production_ui_is_rejected(repo: Path) -> None:
     _stage(repo, "apps/calculator/ui/view.py", 'BACKGROUND = "#A1B2C3"\n')
-    _stage_report(repo)
 
     assert any("color" in error for error in _errors(repo))
 
 
 def test_phase_two_ui_literal_is_warning_only(repo: Path) -> None:
     _stage(repo, "apps/calculator/ui/view.py", "button.configure(width=20, padx=4)\n")
-    _stage_report(repo)
 
     assert not _errors(repo)
     warnings = _warnings(repo)
@@ -130,7 +92,6 @@ def test_phase_two_runtime_sentinel_values_do_not_warn(repo: Path) -> None:
         "apps/calculator/ui/view.py",
         "button.configure(width=0, height=1, padx=0, pady=1)\n",
     )
-    _stage_report(repo)
 
     assert not _errors(repo)
     assert not _warnings(repo)
@@ -138,7 +99,6 @@ def test_phase_two_runtime_sentinel_values_do_not_warn(repo: Path) -> None:
 
 def test_phase_two_named_color_is_warning_only(repo: Path) -> None:
     _stage(repo, "apps/calculator/ui/view.py", 'label.configure(background="white")\n')
-    _stage_report(repo)
 
     assert not _errors(repo)
     assert any("named color" in warning for warning in _warnings(repo))
@@ -155,7 +115,6 @@ def test_domain_constant_and_calculation_test_are_not_blocked(
     repo: Path, path: str, source: str
 ) -> None:
     _stage(repo, path, source)
-    _stage_report(repo)
 
     assert not _errors(repo)
 
@@ -180,7 +139,6 @@ def test_other_phase_one_ui_literals_are_rejected(
     repo: Path, source: str, expected: str
 ) -> None:
     _stage(repo, "apps/calculator/ui/view.py", source)
-    _stage_report(repo)
 
     assert any(expected in error for error in _errors(repo))
 
@@ -189,19 +147,25 @@ def test_checker_reads_staged_blob_not_worktree(repo: Path) -> None:
     path = "apps/calculator/ui/view.py"
     _stage(repo, path, "TOKEN = TABLE_ROW_HEADER_CHARS\n")
     (repo / path).write_text("table(row_header_chars=18)\n", encoding="utf-8")
-    _stage_report(repo)
 
     assert not _errors(repo)
 
 
-def test_structured_ui_literal_exemption_allows_reviewed_literal(repo: Path) -> None:
-    _stage(repo, "apps/calculator/ui/view.py", 'BACKGROUND = "#A1B2C3"\n')
-    _stage_report(
-        repo,
-        VALID_GATE.replace(
-            "ui_literal_exemption: none",
-            "ui_literal_exemption: approved-for-slice",
-        ),
+def test_local_manifest_ui_literal_exemption_allows_reviewed_literal(repo: Path) -> None:
+    path = "apps/calculator/ui/view.py"
+    _stage(repo, path, 'BACKGROUND = "#A1B2C3"\n')
+    git_dir = repo / subprocess.run(
+        ["git", "rev-parse", "--git-dir"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (git_dir / "agent_task_manifest.yml").write_text(
+        "allowed_paths:\n"
+        f"  - {path}\n"
+        "ui_literal_exemption: approved-for-slice\n",
+        encoding="utf-8",
     )
 
     assert not _errors(repo)

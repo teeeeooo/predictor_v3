@@ -22,6 +22,8 @@ over historical path literals inside a moved body.
 
 | Record | Status | Reason | Read when |
 | --- | --- | --- | --- |
+| `2026-09-05-astra-agent-harness-migration-design.md` | superseded | V2 moved generic behavior to operating-envelope, retired repo-local UI/design Skills, and retired active Result Record ceremony. | Reviewing the intermediate Astra migration. |
+| `2026-07-10-agent-harness-report-lifecycle-redesign.md` | superseded | Agent Harness V2 retired the active Result Record/Memory Review write-gate model while preserving historical evidence. | Reviewing the former report/memory lifecycle design. |
 | `2026-05-06-iso16358-2-hspf-core-boundary.md` | absorbed | ISO HSPF boundaries live in architecture/standard owners. | Auditing the original core boundary. |
 | `2026-05-10-iso16358-2-hspf-h8-routing-resolver-design.md` | absorbed | H-8 routing rules moved to ISO implementation owners. | Investigating original resolver intent. |
 | `2026-05-17-calculator-horizontal-table-input-ui.md` | absorbed | Table/input rules live in UI/UX owners. | Tracing the original matrix decision. |
