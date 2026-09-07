@@ -3,8 +3,8 @@
 ## Purpose
 
 This document is the compact active recall bank for long-running predictor_v3 work.
-It keeps only durable current decisions/invariants, cross-owner relationships,
-actual resume points, repeated risks, and unresolved questions.
+It routes durable lessons, cross-owner relationships, and past-dependent work.
+Current acceptance, holds, and next actions belong to `docs/WORK_PLAN.md`.
 
 ## Source Coverage
 
@@ -26,70 +26,70 @@ resolved, or stale wording is preserved under `result_reports/memory/archive/`.
 entries:
   - type: procedure
     topic: agent harness v2 recall and routing boundary
-    content: Generic execution behavior and reusable design/table/window workflows come from the deployed operating-envelope global harness. predictor_v3 AGENTS.md now owns only repository invariants and routing; calculator, ML/Predictor, and packaging remain repo-local Skills. Design interrogation/stress-testing uses the global upstream-derived grill-me Skill, while reusable table/window behavior uses global desktop-table-ui or desktop-window-lifecycle with predictor UI ownership under docs/ui_ux. Result Records and REPORT_INDEX are historical evidence, not required change artifacts. This seed is the hot recall index; durable why/no-repeat knowledge belongs in docs/decisions or docs/failures, and current truth is rechecked at the active owner.
+    content: "Global harness owns generic execution and reusable Skills; repository owners retain domain contracts. Mandatory Result Records and memory-write gates were retired; historical records remain evidence."
     keywords: [predictor_v3, operating-envelope, AGENTS.md, global skills, grill-me, desktop-table-ui, desktop-window-lifecycle, recall gate, decision record, failure record, historical Result Record]
     assertionStatus: verified
     source: AGENTS.md; ACTIVE_DOCUMENTS.md; docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md; docs/agent_workflows/AGENT_CHANGE_GATES.md; docs/decisions/2026-09-07-agent-harness-v2.md; docs/designs/2026-09-07-astra-agent-harness-v2-migration.md
 
   - type: decision
     topic: architecture and UI owner boundary
-    content: New responsibility stays with an explicit Model/Service-or-Controller/Shell-or-Adapter/View/Policy owner; app entrypoints remain thin and cross-layer dependency direction is preserved. docs/ui_ux is the portable UI/UX owner root, and table/window/input-result behavior uses its shared contracts rather than feature-local reinvention.
+    content: "Locate responsibility at the existing Model/Service-or-Controller/Shell-or-Adapter/View/Policy owner before adding another mechanism. UI contracts live under docs/ui_ux; entrypoints remain thin."
     keywords: [clean architecture, owner boundary, thin entrypoint, UI UX, table contract]
     assertionStatus: verified
     source: docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md; docs/ui_ux/00_UI_UX_SYSTEM.md; AGENTS.md
 
   - type: decision
     topic: calculator standard ownership and unresolved ASNZS evidence
-    content: ISO 16358, KS C 9306, EN 14825, AHRI 210/240, Brazil composite capability, and compatibility routes remain separate calculator responsibilities with profile/config behavior owned locally; unsupported selectors/schemas fail fast rather than silently selecting another engine. Within AHRI 210/240, Appendix M SEER/HSPF and Appendix M1 SEER2/HSPF2 are physically separate seasonal-calculation owners with distinct profiles, typed capabilities, configs, and top-level Calculator surfaces. Initial Appendix M support is variable-speed non-ducted single-split; HSPF is Region IV minimum-DHR and follows the AHRI 210/240-2017 with Addendum 1 bin-by-bin COP path, with accepted published golden 10.45 and H42 excluded from the initial M surface. Historical AS/NZS case3 full-dump exact parity remains unresolved until matching workbook or full component-row reference evidence exists.
+    content: "Standards and compatibility routes have separate owners; Appendix M and M1 must not collapse into one seasonal engine. Historical AS/NZS case3 parity needs matching workbook/component-row evidence; use the linked owners and record for formula, initial scope, and golden details."
     keywords: [calculator, ISO16358, KS C 9306, EN14825, AHRI210240, Appendix M, Appendix M1, SEER, HSPF, Brazil CSPF, ASNZS]
     assertionStatus: verified
     source: .agents/skills/calculator/SKILL.md; docs/architecture/project_architecture.md; result_reports/records/2026-09/2026-09-02-ahri-210-240-m-seer-hspf.md; result_reports/legacy/summaries/054_summary-calculator-ui-iso-separation.md; result_reports/legacy/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md
 
   - type: decision
     topic: Train Predict runtime and application boundary
-    content: app_train.py and app_predict.py stay separate thin entrypoints. Train/Predict build runtime-neutral DTO/usecase/port boundaries and inject PySide6 adapters from composition roots; controllers do not own concrete toolkit/process adapters. Predict retains one canonical session/runtime-generation authority and Train owns explicit execution requests/snapshots.
+    content: "Train/Predict use runtime-neutral DTO/usecase/port boundaries with PySide6 adapters injected by composition roots. Predict has one session/runtime-generation authority; Train owns explicit execution requests/snapshots."
     keywords: [Train, Predict, PySide6, execution port, canonical session, runtime generation]
     assertionStatus: verified
     source: AGENTS.md; docs/architecture/pyside6_train_predict_architecture.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md
 
   - type: decision
     topic: Data Definition Data Mapping and ML compatibility ownership
-    content: The canonical Data Definition/runtime generation is the user-facing Feature/Target definition owner; schema.csv/features.csv and MODEL_REGISTRY/COLUMNS are generated or compatibility projections, not independent writable SSOTs. Train-required raw headers are the current generation's active `ml_name` contract. Data Mapping owns concrete `mapping.json` values and saved runtime mapping; the legacy wide mapping source is bootstrap-only and must enter a validated unsaved draft rather than becoming a permanent general import contract or auto-writing mapping.json. Current onboarding work must expose a Training Header Template/reference workflow and a missing-mapping bootstrap/review/export/import/Save path, while remaining static compatibility dependencies are audited before source mutation.
+    content: "Data Definition/runtime generation owns Feature/Target and active ml_name truth; schema.csv/features.csv and MODEL_REGISTRY/COLUMNS are projections. Legacy-wide Mapping conversion is bootstrap-only and enters an unsaved reviewable draft; explicit Save owns publication."
     keywords: [Data Definition, Data Mapping, ml_name, training header, features.csv, mapping.json, legacy wide, onboarding]
     assertionStatus: verified
     source: AGENTS.md; docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/workflows/ml_feature_catalog_workflow.md; docs/designs/2026-07-14-train-admin-phase-1-mapping-data-foundation.md; docs/WORK_PLAN.md
 
   - type: error
     topic: Data Mapping macOS accessibility interaction risk
-    content: Native macOS/AppKit accessibility hierarchy reads have reproducibly crashed during Data Mapping Computer Use table interaction. Automated owner tests and safe native rendering do not prove those physical interaction scenarios; avoid the known AX table path unless a separately scoped acceptance method is available.
+    content: "Native AppKit accessibility hierarchy reads reproducibly crashed during Data Mapping table interaction. Owner tests and native rendering do not prove that physical interaction path; consult the linked failure evidence before choosing an acceptance method."
     keywords: [Data Mapping, macOS, AppKit, accessibility, Computer Use, SIGSEGV]
     assertionStatus: verified
     source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2bc-native-blocker.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md
 
   - type: decision
     topic: Train model lifecycle promotion and experiment boundary
-    content: Train/Admin Phase 5 is closed. Candidate publication, run/analysis evidence, Active promotion/recovery, experiment/campaign execution, confirmation recovery, migration/retention preview, and deployment export remain distinct lifecycle responsibilities. Active promotion is explicit trusted-user authority; automatic promotion and production mutation are excluded. Complete terminal/Candidate evidence may replay, while incomplete confirmation recovery follows isolated abandon-and-restart semantics without mixing partial attempts.
+    content: "Candidate publication, Active promotion, experiment execution, recovery, and export have separate authority/lifetimes. Incomplete confirmation recovery abandons and restarts rather than mixing attempts; replay of complete evidence does not authorize automatic promotion."
     keywords: [Train, Phase 5, Candidate, Active, promotion, experiment, confirmation, recovery]
     assertionStatus: verified
     source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; docs/archive/project_log/2026-07/project_log_2026-07_part01_2026-07-29_to_2026-07-26.md
 
   - type: decision
     topic: Windows persistence publication and runtime-generation invariants
-    content: Windows source-runtime repairs through PR #56 preserve the same logical Candidate/Active/run-evidence, Deployment Export, and runtime-generation publication contracts while using Windows-safe path-based durability/containment. Runtime generation persists portable `/` bundle identities, validates separator-only legacy metadata read-only, rejects unsafe Generation IDs, reconstructs only exact matching incomplete bootstrap residue, and contains mutation against path substitution/reparse redirection. Native Windows 11 Enterprise has now directly confirmed affected-state recovery and clean-state Train startup; PR #57 Result Review alignment is also natively confirmed. Full acceptance remains open because real Train execution through Candidate publication and the remaining application paths are still required.
+    content: "Preserve portable bundle identities and containment across Windows path handling. Separator-only legacy metadata is validated read-only; incomplete bootstrap recovery requires matching identity, and path substitution/reparse redirection must not escape containment."
     keywords: [Windows, persistence, Deployment Export, runtime generation, bundle identity, bootstrap recovery, containment]
     assertionStatus: verified
     source: result_reports/records/2026-08/2026-08-06-windows-model-lifecycle-persistence-compatibility.md; result_reports/records/2026-08/2026-08-06-windows-model-lifecycle-substitution-safety-correction.md; result_reports/records/2026-08/2026-08-06-windows-deployment-export-portability.md; result_reports/records/2026-08/2026-08-06-windows-runtime-generation-file-sync-compatibility.md; result_reports/records/2026-08/2026-08-06-windows-runtime-generation-identity-bootstrap-recovery.md; result_reports/records/2026-08/2026-08-06-windows-runtime-generation-containment-correction.md
 
   - type: decision
     topic: Predict Target authority and Result Review contract
-    content: Predict runtime Target authority comes from the validated generation/runtime, not caller-coherent metadata. Active compatibility remains full-contract while each Case derives only its requested Target subset from canonical raw capacity presence before preprocessing; not-requested Targets project N/A rather than fabricated failures. Result Review is a read-only presentation over the canonical session with execution-pinned provenance, stable-identity specification summary, typed outcomes, and existing stale/unavailable/copy/CSV semantics.
+    content: "Predict Target authority comes from the validated generation; each Case derives requested Targets from raw capacity presence before preprocessing. Not-requested Targets project N/A, while Result Review remains a read-only projection with execution-pinned provenance."
     keywords: [Predict, Target authority, requested subset, Result Review, provenance, stale, unavailable]
     assertionStatus: verified
     source: result_reports/records/2026-08/2026-08-01-predict-runtime-target-authority-provenance-recovery.md; result_reports/records/2026-08/2026-08-02-case-scoped-target-applicability.md; result_reports/records/2026-08/2026-08-02-predict-result-review-projection.md; docs/architecture/pyside6_train_predict_architecture.md
 
   - type: procedure
-    topic: current execution resume point
-    content: The bounded Windows repair set is closed through PR #63, so the exact next gate is one continuous Native Windows source-runtime acceptance pass: protected legacy Mapping bootstrap confirmation as needed, real Train through successful Candidate publication, Predict, Experiment/headless CLI, Calculator, then Deployment Export. Native affected-state recovery, clean-state Train startup, and Result Review alignment are already confirmed and should not be repeated without material invalidation. Do not create another Windows repair/audit gate absent new acceptance evidence. Standard Request Product/Owner Decision and Multi-point Predict → Calculate remain held until native Windows acceptance closes; Result Review XLSX remains DEFER.
+    topic: execution resume and evidence reuse routing
+    content: "Resolve the current acceptance sequence, holds, and reusable native evidence from docs/WORK_PLAN.md. Prior Windows repair cycles taught that already-accepted owner evidence should be reused until materially invalidated; a new repair needs a demonstrated defect, not only an unfinished acceptance pass."
     keywords: [resume point, Windows acceptance, Candidate publication, headless CLI, Standard Request, Multi-point Predict Calculate]
     assertionStatus: verified
     source: docs/WORK_PLAN.md; project_log.md

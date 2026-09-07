@@ -52,7 +52,7 @@ Do not write memory for routine file/test lists, commit/push status, completed-s
 
 ## Memory seed
 
-Keep the seed dense and navigational. Each active topic should contain a compact statement, useful keywords, current status, and source pointers.
+Keep the seed dense and navigational. Each active topic should contain one or two durable reminders, useful keywords, and current-owner/evidence pointers. Resolve current acceptance, holds, and next actions from `docs/WORK_PLAN.md`; do not duplicate their status or ordered execution plan in the seed.
 
 Update or supersede the smallest relevant topic. Retire stale active wording to `result_reports/memory/archive/` only when preserving the old wording has future value. Historical Result Records are never rewritten to match current memory.
 
