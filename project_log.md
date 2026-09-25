@@ -45,6 +45,10 @@
   them. Current toolkit choices remain unchanged.
 - Owners: `docs/ui_ux/README.md` and the temporary bindings in
   `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`.
+- Window policy consolidation moves reusable geometry/refit procedure to the
+  global window Skill reference; `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`
+  retains Predictor adoption, current implementation limits, and acceptance.
+  Product behavior remains temporarily fixed.
 
 ## 2026-09-07 — Agent Harness V2 global/repo boundary
 
