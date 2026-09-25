@@ -23,7 +23,7 @@ Use it only when ownership is not already clear from the task or matching Skill.
 | Durable chronology | `project_log.md` | latest relevant entries only |
 | Mechanical change gates | `docs/agent_workflows/AGENT_CHANGE_GATES.md` | affected checker/hook and focused tests |
 | Architecture | `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md` | nearest architecture owner and design evidence |
-| UI | `docs/ui_ux/README.md` | matching UI/UX owner; global table/window Skill when applicable |
+| UI | `docs/ui_ux/README.md` | predictor adoption and temporary behavior baseline; matching owner/binding; global table/window Skill when applicable |
 | Calculator/standards | `.agents/skills/calculator/SKILL.md`, `docs/README.md` | matching standard/region owner and focused evidence |
 | ML/Predictor | `.agents/skills/ml-predictor/SKILL.md` | architecture, knowledge, or DEV-smoke owner named there |
 | Packaging/dependencies | `.agents/skills/packaging/SKILL.md`, `docs/development/dependencies.md` | `docs/PACKAGING.md` and app-scoped requirements |

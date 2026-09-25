@@ -1,11 +1,24 @@
 # UI / UX Documentation Index
 
-This folder is a portable UI/UX rule set. It is intended to be reusable when
-starting or adopting another engineering/data application, rather than being
-tied to one project, screen, or GUI library.
+This folder owns the UI/UX contracts adopted by predictor_v3. Other projects
+may reuse relevant guidance through explicit adoption; this copy does not
+automatically govern them. Generic table/window workflows remain in the global
+`desktop-table-ui` and `desktop-window-lifecycle` Skills; this folder owns the
+project adoption, surface obligations, and toolkit bindings.
 
 `00_UI_UX_SYSTEM.md` is the root SSOT. This README is only a navigation and
 adoption guide; it does not replace any owner document.
+
+## Temporary behavior baseline
+
+During the 2026-09-25 policy-only consolidation, existing UI behavior is
+temporarily fixed as the baseline. This is not a claim that every current
+behavior passes the generic contract, and it is not a permanent UX decision.
+Policy cleanup must not change product behavior. A later explicitly scoped
+behavior change may revise this baseline with its owning design and checks.
+See [the table bindings](03_SPREADSHEET_TABLE_UX_CONTRACT.md#temporary-surface-bindings)
+for the observed differences and [toolkit policy](01_TOOLKIT_SELECTION_POLICY.md)
+for the retained toolkit choices.
 
 ## Document Roles
 

@@ -2,8 +2,8 @@
 
 ## Role and scope
 
-- This document is the **toolkit choice policy** shared by every
-  desktop project in this organization.
+- This document owns **predictor_v3 toolkit adoption**. Its comparison
+  guidance can be reused elsewhere only through that project's own decision.
 - It tells the agent and the reviewer which UI toolkit to use for a
   given screen and when a toolkit change must go through a design
   gate.
@@ -13,10 +13,12 @@
 
 ## 1. Default policy
 
-- **New** desktop UI with editable, table-heavy screens uses the approved
-  toolkit for that application. If no project-specific design gate exists,
-  **legacy Qt binding** remains the historical default.
-- `predictor_v3` Train/Predict is an approved exception: current Train/Predict
+- During policy consolidation, retain Tkinter for Calculator and PySide6 for
+  Train/Predict as the [temporary baseline](README.md#temporary-behavior-baseline).
+- New screens use their application's approved toolkit. The legacy Qt
+  comparison below is historical guidance, not an automatic default for a new
+  project or permission to change the current toolkit.
+- Current Train/Predict
   UI targets PySide6 under `apps/predict/` and `apps/train/`; the former legacy
   Qt `ui/` path is retired and must not be restored as a production dependency.
 - **Existing** Tkinter apps stay on Tkinter and follow
@@ -29,9 +31,9 @@
 
 ## 2. Choose legacy Qt binding when
 
-legacy Qt binding is the right default if **any** of the following apply to the
-new app or new screen and there is no project-specific approved toolkit
-decision:
+Historically, the following requirements motivated the legacy Qt choice.
+For a new application they are comparison criteria; an explicit project
+decision owns the actual toolkit:
 
 - The screen is dominated by an editable, spreadsheet-like table
   (multi-row, multi-column, with copy / paste / undo / navigation).
@@ -46,9 +48,9 @@ decision:
 - The app is starting fresh and there is no installed Tkinter user
   base to disrupt.
 
-When the answer is yes to any of these and no newer design gate supersedes it,
-use legacy Qt binding and follow
-`adapters/PYQT_TABLE_IMPLEMENTATION.md` for table-shaped surfaces.
+When a project explicitly selects the legacy Qt binding, use
+`adapters/PYQT_TABLE_IMPLEMENTATION.md` for its table-shaped surfaces.
+Read only the adapter relevant to the application being changed.
 
 ## 3. Keep or choose Tkinter when
 

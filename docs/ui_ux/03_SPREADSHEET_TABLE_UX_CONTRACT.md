@@ -2,9 +2,9 @@
 
 ## Role and scope
 
-- This document is the **toolkit-agnostic UX contract** for every
-  spreadsheet-like (multi-row, multi-column, editable) table surface
-  in any project in this organization.
+- This document is the **toolkit-agnostic table baseline adopted by
+  predictor_v3**, with the surface bindings below. Other projects must
+  explicitly adopt it; this repository does not govern their tables.
 - It describes what the user sees and does, not how the toolkit
   implements it.
 - Framework-specific rules live in:
@@ -33,16 +33,34 @@ For the `predictor_v3` rule that shapes repeated input/result data into a
 matrix table or summary result surface in the first place, see
 `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
 
+## Temporary surface bindings
+
+For this policy-only consolidation, existing product behavior is temporarily
+fixed as described in [the root baseline](README.md#temporary-behavior-baseline).
+The following observed bindings take precedence over conflicting generic clauses
+in this document during consolidation. They do not certify overall UX parity or
+permanently settle future interaction design.
+
+| Surface | Temporarily retained behavior | Owner and evidence |
+| --- | --- | --- |
+| Train Data Mapping | One contiguous rectangular selection; no Ctrl-click disjoint ranges. Paste exceeding available rows or columns is rejected as a whole, without changing draft, selection, or undo history. | [Table view](../../apps/train/ui/data_mapping/table_view.py), [overflow/selection regression](../../tests/apps/train/ui/data_mapping/test_audit_selection_overflow.py). |
+| Predict Input | Paste creates required overflow rows through the application bulk transaction; it does not silently discard those values. | [Approved input authoring](../designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md#3-approved-input-authoring), [UI adapter](../../apps/predict/ui/bulk_paste_adapter.py), [application owner](../../apps/predict/application/bulk_paste.py). |
+
+Other existing table behavior is unchanged by policy cleanup. Record unresolved
+contract differences rather than changing implementations to make this document
+appear consistent. Later explicitly scoped behavior work can revise the relevant
+binding with its owner and focused validation.
+
 ## Completion gate
 
-This document is the source of truth for table UX completion across
-toolkits. Toolkit adapters describe how to implement the contract; they are
-not alternate rule sources.
+This document, including its surface bindings, owns table UX completion for
+the adopted predictor_v3 surfaces. Toolkit adapters describe implementation;
+they do not silently introduce alternate product rules.
 
 Concrete implementations and external examples may be used as evidence for
 the desired interaction feel. They do not replace this toolkit-neutral
-contract, and they do not become owner docs. The same interaction target
-applies to Tkinter, PySide, WPF, Web, and any future table-shaped surface.
+contract, and they do not become owner docs. An adopted interaction target
+applies across toolkits subject to the documented surface bindings.
 
 Before a new table-shaped UI or table adapter is treated as complete:
 
@@ -102,8 +120,8 @@ Toolkit-neutral parity checklist:
 
 Users come to every table with spreadsheet muscle memory (Excel,
 Google Sheets, Numbers). The table must respond the way a
-spreadsheet would for the actions below. Behaviors that diverge from
-this baseline are contract violations, not exceptions.
+spreadsheet would for the actions below. Undocumented divergence is a contract gap;
+the explicit temporary surface bindings above retain their current behavior.
 
 ## 2. Selection
 

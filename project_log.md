@@ -35,6 +35,17 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-09-25 — Policy consolidation temporary UI baseline
+
+- User-directed policy cleanup temporarily fixes current product behavior; it
+  does not approve interaction changes or certify generic table parity.
+- UI docs govern predictor adoption rather than other repositories. Retain
+  Data Mapping rectangle/overflow-rejection and Predict Input row-expansion
+  bindings while consolidating policy; future explicit behavior work can revise
+  them. Current toolkit choices remain unchanged.
+- Owners: `docs/ui_ux/README.md` and the temporary bindings in
+  `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`.
+
 ## 2026-09-07 — Agent Harness V2 global/repo boundary
 
 ### Decision

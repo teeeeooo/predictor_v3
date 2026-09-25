@@ -2,9 +2,9 @@
 
 ## Role and scope
 
-- This document is the **common UI/UX SSOT** shared by every desktop
-  project in this organization (SPOT, predictor_v3, and any future
-  desktop tool).
+- This document is the **UI/UX root contract adopted by predictor_v3**.
+  Other projects may explicitly adopt its reusable principles; this repository
+  does not impose policy on SPOT or future projects.
 - It describes UI/UX principles that are **toolkit-agnostic**. legacy Qt binding
   vs Tkinter implementation details do **not** belong here.
 - For toolkit choice, see `01_TOOLKIT_SELECTION_POLICY.md`.
@@ -24,15 +24,16 @@
 - For framework-specific table rules, see the documents under
   `adapters/`.
 
-This document wins when it conflicts with any single project's local
-UI notes. Project-specific deviations must be justified and documented
-inside the project, not by editing this file.
+Within predictor_v3 this root routes to the detailed owner documents below.
+Documented surface bindings own their specific deviations from the common
+baseline. Generic execution and reusable workflows remain with the global
+AGENTS/Skills. The [temporary behavior baseline](README.md#temporary-behavior-baseline)
+keeps policy consolidation from silently changing product behavior.
 
 ## 1. Purpose
 
-- Give every project a single, shared definition of what "good UX"
-  means for our desktop apps.
-- Let agents and reviewers apply the same standard everywhere.
+- Give predictor_v3 a shared definition of good UX across its surfaces.
+- Let agents and reviewers apply the adopted standard and documented bindings.
 - Reduce churn by separating principle (here) from implementation
   (adapters).
 
