@@ -58,6 +58,23 @@ Phase 1 rejects new staged production UI literals for known table/window/color p
 
 Phase 2 warns on likely repeated `width`, `height`, `padx`, `pady`, or named-color literals. Prefer an existing token/helper when it owns the same behavior; a deliberately local value does not require a durable report.
 
+The surface scan covers `apps/calculator/ui/`, `apps/train/ui/`,
+`apps/predict/ui/`, and the legacy `ui/` / `ui_tk/` roots. It inspects only
+added staged lines, not unchanged historical literals. Calculator's layout
+owner and existing token-file exclusions remain; `ui_common/visual_tokens.py`
+and `apps/common/ui/style.py` / `window_policy.py` are shared owners outside
+these surface roots. Consumers should reuse those owners, not copy values.
+
+Qt-style attribute calls to `resize`, `setMinimumSize`, `setMaximumSize`,
+`setFixedSize`, their Width/Height setters, `setContentsMargins`, `setSpacing`,
+`setHorizontalSpacing`, and `setVerticalSpacing` warn on direct numeric
+arguments other than 0/1. These warnings do not block a commit. Receiver types
+are not inferred; same-named methods can be candidates. Token references,
+computed expressions, nested `QSize` values, and CSS size declarations are not
+resolved by this minimal check. Existing six-digit hex-color errors still
+apply, including colors inside stylesheet strings. This is not a complete
+style or token-ownership validator.
+
 Domain/regulation values are not UI presentation literals.
 
 ## Hook Policy

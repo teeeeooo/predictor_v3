@@ -10,12 +10,20 @@ from typing import Sequence
 from tools.agent_change_gate_git import GitIndex, StagedChange
 from tools.agent_change_gate_models import Finding
 
-UI_SOURCE_ROOTS = ("apps/calculator/ui/", "ui/", "ui_tk/")
+UI_SOURCE_ROOTS = (
+    "apps/calculator/ui/", "apps/train/ui/", "apps/predict/ui/", "ui/", "ui_tk/",
+)
 LAYOUT_TOKEN_OWNER = "apps/calculator/ui/layout_constants.py"
 _COLOR_PATTERN = re.compile(r"#[0-9A-Fa-f]{6}\b")
 _GEOMETRY_PATTERN = re.compile(r"^\d+x\d+(?:[+-]\d+[+-]\d+)?$")
 _TABLE_SIZE_KEYWORDS = {"row_header_chars", "data_column_chars"}
 _PHASE2_SIZE_KEYWORDS = {"width", "height", "padx", "pady"}
+_QT_SIZE_METHODS = {
+    "resize", "setMinimumSize", "setMaximumSize", "setFixedSize",
+    "setMinimumWidth", "setMinimumHeight", "setMaximumWidth", "setMaximumHeight",
+    "setFixedWidth", "setFixedHeight", "setContentsMargins", "setSpacing",
+    "setHorizontalSpacing", "setVerticalSpacing",
+}
 _NAMED_COLORS = {
     "black",
     "blue",
@@ -96,6 +104,20 @@ def _literal_findings(tree: ast.AST) -> list[tuple[str, int, str]]:
         elif isinstance(node, ast.Call) and _call_name(node.func) == "geometry":
             if node.args and _is_geometry_string(node.args[0]):
                 found.add(("error", node.args[0].lineno, "window geometry"))
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in _QT_SIZE_METHODS
+        ):
+            # Attribute names are candidates, not inferred Qt receiver types.
+            # Use the literal's line so multiline calls respect staged additions.
+            for value in (*node.args, *(kw.value for kw in node.keywords)):
+                if (
+                    isinstance(value, ast.Constant)
+                    and type(value.value) in (int, float)
+                    and not _is_runtime_sentinel_number(value)
+                ):
+                    found.add(("warning", value.lineno, node.func.attr))
         elif isinstance(node, ast.Constant) and isinstance(node.value, str):
             if _COLOR_PATTERN.search(node.value):
                 found.add(("error", node.lineno, "color"))

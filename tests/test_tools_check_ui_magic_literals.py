@@ -169,3 +169,105 @@ def test_local_manifest_ui_literal_exemption_allows_reviewed_literal(repo: Path)
     )
 
     assert not _errors(repo)
+
+
+@pytest.mark.parametrize("root", ("apps/train/ui", "apps/predict/ui"))
+def test_pyside_roots_reject_new_inline_stylesheet_colors(repo: Path, root: str) -> None:
+    _stage(repo, f"{root}/view.py", 'view.setStyleSheet("color: #A1B2C3;")\n')
+    assert any("color" in error for error in _errors(repo))
+
+
+@pytest.mark.parametrize(
+    "call",
+    (
+        "view.resize(800, 600)",
+        "view.setMinimumSize(560, 440)",
+        "view.setMaximumSize(1200, 900)",
+        "view.setFixedSize(320, 200)",
+        "view.setMinimumWidth(520)",
+        "view.setMinimumHeight(150)",
+        "view.setMaximumWidth(520)",
+        "view.setMaximumHeight(150)",
+        "view.setFixedWidth(200)",
+        "view.setFixedHeight(40)",
+        "layout.setContentsMargins(8, 12, 8, 12)",
+        "layout.setSpacing(12)",
+        "layout.setHorizontalSpacing(8)",
+        "layout.setVerticalSpacing(8)",
+    ),
+)
+def test_qt_dimensions_and_spacing_warn_without_blocking(repo: Path, call: str) -> None:
+    _stage(repo, "apps/train/ui/view.py", call + "\n")
+    assert not _errors(repo)
+    assert _warnings(repo)
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "view.setMinimumSize(MIN_WIDTH, MIN_HEIGHT)\n",
+        'layout.setSpacing(style.spacing("space.sm"))\n',
+        'view.setStyleSheet(style.panel_stylesheet())\n',
+        "view.resize(width, height)\n",
+        "layout.setContentsMargins(0, 1, 0, 1)\n",
+        "view.setFixedWidth(True)\n",
+        "resize(800, 600)\n",  # Free functions are not Qt method candidates.
+    ),
+)
+def test_owned_values_and_non_candidates_do_not_warn(repo: Path, source: str) -> None:
+    _stage(repo, "apps/predict/ui/view.py", source)
+    assert not _errors(repo)
+    assert not _warnings(repo)
+
+
+@pytest.mark.parametrize(
+    "path",
+    (
+        "ui_common/visual_tokens.py",
+        "apps/common/ui/style.py",
+        "apps/common/ui/window_policy.py",
+        "apps/train/application/service.py",
+    ),
+)
+def test_shared_owners_and_application_logic_remain_outside_surface_scan(
+    repo: Path, path: str
+) -> None:
+    _stage(repo, path, 'COLOR = "#A1B2C3"\nview.resize(800, 600)\n')
+    assert not _errors(repo)
+    assert not _warnings(repo)
+
+
+def test_only_added_multiline_qt_argument_is_reported(repo: Path) -> None:
+    path = "apps/predict/ui/view.py"
+    _stage(repo, path, "view.setMinimumSize(\n    560,\n    440,\n)\n")
+    _git(repo, "commit", "-qm", "existing geometry")
+    _stage(repo, path, "view.setMinimumSize(\n    600,\n    440,\n)\n")
+    assert not _errors(repo)
+    warnings = _warnings(repo)
+    assert len(warnings) == 1
+    assert f"{path}:2:" in warnings[0]
+
+
+def test_existing_pyside_literals_are_not_retroactively_reported(repo: Path) -> None:
+    path = "apps/train/ui/view.py"
+    old = 'COLOR = "#A1B2C3"\nview.resize(800, 600)\n'
+    _stage(repo, path, old)
+    _git(repo, "commit", "-qm", "existing presentation")
+    _stage(repo, path, old + "label = title\n")
+    assert not _errors(repo)
+    assert not _warnings(repo)
+
+
+def test_cli_allows_qt_warning_and_rejects_pyside_color(repo: Path) -> None:
+    import sys
+
+    script = Path(__file__).resolve().parents[1] / "tools/check_agent_change_gate.py"
+    command = [sys.executable, str(script), "--cached", "--repo-root", str(repo)]
+    _stage(repo, "apps/predict/ui/view.py", "view.setMinimumSize(560, 440)\n")
+    result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "setMinimumSize" in result.stdout
+    _stage(repo, "apps/predict/ui/view.py", 'COLOR = "#A1B2C3"\n')
+    result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "color" in result.stdout

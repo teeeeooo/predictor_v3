@@ -107,10 +107,14 @@ through the configured owner.
   callers before creating another component/controller.
 - The existing [staged change gate](../agent_workflows/AGENT_CHANGE_GATES.md)
   uses [UI literal checks](../../tools/agent_change_gate_ui_literals.py).
-  It checks added lines in Calculator and legacy UI roots, with specific
-  hard errors and warnings; it is not a full token-ownership scanner and does
-  not currently cover `apps/train/ui/` or `apps/predict/ui/`. Passing it does
-  not prove complete visual adoption. Expanding this guard is separate work.
+  It checks added staged lines in Calculator, Train/Predict, and legacy UI
+  roots. Existing hex-color rules are errors; direct numeric arguments in
+  selected Qt sizing/spacing methods are warnings. Unchanged old literals are
+  not retroactively checked. Shared PySide bindings are
+  [style](../../apps/common/ui/style.py) and
+  [window policy](../../apps/common/ui/window_policy.py), outside the surface
+  scan. This is not a full token-ownership scanner: computed values, nested
+  `QSize`, and CSS sizes are not resolved. Passing does not prove full adoption.
 - Current table deviations are owned by
   [surface bindings](03_SPREADSHEET_TABLE_UX_CONTRACT.md#temporary-surface-bindings).
   Current toolkit decisions are owned by [toolkit policy](01_TOOLKIT_SELECTION_POLICY.md).

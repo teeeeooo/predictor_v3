@@ -54,6 +54,10 @@
   observed keyboard gaps stay explicit. Adapters route to current owners,
   and the adoption guide distinguishes optional controller structure from
   required table completion and records the existing guard's limited scope.
+- The follow-up guard slice extends staged surface checks to Train/Predict,
+  retains shared style/token owners, and warns on direct Qt sizing/spacing
+  literals. Existing screen code remains unchanged; full style analysis and
+  old-literal migration are outside this audit closure.
 
 ## 2026-09-07 — Agent Harness V2 global/repo boundary
 
