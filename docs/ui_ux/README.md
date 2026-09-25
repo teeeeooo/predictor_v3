@@ -25,9 +25,9 @@ for the retained toolkit choices.
 - `00_UI_UX_SYSTEM.md`: root common UI/UX principles.
 - `01_TOOLKIT_SELECTION_POLICY.md`: interface toolkit choice policy.
 - `02_DESIGN_TOKENS_AND_LAYOUT.md`: semantic token and layout contract.
-- `03_SPREADSHEET_TABLE_UX_CONTRACT.md`: portable table interaction contract.
-- `04_VISUAL_DESIGN_ARCHITECTURE.md`: portable visual design architecture.
-- `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`: portable repeated-input and
+- `03_SPREADSHEET_TABLE_UX_CONTRACT.md`: adopted table obligations and current surface bindings.
+- `04_VISUAL_DESIGN_ARCHITECTURE.md`: adopted visual roles and design direction.
+- `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`: adopted repeated-input and
   result-surface shaping rules.
 - `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`: how to bind the common rules into a
   concrete project.
@@ -40,8 +40,9 @@ for the retained toolkit choices.
 ## Portability Rule
 
 Specific project, library, screen, or standard names may appear as examples,
-evidence, or adoption notes. They are not principle scope boundaries unless the
-owner document explicitly says so.
+evidence, or adoption notes. Reusability does not extend this repository's
+policy authority: another project selects its own binding. Read only the
+adapter for the selected toolkit; legacy PyQt guidance is not a PySide6 default.
 
 Adapter documents are allowed to keep specific toolkit names because their job
 is to map portable contracts to a concrete implementation framework.

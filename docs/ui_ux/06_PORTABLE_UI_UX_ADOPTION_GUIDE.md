@@ -7,8 +7,15 @@ UI/UX architecture into another desktop application. It connects the
 common contracts to the project-owned code and verification needed to
 make the contracts enforceable.
 
-The guide is project-wide and toolkit-aware, but does not prescribe a
-particular product palette or widget library.
+In predictor_v3, this is an adoption guide under the
+[temporary behavior baseline](README.md#temporary-behavior-baseline). Another
+project chooses its own scope and binding before using it. Reusing this guide
+does not make all documents active in another project or select its toolkit.
+It does not prescribe a palette or widget library.
+
+Global `desktop-table-ui` and `desktop-window-lifecycle` Skills own reusable
+interaction/lifecycle workflows. The selected local documents own concrete
+keys, visual roles, surface shape, acceptance, and deliberate deviations.
 
 ## 1. Adoption kit
 
@@ -16,7 +23,7 @@ A usable adoption carries all of the following pieces together:
 
 | Part | Responsibility |
 | --- | --- |
-| UI/UX common docs | Behavior, table, layout, and surface principles that are shared across projects. |
+| Selected UI/UX owner docs | Locally adopted behavior, table, layout, and surface obligations; link reusable workflows to their global Skill owners. |
 | Project binding document | The selected toolkit, supported surfaces, deliberate deviations, and rollout order for the adopting project. |
 | Token owner file | Concrete color, typography, spacing, and state values used by the project's UI widgets. |
 | Toolkit adapter | Mapping from the common contracts to framework layout, focus, validation, and interaction mechanisms. |
@@ -64,9 +71,12 @@ A result component should expose compact summary table roles and status
 feedback without requiring a raw output dump. Result and input
 components should share the same visual-value ownership rule.
 
-Excel-like behavior and graph/detail surfaces are optional modules in
-the adoption kit. They may be implemented in later phases without
-moving visual value ownership back into individual widgets.
+A separate interaction-controller module is optional; the required table
+behavior is not optional once a surface is declared table-complete under
+[the table completion gate](03_SPREADSHEET_TABLE_UX_CONTRACT.md#completion-gate).
+An incremental component may be incomplete, provided its missing behavior is
+reported. Graph/detail remains conditional on the product flow. Neither kind
+of staging moves visual-value ownership back into individual widgets.
 
 ## 4. Minimal guard
 
@@ -84,6 +94,26 @@ complete style system:
 The guard does not inspect every numeric literal and does not decide a
 project's palette. Its purpose is to keep new visual values flowing
 through the configured owner.
+
+### Current Predictor owners and guard limits
+
+- Concrete semantic values: [visual tokens](../../ui_common/visual_tokens.py).
+  Calculator's [layout constants](../../apps/calculator/ui/layout_constants.py)
+  and [theme adapter](../../apps/calculator/ui/theme.py) provide local bindings.
+  Document vocabulary is not an exact inventory of runtime token keys.
+- Tk table surface and interaction: [MetricInputTable](../../apps/calculator/ui/metric_input_table.py),
+  [TkTableController](../../apps/calculator/ui/table/controller.py), and
+  [surface protocol](../../apps/calculator/ui/table/surface.py). Inspect current
+  callers before creating another component/controller.
+- The existing [staged change gate](../agent_workflows/AGENT_CHANGE_GATES.md)
+  uses [UI literal checks](../../tools/agent_change_gate_ui_literals.py).
+  It checks added lines in Calculator and legacy UI roots, with specific
+  hard errors and warnings; it is not a full token-ownership scanner and does
+  not currently cover `apps/train/ui/` or `apps/predict/ui/`. Passing it does
+  not prove complete visual adoption. Expanding this guard is separate work.
+- Current table deviations are owned by
+  [surface bindings](03_SPREADSHEET_TABLE_UX_CONTRACT.md#temporary-surface-bindings).
+  Current toolkit decisions are owned by [toolkit policy](01_TOOLKIT_SELECTION_POLICY.md).
 
 ## 5. Reference evidence
 

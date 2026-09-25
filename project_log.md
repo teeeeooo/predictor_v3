@@ -49,6 +49,11 @@
   global window Skill reference; `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`
   retains Predictor adoption, current implementation limits, and acceptance.
   Product behavior remains temporarily fixed.
+- Table/visual/adoption review keeps concrete interaction, token, and matrix
+  obligations local. The Tk paste binding now reflects raw-text acceptance;
+  observed keyboard gaps stay explicit. Adapters route to current owners,
+  and the adoption guide distinguishes optional controller structure from
+  required table completion and records the existing guard's limited scope.
 
 ## 2026-09-07 — Agent Harness V2 global/repo boundary
 

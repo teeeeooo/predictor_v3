@@ -2,8 +2,9 @@
 
 ## Purpose
 
-This document is the portable owner for shaping repeated structured input and
-user-facing result output into coherent surfaces.
+This document owns predictor_v3's adopted rules for shaping repeated structured
+input and user-facing result output into coherent surfaces. Other projects may
+explicitly adopt relevant guidance; this copy does not govern them.
 
 Repeated measurements, comparisons, or conditions are not rendered as
 scattered label-entry forms. They are normalized into matrix tables with
@@ -12,7 +13,7 @@ they are presented as summary result surfaces.
 
 ## Scope
 
-- Applies across single-case calculation screens, prediction workflows,
+- Applies across predictor_v3 single-case calculation screens, prediction workflows,
   training/model-operation workflows, batch workflows, and future structured
   input/result surfaces.
 - Governs input/result **surface shape** and the decision to use a matrix or
@@ -20,6 +21,11 @@ they are presented as summary result surfaces.
 - Does not prescribe metric navigation (e.g., sub-tabs or segmented controls),
   interface widget APIs, visual token values, domain schemas, model schemas,
   or result computation.
+
+The [temporary behavior baseline](README.md#temporary-behavior-baseline) applies to
+existing surfaces, including layout, matrix orientation, validation, and input
+state lifetime. The criteria below are adopted targets, not a declaration of
+current compliance or permission to reshape existing screens.
 
 ## Relationship to Existing UI/UX SSOT
 
@@ -73,8 +79,9 @@ across comparable items.
 - Prefer the higher-comparison axis as columns when it keeps comparison
   compact and readable.
 - Orientation may change for screen width, row count, or entry-flow reasons.
-  A deliberate departure from the preferred orientation must be recorded in
-  the design record or result report.
+  A deliberate departure from the preferred orientation must be explained in
+  the owning design or task evidence. This does not require a new historical
+  Result Record; follow [document lifecycle](../agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md).
 
 ## Axis Selection Heuristics
 

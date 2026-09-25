@@ -3,8 +3,8 @@
 ## Role and scope
 
 - This document defines **design tokens** (color, typography,
-  spacing) and **layout rules** that apply to every desktop project
-  in this organization.
+  spacing) and **layout rules** adopted by predictor_v3. Other projects
+  select their own binding; this copy does not govern them.
 - Tokens here are **names**, not final hex codes. Each project may
   bind these names to concrete values in its own theme module. Until
   a project commits a palette, the names are the contract.
@@ -14,10 +14,16 @@
   neutral-first visual philosophy, see
   `04_VISUAL_DESIGN_ARCHITECTURE.md`; this document continues to own
   token and layout naming.
-- For `predictor_v3`, `ui_common/visual_tokens.py` is the active
-  toolkit-neutral semantic token owner for upcoming PySide6 Predict/Train
-  visual parity work. It does not apply styles by itself; concrete PySide6
-  styling belongs in a later adapter/surface slice.
+- [Shared visual tokens](../../ui_common/visual_tokens.py) own concrete semantic
+  values. Calculator consumes them through [layout constants](../../apps/calculator/ui/layout_constants.py)
+  and [the Tk theme](../../apps/calculator/ui/theme.py). This does not establish
+  full Train/Predict visual adoption or parity.
+
+The [temporary behavior baseline](README.md#temporary-behavior-baseline) applies:
+this document does not authorize restyling, token-value changes, or geometry fixes.
+Names below are design vocabulary, not a promise of identically named Python
+lookup keys. Inspect the concrete owner before using a role; do not invent an
+alias or rename an existing key to match this document.
 
 ## 1. Color tokens
 
@@ -174,9 +180,11 @@ Rules:
   visible caps, and preferred visible ratios are layout policy values.
   They must not be owned as raw numbers inside component or app shell
   modules.
-- Toolkit-neutral placement, auto-fit, multi-monitor, viewport, and
-  scroll behavior policy is owned by
-  `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
+- [Window adoption](07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md) owns Predictor
+  placement constraints and current implementation limits; the global
+  `desktop-window-lifecycle` geometry/refit reference owns the reusable workflow.
+  The steps below retain local sizing acceptance and toolkit safety details,
+  not a second reusable procedure or a claim of native-platform acceptance.
 - Toolkit implementations place these values in a named layout owner.
   For the current Tkinter Calculator, use
   `apps/calculator/ui/layout_constants.py` together with shared visual tokens in

@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document is the portable visual design architecture owner for
-engineering and data-work applications. It translates visual inspiration into
-interface rules without replacing the common UI/UX, interface selection,
+This document owns the visual design architecture adopted by predictor_v3.
+Other engineering/data applications may explicitly adopt relevant principles.
+It translates visual inspiration into interface rules without replacing the common UI/UX, interface selection,
 token/layout, or spreadsheet behavior contracts.
 
 ## Source Inspiration
@@ -23,15 +23,21 @@ token/layout, or spreadsheet behavior contracts.
 
 ## Scope
 
-- Applies across engineering/data application surfaces that need compact,
-  structured, task-focused visual design.
+- Applies to predictor_v3 surfaces that need compact, structured, task-focused
+  visual design. Examples from other projects are reusable evidence only.
 - Governs visual philosophy and semantic visual roles. It does not choose a
   GUI framework or prescribe widget implementation.
-- Works with `00_UI_UX_SYSTEM.md` for global UX principles,
+- Works with `00_UI_UX_SYSTEM.md` for the adopted UX principles,
   `02_DESIGN_TOKENS_AND_LAYOUT.md` for token/layout naming, and
   `03_SPREADSHEET_TABLE_UX_CONTRACT.md` for table interaction behavior.
 - `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` concretizes this
   architecture's table-first/result-surface direction for repeated data.
+
+The [temporary behavior baseline](README.md#temporary-behavior-baseline) preserves
+current styling during policy consolidation. Semantic-role inventory and future
+adoption are not approval to recolor or rebuild current surfaces. Concrete
+values and runtime key names remain with the owners in
+[the token/layout contract](02_DESIGN_TOKENS_AND_LAYOUT.md).
 
 ## Design Philosophy
 
