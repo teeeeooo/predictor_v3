@@ -13,10 +13,11 @@
 - It does **not** describe legacy Qt binding behavior. For legacy Qt binding, see
   `PYQT_TABLE_IMPLEMENTATION.md`.
 
-Tkinter is **not** the default toolkit for new table-heavy desktop
-apps. See `../01_TOOLKIT_SELECTION_POLICY.md`. This adapter exists
-because existing Tkinter apps must keep meeting the common UX
-baseline without being forced into a toolkit migration.
+Predictor Calculator retains Tkinter; Train/Predict retain PySide6 under
+[toolkit policy](../01_TOOLKIT_SELECTION_POLICY.md). Neither this adapter nor
+its historical comparisons select a toolkit for another project. The
+[temporary baseline](../README.md#temporary-behavior-baseline) preserves current
+behavior and keeps observed gaps distinct from table completion.
 
 Before choosing an Entry grid or Treeview for `predictor_v3`, determine the
 input/result surface shape under
@@ -76,8 +77,8 @@ Tkinter is the implementation, not an excuse to drop UX baseline.
   `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` (including its selection/edit
   state machine, Ctrl+C / Ctrl+V TSV, clear, undo, navigation, distinct cell
   states, and invalid display) applies here too.
-- These behaviors are not free in Tkinter. You must implement them
-  yourself; see §4.
+- These behaviors are not native Tkinter spreadsheet primitives. Reuse the
+  current foundation below; §4 describes its adapter responsibilities.
 
 New Tkinter table surfaces must pass this checklist before being treated as
 complete:
@@ -104,10 +105,12 @@ spreadsheet-style paste, undo, navigation, and replace-on-type. SPOT is not a
 source of truth, owner doc, dependency, vendor target, or copy target for
 `predictor_v3`.
 
-`predictor_v3` should build its own common Tk table foundation. New Tkinter
-table-shaped UI should use that foundation once it exists; until then, a new
-standalone controller must explain why the existing table foundation cannot be
-used and must list controller-level parity tests in task validation/evidence.
+The common foundation already exists: [MetricInputTable](../../../apps/calculator/ui/metric_input_table.py),
+[TkTableController](../../../apps/calculator/ui/table/controller.py), and the
+[surface protocol](../../../apps/calculator/ui/table/surface.py). Inspect the
+current surface and caller before extending it. A separate controller must
+explain why these owners cannot serve the surface and identify focused parity
+checks in task validation/evidence.
 This parity requirement does not create a separate report or memory-write artifact. Avoid creating independent Entry/Label-grid controllers for each feature.
 
 ## 4. Implementing the baseline on an Entry grid
@@ -165,13 +168,12 @@ call the controller's `refresh()` so the existing selection/edit state is
 reconciled with the new cell roles. This applies to the Appendix M single and
 batch table surfaces as well as the shared calculator binding.
 
-For this numeric auto-calculation surface, a paste is validated as one
-action before applying any values. If any pasted numeric cell is invalid,
-no cell is changed and no recalculation is scheduled. Inline invalid edits
-remain visible through the existing result-status path. This atomic paste
-policy is a **paste-specific deviation** from the common baseline, retained
-for the current `predictor_v3` binding to avoid partially updated automatic
-results; it does not change the selection/edit state machine.
+Paste semantics and observed interaction gaps are owned by the
+[Calculator surface binding](../03_SPREADSHEET_TABLE_UX_CONTRACT.md#temporary-surface-bindings).
+The current common controller writes raw text to editable cells rather than
+rejecting invalid numeric paste atomically. Do not restore the former atomic
+rejection description or change product behavior to satisfy it. Numeric
+validation and calculation remain with the surface/domain owner.
 
 ## 5. Cell states
 
@@ -224,32 +226,23 @@ results; it does not change the selection/edit state machine.
 
 ## 8. Reusable Tkinter reference lessons
 
-These are the Tkinter-side lessons worth carrying to every Tkinter
-project when reviewing existing implementation evidence:
+Use the existing local owners rather than maintaining another copy here:
 
-- A single fixed input must not stretch full width to fill a row.
-  Constrain its width and let the remaining space stay empty.
-- Multiple fixed inputs use a compact grid or wrap layout, not one
-  column of full-width fields.
-- The initial-value table should target 2–7 points visible on one
-  screen without scrolling. Past that range, prefer narrower entry
-  widths or in-table vertical scrolling over a window that grows
-  beyond the screen.
-- Avoid horizontal scrolling on the root window. Long content lives
-  inside a scrollable table or panel.
-- Long labels wrap to two lines or use an ellipsis; do not stretch
-  the column.
-- Every table column declares sensible readable sizing and stretch behavior;
-  do not freeze a responsive surface to a single pixel width.
-- Numeric values use the project's compact numeric formatter.
-- Progress dialogs paint before the calculation starts; failure
-  paths close them; completion paths give explicit feedback.
+- [Dynamic sizing](../02_DESIGN_TOKENS_AND_LAYOUT.md#7-dynamic-sizing-rules)
+  owns compact fixed inputs, the 2–7-point initial-value target, internal
+  overflow, long labels, column bounds, and compact numeric display. For larger
+  initial-value tables, prefer narrower entries or internal vertical scrolling.
+- [Surface architecture](../03_SPREADSHEET_TABLE_UX_CONTRACT.md#surface-architecture-requirements)
+  owns responsive table alignment; [window adoption](../07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md)
+  owns placement, root-scroll restrictions, and current geometry limitations.
+- [Progress and completion](../00_UI_UX_SYSTEM.md#6-progress-completion-and-error-feedback)
+  owns paint-before-work and terminal feedback; §6 above owns Tk event-loop
+  and conditional COM mechanics.
 
 ## 9. Forbidden patterns
 
-- Treating Tkinter as the **default** toolkit for new table-heavy
-  desktop apps. The default is legacy Qt binding under
-  `../01_TOOLKIT_SELECTION_POLICY.md`.
+- Choosing a toolkit from this adapter's historical comparisons instead of
+  the current application's approved binding in `../01_TOOLKIT_SELECTION_POLICY.md`.
 - Mixing Tkinter and legacy Qt binding widgets in the same process.
 - Dropping the Excel-like UX baseline ("Tkinter can't do it") as a
   justification. The baseline applies; the adapter shows how to
@@ -276,4 +269,4 @@ project when reviewing existing implementation evidence:
 - `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
 - `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — project-wide
   matrix/result surface-shaping rule applied before widget selection.
-- `PYQT_TABLE_IMPLEMENTATION.md` — legacy Qt binding equivalent for new apps.
+- `PYQT_TABLE_IMPLEMENTATION.md` — conditional legacy Qt binding reference.

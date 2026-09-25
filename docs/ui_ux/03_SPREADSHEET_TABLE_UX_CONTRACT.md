@@ -10,8 +10,9 @@
 - Framework-specific rules live in:
   - `adapters/PYQT_TABLE_IMPLEMENTATION.md`
   - `adapters/TKINTER_TABLE_ADAPTER.md`
-  - future toolkit adapters such as PySide or WPF, when those toolkits
-    are approved for a table surface
+  - PySide6 Train/Predict use their current local surface owners and bindings;
+    the legacy PyQt adapter is not their automatic implementation contract.
+    A dedicated document may be added when needed; WPF is not the current toolkit.
 - The historical reference at
   `_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` was a PyQt-only
   contract from a prior project. It is **source / history only**;
@@ -45,6 +46,14 @@ permanently settle future interaction design.
 | --- | --- | --- |
 | Train Data Mapping | One contiguous rectangular selection; no Ctrl-click disjoint ranges. Paste exceeding available rows or columns is rejected as a whole, without changing draft, selection, or undo history. | [Table view](../../apps/train/ui/data_mapping/table_view.py), [overflow/selection regression](../../tests/apps/train/ui/data_mapping/test_audit_selection_overflow.py). |
 | Predict Input | Paste creates required overflow rows through the application bulk transaction; it does not silently discard those values. | [Approved input authoring](../designs/2026-07-14-future-predict-ui-ux-overhaul-boundary.md#3-approved-input-authoring), [UI adapter](../../apps/predict/ui/bulk_paste_adapter.py), [application owner](../../apps/predict/application/bulk_paste.py). |
+| Calculator `MetricInputTable` + `TkTableController` (including Hong Kong inputs) | Paste writes raw text into editable cells; invalid numeric text is not rejected atomically at the paste layer. Read-only cells are excluded. Validation/calculation remains with the surface/domain owner. | [Controller](../../apps/calculator/ui/table/controller.py), [surface](../../apps/calculator/ui/metric_input_table.py), [paste regression](../../tests/test_ui_tk_metric_input_table_controller_parity.py), [Hong Kong caller regression](../../tests/test_ui_tk_hong_kong_cspf_controller_switch.py). |
+
+Source review also shows that the common Tk controller retains a single
+rectangle (no Ctrl-toggle set), keeps selection on selection-mode Esc, and
+provides explicit F2 edit entry without a separate same-cell/double-click
+edit-entry binding. These differ from the generic clauses below and remain
+unresolved interaction gaps under the temporary freeze, not parity passes.
+This is a bounded source observation, not a full per-surface runtime audit.
 
 Other existing table behavior is unchanged by policy cleanup. Record unresolved
 contract differences rather than changing implementations to make this document

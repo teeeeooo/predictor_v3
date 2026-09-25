@@ -22,6 +22,11 @@ For `predictor_v3`, select the input/result surface shape first under
 `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; this adapter governs the
 PyQt implementation of any resulting table surface.
 
+Current Train/Predict use PySide6. Read this legacy PyQt adapter only when an
+explicitly selected task needs that binding; it does not automatically govern
+PySide6 surfaces or authorize toolkit migration. Product behavior and temporary
+deviations remain with [the table contract](../03_SPREADSHEET_TABLE_UX_CONTRACT.md#temporary-surface-bindings).
+
 ## 1. Required widget pattern
 
 - **View**: `QTableView`. `QTableWidget` is **forbidden** for any
@@ -91,18 +96,12 @@ distinguishable in the diff even when they share helpers.
 
 ## 5. Copy / paste (Qt-side)
 
-- Clipboard format is **TSV**. Trailing `\n` after the last row is
-  allowed and ignored on paste.
-- Copy of a non-rectangular selection: either expand to the bounding
-  rectangle or reject the copy. Never emit jagged TSV.
-- Paste parses TSV. Non-TSV clipboard payload is rejected without
-  mutating any cell.
-- Pasted values go through the same validator used by the cell edit
-  path. Invalid pasted cells are marked but do not abort the paste.
-- Paste larger than selection: write outward from top-left; drop
-  out-of-bounds cells silently.
-- Paste smaller than selection: repeat a single-cell source to fill
-  the selection; do not auto-repeat a multi-cell source.
+Use [the table copy/paste contract](../03_SPREADSHEET_TABLE_UX_CONTRACT.md#4-copy-and-paste)
+and its surface bindings for TSV shape, anchor, range fill, overflow, and
+validation semantics. A trailing newline is allowed and ignored on paste.
+In particular, the baseline includes selected-range
+one-row fill; the adapter must not replace it with a blanket ban on repeating
+multi-cell sources. Keep Qt's edit/paste/cascade event paths distinct as in §4.
 
 ## 6. Model data, display data, and edit data
 
