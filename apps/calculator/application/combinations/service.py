@@ -29,7 +29,7 @@ def validate_candidate(candidate, point, row):
         except ValueError:
             raise ValidationError(f"{point.key} · 행 {row} · {field}: 양의 유한 숫자 필요") from None
         numbers.append(value)
-    return Measurement(candidate.id, candidate.label, *numbers)
+    return Measurement(candidate.id, candidate.label, *numbers, number=row)
 
 
 def preflight(session, adapter):

@@ -223,6 +223,9 @@ def test_pair_rectangles_metadata_and_column_identity(root):
         run = content.session.run
         assert run.succeeded == 15
         assert len({result.selections for result in run.results}) == 15
+        for result in run.results:
+            for key, index in zip(blocks, result.selections):
+                assert content.results.tree.set(str(result.ordinal), key) == f"#{index+1}"
         pinned = run.detail(run.results[0])
         block = blocks["35_full"]
         table = block.table

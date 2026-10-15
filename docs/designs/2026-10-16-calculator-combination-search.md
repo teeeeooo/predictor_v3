@@ -282,6 +282,9 @@ Power [W]         400      420
 - Each point has its own candidate count and numbering. One column is one
   stable candidate ID and a complete capacity/power pair. STD #1 and HALF #1
   are independent choices, not a pre-paired case. Three by two gives six runs.
+- Results show the original candidate column as `#n`, followed by its test name
+  when supplied. Pin that number before exclusions so detail/CSV can identify
+  the source column even after later input edits or deletions.
 - Keep both measurement rows adjacent. Candidate names remain editable through
   an optional test-information row; inclusion and validation appear in column
   headers and block summaries. Add/delete/include/exclude act on whole selected
@@ -318,8 +321,9 @@ Required fields:
 - `combination_id`, `rank`, `calculation_status`, `error_code`, `error_message`;
 - capability/profile/metric, climate/product/system type when applicable,
   `score_basis`, `score`, `score_units`, and available raw/published metrics;
-- one stable point-prefixed set of candidate ID, test label, numeric capacity,
-  power, and unit fields per independent point;
+- one stable point-prefixed set of candidate ID, `candidate_number` (the original
+  1-based column at execution time), test label, numeric capacity, power, and
+  unit fields per independent point;
 - standard summary/Rule/Final fields where applicable, and deterministic
   `context_json` for fixed inputs/options and resolved point-source metadata.
 
@@ -474,6 +478,12 @@ arbitrary cap override, or global UI redesign is included.
   modules. A macOS screenshot confirmed STD 3 candidate columns and HALF 5
   candidate columns together, both Capacity/Power rows, the 15-case completion
   count, ranking and action buttons.
+- Main integration review corrected unnamed result candidates showing internal
+  ID prefixes: results now show their pinned column numbers, with optional test
+  names, and CSV includes the same numbers. Excluded columns and later input
+  deletion retain the original run's numbering. The focused feature/application
+  boundary suite passed 65 tests, and all 4 native Tk integration tests passed.
+  A fresh macOS ISO 3×5 completion screenshot confirmed the numbered results.
 
 Verification limits: native Windows, Linux desktop, OS-generated keyboard and
 mouse interaction, multiple monitors and mixed DPI were not checked. The

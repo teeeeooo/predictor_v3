@@ -29,7 +29,7 @@ def export_rows(run, *, stale):
                       published=score.published if score else None)
         for point, pool, index in zip(snapshot.independent_points, snapshot.pools, row.selections):
             value = pool[index]
-            for key, data in (("candidate_id", value.id), ("label", value.label), ("capacity", value.capacity),
+            for key, data in (("candidate_id", value.id), ("candidate_number", value.number), ("label", value.label), ("capacity", value.capacity),
                               ("power", value.power), ("capacity_unit", point.capacity_unit), ("power_unit", "W")):
                 record[f"{point.key}.{key}"] = data
         if score:

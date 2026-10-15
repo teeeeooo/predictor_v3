@@ -62,6 +62,7 @@ class Measurement:
     label: str
     capacity: float
     power: float
+    number: int  # Candidate column at execution time, before exclusions.
 
 
 @dataclass(frozen=True)
