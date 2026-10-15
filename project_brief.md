@@ -31,10 +31,10 @@ decision.
 authoritative product, owner, compatibility, and independent-slice boundary for
 this workstream.
 
-An independent **Calculator combination calculation** feature is now specified
+An independent **Calculator combination calculation** feature is implemented
 for all currently exposed Calculator standards/profiles/products, with a
 10,000-combination cap, shared Tkinter candidate/result UI, ranking, and CSV
-export. Implementation is pending under
+export and pinned run provenance. Its governing specification is
 `docs/designs/2026-10-16-calculator-combination-search.md`. It remains within the
 Calculator owner and does not depend on or reopen the held Predict integration.
 

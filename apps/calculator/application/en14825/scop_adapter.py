@@ -224,6 +224,30 @@ class ScopAdapter:
             computed[key] = comp
         return computed
 
+    def build_tested_request(self, inputs, **settings):
+        """Build only Tested input, preserving the application W-to-kW boundary."""
+        from math import isfinite
+        settings = dict(settings)
+        climate = settings["climate"]
+        tbiv, tol = self.resolve_temperature_overrides(climate, settings.get("tbiv_temp_c"), settings.get("tol_temp_c"))
+        if tol > tbiv:
+            raise ValueError("TOL must be <= Tbiv")
+        settings.update(tbiv_temp_c=tbiv, tol_temp_c=tol)
+        required = self.resolve_point_availability(climate, tbiv, tol)["required_independent_points"]
+        points = {}
+        for key in required:
+            inp = inputs[key]
+            pair = (inp.tested_capacity, inp.tested_power)
+            if any(value is None or not isfinite(value) or value <= 0 for value in pair):
+                raise ValueError(f"{key}: complete positive Tested capacity/power required")
+            points[key] = dict(capacity=pair[0]/1000.0, power=pair[1]/1000.0)
+        for key in ("p_design_h", "p_to", "p_sb", "p_ck", "p_off"):
+            value = float(settings.pop(key+"_w", 0.0))
+            if not isfinite(value) or (key.startswith("p_design") and value <= 0):
+                raise ValueError(f"Invalid {key}")
+            settings[key] = value / 1000.0
+        return En14825ScopRequest(parameters=dict(test_points=points, **settings))
+
     def calculate(
         self,
         inputs: Dict[str, ScopPointInput],
@@ -352,28 +376,13 @@ class ScopAdapter:
 
         # Tested-only calculation
         if tested_complete:
-            core_tested_points = {}
-            for key in required_points:
-                inp = inputs[key]
-                core_tested_points[key] = {
-                    "capacity": inp.tested_capacity / 1000.0,
-                    "power": inp.tested_power / 1000.0,
-                }
-
             try:
-                test_res = self._execute("en14825.scop", En14825ScopRequest(parameters=dict(
-                    test_points=core_tested_points,
-                    p_to=p_to_kw,
-                    p_sb=p_sb_kw,
-                    p_ck=p_ck_kw,
-                    p_off=p_off_kw,
-                    p_design_h=p_design_h_kw,
-                    climate=climate,
-                    cd=cd,
-                    appliance_type=appliance_type,
-                    tbiv_temp_c=eff_tbiv,
-                    tol_temp_c=eff_tol,
-                )))
+                request = self.build_tested_request(
+                    inputs, p_design_h_w=p_design_h_w, climate=climate, tbiv_temp_c=eff_tbiv, tol_temp_c=eff_tol,
+                    p_to_w=p_to_w, p_sb_w=p_sb_w, p_ck_w=p_ck_w, p_off_w=p_off_w,
+                    cd=cd, appliance_type=appliance_type,
+                )
+                test_res = self._execute("en14825.scop", request)
                 summary.tested_scop = test_res["scop"]
                 summary.tested_qh_kwh = test_res["qh_kwh"]
                 summary.tested_total_kwh = test_res["total_kwh"]

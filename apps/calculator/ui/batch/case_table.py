@@ -36,6 +36,8 @@ ROW_HEADER_WIDTH_CHARS = 4
 class BatchCaseTable(ttk.Frame):
     """Row-per-case table with editable input columns and read-only results."""
 
+    reserve_vertical_scrollbar = False
+
     def __init__(
         self,
         master: tk.Misc,
@@ -212,6 +214,7 @@ class BatchCaseTable(ttk.Frame):
             self,
             content_name="batch_table_surface",
             content_background=TABLE_GRID_COLOR,
+            reserve_vertical_scrollbar=self.reserve_vertical_scrollbar,
         )
         self.viewport_frame.grid(row=0, column=0, sticky="nsew")
         self.table_frame = self.viewport_frame.content

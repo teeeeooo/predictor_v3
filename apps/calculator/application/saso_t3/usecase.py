@@ -49,6 +49,21 @@ class SasoT3UseCase:
     ):
         self._capability_executor = capability_executor
 
+    def build_request(self, raw_values, *, test_selection):
+        measured, invalid = _parse_required_inputs(raw_values)
+        if not invalid and test_selection == "with_optional_test":
+            measured, invalid = _parse_optional_inputs(raw_values, measured)
+        if invalid:
+            raise ValueError(str(invalid))
+        return self.request_from_measured(measured, test_selection)
+
+    @staticmethod
+    def request_from_measured(measured, test_selection):
+        return Iso16358CspfRequest(
+            resolve_calculation_mode_profile_id(MODE_SASO_T3), measured,
+            test_selection=test_selection,
+        )
+
     def calculate(self, raw_values: Mapping[str, str]) -> SasoT3UseCaseResult:
         """Calculate SASO T3 rows from raw input-table text values."""
         if not any(str(raw_values.get(field, "")).strip() for field in _REQUIRED_FIELDS):
@@ -200,11 +215,7 @@ class SasoT3UseCase:
     ) -> Mapping[str, object]:
         return self._capability_executor(
             "iso16358.cspf",
-            Iso16358CspfRequest(
-                resolve_calculation_mode_profile_id(MODE_SASO_T3),
-                measured,
-                test_selection=test_selection,
-            ),
+            self.request_from_measured(measured, test_selection),
         )
 
 

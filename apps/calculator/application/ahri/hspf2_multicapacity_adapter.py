@@ -102,12 +102,11 @@ def triple_h3_low_required(text_values: Mapping[str, str]) -> bool:
     return _c_to_f(low_min_c) <= H3_LOW_REQUIRED_MAX_F
 
 
-def calculate_multicapacity_hspf2(
-    executor,
+def build_multicapacity_hspf2_request(
     text_values: Mapping[str, str],
     *,
     options: AhriHspf2Options,
-) -> MultiCapacityHspf2Summary | None:
+):
     product = options.product_classification
     if product not in {"dual_stage", "triple_capacity_northern"}:
         raise MultiCapacityHspf2InputError({"product": "지원하지 않는 제품 형식"})
@@ -242,14 +241,24 @@ def calculate_multicapacity_hspf2(
                 },
             }
         )
-    result = executor(
-        "ahri210240.hspf2",
-        AhriHspf2Request(
-            points,
-            product_classification=product,
-            parameters=parameters,
-        ),
+    return AhriHspf2Request(
+        points,
+        product_classification=product,
+        parameters=parameters,
     )
+
+
+def calculate_multicapacity_hspf2(
+    executor,
+    text_values: Mapping[str, str],
+    *,
+    options: AhriHspf2Options,
+) -> MultiCapacityHspf2Summary | None:
+    request = build_multicapacity_hspf2_request(text_values, options=options)
+    if request is None:
+        return None
+    product = request.product_classification
+    result = executor("ahri210240.hspf2", request)
     metadata = _required_mapping(_required_mapping(result, "summary"), "metadata")
     point_sources = metadata.get("point_sources", {})
     if not isinstance(point_sources, Mapping):

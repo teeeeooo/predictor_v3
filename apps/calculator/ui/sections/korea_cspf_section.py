@@ -127,6 +127,8 @@ class KoreaCspfSection:
         )
         self.batch_button.surface_role = "korea_cspf_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        from apps.calculator.ui.combinations.sources import install
+        install(self, "korea_cspf")
         self.detail_toggle = ttk.Button(
             self.action_row,
             text="상세 보기 ↓",

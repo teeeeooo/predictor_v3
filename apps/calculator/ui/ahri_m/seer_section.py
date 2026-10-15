@@ -62,6 +62,8 @@ class AhriMSeerSection:
         action_row.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         self._batch_access = AhriMBatchAccess(action_row, metric="SEER", shell_parent=self._frame)
         self.batch_button = self._batch_access.button
+        from apps.calculator.ui.combinations.sources import install
+        install(self, "m_seer")
         self.detail_toggle = ttk.Button(action_row, text="상세 보기 ↓", command=self._toggle_detail)
         self.detail_toggle.pack(side=tk.LEFT)
         self.result_actions = add_result_actions(action_row, parent=self._frame, result_owner=self.result_panel, csv_filename="ahri_m_seer_result.csv", surface_prefix="ahri_m_seer_result")

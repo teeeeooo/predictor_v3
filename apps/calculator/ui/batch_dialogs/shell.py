@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Callable
-from typing import Protocol
+from typing import Generic, Protocol, TypeVar
 
 from apps.calculator.ui.window_geometry import parent_centered_content_geometry
 
+SnapshotT = TypeVar("SnapshotT", covariant=True)
 
-class BatchProfileAdapter(Protocol):
+
+class BatchProfileAdapter(Protocol[SnapshotT]):
     """Protocol for profile-specific batch matrix widgets."""
 
     @property
@@ -26,19 +28,19 @@ class BatchProfileAdapter(Protocol):
     def dispose(self) -> None:
         ...
 
-    def snapshot(self) -> list[dict[str, str]]:
+    def snapshot(self) -> SnapshotT:
         ...
 
 
-class BatchDialogShell:
+class BatchDialogShell(Generic[SnapshotT]):
     """Generic Toplevel container for a BatchProfileAdapter."""
 
     def __init__(
         self,
         parent: tk.Widget,
-        adapter: BatchProfileAdapter,
+        adapter: BatchProfileAdapter[SnapshotT],
         *,
-        on_close: Callable[[list[dict[str, str]]], None] | None = None,
+        on_close: Callable[[SnapshotT], None] | None = None,
     ) -> None:
         self._on_close = on_close
         self._adapter = adapter
@@ -106,7 +108,7 @@ class BatchDialogShell:
             requested_size[1] + max(0, height_delta),
         )
 
-    def snapshot(self) -> list[dict[str, str]]:
+    def snapshot(self) -> SnapshotT:
         return self._adapter.snapshot()
 
     def close(self) -> None:

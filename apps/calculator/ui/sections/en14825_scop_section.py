@@ -288,6 +288,8 @@ class En14825ScopSection:
         )
         self.batch_button.surface_role = "en14825_scop_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        from apps.calculator.ui.combinations.sources import install
+        install(self, "en_scop")
         self.detail_toggle = ttk.Button(
             action_row,
             text="상세 보기 ↓",

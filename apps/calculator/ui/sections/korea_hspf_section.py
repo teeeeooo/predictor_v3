@@ -134,6 +134,8 @@ class KoreaHspfSection:
         )
         self.batch_button.surface_role = "korea_hspf_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        from apps.calculator.ui.combinations.sources import install
+        install(self, "korea_hspf")
         self.detail_toggle = ttk.Button(
             self.action_row,
             text="상세 보기 ↓",

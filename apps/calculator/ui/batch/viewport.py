@@ -19,8 +19,10 @@ class BatchTableViewport(ttk.Frame):
         *,
         content_name: str,
         content_background: str,
+        reserve_vertical_scrollbar: bool = False,
     ) -> None:
         super().__init__(master, name="batch_table_viewport")
+        self._reserve_vertical_scrollbar = reserve_vertical_scrollbar
         self.surface_role = "batch_table_viewport"
         self.layout_policy = "table_local_two_axis_scroll_containment"
         self.rowconfigure(0, weight=1)
@@ -52,7 +54,9 @@ class BatchTableViewport(ttk.Frame):
         # which can oscillate forever when a batch dialog is reopened with a
         # different row count on macOS.
         self.horizontal_scrollbar.grid(row=1, column=0, sticky="ew")
-        self._scrollbar_visible = False
+        self._scrollbar_visible = reserve_vertical_scrollbar
+        if reserve_vertical_scrollbar:
+            self.scrollbar.grid(row=0, column=1, sticky="ns")
         self._horizontal_scrollbar_visible = True
         self.content = create_grid_surface(
             self.canvas,
@@ -165,6 +169,10 @@ class BatchTableViewport(ttk.Frame):
         self.canvas.itemconfigure(self._content_window, width=content_width)
 
     def _sync_scrollbar_visibility(self) -> None:
+        # Stacked/paged grids can cross the overflow threshold as the notebook
+        # settles. Reserving the gutter avoids a geometry feedback loop.
+        if self._reserve_vertical_scrollbar:
+            return
         bbox = self.canvas.bbox("all")
         content_height = 0 if bbox is None else bbox[3] - bbox[1]
         viewport_height = self.canvas.winfo_height()

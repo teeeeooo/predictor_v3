@@ -38,25 +38,11 @@ class KoreaHspfUseCase:
     def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
         self._capability_executor = capability_executor
 
-    def calculate(self, raw_values: Mapping[str, str]) -> KoreaHspfUseCaseResult:
-        if not any(str(raw_values.get(field, "")).strip() for field in _FIELDS):
-            return KoreaHspfUseCaseResult(
-                status="empty",
-                status_text=_INPUT_WAITING_STATUS,
-                detail_status=_INPUT_WAITING_STATUS,
-                guide_status=_INPUT_WAITING_STATUS,
-            )
-
+    def build_request(self, raw_values):
+        """Parse and build a numeric request without executing a calculator."""
         numeric, invalid = _parse_numeric_fields(raw_values)
         if invalid:
-            return KoreaHspfUseCaseResult(
-                status="invalid",
-                status_text=_INPUT_ERROR_STATUS,
-                detail_status=_INPUT_ERROR_STATUS,
-                invalid_fields=invalid,
-                guide_status=_INPUT_ERROR_STATUS,
-            )
-
+            raise ValueError(str(invalid))
         measured = {
             "rated_cooling_capacity": numeric["rated_cooling_capacity"],
             "ks_c_9306_hspf": {
@@ -80,10 +66,29 @@ class KoreaHspfUseCase:
                 },
             },
         }
-        try:
-            result = self._capability_executor(
-                "ks_c9306.hspf", KsC9306HspfRequest("ks_c9306_hspf", measured)
+        return KsC9306HspfRequest("ks_c9306_hspf", measured)
+
+    def calculate(self, raw_values: Mapping[str, str]) -> KoreaHspfUseCaseResult:
+        if not any(str(raw_values.get(field, "")).strip() for field in _FIELDS):
+            return KoreaHspfUseCaseResult(
+                status="empty",
+                status_text=_INPUT_WAITING_STATUS,
+                detail_status=_INPUT_WAITING_STATUS,
+                guide_status=_INPUT_WAITING_STATUS,
             )
+
+        numeric, invalid = _parse_numeric_fields(raw_values)
+        if invalid:
+            return KoreaHspfUseCaseResult(
+                status="invalid",
+                status_text=_INPUT_ERROR_STATUS,
+                detail_status=_INPUT_ERROR_STATUS,
+                invalid_fields=invalid,
+                guide_status=_INPUT_ERROR_STATUS,
+            )
+
+        try:
+            result = self._capability_executor("ks_c9306.hspf", self.build_request(raw_values))
         except Exception as exc:
             status_text = f"오류: {type(exc).__name__}: {exc}"
             return KoreaHspfUseCaseResult(

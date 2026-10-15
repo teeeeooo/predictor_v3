@@ -150,6 +150,30 @@ class SeerAdapter:
             computed[key] = comp
         return computed
 
+    def build_tested_request(self, inputs, **settings):
+        """Build only Tested input, preserving the application W-to-kW boundary."""
+        from math import isfinite
+        settings = dict(settings)
+        if any(settings.get(key) is None for key in ("t_design_c", "cd", "appliance_type")):
+            defaults = self.get_seer_defaults()
+            for key, default_key in (("t_design_c", "t_design_c"), ("cd", "degradation_coefficient"), ("appliance_type", "appliance_type")):
+                if settings.get(key) is None:
+                    settings[key] = defaults[default_key]
+        required = ("A", "B", "C", "D")
+        points = {}
+        for key in required:
+            inp = inputs[key]
+            pair = (inp.tested_capacity, inp.tested_power)
+            if any(value is None or not isfinite(value) or value <= 0 for value in pair):
+                raise ValueError(f"{key}: complete positive Tested capacity/power required")
+            points[key] = tuple(value / 1000.0 for value in pair)
+        for key in ("p_design_c", "p_to", "p_sb", "p_ck", "p_off"):
+            value = float(settings.pop(key+"_w", 0.0))
+            if not isfinite(value) or (key.startswith("p_design") and value <= 0):
+                raise ValueError(f"Invalid {key}")
+            settings[key] = value / 1000.0
+        return En14825SeerRequest(parameters=dict(test_points=points, **settings))
+
     def calculate(
         self,
         inputs: Dict[str, SeerPointInput],
@@ -250,24 +274,13 @@ class SeerAdapter:
 
         # Tested-only calculation
         if tested_complete:
-            core_tested_points = {}
-            for key in ("A", "B", "C", "D"):
-                inp = inputs[key]
-                # core expects (capacity_kW, power_kW)
-                core_tested_points[key] = (inp.tested_capacity / 1000.0, inp.tested_power / 1000.0)
-
             try:
-                test_res = self._calculate_core(
-                    test_points=core_tested_points,
-                    p_to=p_to_kw,
-                    p_sb=p_sb_kw,
-                    p_ck=p_ck_kw,
-                    p_off=p_off_kw,
-                    p_design_c=p_design_c_kw,
-                    t_design_c=t_design_c,
-                    cd=cd,
-                    appliance_type=appliance_type,
+                request = self.build_tested_request(
+                    inputs, p_design_c_w=p_design_c_w, t_design_c=t_design_c,
+                    p_to_w=p_to_w, p_sb_w=p_sb_w, p_ck_w=p_ck_w, p_off_w=p_off_w,
+                    cd=cd, appliance_type=appliance_type,
                 )
+                test_res = self._execute("en14825.seer", request)
                 summary.tested_seer = test_res["seer"]
                 summary.tested_qc_kwh = test_res["qc_kwh"]
                 summary.tested_bin_details = _preserve_bin_details(test_res)

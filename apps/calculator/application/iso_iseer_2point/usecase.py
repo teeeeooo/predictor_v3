@@ -29,6 +29,12 @@ class IsoIseer2PointUseCase:
     def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
         self._capability_executor = capability_executor
 
+    def build_request(self, raw_values, *, profile_label):
+        """Shared numeric request seam for single and combination calculations."""
+        return Iso16358CspfRequest(
+            resolve_two_point_profile_id(profile_label), _parse_measured_points(raw_values)
+        )
+
     def calculate(self, raw_values: Mapping[str, str]) -> IsoIseer2PointUseCaseResult:
         """Calculate both ISO/ISEER profiles from raw input-table text values."""
         if not any(value.strip() for value in raw_values.values()):
@@ -53,9 +59,8 @@ class IsoIseer2PointUseCase:
         errors: list[str] = []
         for profile_label in two_point_profile_labels():
             try:
-                profile_id = resolve_two_point_profile_id(profile_label)
                 result = self._capability_executor(
-                    "iso16358.cspf", Iso16358CspfRequest(profile_id, measured)
+                    "iso16358.cspf", self.build_request(raw_values, profile_label=profile_label)
                 )
                 row = _two_point_result_row(profile_label, measured, result)
                 rows.append(row)

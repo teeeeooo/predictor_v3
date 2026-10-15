@@ -35,6 +35,20 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-10-16 — Calculator paired-test combination calculation
+
+- Completed the standalone Calculator feature across the current 11 capabilities
+  and all exposed profile/product branches. Candidate pairs, active point policy,
+  the 10,000-case cap, and existing adapter/gateway ownership remain authoritative.
+- Run snapshots own detail/export provenance even after edits or cancellation;
+  UI session lifetime is separate from disposable dialog widgets. No formula,
+  accepted golden, public result schema, or Predict integration was changed.
+- A reproduced macOS stacked-grid scrollbar geometry loop required an opt-in
+  reserved gutter in the shared viewport; existing batch defaults are unchanged.
+- Owners and precise verification limits:
+  `docs/designs/2026-10-16-calculator-combination-search.md` §10 and
+  `tests/apps/calculator/combinations/`.
+
 ## 2026-09-25 — Policy consolidation temporary UI baseline
 
 - User-directed policy cleanup temporarily fixes current product behavior; it

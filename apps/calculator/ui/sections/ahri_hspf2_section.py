@@ -97,6 +97,8 @@ class AhriHspf2Section:
         )
         self._batch_access = AhriHspf2BatchAccess(action_row, shell_parent=self._frame)
         self.batch_button = self._batch_access.button
+        from apps.calculator.ui.combinations.sources import install
+        install(self, "hspf2")
         self.detail_toggle = ttk.Button(
             action_row,
             text="상세 보기 ↓",

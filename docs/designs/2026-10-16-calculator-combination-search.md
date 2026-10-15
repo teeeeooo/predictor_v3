@@ -1,6 +1,6 @@
 # Calculator Combination Search — Implementation Specification
 
-**Status:** Ready for implementation; product code has not been changed.
+**Status:** Implemented for all currently exposed paths; native verification limits are listed in §10.
 **Scope:** All currently exposed `app_calculator` standard/profile/product paths.
 **Source baseline:** `cc96344c6a08205e754b0b0eb4a3c92e32e29b4f`.
 **Execution state:** [Work Plan](../WORK_PLAN.md). This is a standalone Calculator
@@ -373,32 +373,48 @@ No formula rewrite, new standard, ML/Predict integration, general job system,
 cross-run ranking, session-file import, XLSX export, automatic optimization,
 arbitrary cap override, or global UI redesign is included.
 
-## 10. Next-session first prompt
+## 10. Implementation and verification (2026-10-16)
 
-```text
-app_calculator의 시험값 조합 계산 기능을 구현해줘.
+- Application owner: `apps/calculator/application/combinations/` owns immutable
+  candidate/run snapshots, preflight, a hard 10,000-case cap, lazy bounded steps,
+  cancellation, per-case errors, competition ranking, and snapshot-only replay.
+- Standard application owners now expose shared numeric request-building seams;
+  single calculations and combinations use the same parsing, units and request
+  assembly. EN requests explicitly use Tested inputs. No core engine, config,
+  public result DTO, or golden fixture changed.
+- UI owner: `apps/calculator/ui/combinations/` owns per-origin context sessions,
+  candidate paging (100 rows), the shared spreadsheet binding, common settings,
+  mode/session changes, scheduled progress, result paging (100 rows), detail,
+  and pure `calculator_combinations_v1` projection. The existing CSV adapter
+  retains BOM writing and file picking.
+- `BatchDialogShell` accepts typed snapshots through a generic seam. The shared
+  viewport gained an opt-in reserved vertical scrollbar gutter: without it,
+  the stacked combination notebook reproducibly oscillated on macOS while
+  opening SEER2 Dual Stage. Existing batch surfaces keep their default policy.
+- `tests/apps/calculator/combinations/` covers 22 baseline contexts across all
+  11 capabilities, paired 3×5 sweeps with separate gateway replays, SCOP policy,
+  optional AHRI branches, raw/published values, and rankable Brazil Rule/Final
+  outcomes. Real 10,000-case runs cover SCOP colder, variable HSPF2 and Triple
+  Northern. Cap boundaries, excluded invalid rows, errors, cancellation, stale
+  snapshots, full CSV, and request preflight are guarded separately.
+- Actual `CalculatorTkApp` tests exercise all section actions through run,
+  detail, export and reopen; they also cover mode/session separation, grouped
+  paste/clear/undo, page overflow, a legal 10,000×1 candidate pool with bounded
+  widgets, responsive progress/cancel, partial export and root disposal.
+- The regression pass completed 1,313 tests with no skips; the subsequently
+  strengthened feature suite completed 40 headless tests and 2 native Tk
+  integration tests. Calculator regression spans standard/golden, application
+  boundary, entrypoint, and shared Tk table/window tests. Native modules run in separate processes;
+  new feature UI tests share one Tcl interpreter to avoid macOS Tk's known
+  destroyed-root event-loop behavior.
 
-구현 명세는 docs/designs/2026-10-16-calculator-combination-search.md야.
-이전 세션에서는 명세와 사전 합성 시험까지만 완료했고 제품 코드는 변경하지 않았어.
+Verification limits: native Windows, Linux desktop, OS-generated keyboard and
+mouse interaction, multiple monitors and mixed DPI were not checked. The
+computer-use screenshot service timed out, so no visual screenshot acceptance
+is claimed. The existing shared-controller gaps (disjoint Ctrl selection,
+selection-mode Esc, and dedicated double-click edit entry) remain inherited,
+not claims of full Excel parity. File picker cancel and write errors were
+exercised through the adapter seam, not a native OS save-panel interaction.
 
-먼저 AGENTS.md, .agents/skills/calculator/SKILL.md, 위 명세,
-docs/WORK_PLAN.md의 Calculator 조합 계산 항목을 읽고 현재 git 상태를 확인해줘.
-명세에 연결된 현재 코드 owner를 필요한 범위에서 확인하고, UI 작업에는
-desktop-table-ui와 desktop-window-lifecycle 스킬 및 저장소 Tkinter 규칙을 적용해줘.
-
-명세의 구현 순서대로 공통 실행부 → ISO 실제 UI 연결 → 나머지 규격 확장 →
-통합 검증까지 진행해줘. 최종 범위는 현재 app_calculator의 모든 규격·프로필·제품
-분기이며, ISO만 연결한 단계에서 완료로 끝내지 마.
-
-핵심 조건은 Capacity/Power 시험값 묶음 유지, 실행당 최대 10,000개,
-활성 독립 시험점만 조합, 기존 application adapter/gateway 재사용,
-Excel-like 입력, 진행·취소, 수치 내림차순·동점 처리, 페이지와 무관한 전체 CSV야.
-기존 공식·golden·공개 결과 계약은 유지하고, 입력 수정 후 stale 결과와 부분 결과의
-detail/export는 실행 당시 입력을 사용해야 해.
-
-결정된 설계를 처음부터 다시 조사하거나 일반적인 재확인을 반복하지 말고,
-현재 코드와 실제 충돌하는 부분만 근거를 들어 조정해줘. 새 명세 작성으로 끝내지 말고
-구현과 필요한 검증을 완료해줘. 기존 Windows 수동 검증 및 Predict 연동 보류는
-별도 작업이므로 이번 Calculator 기능의 선행 조건으로 취급하지 마.
-완료 시 변경 내용, 실행한 테스트, 실제 확인하지 못한 UI/플랫폼 경로를 알려줘.
-```
+The existing Native Windows workstream and held Predict integration remain
+independent; this implementation does not close or expand either workstream.

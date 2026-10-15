@@ -10,6 +10,7 @@ from apps.calculator.application.ahri.hspf2_multicapacity_adapter import (
     AhriHspf2Options,
     MultiCapacityHspf2InputError,
     calculate_multicapacity_hspf2,
+    build_multicapacity_hspf2_request,
 )
 from core.calculators.capability import AhriHspf2Request, execute_standard_calculation
 
@@ -134,12 +135,14 @@ class AhriHspf2Adapter:
             )
         return self._calculate_variable(text_values, options=options)
 
-    def _calculate_variable(
+    def build_request(
         self,
         text_values: Mapping[str, str],
         *,
         options: AhriHspf2Options,
-    ) -> AhriHspf2Summary | None:
+    ):
+        if options.product_classification != "variable_capacity":
+            return build_multicapacity_hspf2_request(text_values, options=options)
         if options.region != "IV":
             raise AhriHspf2InputError({"region": "Region IV 필요"})
         active_optional = {
@@ -178,21 +181,29 @@ class AhriHspf2Adapter:
             for point in active_points
         }
         points["A2"] = (numeric["a2_capacity"], _A2_CORE_POWER_PLACEHOLDER)
-        result = self._execute(
-            "ahri210240.hspf2",
-            AhriHspf2Request(
-                points,
-                parameters={
-                    "t_off": self._celsius_to_fahrenheit(numeric["cut_out_c"]),
-                    "t_on": self._celsius_to_fahrenheit(numeric["cut_in_c"]),
-                    "c_d_heating": numeric["cd"],
-                    "fdef_override": numeric["defrost_credit"],
-                    "h1n_same_speed_as_h3": options.h1n_same_speed_as_h32,
-                    "minimum_speed_limited": options.minimum_speed_limited,
-                    **AHRI_HSPF2_HIDDEN_DEFAULTS,
-                },
-            ),
+        return AhriHspf2Request(
+            points,
+            parameters={
+                "t_off": self._celsius_to_fahrenheit(numeric["cut_out_c"]),
+                "t_on": self._celsius_to_fahrenheit(numeric["cut_in_c"]),
+                "c_d_heating": numeric["cd"],
+                "fdef_override": numeric["defrost_credit"],
+                "h1n_same_speed_as_h3": options.h1n_same_speed_as_h32,
+                "minimum_speed_limited": options.minimum_speed_limited,
+                **AHRI_HSPF2_HIDDEN_DEFAULTS,
+            },
         )
+
+    def _calculate_variable(
+        self,
+        text_values: Mapping[str, str],
+        *,
+        options: AhriHspf2Options,
+    ) -> AhriHspf2Summary | None:
+        request = self.build_request(text_values, options=options)
+        if request is None:
+            return None
+        result = self._execute("ahri210240.hspf2", request)
         metadata = self._required_mapping(
             self._required_mapping(result, "summary"), "metadata"
         )

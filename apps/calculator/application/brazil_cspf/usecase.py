@@ -46,6 +46,9 @@ class BrazilCspfUseCase:
     ) -> None:
         self._capability_executor = capability_executor
 
+    def build_request(self, raw_values):
+        return BrazilCspfComplianceRequest(measured_points=_parse_measured_points(raw_values))
+
     def calculate(self, raw_values: Mapping[str, str]) -> BrazilCspfUseCaseResult:
         if not any(str(raw_values.get(field, "")).strip() for field in _INPUT_FIELDS):
             return BrazilCspfUseCaseResult(
@@ -65,7 +68,7 @@ class BrazilCspfUseCase:
         try:
             operation_result = self._capability_executor(
                 _CAPABILITY_ID,
-                BrazilCspfComplianceRequest(measured_points=measured),
+                self.build_request(raw_values),
             )
             if not isinstance(operation_result, BrazilCspfComplianceResult):
                 raise TypeError("Brazil capability returned an unexpected result type")

@@ -16,7 +16,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
-| `2026-10-16-calculator-combination-search.md` | Implementation-ready specification for all-current-standards test-candidate combination calculation, a 10,000-combination limit, shared Tkinter UI, ranking, and CSV export. | Implementing or reviewing Calculator combination search and its next-session handoff. |
+| `2026-10-16-calculator-combination-search.md` | Implemented governing specification for all-current-standards test-candidate combination calculation, a 10,000-combination limit, shared Tkinter UI, ranking, and CSV export. | Reviewing Calculator combination search, its owners, and remaining native verification gaps. |
 | `2026-09-07-astra-agent-harness-v2-migration.md` | Governing predictor_v3 delta for the shared operating-envelope harness, bounded recall, global UI/design Skills, and Result Record retirement. | Changing predictor_v3 agent instructions, Skills, recall/memory policy, or mechanical harness gates. |
 | `2026-09-02-ahri-documentation-sync-plan.md` | Design Gate plan for synchronizing the AHRI Appendix M/M1 standard owners, Tkinter table adapter references, and recent Result Record traceability. | Implementing the documentation corrections identified in the 2026-09-02 AHRI documentation audit. |
 | `2026-09-01-ahri-210-240-m-seer-hspf-audit-design-spec.md` | Active governing audit/design for adding Appendix M SEER/HSPF while preserving Appendix M1 SEER2/HSPF2 ownership and compatibility. | Implementing or reviewing AHRI 210/240 Appendix M calculator, M/M1 UI separation, formula/golden validation, or related owner boundaries. |

@@ -23,6 +23,23 @@ class HongKongHspfUseCase:
     def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
         self._capability_executor = capability_executor
 
+    def build_request(self, raw_values, *, region_label="Hong Kong"):
+        """Parse and build a numeric request without executing a calculator."""
+        numeric, invalid = _parse_numeric_fields(raw_values)
+        if invalid:
+            raise ValueError(str(invalid))
+        measured = {
+            "7_full": {
+                "capacity": numeric["full_capacity"],
+                "power": numeric["full_power"],
+            },
+            "7_half": {
+                "capacity": numeric["half_capacity"],
+                "power": numeric["half_power"],
+            },
+        }
+        return Iso16358HspfRequest(resolve_profile_id(region_label, "HSPF"), measured)
+
     def calculate(
         self,
         raw_values: Mapping[str, str],
@@ -46,21 +63,8 @@ class HongKongHspfUseCase:
                 invalid_fields=invalid,
             )
 
-        measured = {
-            "7_full": {
-                "capacity": numeric["full_capacity"],
-                "power": numeric["full_power"],
-            },
-            "7_half": {
-                "capacity": numeric["half_capacity"],
-                "power": numeric["half_power"],
-            },
-        }
         try:
-            profile_id = resolve_profile_id(region_label, "HSPF")
-            result = self._capability_executor(
-                "iso16358.hspf", Iso16358HspfRequest(profile_id, measured)
-            )
+            result = self._capability_executor("iso16358.hspf", self.build_request(raw_values, region_label=region_label))
         except Exception as exc:
             status_text = f"오류: {type(exc).__name__}: {exc}"
             return HongKongHspfUseCaseResult(

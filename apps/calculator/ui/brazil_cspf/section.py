@@ -104,6 +104,8 @@ class BrazilCspfSection:
         )
         self.batch_button.surface_role = "brazil_cspf_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        from apps.calculator.ui.combinations.sources import install
+        install(self, "brazil")
         self.detail_toggle = ttk.Button(
             self.action_row,
             text="상세 보기 ↓",

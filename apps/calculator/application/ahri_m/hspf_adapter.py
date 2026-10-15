@@ -58,7 +58,7 @@ class AhriHspfAdapter:
     def __init__(self, capability_executor=execute_standard_calculation) -> None:
         self._execute = capability_executor
 
-    def calculate(self, text_values: Mapping[str, str], *, options: AhriHspfOptions) -> AhriHspfSummary | None:
+    def build_request(self, text_values: Mapping[str, str], *, options: AhriHspfOptions):
         errors = {}
         numeric = {}
         points = {}
@@ -116,7 +116,13 @@ class AhriHspfAdapter:
         if options.automatic_cutout:
             params["t_off"] = self._c_to_f(numeric["cut_out_c"])
             params["t_on"] = self._c_to_f(numeric["cut_in_c"])
-        result = self._execute("ahri210240.hspf", AhriHspfRequest(points, parameters=params))
+        return AhriHspfRequest(points, parameters=params)
+
+    def calculate(self, text_values: Mapping[str, str], *, options: AhriHspfOptions) -> AhriHspfSummary | None:
+        request = self.build_request(text_values, options=options)
+        if request is None:
+            return None
+        result = self._execute("ahri210240.hspf", request)
         metadata = self._mapping(self._mapping(result, "summary"), "metadata")
         return AhriHspfSummary(
             raw_hspf=self._float(result, "raw_hspf"),

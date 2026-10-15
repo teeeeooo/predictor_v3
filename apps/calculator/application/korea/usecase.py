@@ -34,6 +34,27 @@ class KoreaCspfUseCase:
     def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
         self._capability_executor = capability_executor
 
+    def build_request(self, raw_values):
+        """Parse and build a numeric request without executing a calculator."""
+        numeric, invalid = _parse_numeric_fields(raw_values)
+        if invalid:
+            raise ValueError(str(invalid))
+        measured = {
+            "35_full": {
+                "capacity": numeric["full_capacity"],
+                "power": numeric["full_power"],
+            },
+            "35_half": {
+                "capacity": numeric["half_capacity"],
+                "power": numeric["half_power"],
+            },
+            "29_min": {
+                "capacity": numeric["min_capacity"],
+                "power": numeric["min_power"],
+            },
+        }
+        return KsC9306CspfRequest("ks_c9306_cspf", measured, declared_capacity=numeric["declared_capacity"])
+
     def calculate(self, raw_values: Mapping[str, str]) -> KoreaCspfUseCaseResult:
         if not any(str(raw_values.get(field, "")).strip() for field in _FIELDS):
             return KoreaCspfUseCaseResult(
@@ -53,28 +74,8 @@ class KoreaCspfUseCase:
                 guide_status=_INPUT_ERROR_STATUS,
             )
 
-        measured = {
-            "35_full": {
-                "capacity": numeric["full_capacity"],
-                "power": numeric["full_power"],
-            },
-            "35_half": {
-                "capacity": numeric["half_capacity"],
-                "power": numeric["half_power"],
-            },
-            "29_min": {
-                "capacity": numeric["min_capacity"],
-                "power": numeric["min_power"],
-            },
-        }
         try:
-            result = self._capability_executor(
-                "ks_c9306.cspf",
-                KsC9306CspfRequest(
-                    "ks_c9306_cspf", measured,
-                    declared_capacity=numeric["declared_capacity"],
-                ),
-            )
+            result = self._capability_executor("ks_c9306.cspf", self.build_request(raw_values))
         except Exception as exc:
             status_text = f"오류: {type(exc).__name__}: {exc}"
             return KoreaCspfUseCaseResult(

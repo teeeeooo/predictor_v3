@@ -9,13 +9,13 @@
 
 ## Current Slice
 
-**Calculator combination calculation — ready for implementation in the next
-session.** The [implementation specification](designs/2026-10-16-calculator-combination-search.md)
-defines all current Calculator standard/profile/product paths, the agreed
-10,000-combination cap, shared Tkinter input/result UI, ranking, and CSV export.
-Only design and exploratory headless probes are complete; no product source has
-been implemented. This standalone Calculator work can proceed independently of
-Native Windows acceptance and the held Predict integration decision below.
+**Calculator combination calculation — implemented across all current
+standard/profile/product paths.** The [governing specification](designs/2026-10-16-calculator-combination-search.md)
+now has a toolkit-free runner and shared modeless Tk dialog, 10,000-case service
+limit, pinned detail/CSV provenance, and separate stale/partial states. Automated
+macOS Tk integration covers the actual section actions and all 22 baseline
+contexts. Native OS keyboard, visual screenshot, Windows and multi-monitor/DPI
+acceptance remain unverified; these do not reopen the separate Predict hold.
 
 **Native Windows source-runtime acceptance** is active again. The complete
 pre-acceptance Windows repair set is closed: PR #58/#59 closed the Data Definition
@@ -33,12 +33,10 @@ work by default.
 
 ## Exact Next Action
 
-**Calculator handoff — implement the approved combination feature.**
-
-Start with the pure candidate/session/count/run/ranking service and one ISO
-profile, connect the actual app dialog, then continue through the specification's
-remaining standards and verification slices. The specification's final section
-contains the ready-to-use first prompt for the new Astra High session.
+**Calculator follow-up — native platform acceptance only when scheduled.**
+Implementation and automated verification are complete. Use the specification's
+implementation/verification section for the tested boundaries and remaining
+native checks; no further Calculator implementation slice is currently required.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 
@@ -48,9 +46,8 @@ audit gate unless new native acceptance evidence demonstrates a concrete defect.
 
 ## Ordered Follow-ups
 
-The Calculator work follows §9 of its specification through full implementation;
-an ISO-only slice does not complete the feature. The independent Windows/Predict
-sequence remains:
+The Calculator combination implementation is complete. The independent
+Windows/Predict sequence remains:
 
 1. **Native Windows continuous source-runtime acceptance**, in this order:
    1. protected DRM-sensitive legacy Mapping bootstrap confirmation as needed;
@@ -108,7 +105,7 @@ evidence.
 
 ## Minimal Anchors
 
-- Calculator combination specification and next-session prompt:
+- Calculator combination specification and implementation evidence:
   `docs/designs/2026-10-16-calculator-combination-search.md`
 - Product/phase map: `project_brief.md`
 - Train/Predict architecture: `docs/architecture/pyside6_train_predict_architecture.md`

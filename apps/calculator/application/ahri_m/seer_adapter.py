@@ -42,7 +42,7 @@ class AhriSeerAdapter:
     def __init__(self, capability_executor=execute_standard_calculation) -> None:
         self._execute = capability_executor
 
-    def calculate(self, text_values: Mapping[str, str]) -> AhriSeerSummary | None:
+    def build_request(self, text_values: Mapping[str, str]):
         required = ["cd", *[f"{kind}_{point}" for point in AHRI_M_SEER_POINT_ORDER for kind in ("capacity", "power")]]
         stripped = {key: str(text_values.get(key, "")).strip() for key in required}
         if not all(stripped.values()):
@@ -62,7 +62,14 @@ class AhriSeerAdapter:
         if errors:
             raise AhriSeerInputError(errors)
         points = {point: (numeric[f"capacity_{point}"], numeric[f"power_{point}"]) for point in AHRI_M_SEER_POINT_ORDER}
-        result = self._execute("ahri210240.seer", AhriSeerRequest(points, c_d_cooling=numeric["cd"]))
+        return AhriSeerRequest(points, c_d_cooling=numeric["cd"])
+
+    def calculate(self, text_values: Mapping[str, str]) -> AhriSeerSummary | None:
+        request = self.build_request(text_values)
+        if request is None:
+            return None
+        points = request.test_points
+        result = self._execute("ahri210240.seer", request)
         return AhriSeerSummary(
             raw_seer=self._required_float(result, "raw_seer"),
             published_seer=self._required_float(result, "published_seer"),

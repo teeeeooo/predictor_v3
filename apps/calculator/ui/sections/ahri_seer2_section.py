@@ -91,6 +91,8 @@ class AhriSeer2Section:
             command=self._open_batch_dialog,
         )
         self.batch_button.pack(side=tk.LEFT)
+        from apps.calculator.ui.combinations.sources import install
+        install(self, "seer2")
         self.detail_toggle = ttk.Button(
             action_row,
             text="상세 보기 ↓",

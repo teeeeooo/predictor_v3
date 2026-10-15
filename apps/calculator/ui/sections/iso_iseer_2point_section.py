@@ -151,6 +151,11 @@ class IsoIseer2PointSection:
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         self._auto_calc.flush_now()
+        from apps.calculator.ui.combinations.manager import add_combination_action
+        from apps.calculator.application.combinations.models import Context
+        add_combination_action(self, lambda: [Context(
+            "iso", profile=label, values=tuple(self.input_table.get_text_values().items())
+        ) for label in two_point_profile_labels()])
 
     def pack(self, **kwargs) -> None:
         self._frame.pack(**kwargs)

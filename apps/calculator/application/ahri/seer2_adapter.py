@@ -104,14 +104,14 @@ class AhriSeer2Adapter:
         self._calculator_config = calculator_config
         self._execute = capability_executor
 
-    def calculate(
+    def build_request(
         self,
         text_values: Mapping[str, str],
         *,
         system_type: str,
         product_classification: str = "variable_capacity",
         options: AhriSeer2Options | None = None,
-    ) -> AhriSeer2Summary | None:
+    ):
         if system_type not in {"HP", "AC"}:
             raise AhriSeer2InputError({"system_type": "HP 또는 AC 필요"})
         options = options or AhriSeer2Options(
@@ -160,16 +160,30 @@ class AhriSeer2Adapter:
         if incomplete:
             return None
 
-        result = self._execute(
-            "ahri210240.seer2",
-            AhriSeer2Request(
-                points,
-                system_type=system_type,
-                cd_low=options.cd_low,
-                product_classification=product,
-                parameters=options.capability_parameters(),
-            ),
+        return AhriSeer2Request(
+            points,
+            system_type=system_type,
+            cd_low=options.cd_low,
+            product_classification=product,
+            parameters=options.capability_parameters(),
         )
+
+    def calculate(
+        self,
+        text_values: Mapping[str, str],
+        *,
+        system_type: str,
+        product_classification: str = "variable_capacity",
+        options: AhriSeer2Options | None = None,
+    ) -> AhriSeer2Summary | None:
+        request = self.build_request(text_values, system_type=system_type,
+                                     product_classification=product_classification, options=options)
+        if request is None:
+            return None
+        points = request.test_points
+        product = request.product_classification
+        point_order = AHRI_SEER2_PRODUCT_POINT_ORDER[product]
+        result = self._execute("ahri210240.seer2", request)
         cooling_season_hours = self._cooling_season_hours()
         total_cooling = self._required_float(result, "total_cooling_Btu")
         total_energy = self._required_float(result, "total_energy_Wh")
