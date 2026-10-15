@@ -31,6 +31,13 @@ decision.
 authoritative product, owner, compatibility, and independent-slice boundary for
 this workstream.
 
+An independent **Calculator combination calculation** feature is now specified
+for all currently exposed Calculator standards/profiles/products, with a
+10,000-combination cap, shared Tkinter candidate/result UI, ranking, and CSV
+export. Implementation is pending under
+`docs/designs/2026-10-16-calculator-combination-search.md`. It remains within the
+Calculator owner and does not depend on or reopen the held Predict integration.
+
 ## Owner Map
 
 - **Data Definition** is the canonical user-edit owner for Feature structure,

@@ -9,6 +9,14 @@
 
 ## Current Slice
 
+**Calculator combination calculation — ready for implementation in the next
+session.** The [implementation specification](designs/2026-10-16-calculator-combination-search.md)
+defines all current Calculator standard/profile/product paths, the agreed
+10,000-combination cap, shared Tkinter input/result UI, ranking, and CSV export.
+Only design and exploratory headless probes are complete; no product source has
+been implemented. This standalone Calculator work can proceed independently of
+Native Windows acceptance and the held Predict integration decision below.
+
 **Native Windows source-runtime acceptance** is active again. The complete
 pre-acceptance Windows repair set is closed: PR #58/#59 closed the Data Definition
 / Data Mapping onboarding prerequisite, PR #60 closed DRM-sensitive legacy Mapping
@@ -25,6 +33,13 @@ work by default.
 
 ## Exact Next Action
 
+**Calculator handoff — implement the approved combination feature.**
+
+Start with the pure candidate/session/count/run/ranking service and one ISO
+profile, connect the actual app dialog, then continue through the specification's
+remaining standards and verification slices. The specification's final section
+contains the ready-to-use first prompt for the new Astra High session.
+
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 
 Continue from the first still-required native acceptance point rather than
@@ -32,6 +47,10 @@ repeating uninvalidated PASS evidence. Do not create another Windows repair or
 audit gate unless new native acceptance evidence demonstrates a concrete defect.
 
 ## Ordered Follow-ups
+
+The Calculator work follows §9 of its specification through full implementation;
+an ISO-only slice does not complete the feature. The independent Windows/Predict
+sequence remains:
 
 1. **Native Windows continuous source-runtime acceptance**, in this order:
    1. protected DRM-sensitive legacy Mapping bootstrap confirmation as needed;
@@ -52,6 +71,10 @@ evidence.
 
 ## Active Constraints
 
+- Calculator combinations reuse existing standard application owners and the
+  capability gateway. Preserve formulas, configs, public contracts, and goldens;
+  enforce the 10,000 limit in the service as well as the UI. Native UI and Windows
+  acceptance remain distinct from exploratory headless calculation evidence.
 - Data Definition / canonical runtime generation remains the Feature/Target and
   Train contract owner. The Training Header Template is saved-generation truth,
   not a second editable schema.
@@ -85,6 +108,8 @@ evidence.
 
 ## Minimal Anchors
 
+- Calculator combination specification and next-session prompt:
+  `docs/designs/2026-10-16-calculator-combination-search.md`
 - Product/phase map: `project_brief.md`
 - Train/Predict architecture: `docs/architecture/pyside6_train_predict_architecture.md`
 - Train/Admin canonical owner direction:
