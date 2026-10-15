@@ -407,11 +407,19 @@ arbitrary cap override, or global UI redesign is included.
   boundary, entrypoint, and shared Tk table/window tests. Native modules run in separate processes;
   new feature UI tests share one Tcl interpreter to avoid macOS Tk's known
   destroyed-root event-loop behavior.
+- A follow-up macOS screenshot review found that the initial candidate viewport
+  showed only one or two rows. Input and result panels now share a proportional
+  2:1 allocation independent of candidate count, with a 480-pixel minimum dialog
+  height. The corrected ISO completion screen was visually inspected. All 3
+  native integration tests passed, including resize checks for at least 5 input
+  rows at 640×590, 8 at 800×720, and 3 at 640×480, with result rows and action
+  buttons remaining visible.
 
 Verification limits: native Windows, Linux desktop, OS-generated keyboard and
 mouse interaction, multiple monitors and mixed DPI were not checked. The
-computer-use screenshot service timed out, so no visual screenshot acceptance
-is claimed. The existing shared-controller gaps (disjoint Ctrl selection,
+initial screenshot attempt timed out; the follow-up inspected the ISO candidate
+and completed-ranking screen only, not every profile or the detail dialog.
+The existing shared-controller gaps (disjoint Ctrl selection,
 selection-mode Esc, and dedicated double-click edit entry) remain inherited,
 not claims of full Excel parity. File picker cancel and write errors were
 exercised through the adapter seam, not a native OS save-panel interaction.

@@ -5,7 +5,7 @@ from tkinter import ttk
 from apps.calculator.application.combinations.service import preflight, start, validate_candidate, ValidationError
 from apps.calculator.ui.batch.case_table import BatchCaseTable
 from apps.calculator.ui.batch.models import BatchProfileSpec, BatchColumnSpec as Column, BatchColumnRole as Role
-from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE
+from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE, APP_WINDOW_FALLBACK_MIN_HEIGHT
 from .candidates import CandidatePanel, CandidateTable
 from .results import ResultsPanel
 from .options import OptionsPanel
@@ -14,7 +14,7 @@ from .presentation import field_label, STATUS
 
 class CombinationContent:
     title = "시험값 조합 계산"
-    min_size = BATCH_DIALOG_SAFETY_MIN_SIZE
+    min_size = (BATCH_DIALOG_SAFETY_MIN_SIZE[0], APP_WINDOW_FALLBACK_MIN_HEIGHT)
 
     def __init__(self, manager, session):
         self.manager, self.session = manager, session
@@ -25,8 +25,11 @@ class CombinationContent:
     def build_content(self, parent):
         self.frame = ttk.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
-        self.frame.rowconfigure(2, weight=1)
-        self.frame.rowconfigure(5, weight=1)
+        # Reserve editing space independently of the current candidate count.
+        # Without a uniform group, the result tree's requested height takes
+        # most of a capped dialog and leaves only one candidate row visible.
+        self.frame.rowconfigure(2, weight=2, uniform="combination_body")
+        self.frame.rowconfigure(5, weight=1, uniform="combination_body")
         self.context_combo = ttk.Combobox(self.frame, values=self.manager.labels(), state="readonly")
         self.context_combo.set(self.manager.label(self.session.context))
         self.context_combo.grid(row=0, column=0, sticky="ew")

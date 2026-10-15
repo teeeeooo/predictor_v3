@@ -134,6 +134,38 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             widget.destroy()
 
 
+def test_candidate_viewport_remains_useful_when_resized(root):
+    from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
+    section = IsoIseer2PointSection(root)
+    populate(section, contexts()[0])
+    section.combination_button.invoke()
+    manager = section.combinations
+    try:
+        content = manager.handle.dialog._adapter
+        window = manager.handle.dialog.window
+        table = content.candidates.table
+        table.set_text_rows([dict(label=f"시험 {i}", capacity="3600", power="900") for i in range(12)])
+        content.calculate_button.invoke()
+        pump(root, lambda: content.session.run.status != "running")
+        for size, visible_rows in (("640x590", 5), ("800x720", 8), ("640x480", 3)):
+            window.geometry(size)
+            root.update()
+            canvas = table.viewport_frame.canvas
+            header_height = table.table_frame.grid_bbox(0, 0, table.column_count(), 0)[3]
+            row_height = table.cell_frame((0, 1)).winfo_height()
+            assert canvas.winfo_height() >= header_height + visible_rows * row_height
+            # The ranking and actions must remain usable alongside input.
+            tree = content.results.tree
+            assert tree.bbox(tree.get_children()[1]), size
+            for button in (content.calculate_button, *content.results.actions.values()):
+                assert button.winfo_rooty() + button.winfo_height() <= window.winfo_rooty() + window.winfo_height()
+        assert len(content.session.pools["35_full"]) == 12
+        assert content.session.run.succeeded == 12
+    finally:
+        manager.handle.dispose()
+        section._frame.destroy()
+
+
 def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_path,monkeypatch):
     from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
     try:
