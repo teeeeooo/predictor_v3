@@ -83,6 +83,12 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             manager.select(index)
             manager.reload()
             content=manager.handle.dialog._adapter
+            if content.common is not None:
+                count=content.common.row_count()
+                content.common.ensure_row_count(count+1)
+                assert content.common.row_count()==count
+            else:
+                assert not content.common_keys
             assert content.calculate_button.instate(["!disabled"]), (context,content.status.cget("text"))
             content.calculate_button.invoke()
             run=content.session.run

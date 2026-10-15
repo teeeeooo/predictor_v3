@@ -62,9 +62,14 @@ class CombinationContent:
         self.common_keys = [row["field"] for row in common]
         for row in common:
             row["field"] = field_label(row["field"])
-        self.common = CandidateTable(common_frame, BatchProfileSpec("combination_common", "공통 설정", (
-            Column("field", "설정", Role.RESULT, 28), Column("value", "값", Role.INPUT)), tuple(common)), values_changed_callback=self.change_common)
-        self.common.grid(row=0, column=0, sticky="nsew")
+        self.common = None
+        if common:
+            self.common = CandidateTable(common_frame, BatchProfileSpec("combination_common", "공통 설정", (
+                Column("field", "설정", Role.RESULT, 28), Column("value", "값", Role.INPUT)), tuple(common)), values_changed_callback=self.change_common)
+            self.common.row_limit = len(common)
+            self.common.grid(row=0, column=0, sticky="nsew")
+        else:
+            ttk.Label(common_frame, text="추가 공통 수치 설정이 없습니다.").grid(row=0, column=0, sticky="nw")
         self.status = ttk.Label(self.frame)
         self.status.grid(row=3, column=0, sticky="w")
         bar = ttk.Frame(self.frame)
@@ -91,7 +96,7 @@ class CombinationContent:
         self.refresh()
 
     def change_common(self):
-        if self.common.locked:
+        if self.common is None or self.common.locked:
             return
         values = dict(self.session.context.values)
         values.update({key: row["value"] for key, row in zip(self.common_keys, self.common.get_text_rows())})
@@ -139,7 +144,8 @@ class CombinationContent:
 
     def calculate(self):
         self.candidates.commit()
-        self.common.interaction_controller._commit_edit()
+        if self.common is not None:
+            self.common.interaction_controller._commit_edit()
         try:
             run = start(self.session, self.adapter)
         except (ValueError, TypeError, KeyError) as exc:
@@ -167,10 +173,11 @@ class CombinationContent:
     def lock(self, locked):
         self.candidates.lock(locked)
         self.options_panel.lock(locked)
-        self.common.locked = locked
-        for i in range(self.common.row_count()):
-            self.common.cell_widget((i, 1)).configure(state="readonly" if locked else "normal")
-        self.common.interaction_controller.refresh()
+        if self.common is not None:
+            self.common.locked = locked
+            for i in range(self.common.row_count()):
+                self.common.cell_widget((i, 1)).configure(state="readonly" if locked else "normal")
+            self.common.interaction_controller.refresh()
         for widget in (self.context_combo, self.basis, self.point_combo):
             widget.configure(state="disabled" if locked else "readonly")
         self.reload_button.state(["disabled" if locked else "!disabled"])

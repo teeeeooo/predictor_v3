@@ -14,9 +14,10 @@ PAGE_SIZE = 100
 class CandidateTable(BatchCaseTable):
     reserve_vertical_scrollbar = True
     locked = False
+    row_limit = PAGE_SIZE
 
     def cell_role(self, position):
-        if self.locked or position[0] >= PAGE_SIZE or position[1] >= self.column_count():
+        if self.locked or position[0] >= self.row_limit or position[1] >= self.column_count():
             return CellRole.READONLY
         return self.cell_roles()[position[1]]
 
@@ -25,12 +26,12 @@ class CandidateTable(BatchCaseTable):
             super().restore_snapshot(snapshot)
 
     def ensure_row_count(self, count):
-        super().ensure_row_count(min(PAGE_SIZE, count))
+        super().ensure_row_count(min(self.row_limit, count))
 
     def set_positions_batch(self, values):
         if self.locked:
             return False
-        return super().set_positions_batch({p: v for p, v in values.items() if p[0] < PAGE_SIZE})
+        return super().set_positions_batch({p: v for p, v in values.items() if p[0] < self.row_limit})
 
 
 class CandidatePanel(ttk.Frame):
