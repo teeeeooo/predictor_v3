@@ -14,8 +14,8 @@ standard/profile/product paths.** The [governing specification](designs/2026-10-
 now has a toolkit-free runner and shared modeless Tk dialog, 10,000-case service
 limit, pinned detail/CSV provenance, and separate stale/partial states. Automated
 macOS Tk integration covers the actual section actions and all 22 baseline
-contexts. Native OS keyboard, visual screenshot, Windows and multi-monitor/DPI
-acceptance remain unverified; these do not reopen the separate Predict hold.
+contexts. The candidate-column revision and ISO screenshot review are complete.
+Native OS keyboard, Windows and multi-monitor/DPI acceptance remain unverified; these do not reopen the separate Predict hold.
 
 **Native Windows source-runtime acceptance** is active again. The complete
 pre-acceptance Windows repair set is closed: PR #58/#59 closed the Data Definition
@@ -34,9 +34,11 @@ work by default.
 ## Exact Next Action
 
 **Calculator follow-up — native platform acceptance only when scheduled.**
-Implementation and automated verification are complete. Use the specification's
-implementation/verification section for the tested boundaries and remaining
-native checks; no further Calculator implementation slice is currently required.
+Specification §6.1 is implemented: vertically stacked point blocks contain
+Capacity/Power rows and independent candidate columns. Verification includes
+43 headless feature tests, 4 native Tk integration tests, 170 shared UI regression
+tests and an ISO screenshot review. The calculation runner and snapshot/result
+contracts remain unchanged. See the specification for remaining platform limits.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 

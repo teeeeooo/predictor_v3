@@ -1,6 +1,6 @@
 # Calculator Combination Search — Implementation Specification
 
-**Status:** Implemented for all currently exposed paths; native verification limits are listed in §10.
+**Status:** Implemented for all current paths, including the confirmed candidate-column UI (§6.1); verification limits are listed in §10.
 **Scope:** All currently exposed `app_calculator` standard/profile/product paths.
 **Source baseline:** `cc96344c6a08205e754b0b0eb4a3c92e32e29b4f`.
 **Execution state:** [Work Plan](../WORK_PLAN.md). This is a standalone Calculator
@@ -114,10 +114,12 @@ Concrete reuse points:
   profile set; `ranking_adapter.py` builds a single ranking candidate envelope.
   Neither is an all-standards combination runner. Reuse compatible projections;
   do not expand an ML/persisted contract solely to store UI session data.
-- Editable candidates reuse `ui/batch/case_table.py`, `ui/batch/models.py`,
-  `ui/table/controller.py`, `ui/table/surface.py`, and shared visual policy where
-  their shape fits. `BatchProfileSpec` requires an input column, so do not force
-  read-only results through it using a fake editable column.
+- Editable candidates reuse `MetricInputTable`, `ui/table/controller.py`,
+  `ui/table/surface.py`, batch viewport and shared visual policy. The batch
+  matrix's complete-case model does not represent independent point pools;
+  a feature-local candidate-column adapter projects those existing pools.
+  Common settings retain `ui/batch/case_table.py`. Read-only results do not
+  acquire a fake editable column to fit an input schema.
 - Existing `ui/batch/controller.py` is synchronous and table-bound. A separate
   combination service is justified by lazy enumeration, pinned session state,
   cancellation, and reuse without widgets. Keep its existing callers intact.
@@ -150,13 +152,13 @@ These are internal feature contracts, not additions to public calculator JSON.
 | Point definition/pool | Stable point key, labels/units, ordered candidate IDs, required/optional/mapped/inactive role, mapping source if applicable |
 | Common context | Capability/profile/metric identity, climate/product/system type, fixed inputs/options, score basis, unit interpretation |
 | Run snapshot | Run ID, input revision, immutable context and candidate values/order, resolved point roles, planned count |
-| Combination identity | Deterministic enumeration ordinal plus selected point→candidate IDs; labels and visible row numbers are not identity |
+| Combination identity | Deterministic enumeration ordinal plus selected point→candidate IDs; labels and visible column numbers are not identity |
 | Result summary | Combination identity, numeric score/basis/units, available raw/published values, execution status/error, standard-specific summary/Rule outcomes |
 | Session | Draft, current run snapshot, progress counters, lightweight result summaries, stale flag; view selection/page state is separate |
 
-- Unused fully blank placeholder rows do not become candidates. A partially
-  entered included row is incomplete and blocks Calculate; report point/row/cell.
-  Excluded rows may retain invalid drafts. Each active independent point needs at
+- Unused fully blank placeholder columns do not become candidates. A partially
+  entered included candidate is incomplete and blocks Calculate; report point/column/field.
+  Excluded candidates may retain invalid drafts. Each active independent point needs at
   least one included complete candidate. Zero/non-finite/negative measurements
   receive the applicable existing validation, never silent removal or coercion.
 - Identical measurements with different candidate IDs remain distinct tests.
@@ -217,11 +219,10 @@ are unnecessary for this limit.
   ranking context selector. Reuse existing standard field definitions/defaults.
   On first open, seed each point with the invoking section's current measurement
   where present, preserving incomplete drafts instead of inventing sample data.
-- Middle: point list with included/total counts and validation status; selecting
-  a point shows its candidate grid. Columns: inclusion, test label, Capacity
-  `[unit]`, Power `[W]`, optional read-only EER/COP, validation status. One test is
-  one row. Provide row add/remove and selected-row include/exclude actions.
-  Auto/mapped/inactive points show their source/status and cannot be edited.
+- Middle: vertically stacked test-point blocks, each with candidate columns and
+  Capacity/Power rows, as fixed in §6.1. All points share the input viewport;
+  there is no point-selection dropdown. Auto/mapped/inactive blocks show their
+  source/status and cannot be edited.
 - Show the count expression, e.g. `STD 3 × HALF 5 = 15 / 10,000`. Above the cap,
   disable Calculate and explain that candidates must be excluded or a point
   fixed to one candidate. Validate again on the application boundary.
@@ -231,14 +232,14 @@ are unnecessary for this limit.
   and fixed settings remain inspectable through detail/export.
 - Default result page size: 100. Export covers the whole run, not the visible
   page. Bound editable candidate rendering too; a legal 10,000×1 run must not
-  create 10,000 Entry rows. Keep all drafts in the model and project a bounded
+  create 10,000 Entry columns. Keep all drafts in the model and project a bounded
   page. Candidate input paging is a view concern, not a smaller candidate limit.
 - Candidate grids use shared rectangular selection, TSV copy/paste, grouped
   edit/paste/clear undo, keyboard navigation, and read-only mutation protection.
   Scope paste to the visible page under the existing overflow rules and make
-  that page boundary visible. Grow rows only within that bounded projection;
-  never silently move overflow into another point/context. A page/point switch
-  settles editing and resets page-local undo so it cannot affect different rows.
+  that page boundary visible. Grow columns only within that bounded projection;
+  never silently move overflow into another point/context. A page switch
+  settles editing and resets page-local undo so it cannot affect different candidates.
 - Result tables support row selection, keyboard navigation, and selected-row TSV
   copy with read-only enforcement, per the scrollable-data family. Preserve
   selection by combination ID across safe refreshes. Shared table behavior and
@@ -261,6 +262,47 @@ Current shared-controller gaps include no disjoint Ctrl selection, selection-mod
 Esc retaining selection, and no separate double-click edit entry. Preserve the
 documented temporary binding, report inherited gaps, and do not claim complete
 Excel parity or expand this feature into a global table overhaul.
+
+### 6.1 Confirmed candidate-column revision (2026-10-16)
+
+The user confirmed this layout after reviewing the first implementation. This
+supersedes the original point-selector / candidate-per-row UI, including its
+later row-height adjustment. It applies to every standard/profile/product.
+
+```text
+STD              #1       #2       #3       ...
+Capacity [W]     3600     3700     3800
+Power [W]         900      920      950
+
+HALF             #1       #2       ...
+Capacity [W]     1800     1900
+Power [W]         400      420
+```
+
+- Each point has its own candidate count and numbering. One column is one
+  stable candidate ID and a complete capacity/power pair. STD #1 and HALF #1
+  are independent choices, not a pre-paired case. Three by two gives six runs.
+- Keep both measurement rows adjacent. Candidate names remain editable through
+  an optional test-information row; inclusion and validation appear in column
+  headers and block summaries. Add/delete/include/exclude act on whole selected
+  candidate columns within that block. A header click selects the whole pair.
+- Default blocks expose the two measurement rows together, without selecting a
+  point first. Many points scroll vertically in one contained input viewport;
+  candidate columns scroll horizontally. Common settings/options stay separate.
+- Paste a 2×N TSV rectangle starting at Capacity #1 without transposition.
+  Pasting grows candidate columns within a bounded 100-column page. Overflow
+  never writes to the next point, metadata row, or next page. Invalid included
+  drafts remain visible; excluded invalid drafts remain retained. One paste or
+  clear is one undo operation; pair identities survive edits and undo.
+- Each point pages independently by 100 columns; full pools remain in session
+  state, including a legal 10,000×1 input. Page changes reset that block's undo
+  history and preserve other blocks. Ordinary edits preserve selection/scroll.
+- Preserve the existing runner, active-point resolution, 10,000 limit, ranking,
+  progress/cancel, stale/partial provenance, CSV and pinned detail contracts.
+  Do not transpose the existing batch complete-case model or alter its behavior.
+- Verify paired paste/copy/undo, column actions, page boundaries, inactive points,
+  close/reopen and all existing actual section entry paths. Inspect ISO's two
+  blocks visually and exercise many-point/resize paths with native Tk tests.
 
 ## 7. CSV contract
 
@@ -383,7 +425,7 @@ arbitrary cap override, or global UI redesign is included.
   assembly. EN requests explicitly use Tested inputs. No core engine, config,
   public result DTO, or golden fixture changed.
 - UI owner: `apps/calculator/ui/combinations/` owns per-origin context sessions,
-  candidate paging (100 rows), the shared spreadsheet binding, common settings,
+  candidate paging (100 columns per point), the shared spreadsheet binding, common settings,
   mode/session changes, scheduled progress, result paging (100 rows), detail,
   and pure `calculator_combinations_v1` projection. The existing CSV adapter
   retains BOM writing and file picking.
@@ -408,12 +450,30 @@ arbitrary cap override, or global UI redesign is included.
   new feature UI tests share one Tcl interpreter to avoid macOS Tk's known
   destroyed-root event-loop behavior.
 - A follow-up macOS screenshot review found that the initial candidate viewport
-  showed only one or two rows. Input and result panels now share a proportional
+  showed only one or two rows. The first layout correction used a proportional
   2:1 allocation independent of candidate count, with a 480-pixel minimum dialog
   height. The corrected ISO completion screen was visually inspected. All 3
   native integration tests passed, including resize checks for at least 5 input
   rows at 640×590, 8 at 800×720, and 3 at 640×480, with result rows and action
-  buttons remaining visible.
+  buttons remaining visible. The row-based layout and row-count acceptance were
+  subsequently superseded by §6.1.
+- Candidate-column revision: `candidate_columns.py` projects bounded pool pages
+  through `MetricInputTable` and the shared controller; `candidate_block.py`
+  owns point-level column actions; `candidates.py` composes all blocks in the
+  existing batch viewport. No shared table/window behavior or calculation owner
+  was modified. A small controller extension guards measurement-paste metadata
+  boundaries and preserves undo history while input is locked.
+- Follow-up verification: 43 headless feature tests and 4 native Tk integration
+  tests passed. These cover all 22 baseline contexts, 3×5 pair paste/run, optional
+  names, whole-column inclusion/deletion, IDs/undo, page boundaries, independent
+  point pages, unchanged-widget selection/scroll retention, 10,000×1 bounded
+  rendering/cancel, resize, root disposal, detail/CSV and source reopen. A real
+  Triple Northern common-setting edit switches H3Low inactive→active→inactive
+  while retaining its pool. The many-point viewport reaches the last block.
+- Shared metric/batch/controller/dialog regression: 170 tests passed across 14
+  modules. A macOS screenshot confirmed STD 3 candidate columns and HALF 5
+  candidate columns together, both Capacity/Power rows, the 15-case completion
+  count, ranking and action buttons.
 
 Verification limits: native Windows, Linux desktop, OS-generated keyboard and
 mouse interaction, multiple monitors and mixed DPI were not checked. The

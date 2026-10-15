@@ -83,6 +83,12 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             manager.select(index)
             manager.reload()
             content=manager.handle.dialog._adapter
+            assert list(content.candidates.blocks) == [p.key for p in content.points]
+            for point in content.points:
+                block=content.candidates.blocks[point.key]
+                assert (block.table is not None) == point.independent
+                if block.table is not None:
+                    assert block.table.row_count()==2
             if content.common is not None:
                 count=content.common.row_count()
                 content.common.ensure_row_count(count+1)
@@ -96,6 +102,25 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             pump(root,lambda:run.status!="running")
             assert run.succeeded==1, (context,run.results)
             assert content.adapter.project(run.snapshot.context,run.detail(run.results[0]))==run.results[0].score
+            if context.product == "triple_capacity_northern":
+                # A real common-setting edit changes the active point policy.
+                block=content.candidates.blocks["H3Low"]
+                assert block.table is None
+                retained=tuple(content.session.pools["H3Low"])
+                row=content.common_keys.index("low_min_c")
+                original=content.common.text_at_position((row,1))
+                content.common.set_positions_batch({(row,1): "0"})
+                assert block.table is not None
+                assert tuple(content.session.pools["H3Low"])==retained
+                content.common.set_positions_batch({(row,1): original})
+                assert block.table is None
+                assert tuple(content.session.pools["H3Low"])==retained
+                root.update()
+                viewport=content.candidates.viewport
+                assert viewport.vertical_overflow_delta()>0
+                viewport.canvas.yview_moveto(1.0)
+                root.update()
+                assert viewport.canvas.yview()[1]==1.0
             content.results.tree.selection_set("1")
             # Detail is the real action, and the subdialog contains pinned input text.
             before=set(manager.handle.dialog.window.winfo_children())
@@ -134,7 +159,7 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             widget.destroy()
 
 
-def test_candidate_viewport_remains_useful_when_resized(root):
+def test_point_blocks_share_viewport_and_resize(root):
     from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
     section = IsoIseer2PointSection(root)
     populate(section, contexts()[0])
@@ -143,24 +168,108 @@ def test_candidate_viewport_remains_useful_when_resized(root):
     try:
         content = manager.handle.dialog._adapter
         window = manager.handle.dialog.window
-        table = content.candidates.table
-        table.set_text_rows([dict(label=f"시험 {i}", capacity="3600", power="900") for i in range(12)])
+        blocks = content.candidates.blocks
+        assert list(blocks) == ["35_full", "35_half"]
+        for block in blocks.values():
+            assert block.table.row_count() == 2
+        first, second = blocks.values()
+        first.table.set_positions_batch({(row, col): value for col in range(12)
+                                        for row, value in ((0, "3600"), (1, "900"))})
         content.calculate_button.invoke()
         pump(root, lambda: content.session.run.status != "running")
-        for size, visible_rows in (("640x590", 5), ("800x720", 8), ("640x480", 3)):
+        for size in ("640x590", "800x720", "640x480"):
             window.geometry(size)
             root.update()
-            canvas = table.viewport_frame.canvas
-            header_height = table.table_frame.grid_bbox(0, 0, table.column_count(), 0)[3]
-            row_height = table.cell_frame((0, 1)).winfo_height()
-            assert canvas.winfo_height() >= header_height + visible_rows * row_height
-            # The ranking and actions must remain usable alongside input.
+            viewport = content.candidates.viewport
+            assert viewport.horizontal_overflow_delta() > 0
+            assert first.winfo_y() < second.winfo_y()
+            assert first.table.cell_frame((1, 0)).winfo_height() > 1
+            # Both rows fit inside each block; only the outer viewport scrolls.
+            for block in blocks.values():
+                bottom = block.table.cell_frame((1, 0))
+                assert bottom.winfo_rooty()+bottom.winfo_height() <= block.winfo_rooty()+block.winfo_height()
             tree = content.results.tree
             assert tree.bbox(tree.get_children()[1]), size
             for button in (content.calculate_button, *content.results.actions.values()):
-                assert button.winfo_rooty() + button.winfo_height() <= window.winfo_rooty() + window.winfo_height()
-        assert len(content.session.pools["35_full"]) == 12
+                assert button.winfo_rooty()+button.winfo_height() <= window.winfo_rooty()+window.winfo_height()
+        # A horizontal page stays wide, but never forces the window off-screen.
+        assert window.winfo_width() == 640
         assert content.session.run.succeeded == 12
+    finally:
+        manager.handle.dispose()
+        section._frame.destroy()
+
+
+def test_pair_rectangles_metadata_and_column_identity(root):
+    from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
+    section = IsoIseer2PointSection(root)
+    populate(section, contexts()[0])
+    section.combination_button.invoke()
+    manager = section.combinations
+    try:
+        content = manager.handle.dialog._adapter
+        blocks = content.candidates.blocks
+        for key, capacities, powers in (
+            ("35_full", "3600\t3700\t3800", "900\t920\t950"),
+            ("35_half", "1800\t1850\t1900\t1950\t2000", "400\t410\t420\t430\t440"),
+        ):
+            table = blocks[key].table
+            table.interaction_controller.select((0, 0))
+            table.clipboard_clear(); table.clipboard_append(capacities+"\n"+powers)
+            table.interaction_controller._paste()
+        assert [len(content.session.pools[k]) for k in blocks] == [3, 5]
+        content.calculate_button.invoke()
+        pump(root, lambda: content.session.run.status != "running")
+        run = content.session.run
+        assert run.succeeded == 15
+        assert len({result.selections for result in run.results}) == 15
+        pinned = run.detail(run.results[0])
+        block = blocks["35_full"]
+        table = block.table
+        ids = [c.id for c in table.candidates]
+        half = blocks["35_half"].table.snapshot()
+        # Metadata remains optional and numeric overflow cannot overwrite it.
+        block.names_var.set(True); block.show_names()
+        table.set_positions_batch({(2, 0): "원본 시험"})
+        table.interaction_controller.select((0, 0))
+        table.clipboard_clear(); table.clipboard_append("3601\n901\n덮어쓰면 안 됨")
+        table.interaction_controller._paste()
+        assert table.candidates[0].label == "원본 시험"
+        assert table.candidates[0].power == "901"
+        assert blocks["35_half"].table.snapshot() == half
+        table.interaction_controller._undo_last()
+        assert table.candidates[0].capacity == "3600"
+        assert [c.id for c in table.candidates] == ids
+        # Include/exclude operates on whole columns and retains invalid drafts.
+        table.select_column(1)
+        assert set(table.interaction_controller.selected_positions()) == {(0, 1), (1, 1)}
+        block.toggle()
+        table.set_positions_batch({(0, 1): "bad"})
+        assert content.calculate_button.instate(["!disabled"])
+        assert not content.session.pools["35_full"][1].included
+        block.toggle()
+        assert content.calculate_button.instate(["disabled"])
+        assert "후보 #2" in content.status.cget("text")
+        block.remove()
+        assert [c.id for c in content.session.pools["35_full"]] == [ids[0], ids[2]]
+        assert content.session.stale and run.detail(run.results[0]) == pinned
+        # Editing a value does not rebuild the table or reset viewport position.
+        root.update()
+        canvas = content.candidates.viewport.canvas
+        canvas.xview_moveto(0.2); root.update()
+        position = canvas.xview()
+        table = block.table
+        widget = table.grid_table
+        table.interaction_controller.select((1, 0))
+        table.set_positions_batch({(1, 0): "902"})
+        root.update()
+        assert table.grid_table is widget
+        assert table.interaction_controller.active == (1, 0)
+        assert canvas.xview() == position
+        saved = dict((key, tuple(pool)) for key, pool in content.session.pools.items())
+        manager.handle.dispose(); section.combination_button.invoke()
+        assert manager.current.run is run
+        assert {k: tuple(v) for k, v in manager.current.pools.items()} == saved
     finally:
         manager.handle.dispose()
         section._frame.destroy()
@@ -173,18 +282,20 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         populate(section,contexts()[0])
         section.combination_button.invoke()
         manager=section.combinations; content=manager.handle.dialog._adapter
-        panel=content.candidates; table=panel.table;controller=table.interaction_controller
-        controller.select((0,1))
-        table.clipboard_clear();table.clipboard_append("시험 A\t3600\t900\n시험 B\t3700\t950")
+        panel=content.candidates.blocks["35_full"]; table=panel.table;controller=table.interaction_controller
+        controller.select((0,0))
+        table.clipboard_clear();table.clipboard_append("3600\t3700\n900\t950")
         controller._paste()
         assert len(content.session.pools["35_full"])==2
-        ids=[c.id for c in content.session.pools["35_full"]]
+        first_id=content.session.pools["35_full"][0].id
         controller._undo_last()
         assert len(content.session.pools["35_full"])==1
         controller._paste()
-        controller.select((0,0));controller._clear()
-        assert content.session.pools["35_full"][0].included
-        controller.select((0,1));controller.select((1,3),extend=True)
+        assert content.session.pools["35_full"][0].id == first_id
+        controller.select((0,0));controller.select((1,1),extend=True)
+        controller._copy()
+        assert table.clipboard_get() == "3600\t3700\n900\t950"
+        controller.select((0,0));controller.select((1,1),extend=True)
         controller._clear();controller._undo_last()
         assert content.session.pools["35_full"][1].power=="950"
         content.calculate_button.invoke();run=content.session.run
@@ -194,11 +305,11 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         pump(root,lambda:run.status!="running")
         assert run.succeeded==2
         prior=run.detail(run.results[0])
-        panel.table.set_positions_batch({(0,3):"1100"})
+        panel.table.set_positions_batch({(1,0):"1100"})
         assert content.session.stale and run.detail(run.results[0])==prior
         panel.table.interaction_controller.select((0,0));panel.toggle()
         assert not content.session.pools["35_full"][0].included
-        panel.table.interaction_controller.select((1,0));panel.remove()
+        panel.table.select_column(1);panel.remove()
         assert len(content.session.pools["35_full"])==1
         # Large legal pool is retained outside widgets; input projection stays bounded.
         session=content.session
@@ -206,9 +317,13 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         session.pools["35_full"]=[Candidate(label=f"시험 {i}",capacity="3600",power="900") for i in range(10000)]
         session.changed()
         section.combination_button.invoke();content=manager.handle.dialog._adapter
-        assert content.candidates.table.row_count()==100
-        content.candidates.move(1)
-        assert content.candidates.page==1 and content.candidates.table.interaction_controller._undo.pop() is None
+        panel=content.candidates.blocks["35_full"]
+        assert panel.table.column_count()==100 and panel.table.row_count()==2
+        other=content.candidates.blocks["35_half"]
+        other_snapshot=other.table.snapshot()
+        panel.move(1)
+        assert panel.page==1 and panel.table.interaction_controller._undo.pop() is None
+        assert other.table.snapshot()==other_snapshot and other.page==0
         content.calculate_button.invoke();run=session.run
         heartbeats=[]
         root.after(5,lambda:heartbeats.append(run.processed))
@@ -220,11 +335,11 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         content.results.copy()
         assert "CSPF" in content.results.clipboard_get()
         # Paste overflow never crosses the candidate page or another point.
-        table=content.candidates.table
-        table.interaction_controller.select((99,2))
-        table.clipboard_clear();table.clipboard_append("3601\t901\n9999\t9999")
+        table=panel.table
+        table.interaction_controller.select((0,99))
+        table.clipboard_clear();table.clipboard_append("3601\t9999\n901\t9999")
         table.interaction_controller._paste()
-        assert table.row_count()==100
+        assert table.column_count()==100
         assert session.pools["35_full"][199].capacity=="3601"
         assert session.pools["35_full"][200].capacity=="3600"
         filename=tmp_path/"partial.csv"
