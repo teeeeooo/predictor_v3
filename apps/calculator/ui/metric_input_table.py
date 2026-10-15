@@ -51,6 +51,7 @@ class MetricInputTable(ttk.Frame):
         columns: tuple[tuple[str, str], ...],
         rows: tuple[tuple[str, str], ...],
         editable_cells: Mapping[CellAddress, str],
+        corner_label: str = "",
         row_header_chars: int = TABLE_ROW_HEADER_CHARS,
         data_column_chars: int = TABLE_DATA_COLUMN_CHARS,
         layout_policy: str = "content_hug",
@@ -68,6 +69,7 @@ class MetricInputTable(ttk.Frame):
         self.columns = columns
         self.rows = rows
         self.editable_cells = dict(editable_cells)
+        self.corner_label = corner_label
         self.row_header_chars = row_header_chars
         self.data_column_chars = data_column_chars
         self.layout_policy = layout_policy
@@ -111,7 +113,7 @@ class MetricInputTable(ttk.Frame):
         self.table_frame.surface_role = "table_frame"
         self.table_frame.layout_policy = self.layout_policy
         self._configure_column_weights()
-        self._add_header_cell(column=0, key=None, label="")
+        self._add_header_cell(column=0, key=None, label=self.corner_label)
         for column_number, (_key, label) in enumerate(self.columns, start=1):
             self._add_header_cell(column=column_number, key=_key, label=label)
         for row_number, (row_key, label) in enumerate(self.rows, start=1):

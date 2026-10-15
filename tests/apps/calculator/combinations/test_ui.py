@@ -188,6 +188,11 @@ def test_point_blocks_share_viewport_and_resize(root):
             for block in blocks.values():
                 bottom = block.table.cell_frame((1, 0))
                 assert bottom.winfo_rooty()+bottom.winfo_height() <= block.winfo_rooty()+block.winfo_height()
+                corner=block.table.grid_table.table_frame.grid_slaves(row=0, column=0)[0]
+                assert corner.winfo_children()[0].cget("text") == {"35_full":"STD", "35_half":"HALF"}[block.point.key]
+                assert "유효" in block.caption.cget("text") and "전체" in block.caption.cget("text")
+                assert bottom.winfo_rooty()+bottom.winfo_height() <= block.caption.winfo_rooty()
+                assert block.caption.winfo_rooty()+block.caption.winfo_height() <= block.buttons[0].winfo_rooty()
             tree = content.results.tree
             assert tree.bbox(tree.get_children()[1]), size
             for button in (content.calculate_button, *content.results.actions.values()):
@@ -273,6 +278,55 @@ def test_pair_rectangles_metadata_and_column_identity(root):
         manager.handle.dispose(); section.combination_button.invoke()
         assert manager.current.run is run
         assert {k: tuple(v) for k, v in manager.current.pools.items()} == saved
+    finally:
+        manager.handle.dispose()
+        section._frame.destroy()
+
+
+def test_context_tabs_preserve_window_and_sessions_and_reload_selected_only(root):
+    from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
+    section = IsoIseer2PointSection(root)
+    populate(section, contexts()[0])
+    section.combination_button.invoke()
+    manager = section.combinations
+    try:
+        shell = manager.handle.dialog
+        window = shell.window
+        window.geometry("800x720+30+40")
+        root.update()
+        geometry = window.geometry()
+        original = manager.current
+        content = shell._adapter
+        labels = [content.context_tabs.tab(i, "text") for i in range(2)]
+        assert labels == [ctx.profile for ctx in manager.contexts]
+        content.candidates.blocks["35_full"].table.set_positions_batch({(0, 1): "3700", (1, 1): "950"})
+        content.calculate_button.invoke()
+        assert str(content.context_tabs.tab(1, "state")) == "disabled"
+        pump(root, lambda: original.run.status != "running")
+        run = original.run
+        content.context_tabs.select(1)
+        root.update()
+        assert content.disposed
+        assert manager.handle.dialog is shell and shell.window is window
+        assert window.geometry() == geometry
+        second = manager.current
+        assert second is not original and second.run is None
+        shell._adapter.candidates.blocks["35_full"].table.set_positions_batch({(0, 0): "4100"})
+        second_input = tuple(second.pools["35_full"])
+        shell._adapter.context_tabs.select(0)
+        root.update()
+        assert manager.current is original and original.run is run
+        assert len(original.pools["35_full"]) == 2
+        assert window.geometry() == geometry
+        # Explicit reload consumes current main inputs and resets this tab only.
+        section.input_table.set_values_batch({"full_capacity": "3900"})
+        shell._adapter.reload_button.invoke()
+        root.update()
+        assert manager.current.run is None
+        assert len(manager.current.pools["35_full"]) == 1
+        assert manager.current.pools["35_full"][0].capacity == "3900"
+        assert tuple(second.pools["35_full"]) == second_input
+        assert manager.sessions[second.context.identity] is second
     finally:
         manager.handle.dispose()
         section._frame.destroy()

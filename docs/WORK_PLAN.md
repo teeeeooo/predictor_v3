@@ -39,8 +39,11 @@ Capacity/Power rows and independent candidate columns. Main integration review
 corrected result/CSV candidate identification by pinning each original column
 number before exclusions. Verification passed 65 feature/application-boundary
 tests and 4 native Tk integration tests, plus a fresh ISO 3×5 completion screenshot.
-The earlier 170 shared UI regression tests remain applicable. Calculation formulas
-and public result contracts remain unchanged. See the specification for remaining
+The latest layout revision puts point names in table corner headers, moves counts
+and actions below the tables, and selects calculation contexts through tabs.
+Five native integration tests and 90 focused shared table/window regression tests
+passed, with ISO screenshots confirming the layout. Calculation formulas and
+public result contracts remain unchanged. See the specification for remaining
 platform limits.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**

@@ -29,9 +29,10 @@ class CandidateColumnController(TkTableController):
 class CandidateColumns(ttk.Frame):
     """One bounded point page; numeric rows never paste into another block."""
 
-    def __init__(self, parent, point, candidates, offset, changed):
+    def __init__(self, parent, point, candidates, offset, changed, *, title):
         super().__init__(parent)
         self.point, self.offset, self.changed = point, offset, changed
+        self.title = title
         self.candidates = list(candidates)
         self.locked = False
         self.pasting_measurements = False
@@ -51,7 +52,7 @@ class CandidateColumns(ttk.Frame):
             self.grid_table.destroy()
         columns = tuple((str(i), f"#{self.offset+i+1}") for i in range(len(self.candidates)))
         labels = dict(capacity=f"Capacity [{self.point.capacity_unit}]", power="Power [W]", label="시험명")
-        self.grid_table = MetricInputTable(self, columns=columns,
+        self.grid_table = MetricInputTable(self, columns=columns, corner_label=self.title,
             rows=tuple((key, labels[key]) for key in self.fields),
             editable_cells={(key, col): f"{key}:{col}" for key in self.fields for col, _ in columns})
         self.grid_table.grid(row=0, column=0, sticky="w")

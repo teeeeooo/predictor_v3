@@ -6,28 +6,30 @@ from tkinter import ttk
 from apps.calculator.application.combinations.models import Candidate
 from apps.calculator.application.combinations.service import validate_candidate, ValidationError
 from apps.calculator.ui.layout_constants import CONTROL_GROUP_GAP
+from apps.calculator.ui.metric_input_table import MetricInputTable
 from .candidate_columns import CandidateColumns, PAGE_SIZE
 
 
 def point_title(point):
-    return {"35_full": "STD · 35_full", "35_half": "HALF · 35_half"}.get(point.key, point.key)
+    return {"35_full": "STD", "35_half": "HALF"}.get(point.key, point.key)
 
 
-class CandidateBlock(ttk.LabelFrame):
+class CandidateBlock(ttk.Frame):
     def __init__(self, parent, session, point, changed):
-        super().__init__(parent, text=point_title(point))
+        super().__init__(parent)
         self.session, self.point, self.changed = session, point, changed
         self.page = 0
         self.table = None
+        self.inactive_header = None
         self.locked = False
         self.rendered_count = 0
         self.columnconfigure(0, weight=1)
         bar = ttk.Frame(self)
-        bar.grid(row=0, column=0, sticky="w")
+        bar.grid(row=2, column=0, sticky="w")
         self.buttons = []
         for label, callback in (("열 추가", self.add), ("선택 열 삭제", self.remove),
-                                ("포함/제외", self.toggle), ("이전 열", lambda: self.move(-1)),
-                                ("다음 열", lambda: self.move(1))):
+                                ("포함/제외", self.toggle), ("이전 페이지", lambda: self.move(-1)),
+                                ("다음 페이지", lambda: self.move(1))):
             button = ttk.Button(bar, text=label, command=callback)
             button.pack(side="left")
             self.buttons.append(button)
@@ -35,7 +37,7 @@ class CandidateBlock(ttk.LabelFrame):
         self.names_button = ttk.Checkbutton(bar, text="시험명", variable=self.names_var, command=self.show_names)
         self.names_button.pack(side="left", padx=(CONTROL_GROUP_GAP, 0))
         self.caption = ttk.Label(self)
-        self.caption.grid(row=2, column=0, sticky="w")
+        self.caption.grid(row=1, column=0, sticky="w")
         self.show()
 
     def commit(self):
@@ -44,6 +46,9 @@ class CandidateBlock(ttk.LabelFrame):
             self.sync()
 
     def show(self):
+        if self.inactive_header:
+            self.inactive_header.destroy()
+            self.inactive_header = None
         if self.table:
             self.table.destroy()
             self.table = None
@@ -53,10 +58,14 @@ class CandidateBlock(ttk.LabelFrame):
             start = self.page * PAGE_SIZE
             candidates = pool[start:start+PAGE_SIZE]
             self.rendered_count = len(candidates)
-            self.table = CandidateColumns(self, self.point, candidates, start, self.sync)
-            self.table.grid(row=1, column=0, sticky="w")
+            self.table = CandidateColumns(self, self.point, candidates, start, self.sync, title=point_title(self.point))
+            self.table.grid(row=0, column=0, sticky="w")
             if self.names_var.get():
                 self.table.names(True)
+        else:
+            self.inactive_header = MetricInputTable(self, columns=(), rows=(),
+                editable_cells={}, corner_label=point_title(self.point))
+            self.inactive_header.grid(row=0, column=0, sticky="w")
         self.lock(self.locked)
         self.refresh()
 
@@ -89,10 +98,9 @@ class CandidateBlock(ttk.LabelFrame):
                 count += validate_candidate(candidate, self.point, i) is not None
             except ValidationError:
                 errors.append(i)
-        self.configure(text=f"{point_title(self.point)} · 유효 {count} / 전체 {len(pool)}")
         start = self.page * PAGE_SIZE
         status = f" · 오류 후보 #{errors[0]} 외 {len(errors)-1}개" if errors else ""
-        self.caption.configure(text=f"후보 #{start+1}–#{min(start+PAGE_SIZE, len(pool))} · 페이지 {self.page+1} · 붙여넣기 최대 100열{status}")
+        self.caption.configure(text=f"후보 #{start+1}–#{min(start+PAGE_SIZE, len(pool))} · 유효 {count} / 전체 {len(pool)} · 페이지 {self.page+1} · 붙여넣기 최대 100열{status}")
         for button, disabled in ((self.buttons[3], self.page == 0),
                                  (self.buttons[4], start+PAGE_SIZE >= len(pool))):
             button.state(["disabled" if disabled or self.locked else "!disabled"])

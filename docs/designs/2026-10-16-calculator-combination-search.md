@@ -292,6 +292,17 @@ Power [W]         400      420
 - Default blocks expose the two measurement rows together, without selecting a
   point first. Many points scroll vertically in one contained input viewport;
   candidate columns scroll horizontally. Common settings/options stay separate.
+- Put each test-point name (e.g. STD/HALF) in the table's top-left corner cell.
+  Show valid/total counts with the candidate-range/page caption below the table;
+  place column actions below that caption. Page controls are labelled 이전 페이지
+  and 다음 페이지 because each step changes a 100-column page.
+- Select calculation profiles/climates/products through explicit top tabs, not
+  an unlabeled dropdown. Tab switches preserve the window geometry and each
+  session's draft/results; other tabs are disabled during a run. Option variants
+  with the same base title receive distinct setting numbers, with exact flags
+  in 실행 옵션. The main-input reload action is labelled 메인 입력으로 초기화,
+  explains that the current tab's candidates/results are reset, and is disabled
+  when no matching context exists in the invoking main section.
 - Paste a 2×N TSV rectangle starting at Capacity #1 without transposition.
   Pasting grows candidate columns within a bounded 100-column page. Overflow
   never writes to the next point, metadata row, or next page. Invalid included
@@ -478,6 +489,13 @@ arbitrary cap override, or global UI redesign is included.
   modules. A macOS screenshot confirmed STD 3 candidate columns and HALF 5
   candidate columns together, both Capacity/Power rows, the 15-case completion
   count, ranking and action buttons.
+- Header/control revision: point names now use the metric grid's optional corner
+  label (blank by default for existing callers). Counts and column controls sit
+  below each table. Context tabs replace the dropdown; the batch shell can swap
+  session content without replacing or repositioning its window. Main-input
+  reload is explicitly labelled as resetting the current tab's candidates and
+  results. Five native combination tests and 90 focused shared table/window
+  regression tests passed; macOS ISO screenshots confirmed the new arrangement.
 - Main integration review corrected unnamed result candidates showing internal
   ID prefixes: results now show their pinned column numbers, with optional test
   names, and CSV includes the same numbers. Excluded columns and later input

@@ -7,7 +7,6 @@ from apps.calculator.application.combinations.adapters import StandardAdapter, s
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
 from .dialog import CombinationContent
-from .presentation import TITLES, field_label
 
 
 class CombinationManager:
@@ -20,14 +19,6 @@ class CombinationManager:
         self.current = None
         self.last_source_identity = None
         parent.bind("<Destroy>", self.on_destroy, add="+")
-
-    def label(self, context):
-        flags = ", ".join(f"{field_label(k)}={v}" for k, v in context.options if isinstance(v, bool))
-        return " / ".join(str(v) for v in (TITLES[context.kind], context.profile if context.kind == "iso" else "", context.climate,
-                                           context.product, context.system_type, context.mode, flags) if v)
-
-    def labels(self):
-        return [self.label(ctx) for ctx in self.contexts]
 
     def open(self):
         contexts = list(self.source())
@@ -53,9 +44,13 @@ class CombinationManager:
 
     def select(self, index):
         context = self.contexts[index]
-        self.handle.dispose()
+        if self.current.context.identity == context.identity:
+            return
         self.current = self.sessions[context.identity]
-        self.handle.open_or_focus(self.create)
+        if self.handle.dialog:
+            self.handle.dialog.replace_content(CombinationContent(self, self.current))
+        else:
+            self.handle.open_or_focus(self.create)
 
     def change_options(self, options):
         self.handle.dispose()
@@ -66,9 +61,12 @@ class CombinationManager:
         self.current = self.sessions[context.identity]
         self.handle.open_or_focus(self.create)
 
+    def reload_source(self):
+        return next((ctx for ctx in self.source() if ctx.identity == self.current.context.identity), None)
+
     def reload(self):
         identity = self.current.context.identity
-        source = next((ctx for ctx in self.source() if ctx.identity == identity), None)
+        source = self.reload_source()
         if source is None:
             return
         self.handle.dispose()

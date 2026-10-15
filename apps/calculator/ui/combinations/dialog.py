@@ -8,7 +8,7 @@ from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE, AP
 from .candidates import CandidatePanel, CandidateTable
 from .results import ResultsPanel
 from .options import OptionsPanel
-from .presentation import field_label, STATUS
+from .presentation import field_label, context_tab_labels, STATUS
 
 
 class CombinationContent:
@@ -29,18 +29,23 @@ class CombinationContent:
         # most of a capped dialog and leaves only one candidate row visible.
         self.frame.rowconfigure(2, weight=2, uniform="combination_body")
         self.frame.rowconfigure(5, weight=1, uniform="combination_body")
-        self.context_combo = ttk.Combobox(self.frame, values=self.manager.labels(), state="readonly")
-        self.context_combo.set(self.manager.label(self.session.context))
-        self.context_combo.grid(row=0, column=0, sticky="ew")
-        self.context_combo.bind("<<ComboboxSelected>>", lambda e: self.manager.select(self.context_combo.current()))
+        self.context_tabs = ttk.Notebook(self.frame, height=0)
+        for label in context_tab_labels(self.manager.contexts):
+            self.context_tabs.add(ttk.Frame(self.context_tabs), text=label)
+        self.context_index = next(i for i, ctx in enumerate(self.manager.contexts)
+                                  if ctx.identity == self.session.context.identity)
+        self.context_tabs.select(self.context_index)
+        self.context_tabs.grid(row=0, column=0, sticky="ew")
+        self.context_tabs.bind("<<NotebookTabChanged>>", self.change_context)
         controls = ttk.Frame(self.frame)
         controls.grid(row=1, column=0, sticky="ew")
-        self.reload_button = ttk.Button(controls, text="원본 입력 다시 불러오기", command=self.manager.reload)
+        self.reload_button = ttk.Button(controls, text="메인 입력으로 초기화", command=self.manager.reload)
         self.reload_button.pack(side="left")
         self.basis = ttk.Combobox(controls, state="readonly", values=self.adapter.bases(self.session.context))
         self.basis.set(self.session.context.basis)
         self.basis.pack(side="left")
         self.basis.bind("<<ComboboxSelected>>", self.change_basis)
+        ttk.Label(controls, text="현재 탭의 후보·결과 초기화").pack(side="left")
         tabs = ttk.Notebook(self.frame)
         tabs.grid(row=2, column=0, sticky="nsew")
         candidate_frame = ttk.Frame(tabs)
@@ -85,6 +90,13 @@ class CombinationContent:
         self.refresh()
         return self.frame
 
+    def change_context(self, _event=None):
+        if self.disposed:
+            return
+        index = self.context_tabs.index("current")
+        if index != self.context_index:
+            self.manager.select(index)
+
     def change_basis(self, _event=None):
         self.session.context = replace(self.session.context, basis=self.basis.get())
         self.session.changed()
@@ -118,6 +130,7 @@ class CombinationContent:
         running = self.session.run is not None and self.session.run.status == "running"
         self.calculate_button.state(["!disabled" if valid and not running else "disabled"])
         self.cancel_button.state(["!disabled" if running else "disabled"])
+        self.reload_button.state(["!disabled" if not running and self.manager.reload_source() is not None else "disabled"])
         self.results.refresh()
         if self.session.run and self.session.run.failure:
             self.status.configure(text=self.session.run.failure)
@@ -158,8 +171,9 @@ class CombinationContent:
             for i in range(self.common.row_count()):
                 self.common.cell_widget((i, 1)).configure(state="readonly" if locked else "normal")
             self.common.interaction_controller.refresh()
-        for widget in (self.context_combo, self.basis):
-            widget.configure(state="disabled" if locked else "readonly")
+        for index in range(len(self.manager.contexts)):
+            self.context_tabs.tab(index, state="disabled" if locked and index != self.context_index else "normal")
+        self.basis.configure(state="disabled" if locked else "readonly")
         self.reload_button.state(["disabled" if locked else "!disabled"])
 
     def cancel(self):

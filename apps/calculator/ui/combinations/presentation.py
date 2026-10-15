@@ -29,3 +29,29 @@ def field_label(key):
     if key.endswith(("_min_c", "_max_c")):
         return key.replace("_min_c", " 최저 [°C]").replace("_max_c", " 최고 [°C]").title()
     return key.replace("_", " ")
+
+
+def context_tab_labels(contexts):
+    """Show the varying calculation choice, without internal option dictionaries."""
+    products = {"variable_capacity": "Variable Capacity", "dual_stage": "Dual Stage",
+                "triple_capacity_northern": "Triple Northern"}
+    climates = {"average": "평균 기후", "warmer": "온난 기후", "colder": "한랭 기후"}
+    modes = {"required_only": "필수 시험", "with_optional_test": "35 Min 실측 포함"}
+    labels = []
+    for context in contexts:
+        if context.kind == "iso":
+            label = context.profile
+        else:
+            label = " · ".join(str(value) for value in (
+                TITLES[context.kind], climates.get(context.climate, context.climate),
+                products.get(context.product, context.product), context.system_type,
+                modes.get(context.mode, context.mode)) if value)
+        labels.append(label)
+    # Options create separate sessions. Keep their tabs distinct and concise;
+    # the selected session's exact flags remain visible in 실행 옵션.
+    counts = {}
+    result = []
+    for label in labels:
+        counts[label] = counts.get(label, 0) + 1
+        result.append(f"{label} · 설정 {counts[label]}" if labels.count(label) > 1 else label)
+    return result

@@ -111,6 +111,17 @@ class BatchDialogShell(Generic[SnapshotT]):
     def snapshot(self) -> SnapshotT:
         return self._adapter.snapshot()
 
+    def replace_content(self, adapter: BatchProfileAdapter[SnapshotT]) -> None:
+        """Switch a session in place, retaining the user's window geometry."""
+        self._adapter.snapshot()
+        self._adapter.dispose()
+        pack_options = self.content_widget.pack_info()
+        self.content_widget.destroy()
+        self._adapter = adapter
+        self.window.title(adapter.title)
+        self.content_widget = adapter.build_content(self.window)
+        self.content_widget.pack(**pack_options)
+
     def close(self) -> None:
         snapshot = self.snapshot()
         self._adapter.dispose()
