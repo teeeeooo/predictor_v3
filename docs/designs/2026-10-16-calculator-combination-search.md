@@ -402,7 +402,7 @@ arbitrary cap override, or global UI redesign is included.
   paste/clear/undo, page overflow, a legal 10,000×1 candidate pool with bounded
   widgets, responsive progress/cancel, partial export and root disposal.
 - The regression pass completed 1,313 tests with no skips; the subsequently
-  strengthened feature suite completed 40 headless tests and 2 native Tk
+  strengthened feature suite completed 43 headless tests and 2 native Tk
   integration tests. Calculator regression spans standard/golden, application
   boundary, entrypoint, and shared Tk table/window tests. Native modules run in separate processes;
   new feature UI tests share one Tcl interpreter to avoid macOS Tk's known

@@ -22,8 +22,8 @@ def validate_candidate(candidate, point, row):
     for field in ("capacity", "power"):
         text = getattr(candidate, field).strip()
         try:
-            # AHRI's current application parser accepts thousands separators.
-            value = float(text.replace(",", "") if point.capacity_unit == "Btu/h" else text)
+            # Preserve the originating table/application numeric text policy.
+            value = float(text.replace(",", "") if point.allow_thousands else text)
             if not isfinite(value) or value <= 0:
                 raise ValueError()
         except ValueError:

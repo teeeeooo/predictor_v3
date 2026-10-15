@@ -102,3 +102,21 @@ def test_raw_published_basis_and_brazil_ng_are_rankable():
     ng_run=finish(start(seed_session(brazil,ng_adapter),ng_adapter))
     assert ng_run.succeeded==1
     assert dict(ng_run.results[0].score.summary)["final"]=="NG"
+
+
+@pytest.mark.parametrize("kind", ["en_seer", "en_scop", "seer2"])
+def test_existing_thousands_separator_input_policy(kind):
+    adapter=StandardAdapter()
+    context=next(c for c in contexts() if c.kind==kind)
+    expected=finish(start(seed_session(context,adapter),adapter)).results[0].score
+    values=dict(context.values)
+    for point in adapter.points(context):
+        if point.independent:
+            for key in (point.capacity_field,point.power_field):
+                values[key]=f"{float(values[key]):,.2f}"
+    for key in ("p_design_c_w", "p_design_h_w"):
+        if key in values:
+            values[key]="3,500"
+    grouped=replace(context,values=tuple(values.items()))
+    run=finish(start(seed_session(grouped,adapter),adapter))
+    assert run.results[0].score==expected

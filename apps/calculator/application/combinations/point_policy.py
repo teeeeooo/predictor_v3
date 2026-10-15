@@ -27,12 +27,12 @@ def resolve_points(context, scop_adapter=None):
         return tuple(Point(key, prefix+"_capacity", prefix+"_power",
                            role="inactive" if key=="35_min" and context.mode!="with_optional_test" else "required") for key, prefix in fields)
     if kind == "en_seer":
-        return tuple(Point(key, "tested_capacity_"+key, "tested_power_"+key) for key in "ABCD")
+        return tuple(Point(key, "tested_capacity_"+key, "tested_power_"+key, allow_thousands=True) for key in "ABCD")
     if kind == "en_scop":
         adapter = scop_adapter or ScopAdapter()
-        availability = adapter.resolve_point_availability(context.climate, float(values["tbiv_temp_c"]) if values.get("tbiv_temp_c", "").strip() else None, float(values["tol_temp_c"]) if values.get("tol_temp_c", "").strip() else None)
+        availability = adapter.resolve_point_availability(context.climate, float(values["tbiv_temp_c"].replace(",", "")) if values.get("tbiv_temp_c", "").strip() else None, float(values["tol_temp_c"].replace(",", "")) if values.get("tol_temp_c", "").strip() else None)
         return tuple(Point(key, "tested_capacity_"+key, "tested_power_"+key,
-                           role=state["state"], source=state["mapped_from"] or "") for key, state in availability["points"].items())
+                           role=state["state"], source=state["mapped_from"] or "", allow_thousands=True) for key, state in availability["points"].items())
     inactive = {}
     if kind == "m_seer":
         order = AHRI_M_SEER_POINT_ORDER
@@ -53,4 +53,4 @@ def resolve_points(context, scop_adapter=None):
     else:
         raise ValueError(f"Unsupported combination context: {kind}")
     return tuple(Point(key, "capacity_"+key, "power_"+key, "Btu/h",
-                       role="inactive" if inactive.get(key, False) else "required") for key in order)
+                       role="inactive" if inactive.get(key, False) else "required", allow_thousands=True) for key in order)

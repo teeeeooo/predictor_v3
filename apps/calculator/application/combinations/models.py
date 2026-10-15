@@ -22,6 +22,7 @@ class Point:
     capacity_unit: str = "W"
     role: str = "required"
     source: str = ""
+    allow_thousands: bool = False
 
     @property
     def independent(self):

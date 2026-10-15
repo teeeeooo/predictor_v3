@@ -91,11 +91,11 @@ class StandardAdapter:
                 if key in ("tbiv_temp_c", "tol_temp_c") and not value.strip():
                     settings[key] = None
                     continue
-                settings[key] = value if key == "appliance_type" else float(value)
+                settings[key] = value if key == "appliance_type" else float(value.replace(",", ""))
                 if isinstance(settings[key], float) and not isfinite(settings[key]):
                     raise ValueError(f"{key}: 유한 숫자 필요")
             model = SeerPointInput if context.kind=="en_seer" else ScopPointInput
-            inputs = {p.key: model(tested_capacity=float(values[p.capacity_field]), tested_power=float(values[p.power_field]))
+            inputs = {p.key: model(tested_capacity=float(values[p.capacity_field].replace(",", "")), tested_power=float(values[p.power_field].replace(",", "")))
                       for p in self.points(context) if p.independent}
             if context.kind == "en_scop":
                 settings["climate"] = context.climate
