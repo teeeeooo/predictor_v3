@@ -127,12 +127,14 @@ Concrete reuse points:
   geometry. The shell's current snapshot annotation is `list[dict[str, str]]`;
   a typed combination session must not be squeezed into fake rows. Use a small
   compatible generic snapshot seam or an adapter over an external session store.
-- Large ranked collections use the scrollable Treeview family and
-  `ui/table/treeview_style.py`, with paging. `compact_result_grid.py` is for small
-  fixed results and whole-table copy; it is not a large ranking table.
+- Ranked results use a feature-local read-only page adapter over
+  `compact_result_grid.py`, `TkTableController` and `BatchTableViewport`. Only
+  100 rows are rendered at once. The original Treeview choice is superseded:
+  native row selection cannot provide the requested rectangular cell copy.
+  Rendering, selection and scrolling stay with their existing shared owners.
 - `ui/table_csv_export.py` already owns UTF-8-BOM CSV writing and file picking.
   Pure application code must not import that Tk-bound module. CSV column names,
-  ordering, and schema version belong to the export adapter, not the engine or
+  ordering, and extra-result selection belong to the export adapter, not the engine or
   application result model; the export projection itself needs no widgets/I/O.
 
 Follow the [architecture boundary](../architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md)
@@ -229,7 +231,7 @@ are unnecessary for this limit.
 - Bottom: Calculate/Cancel, progress and summary, ranked read-only results,
   selected-result detail, and **전체 결과 CSV 저장**. Result columns contain rank,
   metric/units/basis, selected test labels per point, and status. Candidate values
-  and fixed settings remain inspectable through detail/export.
+  remain inspectable through detail/export; fixed settings remain in detail.
 - Default result page size: 100. Export covers the whole run, not the visible
   page. Bound editable candidate rendering too; a legal 10,000×1 run must not
   create 10,000 Entry columns. Keep all drafts in the model and project a bounded
@@ -240,9 +242,10 @@ are unnecessary for this limit.
   that page boundary visible. Grow columns only within that bounded projection;
   never silently move overflow into another point/context. A page switch
   settles editing and resets page-local undo so it cannot affect different candidates.
-- Result tables support row selection, keyboard navigation, and selected-row TSV
-  copy with read-only enforcement, per the scrollable-data family. Preserve
-  selection by combination ID across safe refreshes. Shared table behavior and
+- Result tables support rectangular cell drag selection, keyboard navigation,
+  Ctrl/Cmd+C and an explicit selected-range copy action, with read-only enforcement.
+  Preserve selection by combination ID/column and scroll across unchanged refreshes;
+  reset selection when moving to a page without those results. Shared table behavior and
   visuals belong in shared owners, not copied per standard.
 - Preserve draft/results when closing and reopening within the application
   session. Keep the session outside disposable widgets and keyed by originating
@@ -283,7 +286,7 @@ Power [W]         400      420
   stable candidate ID and a complete capacity/power pair. STD #1 and HALF #1
   are independent choices, not a pre-paired case. Three by two gives six runs.
 - Results show the original candidate column as `#n`, followed by its test name
-  when supplied. Pin that number before exclusions so detail/CSV can identify
+  when supplied. Pin that number before exclusions so the result table/detail can identify
   the source column even after later input edits or deletions.
 - Keep both measurement rows adjacent. Candidate names remain editable through
   an optional test-information row; inclusion and validation appear in column
@@ -320,31 +323,38 @@ Power [W]         400      420
 
 ## 7. CSV contract
 
-New combination export schema `calculator_combinations_v1`: UTF-8 with BOM,
-standard CSV quoting, one processed combination per row in displayed rank order.
-Completed runs include all successful and failed combinations. Cancelled/failed
-runs export only processed rows and explicitly identify partial coverage.
+The user-approved concise export replaces the initial metadata-heavy
+`calculator_combinations_v1` projection. UTF-8 with BOM and standard CSV quoting
+remain unchanged. Export every processed combination in numeric rank order,
+including errors, across all pages.
 
-Required fields:
+Columns, in order:
 
-- `schema_version`, `run_id`, `run_status`, `input_revision`, `stale`,
-  `planned_count`, `processed_count`;
-- `combination_id`, `rank`, `calculation_status`, `error_code`, `error_message`;
-- capability/profile/metric, climate/product/system type when applicable,
-  `score_basis`, `score`, `score_units`, and available raw/published metrics;
-- one stable point-prefixed set of candidate ID, `candidate_number` (the original
-  1-based column at execution time), test label, numeric capacity, power, and
-  unit fields per independent point;
-- standard summary/Rule/Final fields where applicable, and deterministic
-  `context_json` for fixed inputs/options and resolved point-source metadata.
+- `순위`, `값`, `지표`;
+- each independent test point's `성능 [capacity unit]` and `전력 [W]`, in point
+  order, using the run's selected capacity/power pair (`STD`, `HALF` for ISO);
+- available standard-specific additional results: cooling/energy totals for
+  ISO/HK/KS/SASO; Brazil Two Point/Rule/Final; EN SEER `seer_on`, `qc_kwh`;
+  EN SCOP `scop_on`, `qh_kwh`, active/standby/total energy; AHRI M seasonal
+  load/energy sums; M1 EER2 values and canonical load/energy totals;
+- a single `오류` column only when the run has failed combinations. Failed rows
+  retain their test pairs and metric, with blank rank/value/additional results.
 
-Do not export formatted placeholders as numeric values or put bin traces in
-every row. Auto-derived points are identified by policy/source metadata, not
-invented candidate IDs. Export values must match the pinned run and numeric
-ranking. Round-trip tests cover Unicode, commas/newlines in labels, ties, errors,
-stale/partial runs, and all pages. File-picker cancel is a no-op; write failures
-remain visible without destroying results. The new export is not a session
-import/persistence format and does not modify existing CSV schemas.
+Do not include run IDs, candidate IDs/numbers/names, revisions, repeated context,
+JSON, duplicate metric aliases, interpolation coefficients or bin traces.
+Use stored score summaries and immutable run inputs without recalculation.
+Input units are in headers, not repeated columns. Fixed settings, source policy,
+original candidate numbers and full provenance remain available in detail.
+
+Cancelled/failed runs export only processed rows. The screen and proposed
+filename explicitly distinguish `_partial` and `_stale`, independently; a
+non-public score basis adds `_raw` or `_published` to the filename. Metadata is
+not repeated on every row. Users can rename the file in the save dialog.
+
+Round-trip tests cover BOM, Unicode/CSV quoting in errors, all pages, original
+pairs after input edits, and additional fields for every supported context.
+Picker cancel is a no-op; write failures preserve results. This is a result
+export, not an import/session archive, and other CSV contracts are unchanged.
 
 ## 8. Required verification and completion criteria
 
@@ -358,7 +368,7 @@ import/persistence format and does not modify existing CSV schemas.
 | Validation and isolation | Incomplete included candidate blocks preflight; excluded invalid candidate does not; non-finite/zero inputs handled; one combination error followed by valid success |
 | Lifecycle | Cancel before first case and mid-run; completed-with-errors; unexpected failure; edit→stale; rerun isolation; close/reopen; parent context switch/disposal; no late callback writes |
 | Table/UI | Rectangular/single-column paste, grouped undo, navigation, invalid draft retention, inactive/read-only mutation protection, page boundaries and stable selection |
-| CSV | BOM/quoting/Unicode, all pages, errors, numeric scores and candidate values, fixed context, stale/partial provenance, write error and picker cancel |
+| CSV | BOM/quoting/Unicode, all pages, errors, numeric scores and candidate values, per-standard additional results, stale/partial filename, pinned detail context, write error and picker cancel |
 | Integration/performance | Actual app entry → each section button → dialog → run → result/detail/export; bounded input/result widget count; visible progress/cancel during a 10,000-case run |
 
 Add focused tests within a Calculator combination test package. Reuse nearby
@@ -442,7 +452,7 @@ arbitrary cap override, or global UI redesign is included.
 - UI owner: `apps/calculator/ui/combinations/` owns per-origin context sessions,
   candidate paging (100 columns per point), the shared spreadsheet binding, common settings,
   mode/session changes, scheduled progress, result paging (100 rows), detail,
-  and pure `calculator_combinations_v1` projection. The existing CSV adapter
+  and a pure CSV projection (revised to the concise §7 contract). The existing CSV adapter
   retains BOM writing and file picking.
 - `BatchDialogShell` accepts typed snapshots through a generic seam. The shared
   viewport gained an opt-in reserved vertical scrollbar gutter: without it,
@@ -498,10 +508,25 @@ arbitrary cap override, or global UI redesign is included.
   regression tests passed; macOS ISO screenshots confirmed the new arrangement.
 - Main integration review corrected unnamed result candidates showing internal
   ID prefixes: results now show their pinned column numbers, with optional test
-  names, and CSV includes the same numbers. Excluded columns and later input
+  names; the initial CSV also included those numbers (superseded by §7). Excluded columns and later input
   deletion retain the original run's numbering. The focused feature/application
   boundary suite passed 65 tests, and all 4 native Tk integration tests passed.
   A fresh macOS ISO 3×5 completion screenshot confirmed the numbered results.
+
+- Result-copy/export revision: the bounded result page now adapts the shared
+  cell renderer, viewport and rectangular controller. Dragging selects cells;
+  Ctrl/Cmd+C or the copy button exports only that rectangle. Data stays read-only,
+  unchanged refreshes retain selection/scroll, and page changes clear selections
+  absent from the new page. The concise CSV contract in §7 replaces metadata
+  columns while retaining pinned measurements and stored additional results.
+  Verification passed 68 headless combination tests, 21 application boundary
+  tests, 6 native Tk integration tests and 30 shared controller/viewport checks.
+  The native tests include generated drag/key events, reverse selection,
+  read-only mutation protection, 101-result paging, all 22 baseline contexts,
+  partial/stale export, picker cancel, write failure and root disposal.
+  At the minimum 640×480 size one full result row remains visible; normal sizes
+  show more rows, with the remainder scrollable. A fresh macOS ISO 3×5 screenshot
+  confirmed the shared result-cell layout and copy/detail/CSV buttons.
 
 Verification limits: native Windows, Linux desktop, OS-generated keyboard and
 mouse interaction, multiple monitors and mixed DPI were not checked. The

@@ -121,7 +121,7 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
                 viewport.canvas.yview_moveto(1.0)
                 root.update()
                 assert viewport.canvas.yview()[1]==1.0
-            content.results.tree.selection_set("1")
+            content.results.table.interaction_controller.select((0, 0))
             # Detail is the real action, and the subdialog contains pinned input text.
             before=set(manager.handle.dialog.window.winfo_children())
             content.results.detail()
@@ -133,7 +133,8 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             assert filename.read_bytes().startswith(b'\xef\xbb\xbf')
             with filename.open(encoding="utf-8-sig",newline="") as handle:
                 rows=list(csv.DictReader(handle))
-            assert len(rows)==1 and rows[0]["run_id"]==run.snapshot.id
+            assert len(rows)==1 and rows[0]["값"]==str(run.results[0].score.value)
+            assert "run_id" not in rows[0]
             manager.handle.dispose()
             section.combination_button.invoke()
             assert manager.current.run is run
@@ -193,8 +194,12 @@ def test_point_blocks_share_viewport_and_resize(root):
                 assert "유효" in block.caption.cget("text") and "전체" in block.caption.cget("text")
                 assert bottom.winfo_rooty()+bottom.winfo_height() <= block.caption.winfo_rooty()
                 assert block.caption.winfo_rooty()+block.caption.winfo_height() <= block.buttons[0].winfo_rooty()
-            tree = content.results.tree
-            assert tree.bbox(tree.get_children()[1]), size
+            table = content.results.table
+            # Shared cell padding fits one full result at the minimum height,
+            # and two at normal sizes; remaining rows stay scrollable.
+            cell = table.cell_widget((0 if size == "640x480" else 1, 0))
+            canvas = table.viewport.canvas
+            assert cell.winfo_rooty()+cell.winfo_height() <= canvas.winfo_rooty()+canvas.winfo_height(), size
             for button in (content.calculate_button, *content.results.actions.values()):
                 assert button.winfo_rooty()+button.winfo_height() <= window.winfo_rooty()+window.winfo_height()
         # A horizontal page stays wide, but never forces the window off-screen.
@@ -230,7 +235,8 @@ def test_pair_rectangles_metadata_and_column_identity(root):
         assert len({result.selections for result in run.results}) == 15
         for result in run.results:
             for key, index in zip(blocks, result.selections):
-                assert content.results.tree.set(str(result.ordinal), key) == f"#{index+1}"
+                table = content.results.table
+                assert table.rows[table.identities.index(result.ordinal)][table.headers.index(key)] == f"#{index+1}"
         pinned = run.detail(run.results[0])
         block = blocks["35_full"]
         table = block.table
@@ -332,6 +338,67 @@ def test_context_tabs_preserve_window_and_sessions_and_reload_selected_only(root
         section._frame.destroy()
 
 
+def test_result_drag_copy_readonly_selection_and_paging(root):
+    from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
+    section = IsoIseer2PointSection(root)
+    populate(section, contexts()[0])
+    section.combination_button.invoke()
+    manager = section.combinations
+    try:
+        content = manager.handle.dialog._adapter
+        content.session.pools["35_full"] = [Candidate(capacity="3500", power=str(900+i)) for i in range(101)]
+        content.calculate()
+        pump(root, lambda: content.session.run.status != "running")
+        window = manager.handle.dialog.window
+        window.geometry("900x800+30+30")
+        window.lift()
+        root.update()
+        table = content.results.table
+        controller = table.interaction_controller
+        first, last = table.cell_widget((0, 1)), table.cell_widget((1, 2))
+        first.event_generate("<Button-1>", x=3, y=3)
+        first.event_generate("<B1-Motion>", rootx=last.winfo_rootx()+3, rooty=last.winfo_rooty()+3)
+        root.update()
+        assert controller.selection_bounds == (0, 1, 1, 2)
+        expected = "\n".join("\t".join(row[1:3]) for row in table.rows[:2])
+        first.focus_force()
+        first.event_generate("<Control-c>")
+        root.update()
+        assert table.clipboard_get() == expected
+        # Reversed drag and the visible copy action use the same rectangle.
+        last.event_generate("<Button-1>", x=3, y=3)
+        last.event_generate("<B1-Motion>", rootx=first.winfo_rootx()+3, rooty=first.winfo_rooty()+3)
+        content.results.actions["선택 범위 복사"].invoke()
+        assert table.clipboard_get() == expected
+        before = table.snapshot()
+        controller._clear()
+        table.clipboard_clear(); table.clipboard_append("9999")
+        controller._paste()
+        controller._undo_last()
+        assert table.snapshot() == before
+        table.viewport.canvas.yview_moveto(0.3)
+        root.update()
+        scroll = table.viewport.canvas.yview()
+        content.session.changed()
+        content.results.refresh()
+        root.update()
+        assert controller.selection_bounds == (0, 1, 1, 2)
+        assert table.viewport.canvas.yview() == scroll
+        assert "stale" in content.results.caption.cget("text")
+        assert table.row_count() == 100
+        content.results.move(1)
+        root.update()
+        assert table.row_count() == 1 and controller.active is None
+        assert table.viewport.canvas.yview()[0] == 0
+        controller.select((0, 0))
+        assert table.selected_ordinal() == content.session.run.ranked()[100][1].ordinal
+        content.results.move(-1)
+        assert table.row_count() == 100 and controller.active is None
+    finally:
+        manager.handle.dispose()
+        section._frame.destroy()
+
+
 def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_path,monkeypatch):
     from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
     try:
@@ -387,8 +454,9 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         root.after(30,content.cancel_button.invoke)
         pump(root,lambda:run.status!="running")
         assert heartbeats and 0<run.processed<10000 and run.status=="cancelled"
-        assert len(content.results.tree.get_children())<=100
-        content.results.tree.selection_set(content.results.tree.get_children()[0])
+        assert content.results.table.row_count()<=100
+        content.results.table.interaction_controller.select((0, 0))
+        content.results.table.interaction_controller.select((0, 2), extend=True)
         content.results.copy()
         assert "CSPF" in content.results.clipboard_get()
         # Paste overflow never crosses the candidate page or another point.
@@ -400,7 +468,11 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         assert session.pools["35_full"][199].capacity=="3601"
         assert session.pools["35_full"][200].capacity=="3600"
         filename=tmp_path/"partial.csv"
-        monkeypatch.setattr("apps.calculator.ui.table_csv_export.filedialog.asksaveasfilename",lambda **kw:str(filename))
+        picker_args=[]
+        def choose(**kw):
+            picker_args.append(kw)
+            return str(filename)
+        monkeypatch.setattr("apps.calculator.ui.table_csv_export.filedialog.asksaveasfilename",choose)
         content.results.export()
         original_bytes=filename.read_bytes()
         monkeypatch.setattr("apps.calculator.ui.table_csv_export.filedialog.asksaveasfilename",lambda **kw:"")
@@ -415,7 +487,8 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         assert failures
         with filename.open(encoding="utf-8-sig",newline="") as handle:
             rows=list(csv.DictReader(handle))
-        assert len(rows)==run.processed and all(row["partial"]=="True" for row in rows)
+        assert len(rows)==run.processed and "partial" not in rows[0]
+        assert picker_args[0]["initialfile"] == "calculator_combinations_partial_stale.csv"
         content.calculate_button.invoke();next_run=session.run
         manager.handle.dispose()
         assert next_run.status=="cancelled"

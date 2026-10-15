@@ -55,3 +55,7 @@ def context_tab_labels(contexts):
         counts[label] = counts.get(label, 0) + 1
         result.append(f"{label} · 설정 {counts[label]}" if labels.count(label) > 1 else label)
     return result
+
+
+def point_title(point):
+    return {"35_full": "STD", "35_half": "HALF"}.get(point.key, point.key)

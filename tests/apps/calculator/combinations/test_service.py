@@ -34,9 +34,9 @@ def test_pairs_numeric_sort_replay_stale_and_csv():
     session.changed()
     assert session.stale
     assert prior == run.detail(run.results[0])
-    headers, rows = export_rows(run, stale=True)
+    headers, rows = export_rows(run)
     assert len(rows) == 15
-    assert rows[0][headers.index("stale")] == "True"
+    assert rows[0][headers.index("STD 성능 [W]")] == "3500.0"
 
 
 def test_preflight_cap_blanks_exclusion_and_old_run():

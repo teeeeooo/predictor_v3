@@ -1,14 +1,13 @@
 """Paged read-only rankings and snapshot detail/export actions."""
 from dataclasses import asdict, is_dataclass
 import json
-import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 
-from apps.calculator.ui.table.treeview_style import apply_treeview_style
-from apps.calculator.ui.layout_constants import RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX, BATCH_DIALOG_SAFETY_MIN_SIZE
+from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
 from apps.calculator.ui import table_csv_export
-from .export import export_rows, context_json
+from .export import export_rows, export_filename, context_json
+from .result_table import ResultPageTable
 from .presentation import STATUS
 
 
@@ -20,20 +19,13 @@ class ResultsPanel(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.caption = ttk.Label(self)
         self.caption.grid(row=0, column=0, sticky="w")
-        self.tree = ttk.Treeview(self, show="headings", height=6, selectmode="extended")
-        self.tree.grid(row=1, column=0, sticky="nsew")
-        apply_treeview_style(self.tree)
-        for orient, row, column, axis in (("vertical", 1, 1, "y"), ("horizontal", 2, 0, "x")):
-            scroll = ttk.Scrollbar(self, orient=orient, command=getattr(self.tree, axis+"view"))
-            scroll.grid(row=row, column=column, sticky="ns" if axis=="y" else "ew")
-            self.tree.configure(**{axis+"scrollcommand": scroll.set})
-        for binding in ("<Control-c>", "<Command-c>"):
-            self.tree.bind(binding, self.copy)
+        self.table = ResultPageTable(self)
+        self.table.grid(row=1, column=0, sticky="nsew")
         bar = ttk.Frame(self)
-        bar.grid(row=3, column=0, sticky="w")
+        bar.grid(row=2, column=0, sticky="w")
         self.actions = {}
         for label, callback in (("이전 결과", lambda: self.move(-1)), ("다음 결과", lambda: self.move(1)),
-                                ("선택 결과 상세", self.detail), ("전체 결과 CSV 저장", self.export)):
+                                ("선택 범위 복사", self.copy), ("선택 결과 상세", self.detail), ("전체 결과 CSV 저장", self.export)):
             button = ttk.Button(bar, text=label, command=callback)
             button.pack(side="left")
             self.actions[label] = button
@@ -42,18 +34,14 @@ class ResultsPanel(ttk.Frame):
     def refresh(self):
         run = self.session.run
         available = run is not None and run.status != "running" and bool(run.results)
-        for label in ("선택 결과 상세", "전체 결과 CSV 저장"):
+        for label in ("선택 범위 복사", "선택 결과 상세", "전체 결과 CSV 저장"):
             self.actions[label].state(["!disabled" if available else "disabled"])
         if run is None:
+            self.table.set_page(("순위", "값", "지표"), (), (), None)
             self.caption.configure(text="계산 전")
             return
-        selected = self.tree.selection()
         columns = ("순위", "값", "지표", "단위", "기준", *(p.key for p in run.snapshot.independent_points), "상태")
-        self.tree.configure(columns=columns)
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX, stretch=False)
-        self.tree.delete(*self.tree.get_children())
+        rows, identities = [], []
         ranked = run.ranked()
         self.page = min(self.page, max(0, (len(ranked)-1)//100))
         for rank, row in ranked[self.page*100:(self.page+1)*100]:
@@ -63,8 +51,9 @@ class ResultsPanel(ttk.Frame):
             values = (rank or "", score.value if score else "", score.metric if score else "",
                       score.units if score else "", run.snapshot.context.basis, *labels,
                       "정상" if score else f"{row.error_code}: {row.error_message}")
-            self.tree.insert("", "end", iid=str(row.ordinal), values=values)
-        self.tree.selection_set([key for key in selected if self.tree.exists(key)])
+            rows.append(values)
+            identities.append(row.ordinal)
+        self.table.set_page(columns, rows, identities, run.snapshot.id)
         self.caption.configure(text=f"{STATUS[run.status]} · {'부분 결과 · ' if run.partial else ''}{'입력 변경됨(stale) · ' if self.session.stale else ''}"
                                f"성공 {run.succeeded} / 오류 {run.failed} · {run.processed}/{run.snapshot.planned} · 페이지 {self.page+1}")
 
@@ -73,18 +62,14 @@ class ResultsPanel(ttk.Frame):
         self.refresh()
 
     def copy(self, _event=None):
-        rows = [self.tree.item(key, "values") for key in self.tree.selection()]
-        if rows:
-            self.clipboard_clear()
-            self.clipboard_append("\n".join("\t".join(map(str, row)) for row in rows))
-        return "break"
+        return self.table.copy(_event)
 
     def detail(self):
-        selected = self.tree.selection()
-        if not selected:
+        selected = self.table.selected_ordinal()
+        if selected is None:
             return
         run = self.session.run
-        row = next(row for row in run.results if row.ordinal == int(selected[0]))
+        row = next(row for row in run.results if row.ordinal == selected)
         try:
             result = run.detail(row)
             payload = asdict(result) if is_dataclass(result) else result
@@ -101,8 +86,8 @@ class ResultsPanel(ttk.Frame):
         if run is None or run.status == "running" or not run.results:
             return
         try:
-            headers, rows = export_rows(run, stale=self.session.stale)
-            table_csv_export.export_table_to_csv(self.winfo_toplevel(), "calculator_combinations.csv", headers, rows)
+            headers, rows = export_rows(run)
+            table_csv_export.export_table_to_csv(self.winfo_toplevel(), export_filename(run, stale=self.session.stale), headers, rows)
         except (OSError, ValueError) as exc:
             messagebox.showerror("CSV 저장 실패", str(exc), parent=self.winfo_toplevel())
 

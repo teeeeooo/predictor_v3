@@ -12,7 +12,7 @@
 **Calculator combination calculation — implemented across all current
 standard/profile/product paths.** The [governing specification](designs/2026-10-16-calculator-combination-search.md)
 now has a toolkit-free runner and shared modeless Tk dialog, 10,000-case service
-limit, pinned detail/CSV provenance, and separate stale/partial states. Automated
+limit, pinned detail/input provenance, concise result CSV, and separate stale/partial states. Automated
 macOS Tk integration covers the actual section actions and all 22 baseline
 contexts. The candidate-column revision and ISO screenshot review are complete.
 Native OS keyboard, Windows/Linux and multi-monitor/DPI acceptance remain unverified; these do not reopen the separate Predict hold.
@@ -34,17 +34,17 @@ work by default.
 ## Exact Next Action
 
 **Calculator follow-up — native platform acceptance only when scheduled.**
-Specification §6.1 is implemented: vertically stacked point blocks contain
-Capacity/Power rows and independent candidate columns. Main integration review
-corrected result/CSV candidate identification by pinning each original column
-number before exclusions. Verification passed 65 feature/application-boundary
-tests and 4 native Tk integration tests, plus a fresh ISO 3×5 completion screenshot.
-The latest layout revision puts point names in table corner headers, moves counts
-and actions below the tables, and selects calculation contexts through tabs.
-Five native integration tests and 90 focused shared table/window regression tests
-passed, with ISO screenshots confirming the layout. Calculation formulas and
-public result contracts remain unchanged. See the specification for remaining
-platform limits.
+Specification §6.1 and the revised §7 CSV contract are implemented. Candidate
+blocks have point corner headers, controls below the table and context tabs.
+Results support rectangular drag selection and Ctrl/Cmd+C through shared table
+owners, with bounded 100-row pages. CSV contains rank/value/metric, pinned
+capacity/power pairs and standard-specific extra results; provenance remains in
+detail, and partial/stale states also appear in proposed filenames.
+Verification passed 68 headless combination tests, 21 application boundary tests,
+6 native Tk integration tests and 30 shared controller/viewport checks. A fresh
+macOS ISO 3×5 screenshot confirmed the result cells and actions. Calculation
+formulas and public result contracts remain unchanged. See the specification
+for native keyboard, save-panel and platform verification limits.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 

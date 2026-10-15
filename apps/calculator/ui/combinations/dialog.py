@@ -25,7 +25,7 @@ class CombinationContent:
         self.frame = ttk.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
         # Reserve editing space independently of the current candidate count.
-        # Without a uniform group, the result tree's requested height takes
+        # Without a uniform group, the result table's requested height takes
         # most of a capped dialog and leaves only one candidate row visible.
         self.frame.rowconfigure(2, weight=2, uniform="combination_body")
         self.frame.rowconfigure(5, weight=1, uniform="combination_body")

@@ -9,9 +9,7 @@ from apps.calculator.ui.layout_constants import CONTROL_GROUP_GAP
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from .candidate_columns import CandidateColumns, PAGE_SIZE
 
-
-def point_title(point):
-    return {"35_full": "STD", "35_half": "HALF"}.get(point.key, point.key)
+from .presentation import point_title
 
 
 class CandidateBlock(ttk.Frame):
