@@ -52,6 +52,7 @@ class ResultPageTable(ttk.Frame):
                 self.renderer.frame.bind(binding, self.copy)
         self.headers, self.rows, self.identities, self.run_id = headers, rows, identities, run_id
         self.renderer.set_rows(rows)
+        self.viewport.track_grid(self.renderer.frame)
         for attr in ("anchor", "active"):
             previous = saved.get(attr)
             position = None
@@ -101,6 +102,7 @@ class ResultPageTable(ttk.Frame):
         return self.renderer.value_labels[position]
 
     def focus_widget(self, position):
+        self.viewport.reveal_cell(self.cell_frame(position))
         return self.cell_widget(position)
 
     def default_cell_background(self, position):

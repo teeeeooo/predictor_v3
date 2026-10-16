@@ -21,9 +21,10 @@ class CandidateColumnController(TkTableController):
 class CandidateColumns(ttk.Frame):
     """One bounded point page; numeric rows never paste into another block."""
 
-    def __init__(self, parent, point, candidates, offset, changed, *, title):
+    def __init__(self, parent, point, candidates, offset, changed, *, title, viewport):
         super().__init__(parent)
         self.point, self.offset, self.changed = point, offset, changed
+        self.viewport = viewport
         self.title = title
         self.candidates = list(candidates)
         self.locked = False
@@ -49,6 +50,7 @@ class CandidateColumns(ttk.Frame):
         self.grid_table.set_values_batch({f"{key}:{i}": getattr(candidate, key)
             for i, candidate in enumerate(self.candidates) for key in self.fields})
         self.grid_table.set_values_changed_callback(self.sync)
+        self.viewport.track_grid(self.grid_table.table_frame)
         self.present()
         if self.interaction_controller:
             self.interaction_controller.refresh()
@@ -164,6 +166,7 @@ class CandidateColumns(ttk.Frame):
         return self.grid_table.cell_widget(position)
 
     def focus_widget(self, position):
+        self.viewport.reveal_cell(self.cell_frame(position))
         return self.grid_table.focus_widget(position)
 
     def default_cell_background(self, position):

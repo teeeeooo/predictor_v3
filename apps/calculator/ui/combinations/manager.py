@@ -40,7 +40,8 @@ class CombinationManager:
 
     def create(self):
         content = CombinationContent(self, self.current)
-        return BatchDialogShell(self.parent.winfo_toplevel(), content, on_close=self.handle.clear)
+        return BatchDialogShell(self.parent.winfo_toplevel(), content,
+                                on_close=self.handle.clear, resize_edges=True)
 
     def select(self, index):
         context = self.contexts[index]

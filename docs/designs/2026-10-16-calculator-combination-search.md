@@ -608,3 +608,52 @@ exercised through the adapter seam, not a native OS save-panel interaction.
 
 The existing Native Windows workstream and held Predict integration remain
 independent; this implementation does not close or expand either workstream.
+
+### Continuous-resize follow-up
+
+The pre-merge checks above covered calculation, construction, page changes and
+settled window sizes, not continuous resize latency. The user subsequently
+reported slow edge dragging both before and after calculation, worse with
+results, and difficulty finding the bottom resize cursor.
+
+The large-result cost came from mapped native Frame/Label/Entry cells outside
+the viewport. A 100-row page bounds allocation but still leaves up to 1,500
+result cells participating in native painting/clipping during resize. Combination
+candidate and result grids now opt into `ViewportGridCuller` through the existing
+`BatchTableViewport`: retain widgets, data, row/column extents and focus, unmap
+offscreen cells with one-cell overscan, and remap on scroll/resize or explicit
+keyboard navigation. The helper owns only fixed, unspanned cell grids; other
+table surfaces retain their existing behavior. Page replacement resets retained
+row/column minimum sizes, and viewport disposal cancels its queued idle callback.
+
+The shared dialog shell also supports opt-in bottom/right/corner drag targets;
+only combinations enable them. They occupy eight pixels of the existing outer
+padding, provide direction-specific cursors and preserve the window's current
+position while respecting its minimum size. Native borders remain available.
+
+Local macOS Python 3.14 / Tk 8.6 observations, mean milliseconds per
+`geometry` plus `root.update` call:
+
+| Dialog state | Width before → after | Height before → after |
+| --- | --- | --- |
+| ISO, 3×5 candidates, before calculation | 46.6 → 46.2 | 40.0 → 41.3 |
+| ISO, 15 results | 60.5 → 53.4 | 55.7 → 48.1 |
+| ISO, 10,000 results (100×100 candidates) | 340.0 → 56.7 | 350.8 → 53.8 |
+| AHRI Triple, nine independent points, 10,000 results | 721.7 → 81.3 | 772.0 → 81.2 |
+
+Both versions used the same settled dialog, 11 forward/backward geometry steps
+per axis and the same cProfile instrumentation. Width ranged 800–840 at height
+650; height ranged 550–590 at width 800. Calculations finished before measurement;
+only 100 result rows were projected for large runs. These are local update-cost
+observations, not physical drag FPS or a claim that initial-window redraw cost
+has disappeared.
+
+Verification: 3 new native resize/viewport tests and 59 existing native/shared
+tests passed without skips. Coverage includes both scroll axes, preserved scroll
+extent, 100-row to one-row page replacement, editor state during scroll/resize,
+keyboard navigation into hidden cells, edge hit regions/cursor configuration,
+synthetic drag axes/minimum size, queued-callback cleanup, all 22 baseline
+contexts, and stable widgets/callbacks across 100 result pages. Callback errors
+were absent in the final timing probe. The user requested proceeding without a
+screen check: physical mouse dragging, OS-rendered cursors, Windows/Linux and
+multi-monitor/DPI remain unverified.

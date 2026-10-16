@@ -41,6 +41,7 @@ class BatchDialogShell(Generic[SnapshotT]):
         adapter: BatchProfileAdapter[SnapshotT],
         *,
         on_close: Callable[[SnapshotT], None] | None = None,
+        resize_edges: bool = False,
     ) -> None:
         self._on_close = on_close
         self._adapter = adapter
@@ -53,6 +54,9 @@ class BatchDialogShell(Generic[SnapshotT]):
         # Build content using the adapter
         self.content_widget = self._adapter.build_content(self.window)
         self.content_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        if resize_edges:
+            from .resize_edges import DialogResizeEdges
+            self.resize_edges = DialogResizeEdges(self.window)
 
         # hidden-first geometry settle and show
         self._apply_initial_geometry(parent)

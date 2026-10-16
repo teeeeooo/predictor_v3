@@ -22,6 +22,8 @@ The [temporary behavior baseline](README.md#temporary-behavior-baseline) remains
 | One settled shell geometry application | [window_shell.py](../../apps/calculator/ui/window_shell.py) |
 | Coalesced event-loop refit and measurement suppression | [window_refit.py](../../apps/calculator/ui/window_refit.py) |
 | Profile/nested-tab/detail event composition and scroll reset | [lifecycle/controller.py](../../apps/calculator/ui/lifecycle/controller.py) |
+| Batch/combination dialog shell and opt-in bottom/right drag targets | [batch_dialogs/shell.py](../../apps/calculator/ui/batch_dialogs/shell.py), [resize_edges.py](../../apps/calculator/ui/batch_dialogs/resize_edges.py) |
+| Table viewport containment and opt-in offscreen cell unmapping for fixed grids | [batch/viewport.py](../../apps/calculator/ui/batch/viewport.py), [table/viewport_grid.py](../../apps/calculator/ui/table/viewport_grid.py) |
 | Focused geometry/monitor evidence | [calculator foundation tests](../../tests/test_ui_tk_calculator_foundation.py) |
 
 These are Calculator owners, not replacement owners for Train/Predict's PySide6 surfaces. Inspect the affected application's current shell before reusing them. Calculator's raw screen dimensions and vertical clamp are implementation fallbacks; this mapping does not claim true per-monitor work-area/DPI acceptance or saved-geometry persistence is implemented.

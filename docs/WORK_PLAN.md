@@ -15,7 +15,11 @@ now has a toolkit-free runner and shared modeless Tk dialog, 10,000-case service
 limit, pinned detail/input provenance, concise result CSV, and separate stale/partial states. Automated
 macOS Tk integration covers the actual section actions and all 22 baseline
 contexts. The candidate-column revision and ISO screenshot review are complete.
-Native OS keyboard, Windows/Linux and multi-monitor/DPI acceptance remain unverified; these do not reopen the separate Predict hold.
+Continuous-resize follow-up now unmaps offscreen cells while retaining grid
+extent/edit state, and adds bottom/right/corner resize targets. Actual mouse
+drag and cursor appearance remain unverified at the user's request, along with
+native OS keyboard, Windows/Linux and multi-monitor/DPI acceptance; these do not
+reopen the separate Predict hold.
 
 **Native Windows source-runtime acceptance** is active again. The complete
 pre-acceptance Windows repair set is closed: PR #58/#59 closed the Data Definition
@@ -42,15 +46,16 @@ Results support rectangular drag selection and Ctrl/Cmd+C through shared table
 owners, with bounded 100-row pages. CSV contains rank/value/metric, pinned
 capacity/power pairs and standard-specific extra results; provenance remains in
 detail, and partial/stale states also appear in proposed filenames.
-Pre-merge verification passed 89 feature/application-boundary tests, 7 native Tk
-integration tests and 34 shared controller/table/dialog checks. The 10,000-result/
-100-page resource guard includes nine active test points and confirms bounded
-widgets/callbacks. Local macOS runs took 4.43 s (ISO), 10.36 s (EN SCOP colder)
-and 6.85 s (AHRI Triple) from Calculate to the completed first page; table creation
-took 0.29–0.51 s. No additional source correction was needed. The existing
-15 ms execution chunks retain event responsiveness. See the specification for
-measurement details and native keyboard, save-panel and platform verification
-limits. Calculation formulas and public result contracts remain unchanged.
+Resize follow-up passed 62 focused native/shared tests, including the actual
+22-context entry path, 10,000-result/100-page resource guard, viewport scrolling,
+keyboard reveal, editor retention and synthetic edge-drag events. Local mean
+resize/update cost fell from 340–351 to 54–57 ms for ISO with 10,000 results and
+from 722–772 to 81 ms for nine-point AHRI. The small initial ISO window remains
+around 41–46 ms; this is not a claim of smooth physical mouse dragging. See the
+specification for methodology and the retained calculation/export evidence.
+Calculation formulas, public result contracts and 15 ms execution chunks remain
+unchanged. Physical mouse/cursor acceptance is deferred until a screen check is
+requested.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 

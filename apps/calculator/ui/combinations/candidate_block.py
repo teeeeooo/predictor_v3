@@ -12,9 +12,10 @@ from .presentation import point_title
 
 
 class CandidateBlock(ttk.Frame):
-    def __init__(self, parent, session, point, changed):
+    def __init__(self, parent, session, point, changed, *, viewport):
         super().__init__(parent)
         self.session, self.point, self.changed = session, point, changed
+        self.viewport = viewport
         self.page = 0
         self.table = None
         self.inactive_header = None
@@ -55,7 +56,8 @@ class CandidateBlock(ttk.Frame):
             start = self.page * PAGE_SIZE
             candidates = pool[start:start+PAGE_SIZE]
             self.rendered_count = len(candidates)
-            self.table = CandidateColumns(self, self.point, candidates, start, self.sync, title=point_title(self.point))
+            self.table = CandidateColumns(self, self.point, candidates, start, self.sync,
+                                          title=point_title(self.point), viewport=self.viewport)
             self.table.grid(row=0, column=0, sticky="w")
         else:
             self.inactive_header = MetricInputTable(self, columns=(), rows=(),

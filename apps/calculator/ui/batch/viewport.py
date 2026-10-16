@@ -119,6 +119,27 @@ class BatchTableViewport(ttk.Frame):
     def horizontal_scrollbar_visible(self) -> bool:
         return self._horizontal_scrollbar_visible
 
+    def track_grid(self, grid: tk.Misc) -> None:
+        """Cull opted-in fixed grids while preserving their scrollable geometry."""
+        if not hasattr(self, "_grid_culler"):
+            from apps.calculator.ui.table.viewport_grid import ViewportGridCuller
+            self._grid_culler = ViewportGridCuller(self.canvas)
+            self.canvas.configure(xscrollcommand=self._horizontal_view_changed,
+                                  yscrollcommand=self._vertical_view_changed)
+        self._grid_culler.track(grid)
+
+    def reveal_cell(self, cell: tk.Misc) -> None:
+        if hasattr(self, "_grid_culler"):
+            self._grid_culler.reveal(cell)
+
+    def _horizontal_view_changed(self, first, last):
+        self.horizontal_scrollbar.set(first, last)
+        self._grid_culler.schedule()
+
+    def _vertical_view_changed(self, first, last):
+        self.scrollbar.set(first, last)
+        self._grid_culler.schedule()
+
     def preferred_content_size(self) -> tuple[int, int]:
         """Return the table surface's natural size before viewport allocation."""
         self.content.update_idletasks()
