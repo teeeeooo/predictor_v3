@@ -113,6 +113,8 @@ class CanvasMatrixView:
 
     def _draw(self):
         self._pending = None
+        if self.viewport and not self.frame.winfo_ismapped():
+            return  # Map schedules a fresh projection; natural size is retained.
         bounds = (self.viewport.visible_rect(self.frame) if self.viewport else
                   (0, 0, self.layout.xs[-1], self.layout.height(self._count)))
         self._painter.draw(self.layout.visible_positions(bounds, self._count))

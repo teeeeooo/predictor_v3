@@ -275,7 +275,14 @@ class BinDetailGraph:
             highlightbackground=DETAIL_GRAPH_BORDER_COLOR,
         )
         self.canvas.surface_role = "bin_detail_graph"
-        self.canvas.bind("<Configure>", lambda _event: self._draw())
+        self._drawn_size = None
+        self.canvas.bind("<Configure>", self._on_configured)
+
+    def _on_configured(self, event) -> None:
+        # Tk also sends Configure when ancestors move. Recreating every plot
+        # item for an unchanged allocation adds work to each resize flush.
+        if (event.width, event.height) != self._drawn_size:
+            self._draw()
 
     def grid(self, **kwargs) -> None:
         self.canvas.grid(**kwargs)
@@ -290,6 +297,7 @@ class BinDetailGraph:
 
     def _draw(self) -> None:
         canvas = self.canvas
+        self._drawn_size = (canvas.winfo_width(), canvas.winfo_height())
         canvas.delete("all")
         width = max(canvas.winfo_width(), 240)
         height = max(canvas.winfo_height(), 160)

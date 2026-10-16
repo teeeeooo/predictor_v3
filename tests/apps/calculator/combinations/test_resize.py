@@ -158,3 +158,65 @@ def test_combination_edge_hit_areas_drag_axes_and_minimum_size(root):
     finally:
         manager.handle.dispose()
         root.update()
+
+
+def test_offscreen_candidate_blocks_reveal_edit_and_remeasure_pages(root):
+    from dataclasses import replace
+
+    context = next(c for c in contexts() if c.product == "triple_capacity_northern")
+    context = replace(context, values=tuple({**dict(context.values), "low_min_c": "0"}.items()),
+                      options=tuple({**dict(context.options), "measured_h2_boost": True}.items()))
+    manager = CombinationManager(root, lambda: [context])
+    session = seed_session(context, manager.adapter)
+    points = [p for p in manager.adapter.points(context) if p.independent]
+    assert len(points) == 9
+    last_key = points[-1].key
+    candidate = session.pools[last_key][0]
+    session.pools[last_key] = [Candidate(capacity=candidate.capacity, power=candidate.power) for _ in range(101)]
+    manager.sessions[context.identity] = session
+    manager.open()
+    try:
+        shell = manager.handle.dialog
+        shell.window.geometry("800x650")
+        root.update()
+        panel = shell._adapter.candidates
+        viewport = panel.viewport
+        first, last = panel.blocks[points[0].key], panel.blocks[last_key]
+        natural = (viewport.content.winfo_reqwidth(), viewport.content.winfo_reqheight())
+        assert first.winfo_ismapped()
+        assert not last.winfo_ismapped()
+        table = last.table
+        table.interaction_controller.select((0, 0))
+        table.interaction_controller._enter_edit_mode((0, 0))
+        entry = table.focus_widget((0, 0))
+        entry.focus_force()
+        root.update()
+        assert last.winfo_ismapped()
+        assert entry.winfo_ismapped()
+        assert entry.winfo_rooty() >= viewport.canvas.winfo_rooty()
+        assert entry.winfo_rootx() >= viewport.canvas.winfo_rootx()
+        assert entry.winfo_rootx() + entry.winfo_width() <= viewport.canvas.winfo_rootx() + viewport.canvas.winfo_width()
+        assert (viewport.content.winfo_reqwidth(), viewport.content.winfo_reqheight()) == natural
+        entry.insert("end", "7")
+        draft = entry.get()
+        viewport.canvas.yview_moveto(0)
+        root.update()
+        assert last.winfo_ismapped()  # The block with the live editor stays alive.
+        assert root.focus_get() is entry and entry.get() == draft
+        table.interaction_controller._escape()
+        viewport.canvas.focus_force()
+        viewport.canvas.yview_moveto(1)
+        root.update()
+        last.move(1)
+        root.update()
+        assert last.table.column_count() == 1
+        assert viewport.content.winfo_reqwidth() < natural[0]
+        assert viewport.content.winfo_reqheight() == natural[1]
+        last.move(-1)
+        root.update()
+        assert viewport.content.winfo_reqwidth() == natural[0]
+        viewport._grid_culler.schedule()
+    finally:
+        manager.handle.dispose()
+        root.update()
+    assert viewport._grid_culler.pending is None

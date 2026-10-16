@@ -60,6 +60,7 @@ class CandidatePanel(ttk.Frame):
                 self.blocks[point.key].grid(row=i, column=0, sticky="ew", pady=(0, ISO_SECTION_BLOCK_GAP))
             else:
                 self.blocks[point.key].refresh(point)
+        self.viewport.track_grid(self.viewport.content)
 
     def commit(self):
         for block in tuple(self.blocks.values()):

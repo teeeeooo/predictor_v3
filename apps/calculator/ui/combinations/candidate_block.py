@@ -65,6 +65,8 @@ class CandidateBlock(ttk.Frame):
             self.inactive_header.grid(row=0, column=0, sticky="w")
         self.lock(self.locked)
         self.refresh()
+        # Paging can change natural width without changing the session revision.
+        self.viewport.track_grid(self.viewport.content)
 
     def sync(self):
         if not self.table or self.locked:

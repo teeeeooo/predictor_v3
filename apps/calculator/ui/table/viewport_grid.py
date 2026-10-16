@@ -89,9 +89,12 @@ class ViewportGridCuller:
                     cell["shown"] = shown
 
     def reveal(self, widget):
-        """Keyboard navigation may target an unmapped cell; reveal it before focus."""
+        """Reveal an unmapped cell/block before focusing it or a descendant."""
         for grid, state in self.grids.items():
-            cell = state["cells"].get(widget)
+            target = widget
+            while target is not None and target not in state["cells"]:
+                target = getattr(target, "master", None)
+            cell = state["cells"].get(target)
             if cell is None:
                 continue
             canvas = self.canvas
@@ -107,10 +110,10 @@ class ViewportGridCuller:
                 if delta and length:
                     move((view+delta-start)/length)
             if not cell["shown"]:
-                widget.grid()
+                target.grid()
                 cell["shown"] = True
                 # Explicit navigation, never the resize/scroll Configure path.
-                widget.update_idletasks()
+                target.update_idletasks()
             self.schedule()
             return
 

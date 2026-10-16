@@ -1,7 +1,7 @@
 # Calculator Table Architecture Design
 
 **Status:** Implemented — Slices 1-6 complete
-**Rendering follow-up:** Stages 1-5 complete (2026-10-16); residual-cost measurement in progress (§22–25).
+**Rendering follow-up:** Stages 1-6 complete (2026-10-16); native/manual limits and residual Tk cost recorded (§22–26).
 **Scope:** Tkinter Calculator table surfaces
 **Primary implementation sequence:** Table foundation → representative ISO/ISEER migration → progressive Calculator-wide adoption
 **Proposed canonical location:** `docs/designs/2026-07-12-calculator-table-architecture-design.md`
@@ -1084,7 +1084,7 @@ Excel features are outside this workstream.
 | 3 | Reusable native Entry editor over a drawn input surface; ISO input, then combination candidates | Complete (§23) |
 | 4 | Apply the proven renderer/editor to remaining main profile surfaces | Complete (§24) |
 | 5 | Migrate BatchCaseTable/BatchMatrixTable without changing their models or transactions | Complete (§25) |
-| 6 | Remeasure remaining viewport, window and graph costs; fix only demonstrated bottlenecks | Pending |
+| 6 | Remeasure remaining viewport, window and graph costs; fix only demonstrated bottlenecks | Complete (§26) |
 
 These are staged changes, not a mandate to rewrite every existing table. Keep
 the large detail Treeviews. Before each wider rollout, verify that the migrated
@@ -1297,3 +1297,58 @@ This is an adapter-level rendering comparison, not formula timing. The unchanged
 full AHRI 10,000-combination benchmark remains 86.4/88.0 ms for width/height;
 widgets drop from 293 to 193, while visible chrome still dominates. Stage 6
 investigates residual work rather than claiming the combination issue is solved.
+
+
+## 26. Residual resize work and final measurement (stage 6)
+
+Profiling the AHRI dialog showed that reducing cell widgets alone left native
+layout/display work on offscreen candidate toolbars and blocks. The existing
+ViewportGridCuller now operates on complete candidate blocks. It retains full
+natural row/column extents and overscan, keeps the focused editor's block mapped,
+and reveals an unmapped ancestor before logical-cell keyboard navigation.
+Candidate page/context changes explicitly invalidate its natural measurement;
+100-column to one-column paging can shrink the scroll extent. Unmapped matrix
+views defer paint until Map while retaining their authoritative data and size.
+
+A separate expanded ISO graph probe found 327 plot rebuilds over 36 geometry
+changes, many triggered by position-only Configure notifications. BinDetailGraph
+now checks allocation changes, while explicit data/series updates still redraw
+immediately. The same profiled probe reduced rebuilds to 27 and plot work from
+137 to 12 ms total; width/height means fell from 63.5/38.3 to 59.0/35.7 ms.
+Those profiler-attached numbers are separate from the unprofiled benchmark below.
+No automatic refit/measurement/shell-fit callback appeared in this ordinary-resize
+probe. Existing guarded refit scheduling remains unchanged. An experiment caching
+repeated viewport width/scrollregion/fraction assignments did not improve latency
+and was not adopted.
+
+Final unprofiled benchmark: same machine, Python/Tk, theme, dimensions, warmup
+and three cycles as §22. Baseline is `b6ea59d3`, final is stages 1–6:
+
+| Surface | Width mean before → final ms | Height mean before → final ms | Final width / height p95 ms |
+| --- | --- | --- | --- |
+| Main ISO | 27.4 → 25.8 | 21.3 → 20.0 | 27.1 / 21.1 |
+| Main EN SCOP | 57.1 → 43.6 | 36.6 → 29.7 | 44.9 / 30.9 |
+| Main AHRI HSPF2 | 44.3 → 38.3 | 29.4 → 25.8 | 39.4 / 27.2 |
+| Combination ISO, before calculation | 52.7 → 49.4 | 49.2 → 46.3 | 50.2 / 47.0 |
+| Combination ISO, 15 results | 60.5 → 54.3 | 58.9 → 51.9 | 56.3 / 53.3 |
+| Combination ISO, 10,000 results | 67.6 → 53.2 | 69.7 → 53.8 | 54.8 / 55.4 |
+| Combination AHRI, nine independent points / 10,000 results | 100.4 → 65.2 | 103.6 → 69.7 | 66.9 / 73.1 |
+
+| 10,000-result dialog | Open before → final ms | Page mean before → final ms | Native widgets before → final |
+| --- | --- | --- | --- |
+| ISO | 721 → 95 | 49.7 → 14.7 | 3,296 → 70 |
+| AHRI | 1,028 → 135 | 75.1 → 17.2 | 3,729 → 193 |
+
+Whole-app native widgets fell from 2,049 to 503. AHRI mapped widgets at the probe
+size fall from stage 5's 161 to 89 with block culling. All seven final benchmark
+cases reported no callback errors. Timing is geometry plus event flush, not
+physical dragging FPS. The tentative 33/50 ms p95 targets are still unmet on
+some surfaces; remaining native Tk display cost is an explicit limitation.
+
+Verification includes the actual 22-context combination suite, 10,000 AHRI results
+and all 100 pages, detail/export/reopen, nine-point offscreen navigation on both
+axes, draft retention during scrolling, page-width shrink/restore, close cleanup,
+plot data/series updates, and retained window/viewport lifecycle guards. Native
+mouse/IME, Windows/Linux and multi-monitor/DPI acceptance remains unperformed at
+the user's request. The approved six-stage implementation is complete; do not
+extend this result into a claim of perfect resize smoothness or native acceptance.

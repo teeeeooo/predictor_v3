@@ -160,6 +160,8 @@ class BatchTableViewport(ttk.Frame):
         """Reveal a logical cell without requiring a native widget for that cell."""
         # Explicit keyboard/click navigation only, never a Configure handler.
         self.canvas.update_idletasks()
+        if hasattr(self, "_grid_culler") and not widget.winfo_ismapped():
+            self._grid_culler.reveal(widget)
         bounds = self.canvas.bbox("all")
         if bounds is None:
             return
