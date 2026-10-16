@@ -142,6 +142,9 @@ class StandardAdapter:
 def seed_session(context, adapter):
     values = dict(context.values)
     fields = {field for point in adapter.draft_points(context) for field in (point.capacity_field, point.power_field)}
+    if context.kind in ("en_seer", "en_scop"):
+        # Declared inputs belong to the main page comparison, not Tested runs.
+        fields.update(key for key in values if key.startswith("declared_"))
     session = Session(replace(context, values=tuple((k,v) for k,v in context.values if k not in fields)))
     for point in adapter.draft_points(context):
         session.pools[point.key] = [Candidate(capacity=values.get(point.capacity_field, ""),

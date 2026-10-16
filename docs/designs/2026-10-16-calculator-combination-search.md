@@ -66,9 +66,11 @@ currently exposed application scope.
   dialog selects one profile per run; it must not mix the two scores in one rank.
 - SASO selects required-only or measured-Min context before running. An omitted
   optional point uses the current owner rule, not an invented zero-valued test.
-- EN14825 candidates represent **Tested capacity/power**. Declared capacity and
-  EER/COP, Pdesign, auxiliary powers, temperatures, and climate remain common
-  context. Never substitute a Declared score when Tested input is incomplete.
+- EN14825 candidates represent **Tested capacity/power**. Pdesign, auxiliary
+  powers, Cd, appliance type, temperatures, and climate remain common context.
+  Declared capacity and EER/COP are excluded from combination sessions because
+  they do not affect Tested results; they remain in the main page comparison.
+  Never substitute a Declared score when Tested input is incomplete.
   Preserve existing W-to-core-unit conversion in the application adapter.
 - SCOP calls `ScopAdapter.resolve_point_availability()`. At the probed warmer
   defaults, B/C/D are independent, Tbiv maps to B, A is inactive, and TOL is
