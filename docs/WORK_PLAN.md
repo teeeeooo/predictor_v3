@@ -42,16 +42,15 @@ Results support rectangular drag selection and Ctrl/Cmd+C through shared table
 owners, with bounded 100-row pages. CSV contains rank/value/metric, pinned
 capacity/power pairs and standard-specific extra results; provenance remains in
 detail, and partial/stale states also appear in proposed filenames.
-Latest compact-layout verification passed 68 headless combination tests,
-7 native Tk integration tests and 28 calculator foundation checks. A fresh
-macOS ISO 3×5 screenshot confirmed the compact toolbar and number-only rankings. Calculation
-formulas and public result contracts remain unchanged. See the specification
-for native keyboard, save-panel and platform verification limits.
-The subsequent rendering audit fixed callback accumulation during page refresh.
-The 10,000-result/100-page resource guard includes nine active test points;
-7 feature UI tests and 101 focused shared-controller/caller checks cover this
-correction. Initial page creation still has a bounded measurable cost; local
-before/after timings and memory observations are recorded in the specification.
+Pre-merge verification passed 89 feature/application-boundary tests, 7 native Tk
+integration tests and 34 shared controller/table/dialog checks. The 10,000-result/
+100-page resource guard includes nine active test points and confirms bounded
+widgets/callbacks. Local macOS runs took 4.43 s (ISO), 10.36 s (EN SCOP colder)
+and 6.85 s (AHRI Triple) from Calculate to the completed first page; table creation
+took 0.29–0.51 s. No additional source correction was needed. The existing
+15 ms execution chunks retain event responsiveness. See the specification for
+measurement details and native keyboard, save-panel and platform verification
+limits. Calculation formulas and public result contracts remain unchanged.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 

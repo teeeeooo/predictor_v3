@@ -564,6 +564,39 @@ arbitrary cap override, or global UI redesign is included.
   28 calculator foundation checks. A fresh macOS ISO 3×5 screenshot confirmed
   the compact single-row controls, one paste hint and number-only rankings.
 
+### Pre-merge performance review of `feat/calculator-input-layout`
+
+The current dialog's Calculate action was measured on macOS with Python 3.14 /
+Tk 8.6, using real calculator sample inputs with small power variations. Each
+context completed 10,000 combinations with no errors: ISO used 100×100 candidates;
+EN SCOP colder and AHRI Triple used four pools of ten, with other points fixed.
+AHRI included all nine independent points. These are local observations, not
+cross-platform timing guarantees; UI appearance was already accepted by the user.
+
+| Context | Runner steps | Calculate → completed first page | First page construction | Mean next-page time |
+| --- | --- | --- | --- | --- |
+| ISO CSPF | 1.53 s | 4.43 s | 0.29 s | 0.065 s |
+| EN SCOP colder | 3.90 s | 10.36 s | 0.40 s | 0.117 s |
+| AHRI HSPF2 Triple, nine points | 2.28 s | 6.85 s | 0.51 s | 0.166 s |
+
+The end-to-end measurement includes event-loop scheduling and painting, and
+excludes opening the dialog and exporting. Result widgets stay bounded to 100
+rows (800/1,200/1,500 cells); ten measured page changes reused the same widgets
+and kept Tcl command counts constant. Sorting took about 4 ms. Complete CSV
+projection plus local file writing took 0.04–0.10 s, with all 10,000 rows verified.
+During calculation the longest observed 20 ms heartbeat interval was 47 ms.
+
+The existing 15 ms chunks and timed yielding were retained. An idle-only probe
+reduced elapsed time but starved timed UI callbacks; yielding through idle then
+a zero-delay timer preserved responsiveness without improving elapsed time.
+Neither experiment changed production code. No additional source fix was needed.
+
+Verification passed 89 feature/application-boundary tests, 7 native feature UI
+tests and 34 shared controller/table/dialog checks, with no skips. The native
+suite also traverses all 100 pages of a real 10,000-result, nine-point run,
+checks stable widgets/callbacks and release on close, and covers cancellation,
+copy, export and all 22 baseline contexts.
+
 Verification limits: native Windows, Linux desktop, OS-generated keyboard and
 mouse interaction, multiple monitors and mixed DPI were not checked. The
 initial screenshot attempt timed out; the follow-up inspected the ISO candidate
