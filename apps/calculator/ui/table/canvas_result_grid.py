@@ -1,20 +1,12 @@
 """Read-only result view: one native Canvas, pooled visible cell items."""
-from dataclasses import dataclass
 import tkinter as tk
 
 from apps.calculator.ui.table.canvas_result_layout import CanvasResultLayout
+from apps.calculator.ui.table.canvas_painter import CanvasCellPainter, CellPaint
 from apps.calculator.ui.table.visual_policy import (
     AlignmentRole, DEFAULT_TABLE_VISUAL_POLICY, SemanticTone,
 )
 from apps.calculator.ui.table_clipboard import copy_table_to_clipboard, encode_table_tsv
-
-
-@dataclass
-class _PaintedCell:
-    background: int
-    text: int
-    box: tuple = ()
-    style: tuple = ()
 
 
 class CanvasResultGrid:
@@ -45,7 +37,8 @@ class CanvasResultGrid:
         self.frame.configure(width=self.layout.width, height=self.layout.height(0))
         self._tones = {}
         self._selection, self._active = None, None
-        self._painted, self._spares = {}, []
+        self._painter = CanvasCellPainter(self)
+        self._painted = self._painter.cells
         self._pending = None
         self._disposed = False
         self.frame.bind("<Configure>", self.schedule)
@@ -147,47 +140,17 @@ class CanvasResultGrid:
         bounds = (self.viewport.visible_rect(self.frame) if self.viewport else
                   (0, 0, self.layout.width+2*self.layout.inset,
                    self.layout.height(len(self.rows))+2*self.layout.inset))
-        wanted = set(self.layout.visible_positions(bounds, len(self.rows)))
-        for position in self._painted.keys()-wanted:
-            cell = self._painted.pop(position)
-            self.frame.itemconfigure(cell.background, state="hidden")
-            self.frame.itemconfigure(cell.text, state="hidden")
-            self._spares.append(cell)
-        for position in sorted(wanted):
-            cell = self._painted.get(position)
-            if cell is None:
-                if self._spares:
-                    cell = self._spares.pop()
-                    self.frame.itemconfigure(cell.background, state="normal")
-                    self.frame.itemconfigure(cell.text, state="normal")
-                else:
-                    cell = _PaintedCell(self.frame.create_rectangle(0, 0, 0, 0, width=0),
-                                        self.frame.create_text(0, 0))
-                self._painted[position] = cell
-            self._paint_cell(cell, position)
+        self._painter.draw(self.layout.visible_positions(bounds, len(self.rows)))
 
-    def _paint_cell(self, cell, position):
+    def cell_paint(self, position):
         row, column = position
         header = row == -1
         value = self.headers[column] if header else self.rows[row][column]
-        anchor = self.policy.anchor(self.cell_alignment(position))
-        text = self.layout.fit_text("" if value is None else str(value), column, header)
-        style = (self.cell_background(position), text, anchor, header)
-        box = self.cell_bbox(position)
-        if style != cell.style:
-            self.frame.itemconfigure(cell.background, fill=style[0])
-            self.frame.itemconfigure(cell.text, text=text, anchor=anchor,
-                fill=self.policy.header_foreground if header else self.policy.foreground(),
-                font=self.layout.header_font if header else self.layout.body_font)
-        if box != cell.box or style[2:] != cell.style[2:]:
-            x1, y1, x2, y2 = box
-            x2 -= self.policy.divider_width
-            y2 -= self.policy.divider_width
-            x = (x1+self.layout.text_inset if anchor == "w" else
-                 x2-self.layout.text_inset if anchor == "e" else (x1+x2)/2)
-            self.frame.coords(cell.background, x1, y1, x2, y2)
-            self.frame.coords(cell.text, x, (y1+y2)/2)
-        cell.box, cell.style = box, style
+        return CellPaint(
+            self.layout.fit_text("" if value is None else str(value), column, header),
+            self.cell_background(position), self.policy.anchor(self.cell_alignment(position)),
+            str(self.layout.header_font if header else self.layout.body_font),
+            self.policy.header_foreground if header else self.policy.foreground(), self.layout.text_inset)
 
     def _dispose(self, event):
         if event.widget is not self.frame:
@@ -199,5 +162,4 @@ class CanvasResultGrid:
         if self._unsubscribe:
             self._unsubscribe()
         self.layout.fit_text.cache_clear()
-        self._painted.clear()
-        self._spares.clear()
+        self._painter.clear()

@@ -17,10 +17,10 @@ macOS Tk integration covers the actual section actions and all 22 baseline
 contexts. The candidate-column revision and ISO screenshot review are complete.
 Continuous-resize follow-up retains native candidate grids with offscreen
 culling and bottom/right/corner resize targets. The subsequent rendering
-performance stages 1-2 are complete: a repeatable native benchmark and shared
-Canvas backend now cover ISO/ISEER comparison and combination rankings.
+performance stages 1-3 are complete: a repeatable native benchmark and shared
+Canvas backend now cover ISO/ISEER input/results and combination candidates/rankings.
 See the [table rendering roadmap and evidence](designs/2026-07-12-calculator-table-architecture-design.md#22-calculator-rendering-performance-follow-up-2026-10-16).
-Input/editor migration and broader profile/batch rollout remain pending. Actual mouse
+The reusable input editor pilot is complete; broader profile/batch rollout remains pending. Actual mouse
 drag and cursor appearance remain unverified at the user's request, along with
 native OS keyboard, Windows/Linux and multi-monitor/DPI acceptance; these do not
 reopen the separate Predict hold.
@@ -41,24 +41,20 @@ work by default.
 
 ## Exact Next Action
 
-**Calculator next slice — reusable input editor, ISO first.**
-Continue the staged rendering roadmap from stage 3: separate native input event/
-editor binding from logical interaction state, retain one reusable native Entry
-per table, then apply it to ISO inputs and combination candidates. Preserve raw
-draft text, paste/clear/undo transactions, IME/focus behavior and natural geometry.
-Keep the existing controller and data/profile adapters; do not clone their logic.
-Other main profiles and BatchCaseTable/BatchMatrixTable follow after that pilot.
+**Calculator next slice — remaining main profiles, then batch tables.**
+Stage 3 now retains one native Entry per drawn input table, with raw drafts,
+paste/clear/undo, focus and natural geometry covered by 31 focused native tests.
+All 22 combination contexts and the 10,000-result/100-page run pass. ISO large
+combination window widgets fell from 1,680 to 70 and opening from 335 to 101 ms;
+width/height update means are 52.6/53.3 ms. AHRI is 86.5/88.0 ms, with native
+common-setting tables still present. The real native mouse/IME, Windows/Linux
+and multi-monitor/DPI acceptance remains deferred.
 
-The completed read-only pilot passed 157 focused native tests, including all 22
-combination contexts and 100 pages of real 10,000-result AHRI output. Shared input/
-batch controllers and window lifecycle/refit guards passed without changing their
-production behavior. Same-machine page refresh fell from 50→16 ms (ISO) and
-75→19 ms (AHRI); dialog opening from 721→335 ms and 1,028→236 ms respectively.
-Resize improved only about 8–11% for large results; the initial combination
-window is essentially unchanged. Full-app responsiveness is not yet resolved.
-The architecture owner records the measurement conditions and remaining targets.
-Calculation formulas, public result contracts and 15 ms execution chunks remain
-unchanged. Physical mouse/cursor acceptance stays deferred at the user's request.
+Continue automatically through the approved stages while focused checks pass:
+remaining main profile inputs and compact results, shared batch tables, then
+remeasure viewport/window/graph costs and fix demonstrated bottlenecks. Keep
+existing data, controller, calculation, export and geometry owners. The table
+architecture owner §22–23 records evidence and boundaries.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 

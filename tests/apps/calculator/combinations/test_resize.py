@@ -93,7 +93,7 @@ def test_candidate_scrolling_keeps_edit_and_keyboard_reveals_hidden_column(root)
         content = manager.handle.dialog._adapter
         table = content.candidates.blocks["35_full"].table
         controller = table.interaction_controller
-        entry = table.cell_widget((0, 0))
+        entry = table.focus_widget((0, 0))
         controller.select((0, 0))
         entry.focus_force()
         root.update()
@@ -104,7 +104,7 @@ def test_candidate_scrolling_keeps_edit_and_keyboard_reveals_hidden_column(root)
         canvas.xview_moveto(1)
         window.geometry("760x650")
         root.update()
-        assert table.cell_frame((0, 0)).winfo_manager() == "grid"
+        assert entry.winfo_manager() == "place"
         assert root.focus_get() is entry
         assert controller._mode == "edit"
         assert table.snapshot() == snapshot and content.session.revision == revision
@@ -112,7 +112,8 @@ def test_candidate_scrolling_keeps_edit_and_keyboard_reveals_hidden_column(root)
         controller.select((1, 98))
         controller._arrow("right")
         root.update()
-        target = table.cell_widget((1, 99))
+        target = table.focus_widget((1, 99))
+        assert target is entry
         assert controller.active == (1, 99)
         assert root.focus_get() is target and target.winfo_ismapped()
         assert target.winfo_rootx() >= canvas.winfo_rootx()

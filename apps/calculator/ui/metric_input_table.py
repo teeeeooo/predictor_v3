@@ -58,6 +58,8 @@ class MetricInputTable(ttk.Frame):
         values_changed_callback: ValuesChangedCallback | None = None,
         section_break_before_rows: Iterable[str] | None = None,
         visual_style: str = "shared",
+        rendering: str = "native",
+        viewport=None,
         **kwargs: object,
     ) -> None:
         super().__init__(master, **kwargs)
@@ -99,7 +101,59 @@ class MetricInputTable(ttk.Frame):
         self.field_order: tuple[str, ...] = ()
         self.editable_addresses: tuple[CellAddress, ...] = ()
         self._invalid_fields: dict[str, str] = {}
+        self.canvas_view = None
+        self._static_values = {}
+        self._readonly_values = {}
+        if rendering == "canvas":
+            self._build_canvas(viewport)
+            return
+        if rendering != "native":
+            raise ValueError("MetricInputTable rendering must be 'native' or 'canvas'")
         self._build_table()
+
+    def _build_canvas(self, viewport):
+        from apps.calculator.ui.table.canvas_matrix_view import CanvasMatrixView
+        from apps.calculator.ui.table.canvas_binding import CanvasTableBinding
+        self.editable_addresses = tuple((r, c) for r, _ in self.rows for c, _ in self.columns
+                                        if (r, c) in self.editable_cells)
+        self.field_order = tuple(self.editable_cells[a] for a in self.editable_addresses)
+        responsive = self.layout_policy == "responsive"
+        self.columnconfigure(0, weight=int(responsive))
+        self.canvas_view = CanvasMatrixView(self, self,
+            headers=tuple(label for _, label in self.columns),
+            widths=(self.row_header_chars, *((self.data_column_chars,)*len(self.columns))),
+            row_labels=lambda row: self.rows[row][1], corner=self.corner_label,
+            weights=((TABLE_ROW_HEADER_WEIGHT, *((TABLE_DATA_COLUMN_WEIGHT,)*len(self.columns))) if responsive else None),
+            breaks={row for row, (key, _) in enumerate(self.rows) if key in self.section_break_before_rows},
+            viewport=viewport, display_text=self.display_text_at_position)
+        self.table_frame = self.canvas_view.frame
+        self.table_frame.layout_policy = self.layout_policy
+        self.table_frame.grid(row=0, column=0, sticky="ew" if responsive else "w")
+        self.table_presentation = CanvasTableBinding(lambda: self.canvas_view)
+
+    def display_text_at_position(self, position):
+        address = self._address_at_position(position)
+        if address in self._readonly_presentation_addresses:
+            return self._readonly_values.get(address, self.text_at_address(address))
+        if address not in self.editable_cells:
+            return self._static_values.get(address, "-")
+        return self.text_at_address(address)
+
+    def set_static_text(self, address, value):
+        if address in self.editable_cells:
+            raise ValueError("Static display values require a non-editable cell")
+        self._static_values[address] = value
+        if self.canvas_view:
+            self.canvas_view.refresh()
+        else:
+            self.static_cell_labels[address].configure(text=value)
+
+    def field_editor(self, field_key):
+        """Focus target for a field; Canvas tables reuse one real Entry."""
+        address = next(a for a, key in self.editable_cells.items() if key == field_key)
+        position = (next(i for i, (key, _) in enumerate(self.rows) if key == address[0]),
+                    next(i for i, (key, _) in enumerate(self.columns) if key == address[1]))
+        return self.focus_widget(position)
 
     def _build_table(self) -> None:
         is_content_hug = self.layout_policy == "content_hug"
@@ -167,6 +221,11 @@ class MetricInputTable(ttk.Frame):
 
     def update_column_header(self, column_key: str, new_label: str) -> None:
         """Update the text label of a column header dynamically."""
+        if self.canvas_view:
+            column = next(i for i, (key, _) in enumerate(self.columns) if key == column_key)
+            self.canvas_view.headers[column] = new_label
+            self.canvas_view.schedule()
+            return
         cell = self.header_cells.get(column_key)
         if cell:
             for child in cell.winfo_children():
@@ -313,7 +372,15 @@ class MetricInputTable(ttk.Frame):
             raise TypeError("metric input values must be strings")
         if self._values[field_key] == value:
             return False
-        self._variables[field_key].set(value)
+        if self.canvas_view:
+            self._values[field_key] = value
+            self.canvas_view.refresh()
+            if self._batch_depth:
+                self._batch_changed = True
+            elif self._values_changed_callback is not None:
+                self._values_changed_callback()
+        else:
+            self._variables[field_key].set(value)
         return True
 
     def set_values(self, values: Mapping[str, str]) -> bool:
@@ -369,6 +436,11 @@ class MetricInputTable(ttk.Frame):
         }
         changed = readonly_addresses != self._readonly_presentation_addresses
         self._readonly_presentation_addresses = readonly_addresses
+        if self.canvas_view:
+            changed = changed or self._readonly_values != dict(display_values)
+            self._readonly_values = dict(display_values)
+            self.canvas_view.refresh()
+            return changed
         for address, field_key in self.editable_cells.items():
             display_value = display_values.get(address, self._values[field_key])
             changed = (
@@ -479,6 +551,8 @@ class MetricInputTable(ttk.Frame):
         return self.cell_frames[address]
 
     def focus_widget(self, position: tuple[int, int]) -> tk.Widget:
+        if self.canvas_view:
+            return self.canvas_view.editor.focus_widget(position)
         return self.cell_widget(position)
 
     def default_cell_background(self, position: tuple[int, int]) -> str:
@@ -554,6 +628,9 @@ class MetricInputTable(ttk.Frame):
 
     def _apply_all_visual_states(self) -> None:
         """Apply visual state to all editable entries."""
+        if self.canvas_view:
+            self.canvas_view.refresh()
+            return
         for field_key in self.editable_entries:
             self._apply_field_visual_state(field_key)
 

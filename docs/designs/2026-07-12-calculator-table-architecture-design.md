@@ -1,7 +1,7 @@
 # Calculator Table Architecture Design
 
 **Status:** Implemented — Slices 1-6 complete
-**Rendering follow-up:** Stages 1-2 complete (2026-10-16); input/editor and wider rollout pending (§22).
+**Rendering follow-up:** Stages 1-3 complete (2026-10-16); wider rollout pending (§22–23).
 **Scope:** Tkinter Calculator table surfaces
 **Primary implementation sequence:** Table foundation → representative ISO/ISEER migration → progressive Calculator-wide adoption
 **Proposed canonical location:** `docs/designs/2026-07-12-calculator-table-architecture-design.md`
@@ -1081,7 +1081,7 @@ Excel features are outside this workstream.
 | --- | --- | --- |
 | 1 | Repeatable native benchmark: main ISO/EN/AHRI and small/10,000-result combination windows | Complete |
 | 2 | Shared read-only Canvas renderer; ISO/ISEER comparison and combination rankings first | Complete |
-| 3 | Reusable native Entry editor over a drawn input surface; ISO input, then combination candidates | Next, not implemented |
+| 3 | Reusable native Entry editor over a drawn input surface; ISO input, then combination candidates | Complete (§23) |
 | 4 | Apply the proven renderer/editor to remaining main profile surfaces | Pending |
 | 5 | Migrate BatchCaseTable/BatchMatrixTable without changing their models or transactions | Pending |
 | 6 | Remeasure remaining viewport, window and graph costs; fix only demonstrated bottlenecks | Pending |
@@ -1191,3 +1191,44 @@ clear and undo remain on the native input backend and passed their existing
 focused regressions. The user requested no screen check. Physical dragging,
 OS cursor/keyboard behavior, Windows/Linux, multi-monitor and DPI acceptance
 remain unverified. These limitations do not reopen the independent Predict hold.
+
+
+## 23. Reusable input editor pilot (stage 3)
+
+ISO/ISEER input and all combination candidate columns now use `CanvasMatrixView`
+with one native Entry per table. `MetricInputTable` retains raw values, validation,
+batch callbacks and field/address mapping; combination adapters retain candidates,
+IDs, pool bounds, session revision and undo snapshots. Other MetricInputTable
+callers still use the native backend pending stage 4.
+
+`CanvasCellPainter` shares pooled drawing with the result renderer, while matrix
+geometry owns row headers, section gaps and responsive column allocation.
+`CanvasCellEditor` writes through the existing controller's table adapter and
+keeps a draft/caret in the same Entry during resize and scroll. Reprojection only
+changes its StringVar when the model value actually differs. `CanvasTableBinding`
+now binds both the Canvas and editor, including header selection, type-to-replace,
+F2, native partial editing, Enter/Tab, Escape, focus commit and undo. Read-only
+cells have no active editor. Disposal removes the StringVar trace and paint/view
+subscriptions. No synthetic per-cell widget facade was introduced.
+
+31 focused native tests pass, including new editor transactions, Korean draft
+text retention (not OS IME acceptance), matching native natural size, responsive
+editor geometry, Canvas/Entry drag routing, candidate header clicks, all 22 real
+combination contexts and 100 pages of 10,000-result AHRI output. Suites were run
+in separate native Tk invocations after a combined repeated-root invocation
+stopped making progress before integration finished; the real single-root app
+integration completes. Native mouse/IME and other-platform limits remain as in §22.
+
+Same benchmark/environment as §22, stage 2 → stage 3:
+
+| Surface | Open ms | Width / height mean ms | Native widgets |
+| --- | --- | --- | --- |
+| ISO 10,000 results | 335 → 101 | 61.3 / 62.0 → 52.6 / 53.3 | 1,680 → 70 |
+| AHRI 10,000 results, nine points | 236 → 174 | 92.2 / 93.9 → 86.5 / 88.0 | 699 → 294 |
+| ISO before calculation | 70 → 60 | 52.5 / 48.8 → 48.8 / 45.7 | 144 → 70 |
+
+Page refresh remains bounded (ISO 14.2 ms, AHRI 18.0 ms mean). Main ISO width/
+height means are 26.0/20.2 ms; unmigrated EN/AHRI controls remain at their prior
+cost. Callback errors are absent. Stage 4 follows with remaining main inputs
+and compact results; stage 5 covers shared batch/common-setting tables before
+stage 6 remeasures residual window and viewport work.

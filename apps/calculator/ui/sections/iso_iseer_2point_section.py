@@ -58,6 +58,7 @@ class IsoIseer2PointSection:
         )
         self.input_table = MetricInputTable(
             self._frame,
+            rendering="canvas",
             columns=(
                 ("full", "35 Full"),
                 ("half", "35 Half"),

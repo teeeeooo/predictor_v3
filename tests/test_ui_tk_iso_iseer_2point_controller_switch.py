@@ -120,7 +120,7 @@ class TestUndoBehavior:
         assert ctrl.table.text_at_position((0, 0)) == "3600"
 
         # Mutate value by triggering entry edit and focus out
-        entry = section.input_table.editable_entries["full_capacity"]
+        entry = section.input_table.field_editor("full_capacity")
         entry.delete(0, "end")
         entry.insert(0, "invalid_val")
         ctrl._focus_out(None)
@@ -159,7 +159,7 @@ class TestSharedTableVisualFoundation:
         assert table.visual_style == "shared"
         assert table.table_frame.outer_edge_policy == "flat_low_contrast"
         assert int(table.table_frame.cget("borderwidth")) == 0
-        assert table.header_cells["full"].surface_role == "header_cell"
+        assert table.canvas_view.headers == ["35 Full", "35 Half"]
 
     def test_result_uses_compact_grid_and_preserves_logical_data(self, section) -> None:
         section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)

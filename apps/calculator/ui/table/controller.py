@@ -30,7 +30,7 @@ class TkTableController:
 
     def __init__(self, table: TableSurface, *, presentation: TablePresentation | None = None) -> None:
         self.table = table
-        self.presentation = presentation
+        self.presentation = presentation if presentation is not None else getattr(table, "table_presentation", None)
         self.anchor: CellAddress | None = None
         self.active: CellAddress | None = None
         self._mode = "none"

@@ -6,31 +6,47 @@ class CanvasTableBinding:
     """Resolve pointer positions logically; bind one Canvas, not each cell.
 
     Selection, keyboard navigation, roles and clipboard remain controller-owned.
-    This pilot binds read-only result surfaces; native input bindings are retained.
+    Editable matrices attach one reusable native Entry to the same binding.
     """
 
     def __init__(self, renderer):
         self.renderer = renderer
         self._bound = WeakSet()
+        self.controller = None
 
     def refresh(self, controller):
+        self.controller = controller
+        self._keys = dict(controller._key_handlers())
         renderer = self.renderer()
+        editor = getattr(renderer, "editor", None)
+        if editor:
+            editor.controller = controller
         if renderer is None or renderer.frame in self._bound:
             return
         canvas = renderer.frame
-        self._bound.add(canvas)
         def clicked(event):
-            canvas.focus_set()
-            return controller._dispatch(event, controller._click)
-        canvas.bind("<Button-1>", clicked)
-        canvas.bind("<B1-Motion>", controller._drag)
-        for sequence, handler in controller._key_handlers():
-            canvas.bind(sequence, handler)
-        canvas.bind("<FocusOut>", controller._focus_out)
+            if getattr(renderer, "header_action", None):
+                column = renderer.header_at(event)
+                if column is not None:
+                    return renderer.header_action(column, bool(event.state & 1))
+            return self.controller._dispatch(event, self.controller._click)
+        for widget in (canvas, editor.entry) if editor else (canvas,):
+            self._bound.add(widget)
+            widget.bind("<Button-1>", clicked)
+            widget.bind("<B1-Motion>", lambda event: self.controller._drag(event))
+            for sequence in self._keys:
+                widget.bind(sequence, lambda event, seq=sequence: self._keys[seq](event))
+            widget.bind("<FocusOut>", lambda event: self.controller._focus_out(event))
+            if editor:
+                widget.bind("<KeyPress>", lambda event: self.controller._type_replace(event, self.controller.active)
+                            if self.controller.active is not None else None)
 
     def position_at(self, event):
         renderer = self.renderer()
         if renderer is not None:
+            editor = getattr(renderer, "editor", None)
+            if editor and event.widget is editor.entry and getattr(event, "type", None) != "6":
+                return editor.position
             return renderer.hit_test(event.x_root, event.y_root)
         return None
 

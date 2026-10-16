@@ -7,6 +7,7 @@ from apps.calculator.application.combinations.service import validate_candidate,
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
+from apps.calculator.ui.table.canvas_binding import CanvasTableBinding
 
 PAGE_SIZE = 100
 
@@ -30,6 +31,7 @@ class CandidateColumns(ttk.Frame):
         self.locked = False
         self.grid_table = None
         self.interaction_controller = None
+        self.table_presentation = CanvasTableBinding(lambda: self.grid_table.canvas_view)
         self.rebuild()
         self.interaction_controller = CandidateColumnController(self)
         self.bind_headers()
@@ -45,21 +47,19 @@ class CandidateColumns(ttk.Frame):
         labels = dict(capacity=f"Capacity [{self.point.capacity_unit}]", power="Power [W]")
         self.grid_table = MetricInputTable(self, columns=columns, corner_label=self.title,
             rows=tuple((key, labels[key]) for key in self.fields),
+            rendering="canvas", viewport=self.viewport,
             editable_cells={(key, col): f"{key}:{col}" for key in self.fields for col, _ in columns})
         self.grid_table.grid(row=0, column=0, sticky="w")
         self.grid_table.set_values_batch({f"{key}:{i}": getattr(candidate, key)
             for i, candidate in enumerate(self.candidates) for key in self.fields})
         self.grid_table.set_values_changed_callback(self.sync)
-        self.viewport.track_grid(self.grid_table.table_frame)
         self.present()
         if self.interaction_controller:
             self.interaction_controller.refresh()
             self.bind_headers()
 
     def bind_headers(self):
-        for i, cell in enumerate(self.grid_table.header_cells.values()):
-            for widget in (cell, *cell.winfo_children()):
-                widget.bind("<Button-1>", lambda event, col=i: self.select_column(col, bool(event.state & 1)))
+        self.grid_table.canvas_view.header_action = self.select_column
 
     def select_column(self, column, extend=False):
         controller = self.interaction_controller
@@ -149,8 +149,7 @@ class CandidateColumns(ttk.Frame):
             self.grid_table.update_column_header(str(i), f"#{self.offset+i+1}{marker}")
         self.grid_table.clear_invalid_fields()
         self.grid_table.set_invalid_fields(errors)
-        for entry in self.grid_table.editable_entries.values():
-            entry.configure(state="readonly" if self.locked else "normal")
+        self.grid_table.canvas_view.editor.refresh()
         if self.interaction_controller:
             self.interaction_controller.repaint_presentation()
 
@@ -159,14 +158,7 @@ class CandidateColumns(ttk.Frame):
         self.present()
         self.interaction_controller.refresh()
 
-    def cell_frame(self, position):
-        return self.grid_table.cell_frame(position)
-
-    def cell_widget(self, position):
-        return self.grid_table.cell_widget(position)
-
     def focus_widget(self, position):
-        self.viewport.reveal_cell(self.cell_frame(position))
         return self.grid_table.focus_widget(position)
 
     def default_cell_background(self, position):

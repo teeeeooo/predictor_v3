@@ -188,19 +188,19 @@ def test_point_blocks_share_viewport_and_resize(root):
             viewport = content.candidates.viewport
             assert viewport.horizontal_overflow_delta() > 0
             assert first.winfo_y() < second.winfo_y()
-            assert first.table.cell_frame((1, 0)).winfo_height() > 1
+            assert first.table.grid_table.canvas_view.layout.row_height > 1
             # Both rows fit inside each block; only the outer viewport scrolls.
             for block in blocks.values():
-                bottom = block.table.cell_frame((1, 0))
-                assert bottom.winfo_rooty()+bottom.winfo_height() <= block.winfo_rooty()+block.winfo_height()
-                corner=block.table.grid_table.table_frame.grid_slaves(row=0, column=0)[0]
-                assert corner.winfo_children()[0].cget("text") == {"35_full":"STD", "35_half":"HALF"}[block.point.key]
+                view = block.table.grid_table.canvas_view
+                bottom = view.cell_bbox((1, 0), root=True)[3]
+                assert bottom <= block.winfo_rooty()+block.winfo_height()
+                assert view.corner == {"35_full":"STD", "35_half":"HALF"}[block.point.key]
                 assert "유효" in block.caption.cget("text") and "/" in block.caption.cget("text")
                 assert "붙여넣기" not in block.caption.cget("text")
                 assert not hasattr(block, "names_button")
                 assert block.page_caption.cget("text") == "1/1"
                 assert block.buttons[3].instate(["disabled"]) and block.buttons[4].instate(["disabled"])
-                assert bottom.winfo_rooty()+bottom.winfo_height() <= block.caption.winfo_rooty()
+                assert bottom <= block.caption.winfo_rooty()
                 assert block.caption.master is block.buttons[0].master is block.toolbar
                 assert abs(block.caption.winfo_rooty()-block.buttons[0].winfo_rooty()) < block.caption.winfo_height()
                 assert block.buttons[-1].winfo_rootx()+block.buttons[-1].winfo_width() <= viewport.canvas.winfo_rootx()+viewport.canvas.winfo_width()
@@ -275,7 +275,10 @@ def test_pair_rectangles_number_only_and_column_identity(root):
         assert table.candidates[0].capacity == "3600"
         assert [c.id for c in table.candidates] == ids
         # Include/exclude operates on whole columns and retains invalid drafts.
-        table.select_column(1)
+        root.update()
+        view = table.grid_table.canvas_view
+        x, y, _, _ = view.cell_bbox((-1, 1))
+        view.frame.event_generate("<Button-1>", x=x+3, y=y+3)
         assert set(table.interaction_controller.selected_positions()) == {(0, 1), (1, 1)}
         block.toggle()
         table.set_positions_batch({(0, 1): "bad"})
