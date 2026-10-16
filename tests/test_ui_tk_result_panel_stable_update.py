@@ -64,24 +64,16 @@ class TestStableUpdate:
             (ResultSummary(title="CSPF", fields=(("A", "1"),)),)
         )
         tk_root.update_idletasks()
-        labels = panel.summary_value_labels["CSPF"]
-        value_cell = panel.summary_value_cells["CSPF"][0]
-        initial_cell_identity = str(value_cell)
-        initial_label_identity = str(labels[0])
-        assert labels[0].cget("text") == "1"
-
-        panel.set_summaries(
-            (ResultSummary(title="CSPF", fields=(("A", "99"),)),)
-        )
+        grid = panel.summary_grids["CSPF"]
+        initial_items = grid.frame.find_all()
+        assert grid.rows == (("1",),)
+        panel.set_summaries((ResultSummary(title="CSPF", fields=(("A", "99"),)),))
         tk_root.update_idletasks()
-        assert labels[0].cget("text") == "99"
-        assert labels[0].semantic_tone == "calculated"
-        assert labels[0].cget("background") == TABLE_PASS_BG
-        assert str(value_cell) == initial_cell_identity
-        assert str(labels[0]) == initial_label_identity
-        assert value_cell.cget("background") == TABLE_PASS_BG
-        assert value_cell.semantic_background == TABLE_PASS_BG
-        assert value_cell.cget("background") == labels[0].cget("background")
+        assert panel.summary_grids["CSPF"] is grid
+        assert grid.rows == (("99",),)
+        assert grid.cell_tone((0, 0)) == SemanticTone.CALCULATED
+        assert grid.cell_background((0, 0)) == TABLE_PASS_BG
+        assert grid.frame.find_all() == initial_items
 
     def test_placeholder_invalid_and_valid_tones_update_in_place(
         self, panel, tk_root
@@ -89,9 +81,9 @@ class TestStableUpdate:
         panel.show_placeholder(title="CSPF", field_labels=("CSPF",))
         tk_root.update_idletasks()
         card = panel.summary_tables["CSPF"]
-        value = panel.summary_value_labels["CSPF"][0]
-        assert value.cget("text") == "-"
-        assert value.semantic_tone == "pending"
+        grid = panel.summary_grids["CSPF"]
+        assert grid.rows[0][0] == "-"
+        assert grid.cell_tone((0, 0)).value == "pending"
         assert panel._summaries == ()
 
         panel.show_placeholder(
@@ -101,15 +93,15 @@ class TestStableUpdate:
             tone=SemanticTone.INVALID,
         )
         assert panel.summary_tables["CSPF"] is card
-        assert value.semantic_tone == "invalid"
+        assert grid.cell_tone((0, 0)).value == "invalid"
         assert panel._summaries == ()
 
         panel.set_summaries(
             (ResultSummary(title="CSPF", fields=(("CSPF", "4.939"),)),)
         )
         assert panel.summary_tables["CSPF"] is card
-        assert value.cget("text") == "4.939"
-        assert value.semantic_tone == "calculated"
+        assert grid.rows[0][0] == "4.939"
+        assert grid.cell_tone((0, 0)).value == "calculated"
 
     def test_same_shape_updates_status_text(self, panel, tk_root) -> None:
         panel.set_summaries(
@@ -145,20 +137,10 @@ class TestStableUpdate:
         )
         tk_root.update_idletasks()
 
-        card = panel.summary_tables["CSPF"]
-        header_widths = tuple(
-            cell.winfo_width() for cell in panel.summary_header_cells["CSPF"]
-        )
-        value_widths = tuple(
-            cell.winfo_width() for cell in panel.summary_value_cells["CSPF"]
-        )
-
-        assert {
-            card.grid_columnconfigure(column)["uniform"]
-            for column in range(3)
-        } == {"summary_fields"}
-        assert len(set(header_widths)) == 1
-        assert len(set(value_widths)) == 1
+        grid = panel.summary_grids["CSPF"]
+        widths = [grid.cell_bbox((0, col))[2] - grid.cell_bbox((0, col))[0] for col in range(3)]
+        assert len(set(widths)) == 1
+        assert all(grid.cell_bbox((-1, col))[0::2] == grid.cell_bbox((0, col))[0::2] for col in range(3))
 
     def test_content_hug_summary_table_does_not_expand_with_window(self, tk_root) -> None:
         tk_root.geometry("500x300")
@@ -191,19 +173,14 @@ class TestStableUpdate:
         tk_root.update_idletasks()
 
         card = panel.summary_tables["CSPF"]
-        header = panel.summary_header_cells["CSPF"][0]
-        value = panel.summary_value_cells["CSPF"][0]
-        value_label = panel.summary_value_labels["CSPF"][0]
+        grid = panel.summary_grids["CSPF"]
         assert card.outer_edge_policy == "flat_low_contrast"
         assert int(card.cget("borderwidth")) == 0
-        assert header.surface_role == "summary_header_cell"
-        assert value.surface_role == "summary_value_cell"
-        assert value_label.alignment_role == "numeric_result"
-        assert value_label.semantic_tone == "calculated"
-        assert value_label.cget("background") == TABLE_PASS_BG
-        assert value.cget("background") == TABLE_PASS_BG
-        assert value.semantic_background == TABLE_PASS_BG
-        assert value.cget("background") == value_label.cget("background")
+        assert grid.frame.surface_role == "summary_values"
+        assert grid.cell_alignment((0, 0)).value == "numeric_result"
+        assert grid.cell_tone((0, 0)) == SemanticTone.CALCULATED
+        assert grid.cell_background((0, 0)) == TABLE_PASS_BG
+        assert grid.frame.itemcget(grid._painted[(0, 0)].background, "fill") == TABLE_PASS_BG
 
 
 class TestResultActions:
@@ -492,3 +469,33 @@ class TestFocusPreservation:
             (ResultSummary(title="CSPF", fields=(), status="오류"),)
         )
         tk_root.update_idletasks()
+
+
+@pytest.mark.parametrize("layout", ["content_hug", "responsive"])
+def test_summary_text_growth_and_window_resize_keep_items_and_natural_width(tk_root, layout):
+    tk_root.deiconify()
+    tk_root.geometry("750x300")
+    panel = ResultPanel(tk_root, layout_policy=layout)
+    panel.pack(fill="x")
+    panel.set_summaries((ResultSummary(title="Result", fields=(("A", "1"), ("B", "2"))),))
+    tk_root.update()
+    grid = panel.summary_grids["Result"]
+    initial = grid.frame.find_all()
+    before = grid.frame.winfo_reqwidth()
+    value = "1234567890.123456789"
+    panel.set_summaries((ResultSummary(title="Result", fields=(("A", value), ("B", "2"))),))
+    tk_root.update()
+    natural = grid.frame.winfo_reqwidth()
+    allocated = grid.frame.winfo_width()
+    assert natural > before
+    assert grid.cell_paint((0, 0)).text == value
+    assert grid.frame.find_all() == initial
+    tk_root.geometry("950x300")
+    tk_root.update()
+    assert grid.frame.winfo_reqwidth() == natural
+    if layout == "responsive":
+        assert grid.frame.winfo_width() > allocated
+    else:
+        assert grid.frame.winfo_width() == allocated
+    widths = [grid.cell_bbox((0, col))[2] - grid.cell_bbox((0, col))[0] for col in range(2)]
+    assert max(widths) - min(widths) <= 1

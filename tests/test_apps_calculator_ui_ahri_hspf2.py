@@ -311,8 +311,8 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
         ("cop", "COP"),
     )
     for point in AHRI_HSPF2_UI_POINT_ORDER:
-        label = section.heating_table.static_cell_labels[("condition_temp", point)]
-        assert label.cget("text").endswith(
+        label = section.heating_table.static_text(("condition_temp", point))
+        assert label.endswith(
             f"{AHRI_HSPF2_TEMPERATURES_C[point]:.1f} °C"
         )
     assert section.batch_button.master is section.detail_toggle.master
@@ -322,15 +322,11 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
     assert section.heating_table.cell_role((1, 5)) is CellRole.EDITABLE
     assert section.heating_table.cell_role((1, 6)) is CellRole.READONLY
     assert section.heating_table.cell_role((1, 7)) is CellRole.READONLY
-    assert section.heating_table.cell_widget((1, 6)).cget("text") == ""
+    assert section.heating_table.display_text_at_position((1, 6)) == ""
     assert section.a2_table.get_text_values()["a2_capacity"] == ""
     assert "a2_power" not in section.a2_table.field_order
-    assert section.heating_table.static_cell_labels[("cop", "H01")].cget(
-        "text"
-    ) == ""
-    assert section.heating_table.static_cell_labels[("cop", "H12")].cget(
-        "text"
-    ) == ""
+    assert section.heating_table.static_text(("cop", "H01")) == ""
+    assert section.heating_table.static_text(("cop", "H12")) == ""
     assert section.result_panel.summary_tables == {}
     assert section._detail_status == "입력 대기"
     visible_fields = {
@@ -358,10 +354,8 @@ def test_hspf2_optional_toggle_restores_editability_and_calculates(tk_root) -> N
     assert section.heating_table.get_text_values()["capacity_H12"] == (
         HSPF2_SAMPLE_VALUES["capacity_H12"]
     )
-    assert section.heating_table.static_cell_labels[("cop", "H12")].cget(
-        "text"
-    ) == "10.91"
-    assert section.result_panel.summary_value_labels["HSPF2"][0].cget("text")
+    assert section.heating_table.static_text(("cop", "H12")) == "10.91"
+    assert section.result_panel.summary_grids["HSPF2"].rows[0][0]
 
 
 def test_ahri_tab_registers_seer2_and_hspf2_metrics(tk_root) -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 
-from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
 from apps.calculator.ui.table.visual_policy import SemanticTone
 
 
@@ -16,7 +16,7 @@ _GUIDE_ROWS = (
 _GUIDE_ROW_INDEX = {row_key: index for index, (row_key, _label) in enumerate(_GUIDE_ROWS)}
 
 
-class _KoreaMidpointGrid(CompactResultGrid):
+class _KoreaMidpointGrid(CanvasResultGrid):
     """Compact grid with the section's existing address-based read seam."""
 
     def text_at_address(self, address: tuple[str, str]) -> str:

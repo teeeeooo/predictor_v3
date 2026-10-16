@@ -48,10 +48,10 @@ class AhriMHspfSection:
         )
         self.heating_table.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         self.numeric_table.set_values_batch({"cd": "0.25", "defrost_test_minutes": "90", "defrost_max_minutes": "720", "cut_out_c": "-17.8", "cut_in_c": "-15.0"})
-        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(text="1.000")
+        self.numeric_table.set_static_text(("value", "defrost_credit"), "1.000")
         for point in AHRI_M_HSPF_POINT_ORDER:
-            self.heating_table.static_cell_labels[("condition_temp", point)].configure(text=f"{AHRI_M_HSPF_TEMPERATURES_C[point]:.1f} °C")
-            self.heating_table.static_cell_labels[("cop", point)].configure(text="")
+            self.heating_table.set_static_text(("condition_temp", point), f"{AHRI_M_HSPF_TEMPERATURES_C[point]:.1f} °C")
+            self.heating_table.set_static_text(("cop", point), "")
         self._controllers = (
             TkTableController(self.numeric_table),
             TkTableController(self.heating_table),
@@ -134,9 +134,7 @@ class AhriMHspfSection:
             numeric_readonly,
             display_values=display_values,
         )
-        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(
-            text="계산 대기" if self.demand_defrost_var.get() else "1.000"
-        )
+        self.numeric_table.set_static_text(("value", "defrost_credit"), "계산 대기" if self.demand_defrost_var.get() else "1.000")
         for controller in self._controllers:
             controller.refresh()
 
@@ -150,9 +148,7 @@ class AhriMHspfSection:
         if summary is None:
             self._clear_errors(); self._show_placeholder("입력 대기"); self.detail_panel.set_status("입력 대기"); return
         self._clear_errors()
-        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(
-            text=f"{summary.defrost_credit:.3f}"
-        )
+        self.numeric_table.set_static_text(("value", "defrost_credit"), f"{summary.defrost_credit:.3f}")
         self.result_panel.set_summaries((ResultSummary(
             title="HSPF",
             fields=(("Raw HSPF", f"{summary.raw_hspf:.5f}"), ("Published HSPF", f"{summary.published_hspf:.2f}"), ("DHRmin [Btu/h]", f"{summary.dhr_min_standardized:.0f}"), ("Heating Load [Btu/h]", f"{summary.heating_load_aggregate:.1f}"), ("Compressor Input [W]", f"{summary.compressor_energy_aggregate:.1f}"), ("Auxiliary Input [W]", f"{summary.resistance_energy_aggregate:.1f}")),
@@ -163,7 +159,7 @@ class AhriMHspfSection:
     def _update_cops(self, values):
         cops = self.adapter.compute_display_cops(values, options=self.options)
         for point in AHRI_M_HSPF_POINT_ORDER:
-            self.heating_table.static_cell_labels[("cop", point)].configure(text=f"{cops[point]:.2f}" if point in cops else "")
+            self.heating_table.set_static_text(("cop", point), f"{cops[point]:.2f}" if point in cops else "")
 
     def _show_placeholder(self, status):
         self.result_panel.show_placeholder(title="HSPF", field_labels=("Raw HSPF", "Published HSPF", "DHRmin [Btu/h]", "Heating Load [Btu/h]", "Compressor Input [W]", "Auxiliary Input [W]"), status=status)

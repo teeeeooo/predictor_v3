@@ -38,6 +38,7 @@ def sample_table(tk_root):
             ("r2", "c1"): "c",
             ("r2", "c2"): "d",
         },
+        rendering="native",
     )
     table.pack()
     table.set_values({"a": "1", "b": "2", "c": "3", "d": "4"})
@@ -203,6 +204,7 @@ class TestInvalidStateWithReadOnlyCells:
             columns=(("c1", "Col1"), ("c2", "Col2")),
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a"},
+            rendering="native",
         )
         table.set_values({"a": "1"})
         # Setting invalid for editable field works

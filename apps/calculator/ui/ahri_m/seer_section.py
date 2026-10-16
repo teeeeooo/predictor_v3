@@ -50,8 +50,8 @@ class AhriMSeerSection:
         self.input_table.grid(row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
         self.numeric_table.set_values_batch({"cd": "0.25"})
         for point in AHRI_M_SEER_POINT_ORDER:
-            self.input_table.static_cell_labels[("condition_temp", point)].configure(text=f"{AHRI_M_SEER_TEMPERATURES_C[point]:.1f} °C")
-            self.input_table.static_cell_labels[("eer", point)].configure(text="")
+            self.input_table.set_static_text(("condition_temp", point), f"{AHRI_M_SEER_TEMPERATURES_C[point]:.1f} °C")
+            self.input_table.set_static_text(("eer", point), "")
         self._controllers = (
             TkTableController(self.numeric_table),
             TkTableController(self.input_table),
@@ -99,7 +99,7 @@ class AhriMSeerSection:
             return
         self._clear_errors()
         for point, eer in summary.eer_by_point.items():
-            self.input_table.static_cell_labels[("eer", point)].configure(text=f"{eer:.2f}")
+            self.input_table.set_static_text(("eer", point), f"{eer:.2f}")
         self.result_panel.set_summaries((ResultSummary(
             title="SEER",
             fields=(("Raw SEER", f"{summary.raw_seer:.5f}"), ("Published SEER", f"{summary.published_seer:.2f}"), ("CSTL [Btu/h]", f"{summary.seasonal_cooling_numerator:.1f}"), ("CSEC [W]", f"{summary.seasonal_energy_denominator:.1f}")),

@@ -65,14 +65,14 @@ def test_brazil_initial_placeholder_is_pending_and_not_exportable(tk_root):
     assert table.rules == ()
     assert table.final_status is None
     assert {
-        label.semantic_tone
-        for (row, column), label in table.result_value_labels.items()
-        if column > 0
+        table.result_grid.cell_tone((row, column)).value
+        for row in range(len(table.result_grid.rows))
+        for column in range(1, len(table.result_grid.headers))
     } == {"pending"}
     assert {
-        label.semantic_tone
-        for (row, column), label in table.rule_value_labels.items()
-        if column > 0
+        table.rule_grid.cell_tone((row, column)).value
+        for row in range(len(table.rule_grid.rows))
+        for column in range(1, len(table.rule_grid.headers))
     } == {"pending"}
     assert table.final_status_label.semantic_tone == "pending"
     assert table.table_export_data() == (("Status",), (("입력 대기",),))
@@ -91,7 +91,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert section.input_table.visual_style == "shared"
     assert table.row_labels == ("3-point", "2-point")
     assert table.column_labels == ("Scenario", "CSPF", "CSTL [kWh]", "CSEC [kWh]")
-    assert len(table.result_value_labels) == 8
+    assert sum(map(len, table.result_grid.rows)) == 8
     assert "Rule 1" in table.as_text()
     assert "Rule 2" in table.as_text()
     assert "조건" in table.as_text()
@@ -105,7 +105,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
         ("3-point", "6.02", "2461", "409"),
         ("2-point", "4.55", "2461", "541"),
     )
-    rule_rows = [tuple(table.rule_value_labels[(row, column)].cget("text") for column in range(5)) for row in range(2)]
+    rule_rows = list(table.rule_grid.rows)
     assert rule_rows == [
         ("Rule 1", "CSPF 3pt ≤ CSPF 2pt × 1.4", "6.02", "6.37", "OK"),
         ("Rule 2", "29°C EER 실측 > 계산", "5.56", "5.75", "NG"),
@@ -114,22 +114,22 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert table.rule_grid.frame.outer_edge_policy == "flat_low_contrast"
     assert int(table.table.cget("borderwidth")) == 0
     assert int(table.rule_table.cget("borderwidth")) == 0
-    assert table.result_grid.value_labels[(0, 0)].alignment_role == "identity_text"
-    assert table.result_grid.value_labels[(0, 1)].alignment_role == "numeric_result"
-    assert table.rule_grid.value_labels[(0, 0)].alignment_role == "identity_text"
-    assert table.rule_grid.value_labels[(0, 1)].alignment_role == "identity_text"
-    assert table.rule_grid.value_labels[(0, 2)].alignment_role == "numeric_result"
-    assert table.result_value_labels[(0, 0)].semantic_tone == "default"
-    assert table.result_value_labels[(0, 1)].semantic_tone == "calculated"
-    assert table.rule_value_labels[(0, 0)].semantic_tone == "default"
-    assert table.rule_value_labels[(0, 1)].semantic_tone == "default"
-    assert table.rule_value_labels[(0, 2)].semantic_tone == "default"
-    assert table.rule_value_labels[(0, 4)].semantic_tone == "pass"
-    assert table.rule_value_labels[(1, 4)].semantic_tone == "fail"
-    assert table.result_value_labels[(0, 1)].cget("background") == TABLE_PASS_BG
-    assert table.result_value_labels[(1, 3)].cget("background") == TABLE_PASS_BG
-    assert table.rule_value_labels[(0, 4)].cget("background") == TABLE_PASS_BG
-    assert table.rule_value_labels[(1, 4)].cget("background") == TABLE_ERROR_BG
+    assert table.result_grid.cell_alignment((0, 0)).value == "identity_text"
+    assert table.result_grid.cell_alignment((0, 1)).value == "numeric_result"
+    assert table.rule_grid.cell_alignment((0, 0)).value == "identity_text"
+    assert table.rule_grid.cell_alignment((0, 1)).value == "identity_text"
+    assert table.rule_grid.cell_alignment((0, 2)).value == "numeric_result"
+    assert table.result_grid.cell_tone((0, 0)).value == "default"
+    assert table.result_grid.cell_tone((0, 1)).value == "calculated"
+    assert table.rule_grid.cell_tone((0, 0)).value == "default"
+    assert table.rule_grid.cell_tone((0, 1)).value == "default"
+    assert table.rule_grid.cell_tone((0, 2)).value == "default"
+    assert table.rule_grid.cell_tone((0, 4)).value == "pass"
+    assert table.rule_grid.cell_tone((1, 4)).value == "fail"
+    assert table.result_grid.cell_background((0, 1)) == TABLE_PASS_BG
+    assert table.result_grid.cell_background((1, 3)) == TABLE_PASS_BG
+    assert table.rule_grid.cell_background((0, 4)) == TABLE_PASS_BG
+    assert table.rule_grid.cell_background((1, 4)) == TABLE_ERROR_BG
     assert table.final_status_label.cget("background") == TABLE_PASS_BG
     assert table.final_status_label.semantic_tone == "pass"
     expected_tsv = "\n".join(
@@ -153,7 +153,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
 
     tk_root.deiconify()
     tk_root.update_idletasks()
-    table.rule_grid.value_labels[(0, 0)].event_generate("<Button-1>")
+    table.rule_grid.frame.event_generate("<Button-1>")
     assert tk_root.focus_get() == table.rule_grid.frame
     table.rule_grid.frame.event_generate("<Control-c>")
     assert tk_root.clipboard_get() == expected_tsv
@@ -184,17 +184,17 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert table.rules == ()
     assert table.final_status is None
     assert tuple(
-        label.cget("text") for label in table.result_value_labels.values()
+        value for row in table.result_grid.rows for value in row
     ) == ("3-point", "-", "-", "-", "2-point", "-", "-", "-")
-    assert tuple(label.cget("text") for label in table.rule_value_labels.values()) == (
+    assert tuple(value for row in table.rule_grid.rows for value in row) == (
         "Rule 1", "-", "-", "-", "-", "Rule 2", "-", "-", "-", "-"
     )
     assert table.final_status_label.cget("text") == "최종 판정: -"
     assert table.final_status_label.semantic_tone == "invalid"
     assert {
-        label.semantic_tone
-        for (row, column), label in table.result_value_labels.items()
-        if column > 0
+        table.result_grid.cell_tone((row, column)).value
+        for row in range(len(table.result_grid.rows))
+        for column in range(1, len(table.result_grid.headers))
     } == {"invalid"}
     assert table.table_export_data() == (
         ("Status",),

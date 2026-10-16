@@ -14,7 +14,7 @@ from apps.calculator.ui.sections.en14825_scop_result_formatter import (
     format_scop_compact_rows,
     format_scop_status,
 )
-from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
 from apps.calculator.ui.table.grid_primitives import (
     create_cell_container,
     create_text_label,
@@ -42,33 +42,18 @@ class ScopResultSurface:
     _ROW_LABELS = ("Declared", "Tested")
 
     def __init__(self, parent: tk.Widget) -> None:
-        self._grid = CompactResultGrid(
-            parent,
+        self._frame = tk.Frame(parent, borderwidth=0, highlightthickness=0)
+        self._grid = CanvasResultGrid(
+            self._frame,
             headers=("구분", *self._COLUMNS),
             column_widths=(10, 10, 12, 12, 10),
             surface_role="en14825_scop_result_grid",
         )
-        self._frame = self._grid.frame
+        self._grid.frame.grid(row=0, column=0, sticky="w")
         self._frame.surface_role = "summary_table"
         self._frame.layout_policy = "content_hug"
         self.layout_policy = "content_hug"
         self._grid.set_rows(self._empty_rows(), tones=self._row_tones())
-        self._header_labels = {
-            "row_label": self._grid.header_labels[0],
-            **{
-                key: self._grid.header_labels[column]
-                for column, key in enumerate(self._COLUMNS, start=1)
-            },
-        }
-        self._row_header_labels = {
-            row_label: self._grid.value_labels[(row, 0)]
-            for row, row_label in enumerate(self._ROW_LABELS)
-        }
-        self._value_labels = {
-            (row_label, key): self._grid.value_labels[(row, column)]
-            for row, row_label in enumerate(self._ROW_LABELS)
-            for column, key in enumerate(self._COLUMNS, start=1)
-        }
         status_cell = create_cell_container(
             self._frame,
             background=RESULT_VALUE_BG,
@@ -91,18 +76,6 @@ class ScopResultSurface:
     @property
     def frame(self) -> tk.Frame:
         return self._frame
-
-    @property
-    def value_labels(self) -> dict[tuple[str, str], tk.Label]:
-        return self._value_labels
-
-    @property
-    def header_labels(self) -> dict[str, tk.Label]:
-        return self._header_labels
-
-    @property
-    def row_header_labels(self) -> dict[str, tk.Label]:
-        return self._row_header_labels
 
     def grid(self, **kwargs) -> None:
         self._frame.grid(**kwargs)

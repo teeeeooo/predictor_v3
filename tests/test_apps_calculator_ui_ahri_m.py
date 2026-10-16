@@ -101,7 +101,7 @@ def test_m_sections_use_exact_scope_and_render_goldens(tk_root):
     assert seer.batch_button.cget("text") == "일괄 입력"
     seer.input_table.set_values_batch({k: v for k, v in SEER_VALUES.items() if k != "cd"})
     seer._auto_calc.flush_now()
-    assert [label.cget("text") for label in seer.result_panel.summary_value_labels["SEER"]][:2] == ["18.04867", "18.05"]
+    assert list(seer.result_panel.summary_grids["SEER"].rows[0])[:2] == ["18.04867", "18.05"]
     assert seer.result_panel._summary_shapes["SEER"][1] == (
         "Raw SEER", "Published SEER", "CSTL [Btu/h]", "CSEC [W]"
     )
@@ -119,17 +119,17 @@ def test_m_sections_use_exact_scope_and_render_goldens(tk_root):
     hspf.heating_table.set_values_batch({k: v for k, v in HSPF_VALUES.items() if k.startswith(("capacity_", "power_"))})
     hspf.numeric_table.set_values_batch({k: v for k, v in HSPF_VALUES.items() if k in {"cd", "defrost_test_minutes", "defrost_max_minutes", "cut_out_c", "cut_in_c"}})
     hspf._auto_calc.flush_now()
-    values = [label.cget("text") for label in hspf.result_panel.summary_value_labels["HSPF"]]
+    values = list(hspf.result_panel.summary_grids["HSPF"].rows[0])
     assert values == ["10.46286", "10.45", "15000", "4605.6", "359.5", "80.7"]
     assert hspf.result_panel._summary_shapes["HSPF"][1] == (
         "Raw HSPF", "Published HSPF", "DHRmin [Btu/h]", "Heating Load [Btu/h]", "Compressor Input [W]", "Auxiliary Input [W]"
     )
-    assert hspf.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.000"
+    assert hspf.numeric_table.static_text(("value", "defrost_credit")) == "1.000"
 
     hspf.demand_defrost_var.set(True)
     hspf.numeric_table.set_values_batch({"defrost_test_minutes": "180", "defrost_max_minutes": "720"})
     hspf._auto_calc.flush_now()
-    assert hspf.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.026"
+    assert hspf.numeric_table.static_text(("value", "defrost_credit")) == "1.026"
 
 
 def test_m_main_tables_reuse_common_excel_interaction_controller(tk_root):
@@ -138,7 +138,7 @@ def test_m_main_tables_reuse_common_excel_interaction_controller(tk_root):
     seer = AhriMSeerSection(tk_root); seer.pack()
     assert len(seer._controllers) == 2
     seer_controller = seer._controllers[1]
-    assert seer.input_table.cell_widget((1, 0)).bind("<B1-Motion>")
+    assert seer.input_table.focus_widget((1, 0)).bind("<B1-Motion>")
     seer.input_table.clipboard_clear()
     seer.input_table.clipboard_append(
         "15000\t16000\t6800\t3500\t3400\n1200\t1100\t350\t120\t80"
@@ -147,7 +147,7 @@ def test_m_main_tables_reuse_common_excel_interaction_controller(tk_root):
     seer_controller._paste()
     seer._auto_calc.flush_now()
     assert seer.input_table.get_text_values()["capacity_EV"] == "6800"
-    assert seer.result_panel.summary_value_labels["SEER"][1].cget("text") == "18.05"
+    assert seer.result_panel.summary_grids["SEER"].rows[0][1] == "18.05"
     seer_controller.select((1, 0))
     seer_controller.select((2, 4), extend=True)
     seer_controller._copy()
@@ -172,7 +172,7 @@ def test_m_main_tables_reuse_common_excel_interaction_controller(tk_root):
 
     h12_index = AHRI_M_HSPF_POINT_ORDER.index("H12")
     hspf.h12_var.set(True)
-    h12_widget = hspf.heating_table.cell_widget((1, h12_index))
+    h12_widget = hspf.heating_table.focus_widget((1, h12_index))
     assert h12_widget.bind("<B1-Motion>")
     assert h12_widget.bind("<Control-v>")
     hspf.heating_table.clipboard_clear()
@@ -188,7 +188,7 @@ def test_m_main_tables_reuse_common_excel_interaction_controller(tk_root):
     numeric_controller._paste()
     assert hspf.numeric_table.get_text_values()["defrost_test_minutes"] == "90"
     hspf.demand_defrost_var.set(True)
-    defrost_widget = hspf.numeric_table.cell_widget((0, 2))
+    defrost_widget = hspf.numeric_table.focus_widget((0, 2))
     assert defrost_widget.bind("<B1-Motion>")
     assert defrost_widget.bind("<Control-v>")
     numeric_controller.select((0, 2))
@@ -213,19 +213,19 @@ def test_m_batch_buttons_open_appendix_m_matrix_dialogs(tk_root):
     assert section.table.spec is AHRI_M_HSPF_BATCH_SPEC
     assert section.numeric_table.cell_role((0, 2)) is CellRole.READONLY
     assert section.numeric_table.cell_role((0, 3)) is CellRole.READONLY
-    assert section.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.000"
+    assert section.numeric_table.static_text(("value", "defrost_credit")) == "1.000"
     section._vars["demand_defrost"].set("1")
     assert section.numeric_table.cell_role((0, 2)) is CellRole.EDITABLE
     assert section.numeric_table.cell_role((0, 3)) is CellRole.EDITABLE
-    assert section.numeric_table.cell_widget((0, 2)).bind("<B1-Motion>")
-    assert section.numeric_table.cell_widget((0, 2)).bind("<Control-v>")
+    assert section.numeric_table.focus_widget((0, 2)).bind("<B1-Motion>")
+    assert section.numeric_table.focus_widget((0, 2)).bind("<Control-v>")
     section.numeric_table.clipboard_clear()
     section.numeric_table.clipboard_append("180\t720")
     section.numeric_controller.select((0, 2))
     section.numeric_controller._paste()
     section.table.restore_snapshot([{key: value for key, value in HSPF_VALUES.items() if key.startswith(("capacity_", "power_"))}])
     section._auto_calc.flush_now()
-    assert section.numeric_table.static_cell_labels[("value", "defrost_credit")].cget("text") == "1.026"
+    assert section.numeric_table.static_text(("value", "defrost_credit")) == "1.026"
     hspf._batch_access.dialog.close()
 
 

@@ -424,13 +424,11 @@ def test_en14825_gui_integration():
         assert section.design_table.visual_style == "shared"
         assert section.input_table.visual_style == "shared"
         assert METRIC_TABLE_EN14825_ROW_HEADER_CHARS >= len("Declared capacity [W]")
-        declared_header = section.input_table.row_header_cells[
-            "declared_capacity"
-        ].winfo_children()[0]
-        assert int(declared_header.cget("width")) == (
+        declared_header = section.input_table.canvas_view.cell_paint((3, -1))
+        assert int(section.input_table.row_header_chars) == (
             METRIC_TABLE_EN14825_ROW_HEADER_CHARS
         )
-        assert tk_font.Font(root=root, font=declared_header.cget("font")).cget(
+        assert tk_font.Font(root=root, font=declared_header.font).cget(
             "size"
         ) == TABLE_FONT_SIZE
         row_keys = section.input_table.rows
@@ -520,18 +518,18 @@ def test_en14825_seer_cell_background_follows_editable_role_contract():
         computed_pos = (SeerTableModel.ROW_KEYS.index("eer_percent"), col_idx)
 
         assert section.input_table.cell_role(editable_pos) == CellRole.EDITABLE
-        assert section.input_table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
-        assert section.input_table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert section.input_table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
+        assert section.input_table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
         assert section.input_table.cell_role(computed_pos) == CellRole.READONLY
-        assert section.input_table.cell_widget(computed_pos).winfo_class() == "Label"
-        assert section.input_table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
+        assert section.input_table.focus_widget(computed_pos) is section.input_table.canvas_view.frame
+        assert section.input_table.canvas_view.cell_background(computed_pos) == TABLE_STATIC_BG
 
         _populate_seer_sample(section)
         section._auto_calc.flush_now()
-        assert section.input_table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
-        assert section.input_table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
-        assert section.input_table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
-        assert section.input_table.cell_widget(computed_pos).cget("background") == TABLE_STATIC_BG
+        assert section.input_table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
+        assert section.input_table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
+        assert section.input_table.canvas_view.cell_background(computed_pos) == TABLE_STATIC_BG
+        assert section.input_table.canvas_view.cell_background(computed_pos) == TABLE_STATIC_BG
 
         # Now set invalid input to tested_power to trigger invalid state/recalculate
         section.input_table.set_value("tested_power_A", "0")
@@ -540,8 +538,8 @@ def test_en14825_seer_cell_background_follows_editable_role_contract():
         # Power state is invalid
         power_row_idx = SeerTableModel.ROW_KEYS.index("tested_power")
         power_pos = (power_row_idx, col_idx)
-        power_widget = section.input_table.cell_widget(power_pos)
-        assert section.input_table.cell_frame(power_pos).cget("background") == TABLE_INVALID_BG
+        power_widget = section.input_table.focus_widget(power_pos)
+        assert section.input_table.canvas_view.cell_background(power_pos) == TABLE_INVALID_BG
         assert power_widget.cget("background") == TABLE_INVALID_BG
 
     finally:
@@ -565,14 +563,12 @@ def test_en14825_section_breaks():
 
         for row_key in ("declared_capacity", "tested_capacity", "capacity_percent"):
             row_idx = SeerTableModel.ROW_KEYS.index(row_key)
-            frame = section.input_table.cell_frame((row_idx, 0))
-            pady = frame.grid_info()["pady"]
-            assert pady == (6, 1) or str(pady) == "6 1"
+            layout = section.input_table.canvas_view.layout
+            assert layout.cell_bbox((row_idx, 0))[1] - layout.cell_bbox((row_idx - 1, 0))[3] == 6
 
         part_load_row_idx = SeerTableModel.ROW_KEYS.index("part_load_ratio")
-        frame = section.input_table.cell_frame((part_load_row_idx, 0))
-        pady = frame.grid_info()["pady"]
-        assert pady == 1 or pady == (0, 1) or str(pady) == "1"
+        layout = section.input_table.canvas_view.layout
+        assert layout.cell_bbox((part_load_row_idx, 0))[1] - layout.cell_bbox((part_load_row_idx - 1, 0))[3] == 0
 
     finally:
         root.destroy()

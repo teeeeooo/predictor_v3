@@ -1,7 +1,7 @@
 # Calculator Table Architecture Design
 
 **Status:** Implemented — Slices 1-6 complete
-**Rendering follow-up:** Stages 1-3 complete (2026-10-16); wider rollout pending (§22–23).
+**Rendering follow-up:** Stages 1-4 complete (2026-10-16); batch and residual-cost stages pending (§22–24).
 **Scope:** Tkinter Calculator table surfaces
 **Primary implementation sequence:** Table foundation → representative ISO/ISEER migration → progressive Calculator-wide adoption
 **Proposed canonical location:** `docs/designs/2026-07-12-calculator-table-architecture-design.md`
@@ -1082,7 +1082,7 @@ Excel features are outside this workstream.
 | 1 | Repeatable native benchmark: main ISO/EN/AHRI and small/10,000-result combination windows | Complete |
 | 2 | Shared read-only Canvas renderer; ISO/ISEER comparison and combination rankings first | Complete |
 | 3 | Reusable native Entry editor over a drawn input surface; ISO input, then combination candidates | Complete (§23) |
-| 4 | Apply the proven renderer/editor to remaining main profile surfaces | Pending |
+| 4 | Apply the proven renderer/editor to remaining main profile surfaces | Complete (§24) |
 | 5 | Migrate BatchCaseTable/BatchMatrixTable without changing their models or transactions | Pending |
 | 6 | Remeasure remaining viewport, window and graph costs; fix only demonstrated bottlenecks | Pending |
 
@@ -1232,3 +1232,34 @@ height means are 26.0/20.2 ms; unmigrated EN/AHRI controls remain at their prior
 cost. Callback errors are absent. Stage 4 follows with remaining main inputs
 and compact results; stage 5 covers shared batch/common-setting tables before
 stage 6 remeasures residual window and viewport work.
+
+
+## 24. Remaining main profile surfaces (stage 4)
+
+`MetricInputTable` now defaults to the shared Canvas/editor backend. EN14825,
+AHRI M/M1, SASO, Brazil, Hong Kong and Korea keep their existing models and
+controllers. Static computed text goes through the table presentation API;
+callers no longer mutate per-cell Labels. The native backend remains available
+for focused renderer parity checks. Read-only and optional-point roles still
+control both direct editing and rectangular paste.
+
+Compact SASO/Brazil/Korea/SCOP results and ResultPanel summaries share
+CanvasResultGrid. Summary columns measure full current text, remain equal-width,
+and distinguish natural size from responsive allocation. Same-shape updates
+retain the Canvas and item IDs, focus, status, copy and CSV behavior. Small title
+and status Labels remain native. Geometry/refit guards and detail Treeviews are
+unchanged.
+
+Native tests cover profile calculation, invalid and optional inputs, climate
+roles, result tones and exports, summary growth/resize, undo, and the actual
+22-context combination entry path. The shared renderer/native parity and window
+refit/lifecycle group passed 129 tests. Old Label-inspection assertions now
+inspect logical display values, Canvas paint, geometry and the real editor.
+
+Same environment/benchmark as §22: whole-app native widget count fell from
+1,992 to 503. Main EN SCOP width/height means fell from 57.2/36.5 to 43.7/29.7 ms;
+AHRI HSPF2 from 44.1/29.4 to 38.2/25.9 ms. Main ISO stays near 25.8/20.0 ms.
+Combination controls remain near stage 3 (AHRI 87.0/88.6 ms), indicating that
+main-profile migration alone does not resolve their residual resize cost. No
+benchmark callback errors were reported. Stage 5 proceeds with batch tables and
+combination common settings; native platform/manual limitations remain unchanged.

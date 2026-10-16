@@ -44,6 +44,7 @@ def sample_table(tk_root):
             ("r2", "c1"): "c",
             ("r2", "c2"): "d",
         },
+        rendering="native",
     )
     table.pack()
     table.set_values({"a": "1", "b": "2", "c": "3", "d": "4"})
@@ -68,6 +69,7 @@ def mixed_table(tk_root):
             ("r1", "c1"): "a",
             ("r2", "c1"): "b",
         },
+        rendering="native",
     )
     table.pack()
     table.set_values({"a": "1", "b": "2"})

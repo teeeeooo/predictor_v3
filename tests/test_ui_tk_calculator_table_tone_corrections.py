@@ -24,8 +24,9 @@ def tk_root():
 
 def _tones(surface) -> dict[tuple[str, str], str]:
     return {
-        position: label.semantic_tone
-        for position, label in surface.value_labels.items()
+        (row_label, column_label): surface._grid.cell_tone((row, column + 1)).value
+        for row, row_label in enumerate(surface._ROW_LABELS)
+        for column, column_label in enumerate(surface._COLUMNS)
     }
 
 
@@ -36,7 +37,7 @@ def test_scop_compact_result_uses_per_cell_tones_and_preserves_values(tk_root) -
     )
 
     surface = ScopResultSurface(tk_root)
-    assert {label.semantic_tone for label in surface.row_header_labels.values()} == {
+    assert {surface._grid.cell_tone((row, 0)).value for row in range(2)} == {
         "default"
     }
     assert set(_tones(surface).values()) == {"pending"}
@@ -80,10 +81,10 @@ def test_scop_compact_result_uses_per_cell_tones_and_preserves_values(tk_root) -
             status_code="complete",
         )
     )
-    assert surface.value_labels[("Declared", "SCOP")].cget("text") == "3.21"
-    assert surface.value_labels[("Tested", "QH [kWh]")].cget("text") == "111.1"
+    assert surface.visible_snapshot().rows[0][1] == "3.21"
+    assert surface.visible_snapshot().rows[1][2] == "111.1"
     assert _tones(surface)[("Tested", "SCOP %")] == "pending"
-    assert {label.semantic_tone for label in surface.row_header_labels.values()} == {
+    assert {surface._grid.cell_tone((row, 0)).value for row in range(2)} == {
         "default"
     }
 
@@ -136,10 +137,10 @@ def test_korea_midpoint_status_tone_is_explicit(tk_root, status: str, tone: str)
     guide = KoreaMidpointGuideTable(tk_root)
     guide.set_status(status, tone=SemanticTone(tone))
     assert guide.table.text_at_address(("current_tc", "value")) == status
-    assert guide.table.value_labels[(0, 0)].semantic_tone == "default"
-    assert guide.table.value_labels[(0, 1)].semantic_tone == tone
-    assert guide.table.value_labels[(1, 1)].semantic_tone == "pending"
-    assert guide.table.value_labels[(2, 1)].semantic_tone == "pending"
+    assert guide.table.cell_tone((0, 0)).value == "default"
+    assert guide.table.cell_tone((0, 1)).value == tone
+    assert guide.table.cell_tone((1, 1)).value == "pending"
+    assert guide.table.cell_tone((2, 1)).value == "pending"
 
 
 def test_korea_midpoint_normal_values_are_calculated_and_missing_is_pending(
@@ -151,9 +152,9 @@ def test_korea_midpoint_normal_values_are_calculated_and_missing_is_pending(
 
     guide = KoreaMidpointGuideTable(tk_root)
     guide.set_values((("current_tc", "0.50"), ("recommended_tc", "-")))
-    assert guide.table.value_labels[(0, 0)].semantic_tone == "default"
-    assert guide.table.value_labels[(0, 1)].semantic_tone == "calculated"
-    assert guide.table.value_labels[(1, 1)].semantic_tone == "pending"
+    assert guide.table.cell_tone((0, 0)).value == "default"
+    assert guide.table.cell_tone((0, 1)).value == "calculated"
+    assert guide.table.cell_tone((1, 1)).value == "pending"
     assert guide.table.text_at_address(("current_tc", "value")) == "0.50"
 
 

@@ -30,7 +30,7 @@ def make_table(parent, **kwargs):
 def test_native_and_drawn_natural_geometry_and_responsive_editor(root):
     window = tk.Toplevel(root)
     try:
-        native = make_table(window)
+        native = make_table(window, rendering="native")
         table = make_table(window, rendering="canvas", layout_policy="responsive")
         native.pack()
         table.pack(fill="x")

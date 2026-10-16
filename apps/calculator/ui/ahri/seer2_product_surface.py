@@ -78,14 +78,8 @@ class AhriSeer2ProductSurface:
         self.input_table.grid(row=table_row, column=0, sticky="w")
         self.controller = TkTableController(self.input_table)
         for point in point_order:
-            self.input_table.static_cell_labels[
-                ("condition_temp", point)
-            ].configure(
-                text=f"Cooling / {AHRI_SEER2_TEMPERATURES_C[point]:.1f} °C"
-            )
-            self.input_table.static_cell_labels[("eer2", point)].configure(
-                text=""
-            )
+            self.input_table.set_static_text(("condition_temp", point), f"Cooling / {AHRI_SEER2_TEMPERATURES_C[point]:.1f} °C")
+            self.input_table.set_static_text(("eer2", point), "")
         table_values = snapshot.get("table_values", snapshot)
         if isinstance(table_values, Mapping):
             values = {
@@ -198,15 +192,11 @@ class AhriSeer2ProductSurface:
 
     def set_result_eer2(self, values: Mapping[str, float]) -> None:
         for point, value in values.items():
-            label = self.input_table.static_cell_labels.get(("eer2", point))
-            if label is not None:
-                label.configure(text=f"{value:.2f}")
+            self.input_table.set_static_text(("eer2", point), f"{value:.2f}")
 
     def clear_result_eer2(self) -> None:
         for point in dict(self.input_table.columns):
-            label = self.input_table.static_cell_labels.get(("eer2", point))
-            if label is not None:
-                label.configure(text="")
+            self.input_table.set_static_text(("eer2", point), "")
 
     def set_invalid_fields(self, errors: Mapping[str, str]) -> None:
         table_errors = {

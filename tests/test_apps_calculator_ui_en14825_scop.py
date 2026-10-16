@@ -720,8 +720,8 @@ def test_scop_gui_integration_basics():
         assert "자동 계산 완료" in summary_text
         assert section._result_cards["average"].winfo_manager() != ""
         assert section._result_cards["warmer"].winfo_manager() == ""
-        assert section._result_value_labels["average"][("Declared", "SCOP")].cget("text") != "-"
-        assert section._result_value_labels["average"][("Tested", "SCOP")].cget("text") != "-"
+        assert section._result_surfaces["average"].visible_snapshot().rows[0][1] != "-"
+        assert section._result_surfaces["average"].visible_snapshot().rows[1][1] != "-"
         from apps.calculator.ui.layout_constants import (
             RESULT_HEADER_BG,
             RESULT_VALUE_BG,
@@ -729,15 +729,15 @@ def test_scop_gui_integration_basics():
         )
 
         result_surface = section._result_surfaces["average"]
-        from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+        from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
 
-        assert isinstance(result_surface._grid, CompactResultGrid)
-        assert result_surface.frame.outer_edge_policy == "flat_low_contrast"
-        assert result_surface.header_labels["row_label"].cget("text") == "구분"
-        assert result_surface.header_labels["row_label"].cget("background") == RESULT_HEADER_BG
-        assert section._result_value_labels["average"][("Tested", "SCOP")].cget("background") == TABLE_PASS_BG
-        assert result_surface.row_header_labels["Tested"].cget("background") == RESULT_VALUE_BG
-        assert result_surface.row_header_labels["Tested"].semantic_tone == "default"
+        assert isinstance(result_surface._grid, CanvasResultGrid)
+        assert result_surface._grid.frame.outer_edge_policy == "flat_low_contrast"
+        assert result_surface._grid.headers[0] == "구분"
+        assert result_surface._grid.cell_background((-1, 0)) == RESULT_HEADER_BG
+        assert result_surface._grid.cell_background((1, 1)) == TABLE_PASS_BG
+        assert result_surface._grid.cell_background((1, 0)) == RESULT_VALUE_BG
+        assert result_surface._grid.cell_tone((1, 0)).value == "default"
         assert result_surface._status_label.winfo_manager() == "pack"
         assert set(result_surface._status_label.master.grid_info()["sticky"]) == set(
             "nsew"
@@ -763,7 +763,7 @@ def test_scop_gui_integration_basics():
         assert avg_model.get_value("condition_temp", "TOL") == "-12°C"
 
         # Check column label dynamically updated
-        label_text = section.input_tables["average"].header_cells["Tbiv"].winfo_children()[0].cget("text")
+        label_text = section.input_tables["average"].canvas_view.headers[ScopTableModel.COL_KEYS.index("Tbiv")]
         assert "Tbiv (-5°C)" in label_text
 
         # 6. warmer toggle 활성화 시 warmer card/table/result가 계산 대상에 포함되는지 확인
@@ -835,35 +835,31 @@ def test_scop_section_applies_point_availability_to_warmer_table():
                 col_idx = ScopTableModel.COL_KEYS.index(col)
                 field_key = warmer_table.field_key_for_address((row, col))
                 assert field_key is not None
-                entry = warmer_table.editable_entries[field_key]
-                widget = warmer_table.cell_widget((row_idx, col_idx))
                 assert warmer_table.cell_role((row_idx, col_idx)) == CellRole.READONLY
-                assert widget is not entry
-                assert widget.winfo_class() == "Label"
-                assert widget.winfo_manager() == "pack"
-                assert widget.cget("text") == ""
-                assert entry.winfo_manager() == ""
-                assert entry.cget("state") == "normal"
+                assert warmer_table.focus_widget((row_idx, col_idx)) is warmer_table.canvas_view.frame
+                assert warmer_table.display_text_at_position((row_idx, col_idx)) == ""
+                assert warmer_table.canvas_view.editor.entry.winfo_manager() == ""
+
 
         assert warmer_model.is_editable("declared_capacity", "B") is True
         b_row = ScopTableModel.ROW_KEYS.index("declared_capacity")
         b_col = ScopTableModel.COL_KEYS.index("B")
-        b_entry = warmer_table.editable_entries["declared_capacity_B"]
+        b_entry = warmer_table.field_editor("declared_capacity_B")
         assert warmer_table.cell_role((b_row, b_col)) == CellRole.EDITABLE
-        assert warmer_table.cell_widget((b_row, b_col)) is b_entry
-        assert b_entry.winfo_manager() == "pack"
+        assert warmer_table.focus_widget((b_row, b_col)) is b_entry
+        assert b_entry.winfo_manager() == "place"
 
         average_model = section._current_table_models["average"]
         average_table = section.input_tables["average"]
         a_row = ScopTableModel.ROW_KEYS.index("declared_capacity")
         a_col = ScopTableModel.COL_KEYS.index("A")
         tol_col = ScopTableModel.COL_KEYS.index("TOL")
-        average_a_entry = average_table.editable_entries["declared_capacity_A"]
+        average_a_entry = average_table.field_editor("declared_capacity_A")
         assert average_model.is_editable("declared_capacity", "A") is True
         assert average_model.is_editable("declared_capacity", "TOL") is True
         assert average_table.cell_role((a_row, a_col)) == CellRole.EDITABLE
         assert average_table.cell_role((a_row, tol_col)) == CellRole.EDITABLE
-        assert average_table.cell_widget((a_row, a_col)) is average_a_entry
+        assert average_table.focus_widget((a_row, a_col)) is average_a_entry
 
     finally:
         root.destroy()
@@ -939,23 +935,23 @@ def test_en14825_scop_cell_background_follows_editable_role_contract():
         computed_pos = (ScopTableModel.ROW_KEYS.index("cop_percent"), col_idx)
 
         assert table.cell_role(editable_pos) is CellRole.EDITABLE
-        assert table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
-        assert table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
+        assert table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
         assert table.cell_role(computed_pos) is CellRole.READONLY
-        assert table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
+        assert table.canvas_view.cell_background(computed_pos) == TABLE_STATIC_BG
 
         _populate_average_sample(section)
         section._auto_calc.flush_now()
-        assert table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
-        assert table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
-        assert table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
-        assert table.cell_widget(computed_pos).cget("background") == TABLE_STATIC_BG
+        assert table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
+        assert table.canvas_view.cell_background(editable_pos) == TABLE_EDITABLE_BG
+        assert table.canvas_view.cell_background(computed_pos) == TABLE_STATIC_BG
+        assert table.canvas_view.cell_background(computed_pos) == TABLE_STATIC_BG
 
         table.set_value("tested_power_A", "0")
         section._auto_calc.flush_now()
         invalid_pos = (ScopTableModel.ROW_KEYS.index("tested_power"), col_idx)
-        assert table.cell_frame(invalid_pos).cget("background") == TABLE_INVALID_BG
-        assert table.cell_widget(invalid_pos).cget("background") == TABLE_INVALID_BG
+        assert table.canvas_view.cell_background(invalid_pos) == TABLE_INVALID_BG
+        assert table.canvas_view.cell_background(invalid_pos) == TABLE_INVALID_BG
     finally:
         root.destroy()
 

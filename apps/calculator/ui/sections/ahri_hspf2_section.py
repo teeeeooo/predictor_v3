@@ -262,9 +262,7 @@ class AhriHspf2Section:
         )
         table.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 8))
         for point in AHRI_HSPF2_UI_POINT_ORDER:
-            table.static_cell_labels[("condition_temp", point)].configure(
-                text=f"Heating / {AHRI_HSPF2_TEMPERATURES_C[point]:.1f} °C"
-            )
+            table.set_static_text(("condition_temp", point), f"Heating / {AHRI_HSPF2_TEMPERATURES_C[point]:.1f} °C")
         return table
 
     def _populate_initial_values(self) -> None:
@@ -488,9 +486,7 @@ class AhriHspf2Section:
             self._multi_surface.update_cop_rows(cops)
             return
         for point in AHRI_HSPF2_UI_POINT_ORDER:
-            self.heating_table.static_cell_labels[("cop", point)].configure(
-                text=f"{cops[point]:.2f}" if point in cops else ""
-            )
+            self.heating_table.set_static_text(("cop", point), f"{cops[point]:.2f}" if point in cops else "")
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:

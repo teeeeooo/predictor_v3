@@ -58,7 +58,7 @@ class MetricInputTable(ttk.Frame):
         values_changed_callback: ValuesChangedCallback | None = None,
         section_break_before_rows: Iterable[str] | None = None,
         visual_style: str = "shared",
-        rendering: str = "native",
+        rendering: str = "canvas",
         viewport=None,
         **kwargs: object,
     ) -> None:
@@ -140,13 +140,17 @@ class MetricInputTable(ttk.Frame):
         return self.text_at_address(address)
 
     def set_static_text(self, address, value):
-        if address in self.editable_cells:
-            raise ValueError("Static display values require a non-editable cell")
+        if (address in self.editable_cells or address[0] not in dict(self.rows)
+                or address[1] not in dict(self.columns)):
+            return False
         self._static_values[address] = value
         if self.canvas_view:
             self.canvas_view.refresh()
         else:
             self.static_cell_labels[address].configure(text=value)
+
+    def static_text(self, address):
+        return self._static_values.get(address, "-")
 
     def field_editor(self, field_key):
         """Focus target for a field; Canvas tables reuse one real Entry."""

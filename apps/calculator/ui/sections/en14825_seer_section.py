@@ -505,9 +505,7 @@ class En14825SeerSection:
         self.input_controller._paint_selection()
 
     def _set_static_cell_value(self, address: tuple[str, str], value: str) -> None:
-        label = self.input_table.static_cell_labels.get(address)
-        if label:
-            label.configure(text=value)
+        self.input_table.set_static_text(address, value)
 
     def _resolve_cell_bg(self, position: tuple[int, int]) -> str:
         row, col = self.input_table._address_at_position(position)

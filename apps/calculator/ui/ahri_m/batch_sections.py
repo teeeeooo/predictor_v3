@@ -143,7 +143,7 @@ class AhriMHspfBatchSection(_BaseBatchSection):
         )
         self.numeric_table.pack(side=tk.LEFT, padx=(CONTROL_ROW_PADY, 0), pady=CONTROL_ROW_PADY)
         self.numeric_table.set_values_batch({key: defaults[key] for key in ("cd", "defrost_test_minutes", "defrost_max_minutes", "cut_out_c", "cut_in_c")})
-        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(text="1.000")
+        self.numeric_table.set_static_text(("value", "defrost_credit"), "1.000")
         self.numeric_controller = TkTableController(self.numeric_table)
         self.numeric_table.set_values_changed_callback(lambda: getattr(self, "_auto_calc", None) and self._auto_calc.schedule())
         for variable in self._vars.values():
@@ -177,9 +177,7 @@ class AhriMHspfBatchSection(_BaseBatchSection):
                 readonly.append(address)
                 display_values[address] = "No cutout"
         self.numeric_table.set_readonly_addresses(readonly, display_values=display_values)
-        self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(
-            text="계산 대기" if self._bool(self._vars["demand_defrost"].get()) else "1.000"
-        )
+        self.numeric_table.set_static_text(("value", "defrost_credit"), "계산 대기" if self._bool(self._vars["demand_defrost"].get()) else "1.000")
         self.numeric_controller.refresh()
 
     def _recalculate_now(self) -> None:
@@ -197,4 +195,4 @@ class AhriMHspfBatchSection(_BaseBatchSection):
         results = self._apply_results(AhriMHspfBatchHandler(common))
         credits = [result.defrost_credit for result in results if result.defrost_credit is not None]
         if credits:
-            self.numeric_table.static_cell_labels[("value", "defrost_credit")].configure(text=f"{credits[0]:.3f}")
+            self.numeric_table.set_static_text(("value", "defrost_credit"), f"{credits[0]:.3f}")

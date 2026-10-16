@@ -350,9 +350,7 @@ class AhriSeer2Section:
         self._detail_visibility.toggle()
 
     def _set_static_cell(self, address: tuple[str, str], value: str) -> None:
-        label = self.input_table.static_cell_labels.get(address)
-        if label is not None:
-            label.configure(text=value)
+        self.input_table.set_static_text(address, value)
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:

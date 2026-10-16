@@ -164,7 +164,6 @@ class En14825ScopSection:
         self.climate_input_controllers: dict[str, TkTableController] = {}
         self._result_surfaces: dict[str, ScopResultSurface] = {}
         self._result_cards: dict[str, tk.Frame] = {}
-        self._result_value_labels: dict[str, dict[tuple[str, str], tk.Label]] = {}
 
         card_row_start = 2
         for i, clm in enumerate(self.climates):
@@ -271,7 +270,6 @@ class En14825ScopSection:
             result_surface.grid(row=1, column=1, sticky="ne", padx=(0, 2), pady=(0, 6))
             self._result_surfaces[clm] = result_surface
             self._result_cards[clm] = result_surface.frame
-            self._result_value_labels[clm] = result_surface.value_labels
 
         # Compatibility text model for existing non-layout tests.
         self.result_panel = ResultPanel(self._frame, title="SCOP 결과")
@@ -699,9 +697,7 @@ class En14825ScopSection:
         controller._paint_selection()
 
     def _set_static_cell_value(self, table: MetricInputTable, address: tuple[str, str], value: str) -> None:
-        label = table.static_cell_labels.get(address)
-        if label:
-            label.configure(text=value)
+        table.set_static_text(address, value)
 
     def _apply_point_availability(self, table: MetricInputTable, point_availability: dict) -> bool:
         input_rows = ("declared_capacity", "declared_cop", "tested_capacity", "tested_power")

@@ -84,3 +84,29 @@ class CanvasResultLayout:
             else:
                 high = mid-1
         return text[:low]+suffix
+
+
+class CanvasContentResultLayout(CanvasResultLayout):
+    """Equal-width summary columns sized from the current full text.
+
+    Natural width drives content-hug cards; allocated width follows responsive
+    cards without feeding their stretched size back into natural measurement.
+    """
+
+    def update_content(self, headers, rows):
+        widths = [self.header_font.measure(str(label)) for label in headers]
+        for row in rows:
+            widths = [max(width, self.body_font.measure(str(value)))
+                      for width, value in zip(widths, row)]
+        self._column_count = len(headers)
+        self._natural_cell_width = max(widths) + 2*self.text_inset + self.policy.divider_width
+        self.width = self._natural_cell_width*self._column_count
+        self.allocate(self.width)
+
+    def allocate(self, width):
+        width = max(self.width, width)
+        xs = tuple(self.inset + round(width*col/self._column_count)
+                   for col in range(self._column_count+1))
+        if xs != self.xs:
+            self.xs = xs
+            self.fit_text.cache_clear()

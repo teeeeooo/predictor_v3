@@ -109,7 +109,7 @@ class TestUndoBehavior:
         assert ctrl.table.text_at_position((0, 0)) == "6300"
         
         # Mutate value by triggering entry edit and focus out
-        entry = section.input_table.editable_entries["full_capacity"]
+        entry = section.input_table.field_editor("full_capacity")
         entry.delete(0, "end")
         entry.insert(0, "invalid_val")
         ctrl._focus_out(None)

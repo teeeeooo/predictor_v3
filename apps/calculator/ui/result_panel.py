@@ -17,11 +17,10 @@ from apps.calculator.ui.layout_constants import (
 )
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.table.grid_primitives import (
-    create_cell_container,
     create_grid_surface,
-    create_text_label,
 )
-from apps.calculator.ui.table.visual_policy import AlignmentRole, SemanticTone
+from apps.calculator.ui.table.visual_policy import SemanticTone
+from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
 
 
 class ResultPanel:
@@ -48,9 +47,7 @@ class ResultPanel:
         else:
             self._summary_holder.pack(side=tk.TOP, fill=tk.X)
         self.summary_tables: dict[str, tk.Frame] = {}
-        self.summary_header_cells: dict[str, tuple[tk.Frame, ...]] = {}
-        self.summary_value_cells: dict[str, tuple[tk.Frame, ...]] = {}
-        self.summary_value_labels: dict[str, tuple[tk.Label, ...]] = {}
+        self.summary_grids: dict[str, CanvasResultGrid] = {}
         self.summary_status_labels: dict[str, tk.Label] = {}
         self._summary_shapes: dict[str, tuple[str, tuple[str, ...]]] = {}
         self._summaries: tuple[ResultSummary, ...] = ()
@@ -148,35 +145,12 @@ class ResultPanel:
 
     def _update_summary_values(self, summaries: tuple[ResultSummary, ...]) -> None:
         for summary in summaries:
-            value_labels = self.summary_value_labels.get(summary.title)
-            if value_labels:
-                for label, (_, value) in zip(value_labels, summary.fields):
-                    label.configure(text=value)
+            grid = self.summary_grids.get(summary.title)
+            if grid is not None:
+                grid.set_rows((tuple(value for _, value in summary.fields),))
             status_label = self.summary_status_labels.get(summary.title)
             if status_label is not None:
                 status_label.configure(text=summary.status)
-
-    def _make_summary_cell(
-        self, card: tk.Frame, *, row: int, column: int, background: str
-    ) -> tk.Frame:
-        cell = create_cell_container(
-            card,
-            row=row,
-            column=column,
-            background=background,
-            surface_role=(
-                "summary_header_cell" if row == 1 else "summary_value_cell"
-            ),
-        )
-        self._configure_summary_column(card, column)
-        return cell
-
-    def _configure_summary_column(self, card: tk.Frame, column: int) -> None:
-        card.columnconfigure(
-            column,
-            weight=0 if self.layout_policy == "content_hug" else 1,
-            uniform="summary_fields",
-        )
 
     def _render_summary_table(
         self, row: int, summary: ResultSummary, *, value_tone: SemanticTone
@@ -189,6 +163,7 @@ class ResultPanel:
             pady=(0, 8),
         )
         card.layout_policy = self.layout_policy
+        card.columnconfigure(0, weight=1)
         self.summary_tables[summary.title] = card
         self._summary_shapes[summary.title] = self._shape_for(summary)
         self._summary_holder.columnconfigure(
@@ -211,7 +186,7 @@ class ResultPanel:
         title_label.grid(
             row=0,
             column=0,
-            columnspan=max(len(summary.fields), 1),
+            columnspan=1,
             sticky="ew",
             padx=(0, 1),
             pady=(0, 1),
@@ -223,8 +198,6 @@ class ResultPanel:
     def _render_status(
         self, card: tk.Frame, summary: ResultSummary, *, row: int
     ) -> None:
-        if not summary.fields:
-            self._configure_summary_column(card, 0)
         status = tk.Label(
             card,
             text=summary.status,
@@ -238,7 +211,7 @@ class ResultPanel:
         status.grid(
             row=row,
             column=0,
-            columnspan=max(len(summary.fields), 1),
+            columnspan=1,
             sticky="ew",
             padx=(0, 1),
             pady=(0, 1),
@@ -249,55 +222,20 @@ class ResultPanel:
     def _render_result_values(
         self, card: tk.Frame, summary: ResultSummary, *, tone: SemanticTone
     ) -> None:
-        headers = []
-        values = []
-        value_labels: list[tk.Label] = []
-        for column, (label, value) in enumerate(summary.fields):
-            self._configure_summary_column(card, column)
-            header = self._make_summary_cell(
-                card,
-                row=1,
-                column=column,
-                background=card.visual_policy.header_background,
-            )
-            create_text_label(
-                header,
-                text=label,
-                width=None,
-                alignment=AlignmentRole.HEADER_VALUE,
-                header=True,
-            )
-            value_cell = self._make_summary_cell(
-                card,
-                row=2,
-                column=column,
-                background=card.visual_policy.background(tone),
-            )
-            value_label = create_text_label(
-                value_cell,
-                text=value,
-                width=None,
-                alignment=AlignmentRole.NUMERIC_RESULT,
-                tone=tone,
-            )
-            headers.append(header)
-            values.append(value_cell)
-            value_labels.append(value_label)
-        self.summary_header_cells[summary.title] = tuple(headers)
-        self.summary_value_cells[summary.title] = tuple(values)
-        self.summary_value_labels[summary.title] = tuple(value_labels)
+        grid = CanvasResultGrid(
+            card, headers=tuple(label for label, _ in summary.fields),
+            identity_columns=frozenset(), content_widths=True, focusable=False,
+            surface_role="summary_values",
+        )
+        grid.frame.grid(row=1, column=0, sticky="ew")
+        self.summary_grids[summary.title] = grid
+        grid.set_rows((tuple(value for _, value in summary.fields),))
+        self._set_summary_value_tone(summary.title, tone)
 
     def _set_summary_value_tone(self, title: str, tone: SemanticTone) -> None:
-        card = self.summary_tables.get(title)
-        if card is None:
-            return
-        background = card.visual_policy.background(tone)
-        for cell in self.summary_value_cells.get(title, ()):
-            cell.configure(background=background)
-            cell.semantic_background = background
-        for label in self.summary_value_labels.get(title, ()):
-            label.configure(background=background)
-            label.semantic_tone = tone.value
+        grid = self.summary_grids.get(title)
+        if grid is not None:
+            grid.set_rows(grid.rows, tones={(0, col): tone for col in range(len(grid.headers))})
         status_label = self.summary_status_labels.get(title)
         if status_label is not None:
             status_label.semantic_tone = tone.value
@@ -307,9 +245,7 @@ class ResultPanel:
             child.destroy()
         self.summary_tables.clear()
         self._summary_shapes.clear()
-        self.summary_header_cells.clear()
-        self.summary_value_cells.clear()
-        self.summary_value_labels.clear()
+        self.summary_grids.clear()
         self.summary_status_labels.clear()
 
     def _capture_external_focus(self) -> tk.Widget | None:

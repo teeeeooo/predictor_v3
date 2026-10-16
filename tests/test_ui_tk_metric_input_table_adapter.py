@@ -47,6 +47,7 @@ def sample_table(tk_root):
             ("r2", "c1"): "c",
             ("r2", "c2"): "d",
         },
+        rendering="native",
     )
     table.pack()
     table.set_values({"a": "1", "b": "2", "c": "3", "d": "4"})
@@ -80,6 +81,7 @@ class TestAdapterCellRole:
             columns=(("c1", "Col1"), ("c2", "Col2")),
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a"},
+            rendering="native",
         )
         assert table.cell_role((0, 0)) is CellRole.EDITABLE
         assert table.cell_role((0, 1)) is CellRole.READONLY
@@ -105,6 +107,7 @@ class TestAdapterTextAccess:
             columns=(("c1", "Col1"), ("c2", "Col2")),
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a"},
+            rendering="native",
         )
         assert table.text_at_position((0, 1)) == "-"
 
@@ -126,6 +129,7 @@ class TestAdapterSetPositions:
             columns=(("c1", "Col1"), ("c2", "Col2")),
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a"},
+            rendering="native",
         )
         table.set_values({"a": "1"})
         changed = table.set_positions_batch({(0, 1): "99"})
@@ -160,6 +164,7 @@ class TestAdapterWidgets:
             columns=(("c1", "Col1"), ("c2", "Col2")),
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a"},
+            rendering="native",
         )
         widget = table.cell_widget((0, 1))
         assert widget is table.static_cell_labels[("r1", "c2")]
@@ -211,6 +216,7 @@ class TestAdapterBackground:
             columns=(("c1", "Col1"), ("c2", "Col2")),
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a"},
+            rendering="native",
         )
         assert table.default_cell_background((0, 1)) == TABLE_STATIC_BG
 
@@ -269,6 +275,7 @@ def test_section_break_option(tk_root) -> None:
         rows=(("r1", "Row1"), ("r2", "Row2")),
         editable_cells={("r1", "c1"): "a", ("r2", "c1"): "b"},
         section_break_before_rows=("r2",),
+        rendering="native",
     )
 
     # Verify row_count, column_count are not changed
@@ -290,6 +297,7 @@ def test_section_break_option(tk_root) -> None:
         columns=(("c1", "Col1"),),
         rows=(("r1", "Row1"), ("r2", "Row2")),
         editable_cells={("r1", "c1"): "a", ("r2", "c1"): "b"},
+        rendering="native",
     )
     pady_without_r2 = table_without.cell_frame((1, 0)).grid_info()["pady"]
     assert pady_without_r2 == 1 or pady_without_r2 == (0, 1) or str(pady_without_r2) == "1"
@@ -311,6 +319,7 @@ class TestLayoutPolicy:
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a", ("r1", "c2"): "b"},
             layout_policy="responsive",
+            rendering="native",
         )
 
         assert table.layout_policy == "responsive"
@@ -327,6 +336,7 @@ class TestLayoutPolicy:
             rows=(("r1", "Row1"),),
             editable_cells={("r1", "c1"): "a", ("r1", "c2"): "b"},
             layout_policy="content_hug",
+            rendering="native",
         )
 
         assert table.layout_policy == "content_hug"
@@ -345,4 +355,5 @@ class TestLayoutPolicy:
                 rows=(("r1", "Row1"),),
                 editable_cells={("r1", "c1"): "a"},
                 layout_policy="wide",
+                rendering="native",
             )

@@ -11,7 +11,7 @@ from apps.calculator.ui.layout_constants import (
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
 )
-from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
 from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
 
@@ -42,7 +42,7 @@ class IsoSasoT3ResultTable:
         self.title_label = ttk.Label(self._frame, text=title)
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
 
-        self.table = CompactResultGrid(
+        self.table = CanvasResultGrid(
             self._frame,
             headers=self.column_labels,
             column_widths=(24, 12, 12, 12, 12, 12, 12, 12),

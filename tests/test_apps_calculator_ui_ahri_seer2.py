@@ -234,23 +234,19 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
     assert section.input_table.cell_role((1, 0)) == CellRole.EDITABLE
     assert section.input_table.cell_role((3, 0)) == CellRole.READONLY
     for point in AHRI_SEER2_POINT_ORDER:
-        condition = section.input_table.static_cell_labels[("condition_temp", point)]
-        assert condition.cget("text").endswith(
+        condition = section.input_table.static_text(("condition_temp", point))
+        assert condition.endswith(
             f"{AHRI_SEER2_TEMPERATURES_C[point]:.1f} °C"
         )
-        assert section.input_table.static_cell_labels[("eer2", point)].cget(
-            "text"
-        ) == ""
+        assert section.input_table.static_text(("eer2", point)) == ""
 
     section.input_table.set_values_batch(SAMPLE_VALUES)
     section._auto_calc.flush_now()
 
     assert calculator.system_type == "HP"
-    assert section.input_table.static_cell_labels[("eer2", "A_Full")].cget(
-        "text"
-    ) == "12.00"
-    result_values = section.result_panel.summary_value_labels["SEER2"]
-    assert [label.cget("text") for label in result_values] == [
+    assert section.input_table.static_text(("eer2", "A_Full")) == "12.00"
+    result_values = section.result_panel.summary_grids["SEER2"].rows[0]
+    assert list(result_values) == [
         "13.677",
         "11961.491",
         "874.552",

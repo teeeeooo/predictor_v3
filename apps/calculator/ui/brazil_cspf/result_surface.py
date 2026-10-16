@@ -15,7 +15,7 @@ from apps.calculator.ui.layout_constants import (
     TABLE_ERROR_BG,
     TABLE_PASS_BG,
 )
-from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
 from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
 
@@ -42,18 +42,17 @@ class BrazilCspfResultTable:
         self._frame = ttk.Frame(parent)
         self.title_label = ttk.Label(self._frame, text=title)
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
-        self.result_grid = CompactResultGrid(
+        self.result_grid = CanvasResultGrid(
             self._frame,
             headers=BRAZIL_CSPF_RESULT_COLUMNS,
             column_widths=(12, 12, 12, 12),
             surface_role="brazil_cspf_comparison_table",
         )
         self.table = self.result_grid.frame
-        self.result_value_labels = self.result_grid.value_labels
         self.rule_frame = ttk.Frame(self._frame)
         self.rule_title = ttk.Label(self.rule_frame, text="판정")
         self.rule_title.pack(side=tk.TOP, anchor="w", pady=(4, 0))
-        self.rule_grid = CompactResultGrid(
+        self.rule_grid = CanvasResultGrid(
             self.rule_frame,
             headers=BRAZIL_CSPF_RULE_COLUMNS,
             column_widths=(10, 30, 12, 12, 10),
@@ -61,7 +60,6 @@ class BrazilCspfResultTable:
             surface_role="brazil_cspf_rule_table",
         )
         self.rule_table = self.rule_grid.frame
-        self.rule_value_labels = self.rule_grid.value_labels
         for grid in (self.result_grid, self.rule_grid):
             grid.frame.bind("<Control-c>", self.copy)
             grid.frame.bind("<Command-c>", self.copy)

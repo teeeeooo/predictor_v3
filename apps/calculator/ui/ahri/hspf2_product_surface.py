@@ -282,12 +282,8 @@ class AhriHspf2ProductSurface:
             visual_style="shared",
         )
         for point in points:
-            table.static_cell_labels[("condition_temp", point)].configure(
-                text=(
-                    f"Heating / {AHRI_HSPF2_TEMPERATURES_C[point]:.1f} °C"
-                )
-            )
-            table.static_cell_labels[("cop", point)].configure(text="")
+            table.set_static_text(("condition_temp", point), f"Heating / {AHRI_HSPF2_TEMPERATURES_C[point]:.1f} °C")
+            table.set_static_text(("cop", point), "")
         table.set_values_batch(
             {
                 key: str(value)
@@ -467,9 +463,7 @@ class AhriHspf2ProductSurface:
     def update_cop_rows(self, cops: Mapping[str, float]) -> None:
         for table in self.heating_tables:
             for point in dict(table.columns):
-                table.static_cell_labels[("cop", point)].configure(
-                    text=f"{cops[point]:.2f}" if point in cops else ""
-                )
+                table.set_static_text(("cop", point), f"{cops[point]:.2f}" if point in cops else "")
 
     def clear_results(self) -> None:
         self.update_cop_rows({})

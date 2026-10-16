@@ -425,9 +425,9 @@ def test_iso_and_saso_initial_placeholders_use_pending_canonical_rows(tk_root):
     )
     assert saso.rows == ()
     assert {
-        label.semantic_tone
-        for (row, column), label in saso.table.value_labels.items()
-        if column > 0
+        saso.table.cell_tone((row, column)).value
+        for row in range(len(saso.table.rows))
+        for column in range(1, len(saso.table.headers))
     } == {"pending"}
 
 
@@ -669,8 +669,8 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert section.optional_min_enabled.get() is True
     assert section.optional_min_toggle.winfo_manager() == ""
     assert "35 Min optional test 사용" not in _widget_texts(section._frame)
-    assert section.input_table.editable_entries["min_35_capacity"].cget("state") == "normal"
-    assert section.input_table.editable_entries["min_35_power"].cget("state") == "normal"
+    assert section.input_table.field_editor("min_35_capacity").cget("state") == "normal"
+    assert section.input_table.field_editor("min_35_power").cget("state") == "normal"
     assert not section.detail_panel.is_visible()
     assert section.trace_profile_combo.get() == "With 35 Min (4-point)"
     assert section.detail_toggle.cget("text") == "상세 보기 ↓"
@@ -679,10 +679,10 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert "Trace CSV 내보내기" not in _widget_texts(section._frame)
 
     table = section.result_table
-    from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+    from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
 
     assert table.surface_role == "saso_t3_result_surface"
-    assert isinstance(table.table, CompactResultGrid)
+    assert isinstance(table.table, CanvasResultGrid)
     assert table.table.surface_role == "saso_t3_comparison_table"
     assert table.column_labels == (
         "Scenario",
@@ -707,8 +707,8 @@ def test_saso_t3_profile_renders_default_result(tk_root):
         "Required only (3-point)",
     )
     assert table.table.frame.outer_edge_policy == "flat_low_contrast"
-    assert table.table.header_labels[0].cget("anchor") == "w"
-    assert table.table.header_labels[1].cget("anchor") == "center"
+    assert table.table.policy.anchor(table.table.cell_alignment((-1, 0))) == "w"
+    assert table.table.policy.anchor(table.table.cell_alignment((-1, 1))) == "center"
 
     text = _saso_text(tab)
     for label in table.column_labels:
@@ -959,9 +959,9 @@ def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "saso_t3_result_status"
     assert {
-        label.semantic_tone
-        for (row, column), label in section.result_table.table.value_labels.items()
-        if column > 0
+        section.result_table.table.cell_tone((row, column)).value
+        for row in range(len(section.result_table.table.rows))
+        for column in range(1, len(section.result_table.table.headers))
     } == {"invalid"}
     assert "Traceback" not in text
     assert "{" not in text
@@ -1362,6 +1362,9 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert "결과 복사" not in buttons
     assert "결과 지우기" not in buttons
     assert layout_constants.BATCH_INPUT_BUTTON_TEXT in buttons
+    for table in (cspf.rated_table, cspf.input_table, hspf.input_table):
+        labels.extend(table.canvas_view.headers)
+        labels.extend(label for _, label in table.rows)
     for label in ("정격 표기치", "35 Full", "35 Half", "7 Full", "7 Half"):
         assert label in labels
     assert "정격" not in labels
@@ -1369,10 +1372,10 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert labels.count("능력 [W]") == 3
     assert labels.count("전력 [W]") == 2
     assert "전력 [W]" not in _label_texts(cspf.rated_table)
-    assert set(_label_texts(cspf.input_table)) >= {"35 Full", "35 Half"}
-    assert set(_label_texts(hspf.input_table)) >= {"7 Full", "7 Half"}
-    assert "정격 표기치" not in _label_texts(cspf.input_table)
-    assert "정격 표기치" not in _label_texts(hspf.input_table)
+    assert set(cspf.input_table.canvas_view.headers) >= {"35 Full", "35 Half"}
+    assert set(hspf.input_table.canvas_view.headers) >= {"7 Full", "7 Half"}
+    assert "정격 표기치" not in cspf.input_table.canvas_view.headers
+    assert "정격 표기치" not in hspf.input_table.canvas_view.headers
     assert cspf._frame.cget("text") == "CSPF 입력 (Hong Kong)"
     assert cspf.result_panel.title_label.cget("text") == "CSPF 결과"
     assert hspf._frame.cget("text") == "HSPF 입력 (Hong Kong)"
@@ -1538,49 +1541,34 @@ def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
         )
         assert table.columns == expected_columns
         assert table.rows == (("capacity", "능력 [W]"), ("power", "전력 [W]"))
-        assert set(table.cell_frames) == {
-            ("capacity", "full"),
-            ("power", "full"),
-            ("capacity", "half"),
-            ("power", "half"),
+        assert set(table.editable_addresses) == {
+            ("capacity", "full"), ("power", "full"),
+            ("capacity", "half"), ("power", "half"),
         }
-        assert tuple(table.editable_entries) == table.field_order
-        assert len(table.header_cells) == 2
-        assert len(table.row_header_cells) == 2
-        assert len(table.editable_cell_frames) == 4
-        assert not table.static_cell_frames
-        assert roles.count("header_cell") == 3  # includes the corner cell
-        assert roles.count("row_header_cell") == 2
-        assert roles.count("editable_cell") == 4
-        assert "static_cell" not in roles
+        assert len(table.canvas_view.headers) == 2
+        assert table.canvas_view.row_labels(0) == "능력 [W]"
+        assert not table.editable_entries  # one reusable editor
 
         from tkinter import font as tk_font
 
-        entries = list(table.editable_entries.values())
+        entries = [table.field_editor(table.field_order[0])]
         if metric == "CSPF":
             rated = section.rated_table
             rated_roles = _surface_roles(rated)
             assert rated.layout_policy == table.layout_policy
             assert rated.row_header_chars == table.row_header_chars
             assert rated.data_column_chars == table.data_column_chars
-            assert set(rated.cell_frames) == {("rated", "capacity")}
-            assert tuple(rated.editable_entries) == rated.field_order
-            assert len(rated.header_cells) == 1
-            assert len(rated.row_header_cells) == 1
-            assert len(rated.editable_cell_frames) == 1
-            assert not rated.static_cell_frames
-            assert rated_roles.count("header_cell") == 2
-            assert rated_roles.count("row_header_cell") == 1
-            assert rated_roles.count("editable_cell") == 1
-            assert "전력 [W]" not in _label_texts(rated)
-            entries.extend(rated.editable_entries.values())
+            assert set(rated.editable_addresses) == {("rated", "capacity")}
+            assert len(rated.canvas_view.headers) == 1
+            assert rated.row_count() == 1
+            entries.append(rated.field_editor(rated.field_order[0]))
 
         for entry in entries:
             assert entry.cget("justify") == "center"
             assert tk_font.Font(root=tk_root, font=entry.cget("font")).cget("size") >= (
                 TABLE_FONT_SIZE
             )
-            assert entry.pack_info()["pady"] == TABLE_CELL_PADY
+            assert entry.winfo_manager() == "place"
         assert TABLE_CELL_PADY <= 4
 
 
@@ -1645,24 +1633,16 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
         tab._metric_notebook.select(tab.sections[metric]._frame)
         tab._metric_notebook.update_idletasks()
         panel = tab.sections[metric].result_panel
-        result_labels = _label_texts(panel._summary_holder)
+        result_labels = panel.summary_grids[metric].headers
         for label in labels:
             assert label in result_labels
         assert panel.summary_tables[metric].surface_role == "summary_table"
         assert panel.layout_policy == "content_hug"
         assert panel.summary_tables[metric].layout_policy == panel.layout_policy
-        assert len(panel.summary_header_cells[metric]) == 3
-        assert len(panel.summary_value_cells[metric]) == 3
-        header_widths = tuple(
-            cell.winfo_width() for cell in panel.summary_header_cells[metric]
-        )
-        value_widths = tuple(
-            cell.winfo_width() for cell in panel.summary_value_cells[metric]
-        )
-        assert len(set(header_widths)) == 1
-        assert len(set(value_widths)) == 1
-        assert header_widths[0] >= header_widths[1]
-        assert value_widths[0] >= value_widths[1]
+        grid = panel.summary_grids[metric]
+        assert len(grid.headers) == 3
+        widths = [grid.cell_bbox((0, col))[2] - grid.cell_bbox((0, col))[0] for col in range(3)]
+        assert len(set(widths)) == 1
         assert panel.summary_status_labels[metric].surface_role == "summary_status"
 
     tab.sections["CSPF"].recalculate_now()
@@ -1834,9 +1814,8 @@ def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
     assert panel.summary_tables["CSPF"].surface_role == "summary_table"
     assert panel.summary_tables["CSPF"].layout_policy == panel.layout_policy
     assert "summary_title" in _surface_roles(panel._summary_holder)
-    assert "summary_header_cell" in _surface_roles(panel._summary_holder)
-    assert "summary_value_cell" in _surface_roles(panel._summary_holder)
-    assert tuple(label.cget("text") for label in panel.summary_value_labels["CSPF"]) == (
+    assert "summary_values" in _surface_roles(panel._summary_holder)
+    assert panel.summary_grids["CSPF"].rows[0] == (
         "-",
         "-",
         "-",

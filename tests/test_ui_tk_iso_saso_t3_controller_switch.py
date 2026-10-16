@@ -105,7 +105,7 @@ class TestRecalculate:
         # Verify invalid field is visually marked
         assert section.input_table.is_field_invalid("full_46_capacity") is True
         from apps.calculator.ui.layout_constants import TABLE_INVALID_BG
-        assert section.input_table.editable_entries["full_46_capacity"].cget("background") == TABLE_INVALID_BG
+        assert section.input_table.field_editor("full_46_capacity").cget("background") == TABLE_INVALID_BG
 
     def test_recalculate_blocks_on_required_non_positive_value(self, section) -> None:
         # Inject non-positive value
@@ -153,14 +153,14 @@ class TestRecalculate:
 
         tones_by_label = {
             row[0]: {
-                section.result_table.table.value_labels[(row_index, column)].semantic_tone
+                section.result_table.table.cell_tone((row_index, column)).value
                 for column in range(1, len(section.result_table.column_labels))
             }
             for row_index, row in enumerate(rows)
         }
         assert tones_by_label["With 35 Min (4-point)"] == {"invalid"}
         assert tones_by_label["Required only (3-point)"] == {"calculated"}
-        assert section.result_table.table.value_labels[(0, 0)].semantic_tone == "default"
+        assert section.result_table.table.cell_tone((0, 0)).value == "default"
 
         headers, exported_rows = section.result_table.table_export_data()
         assert headers == section.result_table.column_labels
@@ -215,12 +215,11 @@ class TestRecalculate:
         })
         section.recalculate_now()
         assert section.input_table.is_field_invalid("min_35_capacity") is True
-        value_labels = section.result_table.table.value_labels
-        widget_ids = {
-            position: str(label) for position, label in value_labels.items()
-        }
+        grid = section.result_table.table
+        grid.frame.update_idletasks()
+        item_ids = grid.frame.find_all()
         assert {
-            value_labels[(0, column)].semantic_tone
+            grid.cell_tone((0, column)).value
             for column in range(1, len(section.result_table.column_labels))
         } == {"invalid"}
 
@@ -239,22 +238,17 @@ class TestRecalculate:
         assert len(rows) == 2
         assert rows[0][5] != "-"  # 4-point CSPF calculated
         assert rows[1][5] != "-"  # 3-point CSPF calculated
-        assert {
-            position: str(label)
-            for position, label in section.result_table.table.value_labels.items()
-        } == widget_ids
+        grid.frame.update_idletasks()
+        assert grid.frame.find_all() == item_ids
         for row_index in range(2):
             assert {
-                section.result_table.table.value_labels[
-                    (row_index, column)
-                ].semantic_tone
+                section.result_table.table.cell_tone((row_index, column)).value
                 for column in range(1, len(section.result_table.column_labels))
             } == {"calculated"}
         policy = section.result_table.table.policy
         for row_index in range(2):
             for column in range(1, len(section.result_table.column_labels)):
-                label = section.result_table.table.value_labels[(row_index, column)]
-                assert label.cget("background") == policy.background(
+                assert grid.cell_background((row_index, column)) == policy.background(
                     SemanticTone.CALCULATED
                 )
 
@@ -273,7 +267,7 @@ class TestUndoBehavior:
         assert ctrl.table.text_at_position((0, 0)) == "5000"
 
         # Mutate value
-        entry = section.input_table.editable_entries["full_46_capacity"]
+        entry = section.input_table.field_editor("full_46_capacity")
         entry.delete(0, "end")
         entry.insert(0, "invalid_val")
         ctrl._focus_out(None)

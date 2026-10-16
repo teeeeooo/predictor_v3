@@ -208,8 +208,7 @@ class IsoSasoT3Section:
         self._auto_calc.schedule()
 
     def _sync_optional_min_state(self) -> None:
-        for field_key in ("min_35_capacity", "min_35_power"):
-            self.input_table.editable_entries[field_key].configure(state=tk.NORMAL)
+        self.input_table.set_readonly_addresses(())
 
     def _sync_optional_trace_state(self) -> None:
         self.optional_min_enabled.set(True)

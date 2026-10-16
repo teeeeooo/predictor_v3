@@ -1,7 +1,7 @@
 """Read-only result view: one native Canvas, pooled visible cell items."""
 import tkinter as tk
 
-from apps.calculator.ui.table.canvas_result_layout import CanvasResultLayout
+from apps.calculator.ui.table.canvas_result_layout import CanvasResultLayout, CanvasContentResultLayout
 from apps.calculator.ui.table.canvas_painter import CanvasCellPainter, CellPaint
 from apps.calculator.ui.table.visual_policy import (
     AlignmentRole, DEFAULT_TABLE_VISUAL_POLICY, SemanticTone,
@@ -18,7 +18,8 @@ class CanvasResultGrid:
 
     def __init__(self, parent, *, headers, column_widths=None,
                  identity_columns=frozenset({0}), policy=DEFAULT_TABLE_VISUAL_POLICY,
-                 surface_role="compact_result_grid", viewport=None):
+                 surface_role="compact_result_grid", viewport=None,
+                 content_widths=False, focusable=True):
         if not headers or (column_widths is not None and len(column_widths) != len(headers)):
             raise ValueError("result headers and column widths must be nonempty and match")
         self.headers, self.rows = tuple(headers), ()
@@ -26,14 +27,20 @@ class CanvasResultGrid:
         self.column_widths = column_widths or (12,)*len(headers)
         self.surface_role, self.viewport = surface_role, viewport
         self.frame = tk.Canvas(parent, background=policy.divider_color,
-            borderwidth=policy.outer_border_width, highlightthickness=policy.divider_width,
+            borderwidth=policy.outer_border_width, highlightthickness=policy.divider_width if focusable else 0,
             highlightcolor=policy.focus_border_color, highlightbackground=policy.divider_color,
-            takefocus=True)
+            takefocus=focusable)
         self.frame.surface_role = surface_role
         self.frame.visual_policy = policy
         self.frame.outer_edge_policy = "flat_low_contrast"
-        self.frame.focus_policy = "visible"
-        self.layout = CanvasResultLayout(self.frame, self.column_widths, policy)
+        self.frame.focus_policy = "visible" if focusable else "cell_owned"
+        self.content_widths = content_widths
+        layout_type = CanvasContentResultLayout if content_widths else CanvasResultLayout
+        self.layout = layout_type(self.frame, self.column_widths, policy)
+        if not focusable:
+            self.layout.inset = policy.outer_border_width
+        if content_widths:
+            self.layout.update_content(self.headers, ())
         self.frame.configure(width=self.layout.width, height=self.layout.height(0))
         self._tones = {}
         self._selection, self._active = None, None
@@ -41,10 +48,11 @@ class CanvasResultGrid:
         self._painted = self._painter.cells
         self._pending = None
         self._disposed = False
-        self.frame.bind("<Configure>", self.schedule)
+        self.frame.bind("<Configure>", self._configured)
         self.frame.bind("<Map>", self.schedule)
         self.frame.bind("<Destroy>", self._dispose)
-        self.frame.bind("<Button-1>", lambda _event: self.frame.focus_force())
+        if focusable:
+            self.frame.bind("<Button-1>", lambda _event: self.frame.focus_force())
         self.frame.bind("<Control-c>", self.copy)
         self.frame.bind("<Command-c>", self.copy)
         self._unsubscribe = viewport.observe_view(self.schedule) if viewport else None
@@ -65,6 +73,12 @@ class CanvasResultGrid:
             raise ValueError("result row width must match headers")
         height_changed = len(rows) != len(self.rows)
         self.rows, self._tones = rows, dict(tones or {})
+        if self.content_widths:
+            old_width = self.layout.width
+            self.layout.update_content(self.headers, rows)
+            if self.layout.width != old_width:
+                self.frame.configure(width=self.layout.width)
+            self.layout.allocate(self.frame.winfo_width()-2*self.layout.inset)
         if height_changed:
             self.frame.configure(height=self.layout.height(len(rows)))
         self.schedule()
@@ -135,10 +149,15 @@ class CanvasResultGrid:
         if not self._disposed and self._pending is None:
             self._pending = self.frame.after_idle(self._draw)
 
+    def _configured(self, event):
+        if self.content_widths:
+            self.layout.allocate(event.width-2*self.layout.inset)
+        self.schedule()
+
     def _draw(self):
         self._pending = None
         bounds = (self.viewport.visible_rect(self.frame) if self.viewport else
-                  (0, 0, self.layout.width+2*self.layout.inset,
+                  (0, 0, self.layout.xs[-1]+self.layout.inset,
                    self.layout.height(len(self.rows))+2*self.layout.inset))
         self._painter.draw(self.layout.visible_positions(bounds, len(self.rows)))
 
