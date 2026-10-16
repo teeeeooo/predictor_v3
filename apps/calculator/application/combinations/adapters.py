@@ -44,10 +44,6 @@ class StandardAdapter:
             self._owners[context.kind] = OWNERS[context.kind]()
         return self._owners[context.kind]
 
-    def bases(self, context):
-        both = context.kind in ("m_seer", "m_hspf") or (context.kind in ("seer2", "hspf2") and context.product != "variable_capacity")
-        return ("public", "raw", "published") if both else ("public",)
-
     def operation(self, context):
         return OPERATIONS[context.kind]
 
@@ -76,8 +72,6 @@ class StandardAdapter:
     def request(self, context, values):
         owner = self.owner(context)
         opts = dict(context.options)
-        if context.basis not in self.bases(context):
-            raise ValueError("선택한 결과 기준을 제공하지 않는 규격/제품입니다")
         if context.kind == "iso":
             request = owner.build_request(values, profile_label=context.profile)
         elif context.kind == "saso":
@@ -121,19 +115,18 @@ class StandardAdapter:
     def project(self, context, result):
         metric = self.metric(context)
         if context.kind == "brazil":
-            return Score(result.three_point_exact_cspf, metric, "W/W", summary=(
+            # Match the main Brazil report's two-decimal CSPF; rules stay exact.
+            return Score(round(result.three_point_exact_cspf, 2), metric, "W/W", summary=(
                 ("two_point_cspf", result.two_point_exact_cspf), ("rule_1", "OK" if result.rule_1.passed else "NG"),
                 ("rule_2", "OK" if result.rule_2.passed else "NG"), ("final", "OK" if result.final_passed else "NG")))
         key = "cspf" if metric == "ISEER" else metric.lower()
         raw, published = result.get("raw_"+key), result.get("published_"+key)
-        if context.basis == "raw":
-            value = raw
-        elif context.basis == "published" or context.kind in ("m_seer", "m_hspf"):
-            value = published
+        if context.kind == "korea_hspf":
+            value = result.get("rounded_hspf")
         else:
-            value = result.get(metric) if context.kind in ("seer2", "hspf2") else result.get(key)
+            value = result.get(metric) if context.kind in ("m_seer", "m_hspf", "seer2", "hspf2") else result.get(key)
         if value is None:
-            raise ValueError(f"Missing numeric {metric} / {context.basis}")
+            raise ValueError(f"Missing reported numeric {metric}")
         summary = tuple((k,v) for k,v in result.items() if isinstance(v,(int,float,str,bool)) and k not in (key,metric,"raw_"+key,"published_"+key))
         return Score(float(value), metric, "Btu/Wh" if context.kind in ("m_seer","m_hspf","seer2","hspf2") else "W/W",
                      raw, published, summary)

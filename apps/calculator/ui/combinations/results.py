@@ -40,7 +40,7 @@ class ResultsPanel(ttk.Frame):
             self.table.set_page(("순위", "값", "지표"), (), (), None)
             self.caption.configure(text="계산 전")
             return
-        columns = ("순위", "값", "지표", "단위", "기준", *(p.key for p in run.snapshot.independent_points), "상태")
+        columns = ("순위", "값", "지표", "단위", *(p.key for p in run.snapshot.independent_points), "상태")
         rows, identities = [], []
         ranked = run.ranked()
         self.page = min(self.page, max(0, (len(ranked)-1)//100))
@@ -49,7 +49,7 @@ class ResultsPanel(ttk.Frame):
             labels = [f"#{value.number}" for value in measurements]
             score = row.score
             values = (rank or "", score.value if score else "", score.metric if score else "",
-                      score.units if score else "", run.snapshot.context.basis, *labels,
+                      score.units if score else "", *labels,
                       "정상" if score else f"{row.error_code}: {row.error_message}")
             rows.append(values)
             identities.append(row.ordinal)

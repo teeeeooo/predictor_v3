@@ -92,7 +92,7 @@ def test_errors_are_retained_with_one_conditional_column_and_csv_quoting(tmp_pat
         assert tuple(tuple(row) for row in csv.reader(handle)) == (headers, *rows)
 
 
-def test_partial_and_basis_are_visible_in_filename():
+def test_partial_and_stale_are_visible_in_filename():
     session = iso_session()
     session.pools["35_full"].append(Candidate(capacity="3500", power="1000"))
     run = start(session, StandardAdapter())
@@ -102,6 +102,5 @@ def test_partial_and_basis_are_visible_in_filename():
     assert export_filename(run, stale=False) == "calculator_combinations_partial.csv"
     assert export_filename(run, stale=True) == "calculator_combinations_partial_stale.csv"
     session = seed_session(next(c for c in contexts() if c.kind == "hspf2" and c.product == "dual_stage"), StandardAdapter())
-    session.context = replace(session.context, basis="raw")
     run = finish(start(session, StandardAdapter()))
-    assert export_filename(run, stale=False) == "calculator_combinations_raw.csv"
+    assert export_filename(run, stale=False) == "calculator_combinations.csv"

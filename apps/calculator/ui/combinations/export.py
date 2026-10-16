@@ -36,9 +36,6 @@ def measurement_headers(point):
 
 def export_filename(run, *, stale):
     suffix = ("_partial" if run.partial else "") + ("_stale" if stale else "")
-    basis = run.snapshot.context.basis
-    if basis != "public":
-        suffix += "_" + basis
     return f"calculator_combinations{suffix}.csv"
 
 

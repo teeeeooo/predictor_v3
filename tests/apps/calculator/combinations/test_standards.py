@@ -3,6 +3,7 @@ import pytest
 from apps.calculator.application.combinations.adapters import StandardAdapter, seed_session
 from apps.calculator.application.combinations.models import Candidate
 from apps.calculator.application.combinations.service import preflight, start
+from apps.calculator.ui.combinations.export import export_rows
 from core.calculators.capability import execute_standard_calculation, build_builtin_capability_registry
 from .seeds import contexts
 from .test_service import finish
@@ -79,14 +80,46 @@ def test_operation_inventory_and_optional_product_paths():
         assert finish(start(seed_session(context,adapter),adapter)).succeeded==1
 
 
-def test_raw_published_basis_and_brazil_ng_are_rankable():
+@pytest.mark.parametrize("kind,factors,expected", [
+    ("m_seer", (1, 1.00001, 0.9), 18.05),
+    ("brazil", (1, 0.99999, 1.1), 5.72),
+])
+def test_reported_ties_keep_input_order_and_csv_rank(kind, factors, expected):
+    adapter = StandardAdapter()
+    context = next(c for c in contexts() if c.kind == kind)
+    session = seed_session(context, adapter)
+    point = next(p for p in adapter.points(context) if p.independent)
+    base = session.pools[point.key][0]
+    session.pools[point.key] = [
+        Candidate(capacity=base.capacity, power=str(float(base.power) * factor))
+        for factor in factors
+    ]
+    run = finish(start(session, adapter))
+    assert run.succeeded == 3
+    details = [run.detail(row) for row in run.results[:2]]
+    raw = [detail.three_point_exact_cspf if kind == "brazil" else detail["raw_seer"]
+           for detail in details]
+    # The second candidate is better before rounding, but its report ties.
+    assert raw[0] < raw[1]
+    assert [row.score.value for row in run.results[:2]] == [expected, expected]
+    assert run.results[2].score.value < expected
+    assert [(rank, row.ordinal) for rank, row in run.ranked()] == [(1, 1), (1, 2), (3, 3)]
+    _, rows = export_rows(run)
+    assert [row[0] for row in rows] == ["1", "1", "3"]
+    assert [row[1] for row in rows[:2]] == [str(expected), str(expected)]
+
+
+def test_korea_hspf_ranks_the_existing_rounded_report():
+    adapter = StandardAdapter()
+    context = next(c for c in contexts() if c.kind == "korea_hspf")
+    run = finish(start(seed_session(context, adapter), adapter))
+    result = run.detail(run.results[0])
+    assert result["hspf"] != result["rounded_hspf"]
+    assert run.results[0].score.value == result["rounded_hspf"] == 2.874
+
+
+def test_brazil_ng_is_rankable():
     adapter=StandardAdapter()
-    context=next(c for c in contexts() if c.kind=="m_seer")
-    raw=replace(context,basis="raw")
-    pub=replace(context,basis="published")
-    result=adapter.execute(context,dict(context.values))
-    assert adapter.project(raw,result).value==result["raw_seer"]
-    assert adapter.project(pub,result).value==result["published_seer"]
     brazil=next(c for c in contexts() if c.kind=="brazil")
     values=dict(brazil.values);values["half_29_power"]="1000"
     brazil=replace(brazil,values=tuple(values.items()))

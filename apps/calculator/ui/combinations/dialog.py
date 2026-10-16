@@ -41,10 +41,6 @@ class CombinationContent:
         controls.grid(row=1, column=0, sticky="ew")
         self.reload_button = ttk.Button(controls, text="메인 입력으로 초기화", command=self.manager.reload)
         self.reload_button.pack(side="left")
-        self.basis = ttk.Combobox(controls, state="readonly", values=self.adapter.bases(self.session.context))
-        self.basis.set(self.session.context.basis)
-        self.basis.pack(side="left")
-        self.basis.bind("<<ComboboxSelected>>", self.change_basis)
         ttk.Label(controls, text="현재 탭의 후보·결과 초기화").pack(side="left")
         tabs = ttk.Notebook(self.frame)
         tabs.grid(row=2, column=0, sticky="nsew")
@@ -96,11 +92,6 @@ class CombinationContent:
         index = self.context_tabs.index("current")
         if index != self.context_index:
             self.manager.select(index)
-
-    def change_basis(self, _event=None):
-        self.session.context = replace(self.session.context, basis=self.basis.get())
-        self.session.changed()
-        self.refresh()
 
     def change_common(self):
         if self.common is None or self.common.locked:
@@ -172,7 +163,6 @@ class CombinationContent:
             self.common.interaction_controller.refresh()
         for index in range(len(self.manager.contexts)):
             self.context_tabs.tab(index, state="disabled" if locked and index != self.context_index else "normal")
-        self.basis.configure(state="disabled" if locked else "readonly")
         self.reload_button.state(["disabled" if locked else "!disabled"])
 
     def cancel(self):

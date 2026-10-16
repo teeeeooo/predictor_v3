@@ -84,8 +84,9 @@ currently exposed application scope.
   range reaches 37 °F or below; H2Boost follows its measured flag. Thus the
   maximum is **nine active pairs**, and the probed default has eight. Reuse
   `triple_h3_low_required()` and the existing optional-point policy.
-- Brazil calls the composite capability once per combination. Rank by its
-  public `three_point_exact_cspf`; retain two-point CSPF and Rule/Final outcomes.
+- Brazil calls the composite capability once per combination. Rank by the
+  two-decimal 3-point CSPF used in its main report; retain two-point CSPF and
+  exact Rule/Final outcomes.
   A Rule/Final NG is distinct from an execution failure and remains rankable.
 
 ## 3. Architecture and reuse boundary
@@ -157,10 +158,10 @@ These are internal feature contracts, not additions to public calculator JSON.
 | --- | --- |
 | Candidate draft | Stable candidate ID, inclusion flag, raw capacity/power text, cell issues; numeric values after validation (legacy label metadata is retained internally, not authored in the UI) |
 | Point definition/pool | Stable point key, labels/units, ordered candidate IDs, required/optional/mapped/inactive role, mapping source if applicable |
-| Common context | Capability/profile/metric identity, climate/product/system type, fixed inputs/options, score basis, unit interpretation |
+| Common context | Capability/profile/metric identity, climate/product/system type, fixed inputs/options, unit interpretation |
 | Run snapshot | Run ID, input revision, immutable context and candidate values/order, resolved point roles, planned count |
 | Combination identity | Deterministic enumeration ordinal plus selected point→candidate IDs; labels and visible column numbers are not identity |
-| Result summary | Combination identity, numeric score/basis/units, available raw/published values, execution status/error, standard-specific summary/Rule outcomes |
+| Result summary | Combination identity, numeric reported score/units, available raw/published diagnostics, execution status/error, standard-specific summary/Rule outcomes |
 | Session | Draft, current run snapshot, progress counters, lightweight result summaries, stale flag; view selection/page state is separate |
 
 - Unused fully blank placeholder columns do not become candidates. A partially
@@ -173,13 +174,14 @@ These are internal feature contracts, not additions to public calculator JSON.
   Enforce the same 10,000 limit in the application service, including direct
   headless calls. Any zero pool blocks execution; all single-candidate pools
   produce exactly one combination. Point count alone is not a limit.
-- Sort descending by the actual numeric metric returned by the existing
-  contract, never a formatted cell. Default to the normal reported/public metric;
-  offer Raw/Published selection only when the current result exposes both, with
-  the basis visible and pinned. Do not invent unavailable extra precision.
-  ISO public results may already be rounded; preserve that precision.
+- Sort descending by the final numeric reported metric after the existing
+  standard-specific rounding, never by a formatted cell or unrounded tie-breaker.
+  Ranking is fixed; no Public/Raw/Published selector or basis column is shown.
+  Reuse the current result precision: AHRI's reported metric, KS HSPF's
+  `rounded_hspf`, Brazil's two-decimal main report, and the returned rounded
+  metric for ISO, EN and other paths. Do not change core results or rule checks.
 - Equal numeric scores receive competition ranks (`1, 1, 3`) and deterministic
-  enumeration order. Do not secretly break a Published-score tie using Raw.
+  enumeration order. Do not break a reported-score tie using Raw.
   Error rows have no rank and follow successful rows in enumeration order.
 - Retain candidate values and common context once per run plus O(combinations)
   compact summaries/selection references. Discard per-combination bin details
@@ -235,7 +237,7 @@ are unnecessary for this limit.
   fixed to one candidate. Validate again on the application boundary.
 - Bottom: Calculate/Cancel, progress and summary, ranked read-only results,
   selected-result detail, and **전체 결과 CSV 저장**. Result columns contain rank,
-  metric/units/basis, selected candidate numbers per point, and status. Candidate values
+  metric/units, selected candidate numbers per point, and status. Candidate values
   remain inspectable through detail/export; fixed settings remain in detail.
 - Default result page size: 100. Export covers the whole run, not the visible
   page. Bound editable candidate rendering too; a legal 10,000×1 run must not
@@ -355,9 +357,9 @@ Input units are in headers, not repeated columns. Fixed settings, source policy,
 original candidate numbers and full provenance remain available in detail.
 
 Cancelled/failed runs export only processed rows. The screen and proposed
-filename explicitly distinguish `_partial` and `_stale`, independently; a
-non-public score basis adds `_raw` or `_published` to the filename. Metadata is
-not repeated on every row. Users can rename the file in the save dialog.
+filename explicitly distinguish `_partial` and `_stale`, independently. There
+is no score-basis suffix. Metadata is not repeated on every row. Users can
+rename the file in the save dialog.
 
 Round-trip tests cover BOM, Unicode/CSV quoting in errors, all pages, original
 pairs after input edits, and additional fields for every supported context.
@@ -372,7 +374,7 @@ export, not an import/session archive, and other CSV contracts are unchanged.
 | Limit | 0/1/10,000/10,001 cases; 10^8 projected cases rejected before engine invocation; fixed/mapped/inactive axes counted correctly; direct service guard |
 | Coverage | Every row of §2 through the real application adapter and gateway; every exposed profile/product, EN climate, and relevant optional-point branch |
 | Numerical compatibility | Each synthetic combination equals a separately invoked existing single calculation with the same typed request/context; current golden suites remain unchanged |
-| Ranking | Numeric order, current precision, competition ties/stable identity, explicit Raw/Published basis, no mixed contexts, Brazil NG distinct from error |
+| Ranking | Final reported numeric order, standard-specific rounding, competition ties/stable identity without Raw tie-breaking, no mixed contexts, Brazil NG distinct from error |
 | Validation and isolation | Incomplete included candidate blocks preflight; excluded invalid candidate does not; non-finite/zero inputs handled; one combination error followed by valid success |
 | Lifecycle | Cancel before first case and mid-run; completed-with-errors; unexpected failure; edit→stale; rerun isolation; close/reopen; parent context switch/disposal; no late callback writes |
 | Table/UI | Rectangular/single-column paste, grouped undo, navigation, invalid draft retention, inactive/read-only mutation protection, page boundaries and stable selection |

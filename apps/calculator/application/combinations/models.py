@@ -37,7 +37,6 @@ class Context:
     product: str = ""
     system_type: str = ""
     mode: str = ""
-    basis: str = "public"
     values: tuple[tuple[str, str], ...] = ()
     options: tuple[tuple[str, str | float | int | bool | None], ...] = ()
 

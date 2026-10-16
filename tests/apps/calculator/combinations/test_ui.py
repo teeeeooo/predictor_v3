@@ -105,6 +105,7 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             assert run.status=="running" and run.processed==0
             pump(root,lambda:run.status!="running")
             assert run.succeeded==1, (context,run.results)
+            assert "기준" not in content.results.table.headers
             assert content.adapter.project(run.snapshot.context,run.detail(run.results[0]))==run.results[0].score
             if context.product == "triple_capacity_northern":
                 # A real common-setting edit changes the active point policy.
