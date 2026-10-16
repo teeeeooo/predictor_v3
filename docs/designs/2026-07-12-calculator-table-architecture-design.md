@@ -1,6 +1,7 @@
 # Calculator Table Architecture Design
 
 **Status:** Implemented — Slices 1-6 complete
+**Rendering follow-up:** Stages 1-2 complete (2026-10-16); input/editor and wider rollout pending (§22).
 **Scope:** Tkinter Calculator table surfaces
 **Primary implementation sequence:** Table foundation → representative ISO/ISEER migration → progressive Calculator-wide adoption
 **Proposed canonical location:** `docs/designs/2026-07-12-calculator-table-architecture-design.md`
@@ -1064,3 +1065,129 @@ When this document is first added to the repository:
 - use the existing Slice 0 audit as inventory evidence rather than duplicating that audit here.
 
 The next implementation prompt should direct the agent to implement **Slice 1 only** from this design after placing and indexing the document.
+
+---
+
+## 22. Calculator rendering performance follow-up (2026-10-16)
+
+### Approved scope and sequence
+
+This follow-up targets `app_calculator` on Tkinter. The original three table
+families, profile-local schemas, calculation owners and interaction semantics
+remain in force. Train/Predict, toolkit replacement, formula changes and new
+Excel features are outside this workstream.
+
+| Stage | Scope | State |
+| --- | --- | --- |
+| 1 | Repeatable native benchmark: main ISO/EN/AHRI and small/10,000-result combination windows | Complete |
+| 2 | Shared read-only Canvas renderer; ISO/ISEER comparison and combination rankings first | Complete |
+| 3 | Reusable native Entry editor over a drawn input surface; ISO input, then combination candidates | Next, not implemented |
+| 4 | Apply the proven renderer/editor to remaining main profile surfaces | Pending |
+| 5 | Migrate BatchCaseTable/BatchMatrixTable without changing their models or transactions | Pending |
+| 6 | Remeasure remaining viewport, window and graph costs; fix only demonstrated bottlenecks | Pending |
+
+These are staged changes, not a mandate to rewrite every existing table. Keep
+the large detail Treeviews. Before each wider rollout, verify that the migrated
+surface still owns the same schema, interaction, calculation and export behavior.
+
+### Ownership and implementation boundary
+
+- Profile/result adapters retain headers, logical values, formatting, tones,
+  placeholder rows, detail provenance and CSV payloads.
+- `TableSurface` separates logical cell access and interaction effects from
+  `TkTableSurface`'s per-cell widget extension. `TkTableController` continues to
+  own selection, navigation, clipboard, mutation guards, edit state and undo.
+- `CanvasTableBinding` provides pointer hit testing and Canvas event/paint
+  binding to that controller. It does not implement another selection or
+  clipboard engine. The original native binding remains the default for inputs.
+- `CanvasResultGrid` owns a single native Canvas and reusable rectangle/text
+  item pairs. `CanvasResultLayout` derives natural geometry from the shared
+  fonts, padding and native Label metrics. Both consume `TkTableVisualPolicy`.
+- `BatchTableViewport` owns visible bounds, scroll notification and reveal of
+  a logical rectangle. The renderer coalesces draws with `after_idle`, retains
+  item pairs at the observed viewport high-water mark, and updates only changed
+  item coordinates/presentation. Disposal removes the viewport subscription and
+  pending callback.
+
+The pilot needs a separate renderer because `CompactResultGrid` exposes native
+cell widget registries to existing consumers. Globally replacing those registries
+would expand this slice to all profiles. Both renderers retain the same logical
+result/TSV API and policy; they are two backends within the compact result family,
+not two domain models. The native backend remains for all other result consumers.
+
+ISO renders its small comparison in one Canvas and retains whole-table copy.
+Combination rankings use viewport clipping plus one-cell overscan, while their
+wrapper still caps a page at 100 rows and the run at 10,000 combinations. Their
+rectangular copy, selected ordinal, stale state and page restoration remain
+controller/adapter responsibilities. Candidate grids still use the previous
+native `ViewportGridCuller`; this stage does not migrate input editors.
+
+Natural requested width/height always describe the entire logical grid, including
+initial placeholder rows, independently of which cells are painted. A native
+regression compares the Canvas footprint with the original compact renderer.
+This preserves existing first-show, tab-switch and nested-notebook sizing guards.
+Long visible text is single-line and ellipsized within its column; full values
+remain available in logical copy/export and result detail.
+
+### Measurement and outcome
+
+Run with a native Tk Python from the repository root:
+
+```sh
+python -m tests.apps.calculator.performance.benchmark --output /tmp/calculator-ui.json
+```
+
+`--case` selects individual surfaces and `--repeats` controls the default three
+cycles. The JSON records platform/Python/Tk, scaling, display size, Git revision,
+dirty state, individual samples, p50/p95, widget/item counts and callback errors.
+Calculation is completed before measuring UI work. Each axis uses 12 geometry
+changes per cycle after 12 native warmup changes. Width varies 800–848 at height
+650; height varies 650–698 at width 800. Page timing measures 10 successive page
+refreshes including the event flush. Opening time is one observation per case.
+
+Local comparison: macOS 27.0.1 arm64, Python 3.14.4, Tk 8.6.17, 2240×1260,
+scaling 1.00028. Before is production `b6ea59d3`; after is the Canvas pilot.
+Values are milliseconds for `geometry`/refresh plus `root.update`, with no
+profiler attached. They are not physical mouse-drag FPS and must not be compared
+directly with the earlier cProfile resize probe's different height range.
+
+| Surface | Width mean before → after | Height mean before → after | Width / height p95 after |
+| --- | --- | --- | --- |
+| Main ISO, initial | 27.4 → 26.4 | 21.3 → 20.4 | 28.3 / 22.1 |
+| Main EN SCOP, unchanged control | 57.1 → 57.3 | 36.6 → 36.5 | 59.1 / 37.9 |
+| Main AHRI HSPF2, unchanged control | 44.3 → 44.2 | 29.4 → 29.3 | 45.4 / 30.8 |
+| Combination ISO, 3×5 before calculation | 52.7 → 52.5 | 49.2 → 48.8 | 53.1 / 49.5 |
+| Combination ISO, 15 results | 60.5 → 56.9 | 58.9 → 54.2 | 58.5 / 55.3 |
+| Combination ISO, 100×100 / 10,000 results | 67.6 → 61.3 | 69.7 → 62.0 | 62.8 / 63.5 |
+| Combination AHRI, nine independent points / 10,000 results | 100.4 → 92.2 | 103.6 → 93.9 | 93.6 / 95.8 |
+
+| 10,000-result dialog | Page refresh mean before → after | Page p95 before → after | Open before → after | Native widgets before → after |
+| --- | --- | --- | --- | --- |
+| ISO | 49.7 → 15.7 | 50.2 → 18.1 | 721 → 335 | 3,296 → 1,680 |
+| AHRI | 75.1 → 18.8 | 75.7 → 22.1 | 1,028 → 236 | 3,729 → 699 |
+
+The strongest gains are construction and page refresh. Initial combination
+resize is essentially unchanged; remaining native input/chrome costs require
+the next stage. The tentative same-machine targets (ordinary resize p95 ≤33 ms,
+large combinations ≤50 ms) are not achieved across the app and are not hard CI
+timing assertions. Do not claim the resize problem is solved by this pilot.
+
+### Verification and retained limits
+
+157 focused native tests passed across the migrated renderer, ISO auto-calculation,
+shared input/batch controllers and window lifecycle/refit/measurement guards.
+Coverage includes the actual 22-context combination entry path, real 10,000-result
+AHRI execution and all 100 result pages, stable Canvas items/Tcl callback counts,
+close cleanup, both scroll axes, keyboard reveal, drag/reverse/Shift selection,
+Tab/Enter/arrow movement, Ctrl/Cmd+C including offscreen values, result mutation
+protection, logical identity/stale selection, short pages, detail and CSV export.
+The standalone layout test now explicitly applies the application theme instead
+of depending on an earlier full-app test. Performance probes reported no callback
+errors. Formula/config/golden owners and calculation chunk scheduling are unchanged.
+
+The existing single-rectangle, selection-mode Esc and double-click edit-entry
+gaps remain inherited; this is not a claim of full Excel parity. Editable paste,
+clear and undo remain on the native input backend and passed their existing
+focused regressions. The user requested no screen check. Physical dragging,
+OS cursor/keyboard behavior, Windows/Linux, multi-monitor and DPI acceptance
+remain unverified. These limitations do not reopen the independent Predict hold.

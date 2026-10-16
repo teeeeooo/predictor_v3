@@ -8,6 +8,7 @@ import pytest
 
 from apps.calculator.ui.calculator_app import CalculatorTkApp
 from apps.calculator.ui.metric_input_table import MetricInputTable
+from apps.calculator.ui.theme import apply_calculator_theme
 from apps.calculator.application.combinations.models import Candidate
 from apps.calculator.ui.combinations.sources import collect
 from .seeds import contexts
@@ -46,6 +47,8 @@ def root():
     # One Tcl interpreter per module avoids macOS Tk's destroyed-root event loop.
     root = tk.Tk()
     root.withdraw()
+    # Standalone tests use the same chrome metrics as the actual app entrypoint.
+    apply_calculator_theme(root)
     yield root
     try:
         root.destroy()
@@ -207,11 +210,13 @@ def test_point_blocks_share_viewport_and_resize(root):
                 assert block.buttons[0].winfo_reqheight() < regular.winfo_reqheight()
                 regular.destroy()
             table = content.results.table
-            # Shared cell padding fits one full result at the minimum height,
+            # Shared cell padding fits one full result value at the minimum height,
             # and two at normal sizes; remaining rows stay scrollable.
-            cell = table.cell_widget((0 if size == "640x480" else 1, 0))
+            position = (0 if size == "640x480" else 1, 0)
+            renderer = table.renderer
+            text_box = renderer.frame.bbox(renderer._painted[position].text)
             canvas = table.viewport.canvas
-            assert cell.winfo_rooty()+cell.winfo_height() <= canvas.winfo_rooty()+canvas.winfo_height(), size
+            assert renderer.frame.winfo_rooty()+text_box[3] <= canvas.winfo_rooty()+canvas.winfo_height(), size
             for button in (content.calculate_button, *content.results.actions.values()):
                 assert button.winfo_rooty()+button.winfo_height() <= window.winfo_rooty()+window.winfo_height()
         # A horizontal page stays wide, but never forces the window off-screen.
@@ -370,19 +375,23 @@ def test_result_drag_copy_readonly_selection_and_paging(root):
         root.update()
         table = content.results.table
         controller = table.interaction_controller
-        first, last = table.cell_widget((0, 1)), table.cell_widget((1, 2))
-        first.event_generate("<Button-1>", x=3, y=3)
-        first.event_generate("<B1-Motion>", rootx=last.winfo_rootx()+3, rooty=last.winfo_rooty()+3)
+        canvas = table.renderer.frame
+        def pointer(sequence, position):
+            x, y, _, _ = table.renderer.cell_bbox(position)
+            canvas.event_generate(sequence, x=x+3, y=y+3,
+                                  rootx=canvas.winfo_rootx()+x+3, rooty=canvas.winfo_rooty()+y+3)
+        pointer("<Button-1>", (0, 1))
+        pointer("<B1-Motion>", (1, 2))
         root.update()
         assert controller.selection_bounds == (0, 1, 1, 2)
         expected = "\n".join("\t".join(row[1:3]) for row in table.rows[:2])
-        first.focus_force()
-        first.event_generate("<Control-c>")
+        canvas.focus_force()
+        canvas.event_generate("<Control-c>")
         root.update()
         assert table.clipboard_get() == expected
         # Reversed drag and the visible copy action use the same rectangle.
-        last.event_generate("<Button-1>", x=3, y=3)
-        last.event_generate("<B1-Motion>", rootx=first.winfo_rootx()+3, rooty=first.winfo_rooty()+3)
+        pointer("<Button-1>", (1, 2))
+        pointer("<B1-Motion>", (0, 1))
         content.results.actions["선택 범위 복사"].invoke()
         assert table.clipboard_get() == expected
         before = table.snapshot()
@@ -432,18 +441,23 @@ def test_ten_thousand_wide_results_keep_widgets_and_callbacks_bounded(root):
     run = finish(start(session, adapter))
     assert run.succeeded == 10000
     window = tk.Toplevel(root)
+    window.geometry("900x650")
     try:
         panel = ResultsPanel(window, session)
         panel.pack(fill="both", expand=True)
         root.update()
         table = panel.table
-        first_widgets = tuple(table.renderer.value_labels.values())
+        canvas = table.renderer.frame
+        first_items = canvas.find_all()
+        assert len(first_items) < 600  # Visible area, not all 1,500 result cells.
+        assert canvas.winfo_children() == []
         commands = len(root.tk.call("info", "commands"))
         for page in range(1, 100):
             panel.move(1)
             root.update()
             assert table.row_count() == 100
-            assert tuple(table.renderer.value_labels.values()) == first_widgets
+            assert table.renderer.frame is canvas
+            assert canvas.find_all() == first_items
             # Check each page, so a regression fails before commands can pile up.
             assert len(root.tk.call("info", "commands")) == commands
             assert table.identities == tuple(range(page*100+1, page*100+101))
@@ -451,8 +465,8 @@ def test_ten_thousand_wide_results_keep_widgets_and_callbacks_bounded(root):
         controller.select((0, 0)); controller.select((1, 2), extend=True)
         panel.copy()
         assert table.clipboard_get() == "\n".join("\t".join(row[:3]) for row in table.rows[:2])
-        callback_names = {name for widget in (*table.renderer.value_cells.values(), *first_widgets)
-                          for name in (widget._tclCommands or ())}
+        root.update_idletasks()
+        callback_names = set(canvas._tclCommands or ())
         window.destroy()
         root.update()
         assert callback_names.isdisjoint(root.tk.call("info", "commands"))

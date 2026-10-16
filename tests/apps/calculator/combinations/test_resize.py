@@ -43,14 +43,15 @@ def test_result_scroll_resize_and_short_page_preserve_extent_and_data(root):
         root.update()
         grid = table.renderer.frame
         natural_size = (grid.winfo_reqwidth(), grid.winfo_reqheight())
-        first, last = table.cell_frame((0, 0)), table.cell_frame((99, 14))
-        assert first.winfo_ismapped() and not last.winfo_ismapped()
-        assert sum(cell.winfo_ismapped() for cell in table.renderer.value_cells.values()) < 200
+        first, last = (0, 0), (99, 14)
+        assert first in table.renderer.painted_positions and last not in table.renderer.painted_positions
+        assert len(table.renderer.painted_positions) < 200
+        assert grid.winfo_children() == []
         canvas = table.viewport.canvas
         canvas.xview_moveto(1)
         canvas.yview_moveto(1)
         root.update()
-        assert last.winfo_ismapped() and not first.winfo_ismapped()
+        assert last in table.renderer.painted_positions and first not in table.renderer.painted_positions
         assert canvas.xview()[1] == canvas.yview()[1] == 1
         for size in ("800x550", "650x430", "900x600"):
             window.geometry(size)
@@ -59,24 +60,25 @@ def test_result_scroll_resize_and_short_page_preserve_extent_and_data(root):
             canvas.xview_moveto(1)
             canvas.yview_moveto(1)
             root.update()
-            assert last.winfo_ismapped()
+            assert last in table.renderer.painted_positions
             assert table.snapshot() == rows
-        # Keyboard navigation reveals an unmapped result before requesting focus.
+        # Keyboard navigation reveals a logical result and focuses the Canvas.
         table.interaction_controller.select((0, 1))
         table.interaction_controller._arrow("left")
         root.update()
-        assert first.winfo_ismapped()
-        assert first.winfo_rootx() >= canvas.winfo_rootx()
-        assert first.winfo_rooty() >= canvas.winfo_rooty()
-        assert first.winfo_rootx() + first.winfo_width() <= canvas.winfo_rootx() + canvas.winfo_width()
-        assert first.winfo_rooty() + first.winfo_height() <= canvas.winfo_rooty() + canvas.winfo_height()
+        assert first in table.renderer.painted_positions
+        x1, y1, x2, y2 = table.renderer.cell_bbox(first, root=True)
+        assert x1 >= canvas.winfo_rootx()
+        assert y1 >= canvas.winfo_rooty()
+        assert x2 <= canvas.winfo_rootx() + canvas.winfo_width()
+        assert y2 <= canvas.winfo_rooty() + canvas.winfo_height()
         table.set_page(headers, rows[:1], (100,), "run")
         root.update()
         assert grid.winfo_reqheight() < natural_size[1] / 10
         assert canvas.yview() == (0, 1)
         assert table.snapshot() == rows[:1]
         # Closing with a queued visibility update must cancel the owned callback.
-        table.viewport._grid_culler.schedule()
+        table.renderer.schedule()
     finally:
         window.destroy()
         root.update()

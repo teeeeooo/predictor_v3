@@ -19,7 +19,7 @@ its historical comparisons select a toolkit for another project. The
 [temporary baseline](../README.md#temporary-behavior-baseline) preserves current
 behavior and keeps observed gaps distinct from table completion.
 
-Before choosing an Entry grid or Treeview for `predictor_v3`, determine the
+Before choosing a table renderer for `predictor_v3`, determine the
 input/result surface shape under
 `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`. This adapter implements a
 selected shape; it does not decide whether repeated data should be a matrix.
@@ -43,18 +43,29 @@ Trainer batch/model workflows may use explicit Run/Predict/Train actions.
 ## 2. Allowed widget patterns
 
 Tkinter has no native model / view / delegate equivalent. The
-adapter accepts two patterns, picked per surface:
+adapter accepts the following patterns, picked per surface:
 
 - **Entry grid**: a 2D grid of `tk.Entry` (or `ttk.Entry`,
   `ttk.Combobox`) widgets laid out by `.grid(...)`. Use this when
   every cell must be editable, with type-to-replace and per-column
   validators.
-- **Treeview**: `ttk.Treeview` configured as a multi-column table.
-  Use this when the table is primarily display / read-only with at
-  most light editing (e.g. inline rename, selection-based actions).
+- **Compact read-only grid**: shared cell rendering with native Frames/Labels
+  or a Canvas backend. Calculator uses `CompactResultGrid`; the staged
+  `CanvasResultGrid` pilot covers ISO/ISEER comparison and combination rankings.
+  Canvas does not imply a separate interaction engine: rankings bind the
+  existing `TkTableController` through logical hit testing and paint callbacks.
+  See the [table architecture follow-up](../../designs/2026-07-12-calculator-table-architecture-design.md#22-calculator-rendering-performance-follow-up-2026-10-16).
+- **Treeview**: `ttk.Treeview` configured as a multi-column table for large
+  scrollable detail data, through the shared style adapter.
 
 Pick one per surface. Do not mix Entry grid and Treeview into one
 hybrid widget for the same table.
+
+Canvas renderers must preserve the complete logical table's requested geometry
+independently of visible-item clipping, shared semantic/selection styling and
+logical copy/export data. Reuse the existing viewport for clipping/scroll/reveal
+and release subscriptions and queued paint callbacks on disposal. Native input
+editors remain unchanged until the separately staged editor migration.
 
 ### Responsive Entry-grid construction
 

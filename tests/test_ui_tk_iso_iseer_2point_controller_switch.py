@@ -168,23 +168,22 @@ class TestSharedTableVisualFoundation:
         assert grid.frame.bind("<Control-c>")
         assert grid.frame.bind("<Command-c>")
         assert grid.surface_role == "two_point_comparison_table"
-        assert grid.frame.winfo_class() == "Frame"
+        assert grid.frame.winfo_class() == "Canvas"
         assert grid.frame.focus_policy == "visible"
         assert int(grid.frame.cget("takefocus")) == 1
         assert grid.logical_data() == (
             section.result_table.column_labels,
             section.result_table.rows,
         )
-        assert grid.header_labels[0].alignment_role == "header_identity"
-        assert grid.header_labels[1].alignment_role == "header_value"
-        assert grid.value_labels[(0, 0)].alignment_role == "identity_text"
-        assert grid.value_labels[(0, 1)].alignment_role == "numeric_result"
-        assert grid.value_labels[(0, 0)].semantic_tone == "default"
+        assert grid.cell_alignment((-1, 0)).value == "header_identity"
+        assert grid.cell_alignment((-1, 1)).value == "header_value"
+        assert grid.cell_alignment((0, 0)).value == "identity_text"
+        assert grid.cell_alignment((0, 1)).value == "numeric_result"
+        assert grid.cell_tone((0, 0)).value == "default"
         for row in range(len(grid.rows)):
             for column in range(1, len(grid.headers)):
-                label = grid.value_labels[(row, column)]
-                assert label.semantic_tone == "calculated"
-                assert label.cget("background") == TABLE_PASS_BG
+                assert grid.cell_tone((row, column)).value == "calculated"
+                assert grid.cell_background((row, column)) == TABLE_PASS_BG
 
     def test_result_whole_table_copy_matches_export_contract(self, section) -> None:
         section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)
@@ -204,13 +203,8 @@ class TestSharedTableVisualFoundation:
         tk_root.deiconify()
         tk_root.update_idletasks()
         grid = section.result_table.table
-        target = (
-            grid.header_labels[0]
-            if target_kind == "header"
-            else grid.value_labels[(0, 0)]
-        )
-
-        target.event_generate("<Button-1>")
+        box = grid.cell_bbox((-1 if target_kind == "header" else 0, 0))
+        grid.frame.event_generate("<Button-1>", x=box[0]+3, y=box[1]+3)
         assert tk_root.focus_get() == grid.frame
 
         grid.frame.event_generate("<Control-c>")

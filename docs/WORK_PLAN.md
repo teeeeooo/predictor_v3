@@ -15,8 +15,12 @@ now has a toolkit-free runner and shared modeless Tk dialog, 10,000-case service
 limit, pinned detail/input provenance, concise result CSV, and separate stale/partial states. Automated
 macOS Tk integration covers the actual section actions and all 22 baseline
 contexts. The candidate-column revision and ISO screenshot review are complete.
-Continuous-resize follow-up now unmaps offscreen cells while retaining grid
-extent/edit state, and adds bottom/right/corner resize targets. Actual mouse
+Continuous-resize follow-up retains native candidate grids with offscreen
+culling and bottom/right/corner resize targets. The subsequent rendering
+performance stages 1-2 are complete: a repeatable native benchmark and shared
+Canvas backend now cover ISO/ISEER comparison and combination rankings.
+See the [table rendering roadmap and evidence](designs/2026-07-12-calculator-table-architecture-design.md#22-calculator-rendering-performance-follow-up-2026-10-16).
+Input/editor migration and broader profile/batch rollout remain pending. Actual mouse
 drag and cursor appearance remain unverified at the user's request, along with
 native OS keyboard, Windows/Linux and multi-monitor/DPI acceptance; these do not
 reopen the separate Predict hold.
@@ -37,25 +41,24 @@ work by default.
 
 ## Exact Next Action
 
-**Calculator follow-up — native platform acceptance only when scheduled.**
-Specification §6.1 and the revised §7 CSV contract are implemented. Candidate
-blocks have point corner headers, a compact single-row status/action/pager below
-each table, and context tabs. The name-entry option is removed; rankings identify
-candidates by their original column numbers only.
-Results support rectangular drag selection and Ctrl/Cmd+C through shared table
-owners, with bounded 100-row pages. CSV contains rank/value/metric, pinned
-capacity/power pairs and standard-specific extra results; provenance remains in
-detail, and partial/stale states also appear in proposed filenames.
-Resize follow-up passed 62 focused native/shared tests, including the actual
-22-context entry path, 10,000-result/100-page resource guard, viewport scrolling,
-keyboard reveal, editor retention and synthetic edge-drag events. Local mean
-resize/update cost fell from 340–351 to 54–57 ms for ISO with 10,000 results and
-from 722–772 to 81 ms for nine-point AHRI. The small initial ISO window remains
-around 41–46 ms; this is not a claim of smooth physical mouse dragging. See the
-specification for methodology and the retained calculation/export evidence.
+**Calculator next slice — reusable input editor, ISO first.**
+Continue the staged rendering roadmap from stage 3: separate native input event/
+editor binding from logical interaction state, retain one reusable native Entry
+per table, then apply it to ISO inputs and combination candidates. Preserve raw
+draft text, paste/clear/undo transactions, IME/focus behavior and natural geometry.
+Keep the existing controller and data/profile adapters; do not clone their logic.
+Other main profiles and BatchCaseTable/BatchMatrixTable follow after that pilot.
+
+The completed read-only pilot passed 157 focused native tests, including all 22
+combination contexts and 100 pages of real 10,000-result AHRI output. Shared input/
+batch controllers and window lifecycle/refit guards passed without changing their
+production behavior. Same-machine page refresh fell from 50→16 ms (ISO) and
+75→19 ms (AHRI); dialog opening from 721→335 ms and 1,028→236 ms respectively.
+Resize improved only about 8–11% for large results; the initial combination
+window is essentially unchanged. Full-app responsiveness is not yet resolved.
+The architecture owner records the measurement conditions and remaining targets.
 Calculation formulas, public result contracts and 15 ms execution chunks remain
-unchanged. Physical mouse/cursor acceptance is deferred until a screen check is
-requested.
+unchanged. Physical mouse/cursor acceptance stays deferred at the user's request.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 
@@ -65,8 +68,10 @@ audit gate unless new native acceptance evidence demonstrates a concrete defect.
 
 ## Ordered Follow-ups
 
-The Calculator combination implementation is complete. The independent
-Windows/Predict sequence remains:
+Calculator continues with the input/editor pilot, remaining main profiles,
+batch tables, then remeasurement of remaining viewport/window/graph costs.
+Keep large detail Treeviews and repair only demonstrated bottlenecks.
+The independent Windows/Predict sequence remains:
 
 1. **Native Windows continuous source-runtime acceptance**, in this order:
    1. protected DRM-sensitive legacy Mapping bootstrap confirmation as needed;

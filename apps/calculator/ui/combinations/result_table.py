@@ -2,7 +2,8 @@
 from tkinter import ttk
 
 from apps.calculator.ui.batch.viewport import BatchTableViewport
-from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.canvas_result_grid import CanvasResultGrid
+from apps.calculator.ui.table.canvas_binding import CanvasTableBinding
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.layout_constants import TABLE_DATA_COLUMN_CHARS
@@ -24,7 +25,8 @@ class ResultPageTable(ttk.Frame):
         self.identities = ()
         self.run_id = None
         self.renderer = None
-        self.interaction_controller = TkTableController(self)
+        self.interaction_controller = TkTableController(
+            self, presentation=CanvasTableBinding(lambda: self.renderer))
         self.set_page(("순위", "값", "지표"), (), (), None)
 
     def set_page(self, headers, rows, identities, run_id):
@@ -44,15 +46,13 @@ class ResultPageTable(ttk.Frame):
         if headers != self.headers:
             if self.renderer:
                 self.renderer.frame.destroy()
-            self.renderer = CompactResultGrid(self.viewport.content, headers=headers,
+            self.renderer = CanvasResultGrid(self.viewport.content, headers=headers,
                 column_widths=(TABLE_DATA_COLUMN_CHARS,) * len(headers),
-                identity_columns=frozenset(range(2, len(headers))), surface_role="ranked_result_page")
+                identity_columns=frozenset(range(2, len(headers))), surface_role="ranked_result_page",
+                viewport=self.viewport)
             self.renderer.pack(anchor="nw")
-            for binding in ("<Control-c>", "<Command-c>"):
-                self.renderer.frame.bind(binding, self.copy)
         self.headers, self.rows, self.identities, self.run_id = headers, rows, identities, run_id
         self.renderer.set_rows(rows)
-        self.viewport.track_grid(self.renderer.frame)
         for attr in ("anchor", "active"):
             previous = saved.get(attr)
             position = None
@@ -95,18 +95,9 @@ class ResultPageTable(ttk.Frame):
     def restore_snapshot(self, snapshot):
         pass
 
-    def cell_frame(self, position):
-        return self.renderer.value_cells[position]
-
-    def cell_widget(self, position):
-        return self.renderer.value_labels[position]
-
     def focus_widget(self, position):
-        self.viewport.reveal_cell(self.cell_frame(position))
-        return self.cell_widget(position)
-
-    def default_cell_background(self, position):
-        return self.renderer.policy.body_background
+        self.renderer.reveal(position)
+        return self.renderer.frame
 
     def copy(self, event=None):
         return self.interaction_controller._copy(event)

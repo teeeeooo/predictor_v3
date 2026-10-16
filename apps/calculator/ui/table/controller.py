@@ -22,14 +22,15 @@ from apps.calculator.ui.table.interaction_core import (
     selection_bounds,
 )
 from apps.calculator.ui.table.roles import is_mutable
-from apps.calculator.ui.table.surface import TkTableSurface
+from apps.calculator.ui.table.surface import TablePresentation, TableSurface
 
 
 class TkTableController:
     """Owns Excel-like interaction for one Tk table surface."""
 
-    def __init__(self, table: TkTableSurface) -> None:
+    def __init__(self, table: TableSurface, *, presentation: TablePresentation | None = None) -> None:
         self.table = table
+        self.presentation = presentation
         self.anchor: CellAddress | None = None
         self.active: CellAddress | None = None
         self._mode = "none"
@@ -55,6 +56,12 @@ class TkTableController:
         )
 
     def refresh(self) -> None:
+        if self.presentation is not None:
+            self.presentation.refresh(self)
+            self._clamp_active()
+            self._paint_selection()
+            return
+        # The default native backend requires the extended TkTableSurface.
         self._widget_positions.clear()
         for row in range(self.table.row_count()):
             for column in range(self.table.column_count()):
@@ -85,7 +92,8 @@ class TkTableController:
         self._paint_selection()
 
     def _dispatch(self, event, handler):
-        position = self._widget_positions.get(event.widget)
+        position = (self.presentation.position_at(event) if self.presentation is not None
+                    else self._widget_positions.get(event.widget))
         if position is None:
             return "break"
         return handler(event, position)
@@ -144,8 +152,11 @@ class TkTableController:
         return "break"
 
     def _drag(self, event) -> str:
-        widget = self.table.winfo_containing(event.x_root, event.y_root)
-        position = self._widget_positions.get(widget)
+        if self.presentation is not None:
+            position = self.presentation.position_at(event)
+        else:
+            widget = self.table.winfo_containing(event.x_root, event.y_root)
+            position = self._widget_positions.get(widget)
         if position is not None:
             self.select(position, extend=True)
         return "break"
@@ -321,6 +332,9 @@ class TkTableController:
         widget.icursor("end")
 
     def _paint_selection(self) -> None:
+        if self.presentation is not None:
+            self.presentation.paint_selection(self.selection_bounds, self.active)
+            return
         selected = set(self.selected_positions())
         for row in range(self.table.row_count()):
             for column in range(self.table.column_count()):

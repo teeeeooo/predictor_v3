@@ -23,6 +23,7 @@ class BatchTableViewport(ttk.Frame):
     ) -> None:
         super().__init__(master, name="batch_table_viewport")
         self._reserve_vertical_scrollbar = reserve_vertical_scrollbar
+        self._view_observers = set()
         self.surface_role = "batch_table_viewport"
         self.layout_policy = "table_local_two_axis_scroll_containment"
         self.rowconfigure(0, weight=1)
@@ -45,8 +46,8 @@ class BatchTableViewport(ttk.Frame):
             command=self.canvas.xview,
         )
         self.canvas.configure(
-            yscrollcommand=self.scrollbar.set,
-            xscrollcommand=self.horizontal_scrollbar.set,
+            yscrollcommand=self._vertical_view_changed,
+            xscrollcommand=self._horizontal_view_changed,
         )
         self.canvas.grid(row=0, column=0, sticky="nsew")
         # Keep the horizontal affordance stable. Dynamically adding/removing it
@@ -124,8 +125,6 @@ class BatchTableViewport(ttk.Frame):
         if not hasattr(self, "_grid_culler"):
             from apps.calculator.ui.table.viewport_grid import ViewportGridCuller
             self._grid_culler = ViewportGridCuller(self.canvas)
-            self.canvas.configure(xscrollcommand=self._horizontal_view_changed,
-                                  yscrollcommand=self._vertical_view_changed)
         self._grid_culler.track(grid)
 
     def reveal_cell(self, cell: tk.Misc) -> None:
@@ -134,11 +133,45 @@ class BatchTableViewport(ttk.Frame):
 
     def _horizontal_view_changed(self, first, last):
         self.horizontal_scrollbar.set(first, last)
-        self._grid_culler.schedule()
+        self._notify_view_changed()
 
     def _vertical_view_changed(self, first, last):
         self.scrollbar.set(first, last)
-        self._grid_culler.schedule()
+        self._notify_view_changed()
+
+    def observe_view(self, callback):
+        """Subscribe a drawn surface to viewport changes; return its disposer."""
+        self._view_observers.add(callback)
+        return lambda: self._view_observers.discard(callback)
+
+    def _notify_view_changed(self):
+        if hasattr(self, "_grid_culler"):
+            self._grid_culler.schedule()
+        for callback in tuple(self._view_observers):
+            callback()
+
+    def visible_rect(self, widget):
+        """Viewport bounds in a child surface's coordinates."""
+        left = self.canvas.winfo_rootx()-widget.winfo_rootx()
+        top = self.canvas.winfo_rooty()-widget.winfo_rooty()
+        return left, top, left+self.canvas.winfo_width(), top+self.canvas.winfo_height()
+
+    def reveal_rect(self, widget, box):
+        """Reveal a logical cell without requiring a native widget for that cell."""
+        # Explicit keyboard/click navigation only, never a Configure handler.
+        self.canvas.update_idletasks()
+        bounds = self.canvas.bbox("all")
+        if bounds is None:
+            return
+        left, top, right, bottom = self.visible_rect(widget)
+        for first, last, visible_first, visible_last, start, length, view, move in (
+            (box[0], box[2], left, right, bounds[0], bounds[2]-bounds[0], self.canvas.canvasx(0), self.canvas.xview_moveto),
+            (box[1], box[3], top, bottom, bounds[1], bounds[3]-bounds[1], self.canvas.canvasy(0), self.canvas.yview_moveto),
+        ):
+            delta = first-visible_first if first < visible_first else max(0, last-visible_last)
+            if delta and length:
+                move((view+delta-start)/length)
+        self._notify_view_changed()
 
     def preferred_content_size(self) -> tuple[int, int]:
         """Return the table surface's natural size before viewport allocation."""
@@ -179,11 +212,13 @@ class BatchTableViewport(ttk.Frame):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         self._sync_content_width(self.canvas.winfo_width())
         self._sync_scrollbar_visibility()
+        self._notify_view_changed()
 
     def _on_canvas_configured(self, event: tk.Event | None = None) -> None:
         if event is not None:
             self._sync_content_width(event.width)
         self._sync_scrollbar_visibility()
+        self._notify_view_changed()
 
     def _sync_content_width(self, viewport_width: int) -> None:
         content_width = max(viewport_width, self.content.winfo_reqwidth())

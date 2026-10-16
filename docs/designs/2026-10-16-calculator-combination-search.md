@@ -619,7 +619,7 @@ results, and difficulty finding the bottom resize cursor.
 The large-result cost came from mapped native Frame/Label/Entry cells outside
 the viewport. A 100-row page bounds allocation but still leaves up to 1,500
 result cells participating in native painting/clipping during resize. Combination
-candidate and result grids now opt into `ViewportGridCuller` through the existing
+candidate and result grids initially opted into `ViewportGridCuller` through the existing
 `BatchTableViewport`: retain widgets, data, row/column extents and focus, unmap
 offscreen cells with one-cell overscan, and remap on scroll/resize or explicit
 keyboard navigation. The helper owns only fixed, unspanned cell grids; other
@@ -657,3 +657,14 @@ contexts, and stable widgets/callbacks across 100 result pages. Callback errors
 were absent in the final timing probe. The user requested proceeding without a
 screen check: physical mouse dragging, OS-rendered cursors, Windows/Linux and
 multi-monitor/DPI remain unverified.
+
+### Canvas result follow-up
+
+The subsequent [table rendering pilot](2026-07-12-calculator-table-architecture-design.md#22-calculator-rendering-performance-follow-up-2026-10-16)
+replaces only the result grid's native cell widgets with `CanvasResultGrid`.
+`ViewportGridCuller` remains for candidate inputs. Results keep their 100-row page,
+10,000-case limit, selected-ordinal identity and existing copy/export/detail schema;
+`TkTableController` still owns rectangular selection and keyboard behavior.
+Full logical geometry remains independent of visible Canvas items, preserving
+natural window fitting and scroll extent. The linked owner records the repeatable
+benchmark, before/after results, remaining input-rendering work and verification.
