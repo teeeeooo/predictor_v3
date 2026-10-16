@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from apps.calculator.ui.en14825.settings_presentation import COMMON_TITLE, COMMON_COLUMNS
+
 from collections.abc import Mapping
 import tkinter as tk
 from tkinter import ttk
@@ -182,17 +184,12 @@ class En14825Tab(ttk.Frame):
             self._syncing_common_inputs = False
 
     def _create_common_input_panel(self, parent: tk.Widget) -> ttk.LabelFrame:
-        common_frame = ttk.LabelFrame(parent, text="공통 입력")
+        common_frame = ttk.LabelFrame(parent, text=COMMON_TITLE)
         common_frame.pack(fill=tk.X, padx=4, pady=(4, 0))
         common_frame.columnconfigure(0, weight=0)
         table = MetricInputTable(
             common_frame,
-            columns=(
-                ("p_to", "Pto [W]"),
-                ("p_sb", "Psb [W]"),
-                ("p_ck", "Pck [W]"),
-                ("p_off", "Poff [W]"),
-            ),
+            columns=COMMON_COLUMNS,
             rows=(("common", "입력값"),),
             editable_cells={
                 ("common", "p_to"): "p_to",

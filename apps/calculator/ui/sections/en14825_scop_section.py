@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from apps.calculator.ui.en14825.settings_presentation import (
+    SCOP_DESIGN_TITLE, SCOP_CD_COLUMNS, SCOP_CLIMATE_COLUMNS,
+)
+
 from collections.abc import Callable, Mapping
 import tkinter as tk
 from tkinter import ttk
@@ -98,12 +102,12 @@ class En14825ScopSection:
         )
 
         # Specs Frame (Cd)
-        specs_frame = ttk.LabelFrame(aux_frame, text="설계 사양")
+        specs_frame = ttk.LabelFrame(aux_frame, text=SCOP_DESIGN_TITLE)
         specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, CONTROL_GROUP_GAP))
         specs_frame.columnconfigure(0, weight=0)
         self.cd_table = MetricInputTable(
             specs_frame,
-            columns=(("cd", "Cd"),),
+            columns=SCOP_CD_COLUMNS,
             rows=(("design", "입력값"),),
             editable_cells={("design", "cd"): "cd"},
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
@@ -214,11 +218,7 @@ class En14825ScopSection:
 
             climate_table = MetricInputTable(
                 inputs_frame,
-                columns=(
-                    ("p_design_h", "Pdesignh [W]"),
-                    ("tbiv", "Tbiv [°C]"),
-                    ("tol", "TOL [°C]"),
-                ),
+                columns=SCOP_CLIMATE_COLUMNS,
                 rows=(("design", "입력값"),),
                 editable_cells={
                     ("design", "p_design_h"): "p_design_h",

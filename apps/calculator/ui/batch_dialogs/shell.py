@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Generic, Protocol, TypeVar
 
 from apps.calculator.ui.window_geometry import parent_centered_content_geometry
+from apps.calculator.ui.window_measurement import content_size_with_margins
 
 SnapshotT = TypeVar("SnapshotT", covariant=True)
 
@@ -42,9 +43,11 @@ class BatchDialogShell(Generic[SnapshotT]):
         *,
         on_close: Callable[[SnapshotT], None] | None = None,
         resize_edges: bool = False,
+        content_margins: bool = False,
     ) -> None:
         self._on_close = on_close
         self._adapter = adapter
+        self._content_margins = content_margins
         self.window = tk.Toplevel(parent)
         self.window.withdraw()
         self.window.title(self._adapter.title)
@@ -107,10 +110,12 @@ class BatchDialogShell(Generic[SnapshotT]):
                     preferred_height - widget.winfo_reqheight(),
                 )
             pending.extend(widget.winfo_children())
-        return (
-            requested_size[0] + max(0, width_delta),
-            requested_size[1] + max(0, height_delta),
-        )
+        content_width = self.content_widget.winfo_reqwidth() + max(0, width_delta)
+        content_height = self.content_widget.winfo_reqheight() + max(0, height_delta)
+        if self._content_margins:
+            content_width, content_height = content_size_with_margins(content_width, content_height)
+        return (requested_size[0] - self.content_widget.winfo_reqwidth() + content_width,
+                requested_size[1] - self.content_widget.winfo_reqheight() + content_height)
 
     def snapshot(self) -> SnapshotT:
         return self._adapter.snapshot()

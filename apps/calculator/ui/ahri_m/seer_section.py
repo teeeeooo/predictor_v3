@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .settings_presentation import SEER_COLUMNS
+
 from collections.abc import Callable
 import tkinter as tk
 from tkinter import ttk
@@ -31,7 +33,7 @@ class AhriMSeerSection:
         self._frame = ttk.LabelFrame(parent, text="SEER")
         self._frame.columnconfigure(0, weight=1)
         self.numeric_table = MetricInputTable(
-            self._frame, columns=(("cd", "CDc"),), rows=(("value", "Value"),),
+            self._frame, columns=SEER_COLUMNS, rows=(("value", "Value"),),
             editable_cells={("value", "cd"): "cd"}, visual_style="shared",
         )
         self.numeric_table.grid(row=0, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(ISO_SECTION_BLOCK_GAP, 6))

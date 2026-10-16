@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from .settings_presentation import (
+    FLAG_LABELS, HSPF2_RANGE_COLUMNS, HSPF2_ANCHOR_COLUMNS, HSPF2_ANCHOR_ROWS,
+    hspf2_numeric_columns, DEFROST_CHOICES,
+)
+
 from collections.abc import Callable, Mapping
 import tkinter as tk
 from tkinter import ttk
@@ -21,6 +26,7 @@ from apps.calculator.application.ahri.product_defaults import (
 )
 from apps.calculator.ui.layout_constants import (
     CONTROL_COMPACT_GAP,
+    CONTROL_DEFROST_SELECTOR_WIDTH_CHARS,
     CONTROL_GROUP_GAP,
     CONTROL_ROW_PADY,
     METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,
@@ -116,15 +122,15 @@ class AhriHspf2ProductSurface:
         )
         options = (
             (
-                ("H4Full tested", self.h4_full_var),
-                ("H2Low tested", self.h2_low_var),
-                ("Low-stage lockout", self.low_lockout_var),
+                (FLAG_LABELS["measured_h4_full"], self.h4_full_var),
+                (FLAG_LABELS["measured_h2_low"], self.h2_low_var),
+                (FLAG_LABELS["low_stage_lockout_enabled"], self.low_lockout_var),
             )
             if self.product == "dual_stage"
             else (
-                ("H2Low tested", self.h2_low_var),
-                ("H2Boost tested", self.h2_boost_var),
-                ("H3Low tested", self.h3_low_var),
+                (FLAG_LABELS["measured_h2_low"], self.h2_low_var),
+                (FLAG_LABELS["measured_h2_boost"], self.h2_boost_var),
+                (FLAG_LABELS["measured_h3_low"], self.h3_low_var),
             )
         )
         self.h2_low_checkbutton: ttk.Checkbutton | None = None
@@ -146,9 +152,9 @@ class AhriHspf2ProductSurface:
         self.defrost_selector = ttk.Combobox(
             frame,
             textvariable=self.defrost_mode_var,
-            values=("none", "explicit_override", "calculated_from_timing"),
+            values=DEFROST_CHOICES,
             state="readonly",
-            width=22,
+            width=CONTROL_DEFROST_SELECTOR_WIDTH_CHARS,
         )
         self.defrost_selector.pack(
             side=tk.LEFT,
@@ -170,25 +176,7 @@ class AhriHspf2ProductSurface:
     def _build_numeric_table(
         self, snapshot: Mapping[str, object]
     ) -> MetricInputTable:
-        columns = [
-            ("cut_out_c", "Cut Out [°C]"),
-            ("cut_in_c", "Cut In [°C]"),
-            ("cd_low", "Cd Low"),
-            ("cd_full", "Cd Full"),
-        ]
-        if self.product == "triple_capacity_northern":
-            columns.append(("cd_boost", "Cd Boost"))
-        columns.extend(
-            (
-                ("defrost_factor", "Fdef"),
-                ("defrost_t_test_minutes", "Ttest [min]"),
-                ("defrost_t_max_minutes", "Tmax [min]"),
-            )
-        )
-        if self.product == "dual_stage":
-            columns.append(
-                ("low_stage_lockout_temp_c", "Low Lockout [°C]")
-            )
+        columns = hspf2_numeric_columns(self.product)
         table = MetricInputTable(
             self.frame,
             columns=tuple(columns),
@@ -219,8 +207,8 @@ class AhriHspf2ProductSurface:
     ) -> MetricInputTable:
         table = MetricInputTable(
             self.frame,
-            columns=(("A2", "A2"),),
-            rows=(("capacity", "Capacity [Btu/h]"),),
+            columns=HSPF2_ANCHOR_COLUMNS,
+            rows=HSPF2_ANCHOR_ROWS,
             editable_cells={("capacity", "A2"): "a2_capacity"},
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,
@@ -296,14 +284,7 @@ class AhriHspf2ProductSurface:
     def _build_range_table(
         self, snapshot: Mapping[str, object]
     ) -> MetricInputTable:
-        columns = (
-            ("low_min_c", "Low Min [°C]"),
-            ("low_max_c", "Low Max [°C]"),
-            ("full_min_c", "Full Min [°C]"),
-            ("full_max_c", "Full Max [°C]"),
-            ("boost_min_c", "Boost Min [°C]"),
-            ("boost_max_c", "Boost Max [°C]"),
-        )
+        columns = HSPF2_RANGE_COLUMNS
         table = MetricInputTable(
             self.frame,
             columns=columns,

@@ -24,6 +24,7 @@ from apps.calculator.ui.layout_constants import (
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
+from .settings_presentation import SEER2_DUAL_COLUMNS, FLAG_LABELS
 
 
 class AhriSeer2ProductSurface:
@@ -101,7 +102,7 @@ class AhriSeer2ProductSurface:
         )
         ttk.Checkbutton(
             option_frame,
-            text="Low-stage lockout",
+            text=FLAG_LABELS["low_stage_lockout_enabled"],
             variable=self.lockout_var,
             command=self._on_values_changed,
         ).pack(
@@ -111,11 +112,7 @@ class AhriSeer2ProductSurface:
         )
         self.options_table = MetricInputTable(
             option_frame,
-            columns=(
-                ("cd_low", "Cd Low"),
-                ("cd_full", "Cd Full"),
-                ("low_stage_lockout_temp_f", "Lockout [°F]"),
-            ),
+            columns=SEER2_DUAL_COLUMNS,
             rows=(("value", "Value"),),
             editable_cells={
                 ("value", "cd_low"): "cd_low",

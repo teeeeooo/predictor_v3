@@ -12,10 +12,22 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any, Callable, ContextManager, Mapping
 
-from apps.calculator.ui.layout_constants import APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO
+from apps.calculator.ui.layout_constants import (
+    APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO, APP_WINDOW_CONTENT_MARGIN_HEIGHT_CAP,
+)
 
 
 SuppressMeasurement = Callable[[], ContextManager[object]]
+
+
+def content_size_with_margins(
+    width: int, height: int, *, scrollbar_width: int = 0,
+    horizontal_margin_ratio: float = APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
+    vertical_margin_cap: int = APP_WINDOW_CONTENT_MARGIN_HEIGHT_CAP,
+) -> tuple[int, int]:
+    """Shared natural-content allowance for the main window and opt-in dialogs."""
+    return (int(width * (1 + horizontal_margin_ratio)) + scrollbar_width,
+            height + min(int(height * horizontal_margin_ratio), vertical_margin_cap))
 
 
 @dataclass(frozen=True)
@@ -54,7 +66,7 @@ class TkVisibleContentMeasurement:
         nested_notebook_active: Callable[[], bool] | None = None,
         suppress_measurement: SuppressMeasurement | None = None,
         horizontal_margin_ratio: float = APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
-        vertical_margin_cap: int = 18,
+        vertical_margin_cap: int = APP_WINDOW_CONTENT_MARGIN_HEIGHT_CAP,
     ) -> None:
         self._content = content
         self._scrollbar = scrollbar
@@ -129,11 +141,10 @@ class TkVisibleContentMeasurement:
                 (self._chrome_height_estimate or 0) + nested.current_tab_height,
             )
 
-        margin = self._horizontal_margin_ratio
-        vertical_margin = min(int(content_height * margin), self._vertical_margin_cap)
-        preferred_size = (
-            int(content_width * (1 + margin)) + self._scrollbar.winfo_reqwidth(),
-            content_height + vertical_margin,
+        preferred_size = content_size_with_margins(
+            content_width, content_height, scrollbar_width=self._scrollbar.winfo_reqwidth(),
+            horizontal_margin_ratio=self._horizontal_margin_ratio,
+            vertical_margin_cap=self._vertical_margin_cap,
         )
         overflow_delta = self._overflow_source.vertical_overflow_delta()
         diagnostics = {

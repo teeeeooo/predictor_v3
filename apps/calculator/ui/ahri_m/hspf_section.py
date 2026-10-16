@@ -22,6 +22,7 @@ from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDeta
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.table.controller import TkTableController
 from .detail_schema import AHRI_M_HSPF_DETAIL_SCHEMA
+from .settings_presentation import HSPF_COLUMNS, HSPF_FLAG_LABELS
 
 
 class AhriMHspfSection:
@@ -33,7 +34,7 @@ class AhriMHspfSection:
         self._build_options()
         self.numeric_table = MetricInputTable(
             self._frame,
-            columns=(("cd", "CDh"), ("defrost_credit", "Defrost Credit"), ("defrost_test_minutes", "Defrost Test [min]"), ("defrost_max_minutes", "Defrost Max [min]"), ("cut_out_c", "Cut Out [°C]"), ("cut_in_c", "Cut In [°C]")),
+            columns=HSPF_COLUMNS,
             rows=(("value", "Value"),),
             editable_cells={("value", key): key for key in ("cd", "defrost_test_minutes", "defrost_max_minutes", "cut_out_c", "cut_in_c")},
             data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS, visual_style="shared",
@@ -90,12 +91,12 @@ class AhriMHspfSection:
         self.cutout_var = tk.BooleanVar(master=self._frame, value=True)
         self.demand_defrost_var = tk.BooleanVar(master=self._frame, value=False)
         ttk.Label(frame, text="Measured:").pack(side=tk.LEFT, padx=(0, CONTROL_COMPACT_GAP))
-        ttk.Checkbutton(frame, text="H12", variable=self.h12_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(frame, text="H22", variable=self.h22_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(frame, text=HSPF_FLAG_LABELS["measured_h12"], variable=self.h12_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(frame, text=HSPF_FLAG_LABELS["measured_h22"], variable=self.h22_var).pack(side=tk.LEFT)
         ttk.Label(frame, text="Flags:").pack(side=tk.LEFT, padx=(CONTROL_GROUP_GAP, CONTROL_COMPACT_GAP))
-        ttk.Checkbutton(frame, text="H1N=H32 Hz", variable=self.h1n_same_speed_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(frame, text="Demand Defrost", variable=self.demand_defrost_var).pack(side=tk.LEFT, padx=(CONTROL_GROUP_GAP, 0))
-        ttk.Checkbutton(frame, text="Automatic Cutout", variable=self.cutout_var).pack(side=tk.LEFT, padx=(CONTROL_GROUP_GAP, CONTROL_ROW_PADY))
+        ttk.Checkbutton(frame, text=HSPF_FLAG_LABELS["h1n_same_speed_as_h32"], variable=self.h1n_same_speed_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(frame, text=HSPF_FLAG_LABELS["demand_defrost"], variable=self.demand_defrost_var).pack(side=tk.LEFT, padx=(CONTROL_GROUP_GAP, 0))
+        ttk.Checkbutton(frame, text=HSPF_FLAG_LABELS["automatic_cutout"], variable=self.cutout_var).pack(side=tk.LEFT, padx=(CONTROL_GROUP_GAP, CONTROL_ROW_PADY))
 
     def pack(self, **kwargs): self._frame.pack(**kwargs)
     def _toggle_detail(self): self._detail_visibility.toggle()

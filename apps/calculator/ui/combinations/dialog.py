@@ -4,7 +4,7 @@ from tkinter import ttk
 
 from apps.calculator.application.combinations.service import preflight, start
 from apps.calculator.ui.layout_constants import (
-    BATCH_DIALOG_SAFETY_MIN_SIZE, APP_WINDOW_FALLBACK_MIN_HEIGHT, COMBINATION_DIALOG_PREFERRED_WIDTH,
+    BATCH_DIALOG_SAFETY_MIN_SIZE, APP_WINDOW_FALLBACK_MIN_HEIGHT,
 )
 from .candidates import CandidatePanel
 from .results import ResultsPanel
@@ -24,7 +24,6 @@ class CombinationContent:
 
     def build_content(self, parent):
         self.frame = ttk.Frame(parent)
-        self.frame.preferred_content_size = self.preferred_content_size
         self.frame.columnconfigure(0, weight=1)
         # Reserve editing space independently of the current candidate count.
         # Without a uniform group, the result table's requested height takes
@@ -64,6 +63,12 @@ class CombinationContent:
         self.results.grid(row=5, column=0, sticky="nsew")
         self.candidates.refresh(self.points)
         self.refresh()
+        # Seed the hidden viewport requests from actual tables, not Canvas's
+        # default size. The shell can then measure the same natural layout as
+        # the main page without adding a second width/height contribution.
+        for viewport in (self.candidates.viewport, self.results.table.viewport):
+            _, height = viewport.preferred_content_size()
+            viewport.sync(height)
         return self.frame
 
     def change_context(self, _event=None):
@@ -72,9 +77,6 @@ class CombinationContent:
         index = self.context_tabs.index("current")
         if index != self.context_index:
             self.manager.select(index)
-
-    def preferred_content_size(self):
-        return max(COMBINATION_DIALOG_PREFERRED_WIDTH, self.frame.winfo_reqwidth()), self.frame.winfo_reqheight()
 
     def change_common(self, changes):
         if self.disposed or self.settings.locked:

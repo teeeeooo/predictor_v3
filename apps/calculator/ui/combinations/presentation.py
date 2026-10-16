@@ -3,32 +3,7 @@ TITLES = dict(iso="ISO / ISEER", hong_kong_cspf="Hong Kong CSPF", hong_kong_hspf
               saso="SASO T3", brazil="Brazil CSPF", korea_cspf="KS C 9306 CSPF", korea_hspf="KS C 9306 HSPF",
               en_seer="EN14825 SEER · Tested", en_scop="EN14825 SCOP · Tested", m_seer="AHRI M SEER",
               m_hspf="AHRI M HSPF", seer2="AHRI M1 SEER2", hspf2="AHRI M1 HSPF2")
-LABELS = {
-    "declared_capacity": "정격 냉방능력 [W]", "rated_cooling_capacity": "정격 냉방능력 [W]",
-    "a2_capacity": "A2 / AFull [Btu/h]", "p_design_c_w": "Pdesignc [W]", "p_design_h_w": "Pdesignh [W]",
-    "t_design_c": "Tdesignc [°C]", "tbiv_temp_c": "Tbiv [°C]", "tol_temp_c": "TOL [°C]",
-    "p_to_w": "Pto [W]", "p_sb_w": "Psb [W]", "p_ck_w": "Pck [W]", "p_off_w": "Poff [W]",
-    "cd": "Cd", "cd_low": "Cd Low", "cd_full": "Cd Full", "cd_boost": "Cd Boost",
-    "cut_out_c": "Cut-out [°C]", "cut_in_c": "Cut-in [°C]", "defrost_credit": "Defrost credit",
-    "defrost_factor": "Defrost factor", "defrost_mode": "제상 모드", "appliance_type": "기기 형식",
-    "defrost_test_minutes": "Ttest [min]", "defrost_max_minutes": "Tmax [min]",
-    "defrost_t_test_minutes": "Ttest [min]", "defrost_t_max_minutes": "Tmax [min]",
-    "low_stage_lockout_enabled": "Low stage lockout", "low_stage_lockout_temp_f": "Lockout [°F]",
-    "low_stage_lockout_temp_c": "Low Lockout [°C]", "automatic_cutout": "자동 Cut-out",
-    "demand_defrost": "Demand defrost", "minimum_speed_limited": "최저 속도 제한",
-    "h1n_same_speed_as_h32": "H1N / H32 동일 속도", "region": "Region", "product_classification": "제품 형식",
-}
 STATUS = {"running":"계산 중", "completed":"완료", "completed-with-errors":"완료 (오류 포함)", "cancelled":"취소됨", "failed":"실행 실패"}
-
-
-def field_label(key):
-    if key in LABELS:
-        return LABELS[key]
-    if key.startswith("measured_"):
-        return key.removeprefix("measured_").replace("_", " ").upper()+" 실측"
-    if key.endswith(("_min_c", "_max_c")):
-        return key.replace("_min_c", " 최저 [°C]").replace("_max_c", " 최고 [°C]").title()
-    return key.replace("_", " ")
 
 
 def context_tab_labels(contexts):
@@ -47,14 +22,7 @@ def context_tab_labels(contexts):
                 products.get(context.product, context.product), context.system_type,
                 modes.get(context.mode, context.mode)) if value)
         labels.append(label)
-    # Options create separate sessions. Keep their tabs distinct and concise;
-    # The selected session's flags remain visible above its candidate tables.
-    counts = {}
-    result = []
-    for label in labels:
-        counts[label] = counts.get(label, 0) + 1
-        result.append(f"{label} · 설정 {counts[label]}" if labels.count(label) > 1 else label)
-    return result
+    return labels
 
 
 def point_title(point):

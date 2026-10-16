@@ -1,7 +1,6 @@
 """Per-section dialog handle and external session store."""
 from tkinter import ttk
 from dataclasses import replace
-from apps.calculator.application.combinations.models import Session
 
 from apps.calculator.application.combinations.adapters import StandardAdapter, seed_session
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
@@ -41,7 +40,7 @@ class CombinationManager:
     def create(self):
         content = CombinationContent(self, self.current)
         return BatchDialogShell(self.parent.winfo_toplevel(), content,
-                                on_close=self.handle.clear, resize_edges=True)
+                                on_close=self.handle.clear, resize_edges=True, content_margins=True)
 
     def select(self, index):
         context = self.contexts[index]
@@ -54,17 +53,17 @@ class CombinationManager:
             self.handle.open_or_focus(self.create)
 
     def change_options(self, options):
+        if self.current.run is not None and self.current.run.status == "running":
+            return
         if self.handle.dialog:
             self.handle.dialog.snapshot()
         context = replace(self.current.context, options=tuple(options.items()))
-        if context.identity not in self.sessions:
-            self.sessions[context.identity] = Session(context, {k: list(v) for k,v in self.current.pools.items()})
-            self.contexts.append(context)
-        self.current = self.sessions[context.identity]
+        if context.options == self.current.context.options:
+            return
+        self.current.context = context
+        self.current.changed()
         if self.handle.dialog:
-            self.handle.dialog.replace_content(CombinationContent(self, self.current))
-        else:
-            self.handle.open_or_focus(self.create)
+            self.handle.dialog._adapter.refresh()
 
     def reload_source(self):
         return next((ctx for ctx in self.source() if ctx.identity == self.current.context.identity), None)

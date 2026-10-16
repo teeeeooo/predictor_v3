@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from apps.calculator.ui.en14825.settings_presentation import SEER_DESIGN_TITLE, SEER_DESIGN_COLUMNS
+
 from collections.abc import Callable, Mapping
 import tkinter as tk
 from tkinter import ttk
@@ -116,16 +118,12 @@ class En14825SeerSection:
         )
 
         # Design Specs Frame (Pdesignc, Tdesignc, Cd)
-        design_frame = ttk.LabelFrame(aux_frame, text="설계 사양 (Design Specs)")
+        design_frame = ttk.LabelFrame(aux_frame, text=SEER_DESIGN_TITLE)
         design_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, CONTROL_GROUP_GAP))
         design_frame.columnconfigure(0, weight=0)
         self.design_table = MetricInputTable(
             design_frame,
-            columns=(
-                ("p_design_c", "Pdesignc [W]"),
-                ("t_design_c", "Tdesignc [°C]"),
-                ("cd", "Cd"),
-            ),
+            columns=SEER_DESIGN_COLUMNS,
             rows=(("design", "입력값"),),
             editable_cells={
                 ("design", "p_design_c"): "p_design_c",

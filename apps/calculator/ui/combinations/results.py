@@ -54,7 +54,7 @@ class ResultsPanel(ttk.Frame):
             rows.append(values)
             identities.append(row.ordinal)
         self.table.set_page(columns, rows, identities, run.snapshot.id)
-        self.caption.configure(text=f"{STATUS[run.status]} · {'부분 결과 · ' if run.partial else ''}{'입력 변경됨(stale) · ' if self.session.stale else ''}"
+        self.caption.configure(text=f"{STATUS[run.status]} · {'부분 결과 · ' if run.partial else ''}{'입력 변경됨 · 재계산 필요 · ' if self.session.stale else ''}"
                                f"성공 {run.succeeded} / 오류 {run.failed} · {run.processed}/{run.snapshot.planned} · 페이지 {self.page+1}")
 
     def move(self, delta):

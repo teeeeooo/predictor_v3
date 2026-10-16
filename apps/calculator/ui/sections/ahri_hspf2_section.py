@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from apps.calculator.ui.ahri.settings_presentation import (
+    HSPF2_VARIABLE_COLUMNS, HSPF2_ANCHOR_COLUMNS, HSPF2_ANCHOR_ROWS, FLAG_LABELS,
+)
+
 from collections.abc import Callable
 import tkinter as tk
 from tkinter import ttk
@@ -189,9 +193,9 @@ class AhriHspf2Section:
             side=tk.LEFT, padx=(0, CONTROL_COMPACT_GAP)
         )
         for label, variable in (
-            ("H42", self.h42_var),
-            ("H12", self.h12_var),
-            ("H22", self.h22_var),
+            (FLAG_LABELS["measured_h42"], self.h42_var),
+            (FLAG_LABELS["measured_h12"], self.h12_var),
+            (FLAG_LABELS["measured_h22"], self.h22_var),
         ):
             ttk.Checkbutton(
                 self._variable_option_group, text=label, variable=variable
@@ -201,24 +205,19 @@ class AhriHspf2Section:
         )
         ttk.Checkbutton(
             self._variable_option_group,
-            text="H1N=H32 Hz",
+            text=FLAG_LABELS["h1n_same_speed_as_h32"],
             variable=self.h1n_same_speed_var,
         ).pack(side=tk.LEFT)
         ttk.Checkbutton(
             self._variable_option_group,
-            text="MinSpd",
+            text=FLAG_LABELS["minimum_speed_limited"],
             variable=self.minimum_speed_var,
         ).pack(side=tk.LEFT, padx=(0, CONTROL_ROW_PADY))
 
     def _build_numeric_table(self) -> MetricInputTable:
         table = MetricInputTable(
             self._frame,
-            columns=(
-                ("cd", "Cd"),
-                ("defrost_credit", "Defrost Credit"),
-                ("cut_out_c", "Cut Out [°C]"),
-                ("cut_in_c", "Cut In [°C]"),
-            ),
+            columns=HSPF2_VARIABLE_COLUMNS,
             rows=(("value", "Value"),),
             editable_cells={
                 ("value", key): key
@@ -234,8 +233,8 @@ class AhriHspf2Section:
     def _build_a2_table(self) -> MetricInputTable:
         table = MetricInputTable(
             self._frame,
-            columns=(("A2", "A2"),),
-            rows=(("capacity", "Capacity [Btu/h]"),),
+            columns=HSPF2_ANCHOR_COLUMNS,
+            rows=HSPF2_ANCHOR_ROWS,
             editable_cells={("capacity", "A2"): "a2_capacity"},
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,

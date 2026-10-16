@@ -51,8 +51,10 @@ class Context:
 
     @property
     def identity(self):
+        # Editable options belong to this session's draft, not to tab identity.
+        # A completed run retains its original options in Snapshot.context.
         return (self.kind, self.profile, self.climate, self.product,
-                self.system_type, self.mode, self.options)
+                self.system_type, self.mode)
 
 
 @dataclass(frozen=True)

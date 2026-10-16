@@ -96,6 +96,18 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             common_keys = set(content.settings.field_tables) | set(content.settings.options.selectors).intersection({"appliance_type"})
             assert common_keys == set(dict(content.session.context.values))
             assert all(table.row_count() == 1 for table in content.settings.tables)
+            main_tables = list(tables(section._frame))
+            if context.kind.startswith("en_"):
+                main_tables += app.en14825_tab._common_input_tables
+            aliases = {"p_design_c_w": "p_design_c", "p_design_h_w": "p_design_h",
+                       "tbiv_temp_c": "tbiv", "tol_temp_c": "tol",
+                       **{key + "_w": key for key in ("p_to", "p_sb", "p_ck", "p_off")}}
+            for key, table in content.settings.field_tables.items():
+                main_key = aliases.get(key, key)
+                source = next(t for t in main_tables if main_key in t.field_order)
+                column = next(c for (_r, c), field in source.editable_cells.items() if field == main_key)
+                assert dict(table.columns)[key] == dict(source.columns)[column]
+                assert table.data_column_chars == source.data_column_chars
             if context.kind.startswith("en_"):
                 assert all(not key.startswith("declared_") for key in common_keys)
             assert content.calculate_button.instate(["!disabled"]), (context,content.status.cget("text"))
@@ -144,18 +156,20 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
             assert manager.current.run is run
             manager.handle.dispose()
             checked.append(context)
-        # Measurement mode changes use separate sessions and never relabel old results.
+        # Editable options stay in the same session; old results keep their snapshot.
         manager=sections["hspf2"].combinations
         manager.open()
         original=manager.current
         content=manager.handle.dialog._adapter
+        run=original.run
+        tabs=content.context_tabs.tabs()
         button=content.settings.options.flag_controls["measured_h2_boost"]
         button.invoke()
-        assert manager.current is not original
-        assert manager.current.run is None
+        assert manager.current is original and original.run is run
+        assert original.stale
+        assert content.context_tabs.tabs()==tabs
         assert sum(p.independent for p in manager.adapter.points(manager.current.context))==7
-        manager.select(next(i for i,c in enumerate(manager.contexts) if c.identity==original.context.identity))
-        assert manager.current is original and manager.current.run is not None
+        assert dict(run.snapshot.context.options)["measured_h2_boost"] is True
         manager.handle.dispose()
         assert len(checked)==22
         assert not errors, errors
@@ -411,7 +425,7 @@ def test_result_drag_copy_readonly_selection_and_paging(root):
         root.update()
         assert controller.selection_bounds == (0, 1, 1, 2)
         assert table.viewport.canvas.yview() == scroll
-        assert "stale" in content.results.caption.cget("text")
+        assert "재계산 필요" in content.results.caption.cget("text")
         assert table.row_count() == 100
         content.results.move(1)
         root.update()
@@ -478,7 +492,7 @@ def test_ten_thousand_wide_results_keep_widgets_and_callbacks_bounded(root):
             window.destroy()
 
 
-def test_inline_en_settings_edit_lock_reopen_and_wide_initial_size(root):
+def test_inline_en_settings_edit_lock_reopen_and_content_fit(root):
     from apps.calculator.ui.combinations.manager import CombinationManager
     from apps.calculator.ui.table.roles import CellRole
     context = next(c for c in contexts() if c.kind == "en_seer")
@@ -493,7 +507,16 @@ def test_inline_en_settings_edit_lock_reopen_and_wide_initial_size(root):
         assert content.settings.winfo_ismapped()
         assert not any(isinstance(child, ttk.Notebook) and child is not content.context_tabs
                        for child in content.frame.winfo_children())
-        assert shell.window.winfo_width() >= min(1100, int(root.winfo_screenwidth() * 0.8))
+        from apps.calculator.ui.window_geometry import capped_window_size
+        from apps.calculator.ui.window_measurement import content_size_with_margins
+        natural = (content.frame.winfo_reqwidth(), content.frame.winfo_reqheight())
+        padded = content_size_with_margins(*natural)
+        assert shell._initial_preferred_size == tuple(
+            requested - body + fitted
+            for requested, body, fitted in zip(shell._initial_requested_size, natural, padded))
+        assert (shell.window.winfo_width(), shell.window.winfo_height()) == capped_window_size(
+            *shell._initial_preferred_size, root.winfo_screenwidth(), root.winfo_screenheight())
+        assert shell._initial_preferred_size[0] < 1120
         table = content.settings.field_tables["p_design_c_w"]
         controller = content.settings.controllers[content.settings.tables.index(table)]
         assert [key for key, _ in table.columns] == ["p_design_c_w", "t_design_c", "cd"]
@@ -576,6 +599,66 @@ def test_inline_product_controls_preserve_geometry_and_requiredness(root):
         assert dict(context.options)["measured_h2_boost"] is True
     finally:
         manager.handle.dispose()
+
+
+def test_m_hspf_demand_defrost_updates_same_tab_and_keeps_snapshot(root):
+    from apps.calculator.ui.ahri_m.hspf_section import AhriMHspfSection
+    from apps.calculator.ui.table.roles import CellRole
+    section = AhriMHspfSection(root)
+    populate(section, next(c for c in contexts() if c.kind == "m_hspf"))
+    section.combination_button.invoke()
+    manager = section.combinations
+    try:
+        shell = manager.handle.dialog
+        content = shell._adapter
+        session = content.session
+        table = content.settings.field_tables["cd"]
+        assert table.columns == section.numeric_table.columns
+        assert table.rows == section.numeric_table.rows
+        flags = content.settings.options.flag_controls
+        assert flags["demand_defrost"].cget("text") == "Demand Defrost"
+        assert flags["automatic_cutout"].cget("text") == "Automatic Cutout"
+        content.calculate()
+        pump(root, lambda: session.run.status != "running")
+        original = session.run
+        pinned = original.detail(original.results[0])
+        pools = {key: tuple(pool) for key, pool in session.pools.items()}
+        root.update()
+        geometry = shell.window.geometry()
+        tab_ids = content.context_tabs.tabs()
+        timing_column = [key for key, _ in table.columns].index("defrost_test_minutes")
+        for enabled in (True, False, True):
+            flags["demand_defrost"].invoke()
+            root.update()
+            assert manager.current is session and shell._adapter is content
+            assert shell.window.geometry() == geometry
+            assert content.context_tabs.tabs() == tab_ids and len(tab_ids) == 1
+            assert len(manager.sessions) == len(manager.contexts) == 1
+            assert dict(session.context.options)["demand_defrost"] is enabled
+            assert table.cell_role((0, timing_column)) == (CellRole.EDITABLE if enabled else CellRole.READONLY)
+            assert session.run is original and session.stale
+            assert original.detail(original.results[0]) == pinned
+            assert {key: tuple(pool) for key, pool in session.pools.items()} == pools
+        assert "재계산 필요" in content.results.caption.cget("text")
+        table.set_address_values_batch({("value", "defrost_test_minutes"): "150"})
+        content.calculate()
+        pump(root, lambda: session.run.status != "running")
+        assert session.run is not original and session.run.succeeded == 1 and not session.stale
+        expected = session.run.detail(session.run.results[0])["f_def"]
+        assert table.static_text(("value", "defrost_credit")) == f"{expected:.3f}"
+        manager.handle.dispose()
+        section.combination_button.invoke()
+        content = manager.handle.dialog._adapter
+        assert manager.current is session and len(content.context_tabs.tabs()) == 1
+        assert dict(session.context.options)["demand_defrost"] is True
+        assert content.settings.field_tables["cd"].get_text_values()["defrost_test_minutes"] == "150"
+        content.reload_button.invoke()
+        assert dict(manager.current.context.options)["demand_defrost"] is False
+        assert manager.current.run is None and len(manager.contexts) == 1
+        assert not section.demand_defrost_var.get()
+    finally:
+        manager.handle.dispose()
+        section._frame.destroy()
 
 
 def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_path,monkeypatch):

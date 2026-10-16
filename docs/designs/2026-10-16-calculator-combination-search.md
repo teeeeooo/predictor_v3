@@ -17,7 +17,8 @@ test; capacity and power must never be combined independently.
 - Hard limit: **10,000 combinations per run**, inclusive. Reject 10,001 or more
   before calculation. Do not silently truncate, sample, or retain only top-K.
 - A run uses one standard, profile, metric, climate, product variant, and set of
-  common options. Different contexts have separate rankings.
+  common options. Different contexts have separate rankings. Editable options
+  are draft values within a tab, not identities that create additional tabs.
 - Include only active independent measured points in the Cartesian product.
   A fixed point has one included candidate. Derived, mapped, and disabled points
   are not independent axes. Common scalar settings are not candidate pools.
@@ -232,15 +233,20 @@ are unnecessary for this limit.
   where present, preserving incomplete drafts instead of inventing sample data.
 - Settings are inline above the test points, using horizontal numeric matrices,
   read-only choice dropdowns and product-relevant checkboxes as on the main page.
+  EN14825 and AHRI main/combination views share their setting presentation
+  definitions: labels, field ordering and option groups. Combination matrices
+  retain the corresponding main-page row labels and column-width tokens.
   There are no separate 시험점 후보 / 공통 설정 / 실행 옵션 tabs. Omit empty
   settings sections and internal option metadata. Preserve conditional
   read-only fields and automatically determined test points.
 - Settings and test points share one two-axis input viewport. Calculate/Cancel
-  and ranked results remain outside that viewport. Initial content width prefers
-  1,120 px, growing for wider settings under the existing shell's screen cap;
-  this is not a manual minimum or maximum. Manual shrinking retains internal
-  scrolling. Option changes replace content in the same window and preserve
-  geometry and the prior session's drafts/results.
+  and ranked results remain outside that viewport. Initial size uses the
+  shell's measured natural content and the main window's shared margin policy
+  (5% width allowance; height allowance capped at 18 px), under the shared
+  automatic screen caps (82% width, 80% height). There is no fixed preferred
+  width. Manual shrinking retains internal scrolling. Option changes update
+  the existing view/session and mark prior results as needing recalculation;
+  they preserve the window geometry, candidate pools and pinned run snapshot.
 - Middle: vertically stacked test-point blocks, each with candidate columns and
   Capacity/Power rows, as fixed in §6.1. All points share the input viewport;
   there is no point-selection dropdown. Auto/mapped/inactive blocks show their
@@ -325,9 +331,9 @@ Power [W]         400      420
   viewport, not once per point. There is no name checkbox or overflow menu.
 - Select calculation profiles/climates/products through explicit top tabs, not
   an unlabeled dropdown. Tab switches preserve the window geometry and each
-  session's draft/results; other tabs are disabled during a run. Option variants
-  with the same base title receive distinct setting numbers, with exact flags
-  above the candidate tables. The main-input reload action is labelled 메인 입력으로 초기화,
+  session's draft/results; other tabs are disabled during a run. Checkboxes and
+  other editable options never create tabs, including after close/reopen.
+  The main-input reload action is labelled 메인 입력으로 초기화,
   explains that the current tab's candidates/results are reset, and is disabled
   when no matching context exists in the invoking main section.
 - Paste a 2×N TSV rectangle starting at Capacity #1 without transposition.
