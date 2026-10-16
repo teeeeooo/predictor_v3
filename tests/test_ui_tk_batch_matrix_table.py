@@ -74,7 +74,7 @@ def test_matrix_table_constructs_with_hong_kong_spec(root):
     assert t.row_count() == 10  # 5 default cases * 2 physical rows
     assert t.table_frame.outer_edge_policy == "flat_low_contrast"
     assert t.table_frame.cget("relief") == tk.FLAT
-    assert t.cell_frame((0, 2)).semantic_background == t.default_cell_background((0, 2))
+    assert t.canvas_view.cell_background((0, 2)) == t.default_cell_background((0, 2))
     t.destroy()
 
 
@@ -92,9 +92,9 @@ def test_row_per_case_table_uses_shared_flat_grid_primitives(root):
 
     assert table.table_frame.outer_edge_policy == "flat_low_contrast"
     assert table.table_frame.cget("relief") == tk.FLAT
-    assert table.cell_frame((0, 0)).semantic_background == table.default_cell_background((0, 0))
-    assert table.cell_frame((0, 1)).semantic_background == table.default_cell_background((0, 1))
-    assert int(table.cell_frame((0, 0)).cget("takefocus")) == 1
+    assert table.canvas_view.cell_background((0, 0)) == table.default_cell_background((0, 0))
+    assert table.canvas_view.cell_background((0, 1)) == table.default_cell_background((0, 1))
+    assert int(table.canvas_view.frame.cget("takefocus")) == 1
     table.destroy()
 
 
@@ -134,8 +134,8 @@ def test_leading_columns_use_common_minimum_width_policy(table):
         len("Capacity"),
         len("Power"),
     )
-    assert int(table.cell_widget((0, 0)).cget("width")) == table._header_width(0)
-    assert int(table.cell_widget((0, 1)).cget("width")) == table._header_width(1)
+    assert table.canvas_view.cell_bbox((0, 0))[0::2] == table.canvas_view.cell_bbox((-1, 0))[0::2]
+    assert table.canvas_view.cell_bbox((0, 1))[0::2] == table.canvas_view.cell_bbox((-1, 1))[0::2]
 
 
 def test_matrix_exposes_natural_table_size_for_dialog_fitting(table):
@@ -169,13 +169,13 @@ def test_result_repaint_preserves_active_cell_and_clears_semantic_background(roo
     t.set_result(0, {CSPF: "4.939"})
     assert controller.active == (0, 2)
     assert controller.selected_positions() == ((0, 2),)
-    assert t.cell_widget((0, 2)).cget("background") == TABLE_ACTIVE_BG
-    assert t.cell_widget((0, 5)).cget("background") == TABLE_PASS_BG
+    assert t.canvas_view.cell_background((0, 2)) == TABLE_ACTIVE_BG
+    assert t.canvas_view.cell_background((0, 5)) == TABLE_PASS_BG
 
     t.clear_results()
     assert t.text_at_position((0, 5)) == ""
-    assert t.cell_widget((0, 5)).cget("background") == TABLE_STATIC_BG
-    assert t.cell_widget((0, 2)).cget("background") == TABLE_ACTIVE_BG
+    assert t.canvas_view.cell_background((0, 5)) == TABLE_STATIC_BG
+    assert t.canvas_view.cell_background((0, 2)) == TABLE_ACTIVE_BG
     t.destroy()
 
 
@@ -281,24 +281,27 @@ def test_snapshot_restore_is_logical_case_based(root):
 
 def test_same_shape_restore_preserves_widgets(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
-    original_widget_ids = {pos: id(t.cell_widget(pos)) for pos in t._cell_widgets}
+    view = t.canvas_view
+    editor = view.editor.entry
     snapshot = t.snapshot()
     t.cases[0][DECLARED_CAPACITY] = "9999"
     t.restore_snapshot(snapshot)
-    # same-shape restore should not rebuild widgets
-    for pos in original_widget_ids:
-        assert pos in t._cell_widgets
-        assert id(t.cell_widget(pos)) == original_widget_ids[pos]
+    assert t.canvas_view is view
+    assert t.canvas_view.editor.entry is editor
+    assert t.text_at_position((0, 2)) == ""
     t.destroy()
 
 
-def test_shape_changing_restore_rebuilds_widgets(root):
+def test_shape_changing_restore_reuses_view_and_resizes_extent(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
-    original_widget_ids = {pos: id(t.cell_widget(pos)) for pos in t._cell_widgets}
+    view = t.canvas_view
+    editor = view.editor.entry
     # create a snapshot with different number of cases
     snapshot = [{}, {}]
     t.restore_snapshot(snapshot)
-    # shape changed: widgets should be rebuilt
+    assert t.canvas_view is view
+    assert t.canvas_view.editor.entry is editor
+    assert view.layout.height(4) == int(view.frame.cget("height"))
     assert len(t.cases) == 2
     assert t.row_count() == 4
     t.destroy()

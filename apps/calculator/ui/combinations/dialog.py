@@ -168,8 +168,7 @@ class CombinationContent:
         self.options_panel.lock(locked)
         if self.common is not None:
             self.common.locked = locked
-            for i in range(self.common.row_count()):
-                self.common.cell_widget((i, 1)).configure(state="readonly" if locked else "normal")
+            self.common.canvas_view.refresh()
             self.common.interaction_controller.refresh()
         for index in range(len(self.manager.contexts)):
             self.context_tabs.tab(index, state="disabled" if locked and index != self.context_index else "normal")

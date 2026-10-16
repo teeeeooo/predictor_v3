@@ -16,10 +16,10 @@ limit, pinned detail/input provenance, concise result CSV, and separate stale/pa
 macOS Tk integration covers the actual section actions and all 22 baseline
 contexts. The candidate-column revision and ISO screenshot review are complete.
 Continuous-resize follow-up retains bottom/right/corner resize targets. The subsequent rendering
-performance stages 1-4 are complete: a repeatable native benchmark and shared
+performance stages 1-5 are complete: a repeatable native benchmark and shared
 Canvas backend now cover main profile inputs/results and combination candidates/rankings.
 See the [table rendering roadmap and evidence](designs/2026-07-12-calculator-table-architecture-design.md#22-calculator-rendering-performance-follow-up-2026-10-16).
-Main profile rollout is complete; batch rollout and residual-cost measurement remain pending. Actual mouse
+Main and batch rollout are complete; residual-cost measurement remains pending. Actual mouse
 drag and cursor appearance remain unverified at the user's request, along with
 native OS keyboard, Windows/Linux and multi-monitor/DPI acceptance; these do not
 reopen the separate Predict hold.
@@ -40,17 +40,16 @@ work by default.
 
 ## Exact Next Action
 
-**Calculator next slice — shared batch tables, then residual resize costs.**
-Stage 4 migrates remaining main profile inputs, compact results and summary
-cards. Whole-app native widgets fell from 1,992 to 503; EN SCOP width/height
-means improved to 43.7/29.7 ms and AHRI HSPF2 to 38.2/25.9 ms. Focused profile,
-editor, export and window-lifecycle checks pass. See table architecture §24.
+**Calculator next slice — residual viewport/window/graph cost.**
+Stages 1–5 are complete. Batch tables now keep one Canvas/editor through row
+growth and updates. A native 50-case paste fell from 895 to 19 ms and horizontal
+resize mean from 739 to 30 ms; actual combination and profile checks pass.
+AHRI 10,000-combination resize remains 86.4/88.0 ms despite fewer widgets.
 
-Continue automatically through stages 5 and 6 while focused checks pass:
-shared batch/common-setting tables, then remeasure viewport/window/graph costs
-and fix demonstrated bottlenecks. Keep existing data, controllers, calculation,
-export and geometry owners. Native mouse/IME, Windows/Linux and multi-monitor/
-DPI acceptance remains deferred at the user's request.
+Continue automatically with stage 6: measure offscreen surfaces and viewport/
+window/graph callbacks, then repair only demonstrated bottlenecks. Keep geometry
+history safeguards, data/controllers and formula/export contracts. Native mouse/
+IME, Windows/Linux and multi-monitor/DPI acceptance remains deferred.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 
@@ -60,8 +59,7 @@ audit gate unless new native acceptance evidence demonstrates a concrete defect.
 
 ## Ordered Follow-ups
 
-Calculator continues with batch tables, then remeasurement of remaining
-viewport/window/graph costs.
+Calculator continues with remeasurement of remaining viewport/window/graph costs.
 Keep large detail Treeviews and repair only demonstrated bottlenecks.
 The independent Windows/Predict sequence remains:
 

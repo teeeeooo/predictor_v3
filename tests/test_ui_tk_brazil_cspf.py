@@ -337,12 +337,10 @@ def test_brazil_batch_dialog_opens_and_preserves_input_snapshot(tk_root, monkeyp
             BRAZIL_CSPF_MATRIX_SPEC.result_metrics
         )
     }
-    assert table.cell_widget((0, key_to_column[THREE_POINT_CSPF])).cget(
-        "background"
-    ) == TABLE_PASS_BG
-    assert table.cell_widget((0, key_to_column[RULE_1])).cget("background") == TABLE_PASS_BG
-    assert table.cell_widget((0, key_to_column[RULE_2])).cget("background") == TABLE_ERROR_BG
-    assert table.cell_widget((0, key_to_column[FINAL])).cget("background") == TABLE_PASS_BG
+    assert table.canvas_view.cell_background((0, key_to_column[THREE_POINT_CSPF])) == TABLE_PASS_BG
+    assert table.canvas_view.cell_background((0, key_to_column[RULE_1])) == TABLE_PASS_BG
+    assert table.canvas_view.cell_background((0, key_to_column[RULE_2])) == TABLE_ERROR_BG
+    assert table.canvas_view.cell_background((0, key_to_column[FINAL])) == TABLE_PASS_BG
     for column in range(
         BRAZIL_CSPF_MATRIX_SPEC.result_start_column,
         BRAZIL_CSPF_MATRIX_SPEC.column_count,
@@ -395,11 +393,9 @@ def test_brazil_batch_recalculation_preserves_overlays_and_clears_stale_colors(
     }
     assert interaction.active == (0, 3)
     assert interaction.selected_positions() == ((0, 2), (0, 3))
-    assert table.cell_widget((0, 2)).cget("background") == TABLE_SELECTED_BG
-    assert table.cell_widget((0, 3)).cget("background") == TABLE_ACTIVE_BG
-    assert table.cell_widget((0, result_columns[THREE_POINT_CSPF])).cget(
-        "background"
-    ) == TABLE_PASS_BG
+    assert table.canvas_view.cell_background((0, 2)) == TABLE_SELECTED_BG
+    assert table.canvas_view.cell_background((0, 3)) == TABLE_ACTIVE_BG
+    assert table.canvas_view.cell_background((0, result_columns[THREE_POINT_CSPF])) == TABLE_PASS_BG
 
     transitions = (("OK", "NG", TABLE_ERROR_BG), ("NG", "OK", TABLE_PASS_BG))
     for before, after, expected in transitions:
@@ -407,7 +403,7 @@ def test_brazil_batch_recalculation_preserves_overlays_and_clears_stale_colors(
         table.set_result(0, {RULE_1: after})
         assert table.text_at_position((0, result_columns[RULE_1])) == after
         assert (
-            table.cell_widget((0, result_columns[RULE_1])).cget("background")
+            table.canvas_view.cell_background((0, result_columns[RULE_1]))
             == expected
         )
 
@@ -416,28 +412,26 @@ def test_brazil_batch_recalculation_preserves_overlays_and_clears_stale_colors(
     for key in (THREE_POINT_CSPF, RULE_1, RULE_2, FINAL):
         position = (0, result_columns[key])
         assert table.text_at_position(position) == ""
-        assert table.cell_widget(position).cget("background") == TABLE_STATIC_BG
+        assert table.canvas_view.cell_background(position) == TABLE_STATIC_BG
 
     table.cases[0].update({**_raw_values(), "half_29_power": "bad"})
     batch._recalculate_now()
     for key in (MEASURED_29_HALF_EER, CALCULATED_29_BIN_EER, RULE_2):
         position = (0, result_columns[key])
         assert table.text_at_position(position) == ""
-        assert table.cell_widget(position).cget("background") == TABLE_STATIC_BG
+        assert table.canvas_view.cell_background(position) == TABLE_STATIC_BG
 
     table.cases[0].update(_raw_values())
     batch._recalculate_now()
-    assert table.cell_widget((0, result_columns[THREE_POINT_CSPF])).cget(
-        "background"
-    ) == TABLE_PASS_BG
+    assert table.canvas_view.cell_background((0, result_columns[THREE_POINT_CSPF])) == TABLE_PASS_BG
     table.clear_results()
     assert table.text_at_position((0, result_columns[FINAL])) == ""
     assert (
-        table.cell_widget((0, result_columns[FINAL])).cget("background")
+        table.canvas_view.cell_background((0, result_columns[FINAL]))
         == TABLE_STATIC_BG
     )
-    assert table.cell_widget((0, 2)).cget("background") == TABLE_SELECTED_BG
-    assert table.cell_widget((0, 3)).cget("background") == TABLE_ACTIVE_BG
+    assert table.canvas_view.cell_background((0, 2)) == TABLE_SELECTED_BG
+    assert table.canvas_view.cell_background((0, 3)) == TABLE_ACTIVE_BG
 
     section._batch_dialog.close()
 

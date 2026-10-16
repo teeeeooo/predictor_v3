@@ -18,7 +18,8 @@ class CanvasResultLayout:
         # keeps the first-show footprint compatible with the existing renderer.
         probe = tk.Label(master)
         try:
-            padding = int(probe.cget("padx")) + int(probe.cget("borderwidth"))
+            self.label_padx = int(probe.cget("padx"))
+            padding = self.label_padx + int(probe.cget("borderwidth"))
             self.text_inset = policy.cell_padx + padding
             column_sizes = []
             for width in widths:

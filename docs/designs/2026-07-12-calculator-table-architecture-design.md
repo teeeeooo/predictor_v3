@@ -1,7 +1,7 @@
 # Calculator Table Architecture Design
 
 **Status:** Implemented — Slices 1-6 complete
-**Rendering follow-up:** Stages 1-4 complete (2026-10-16); batch and residual-cost stages pending (§22–24).
+**Rendering follow-up:** Stages 1-5 complete (2026-10-16); residual-cost measurement in progress (§22–25).
 **Scope:** Tkinter Calculator table surfaces
 **Primary implementation sequence:** Table foundation → representative ISO/ISEER migration → progressive Calculator-wide adoption
 **Proposed canonical location:** `docs/designs/2026-07-12-calculator-table-architecture-design.md`
@@ -1083,7 +1083,7 @@ Excel features are outside this workstream.
 | 2 | Shared read-only Canvas renderer; ISO/ISEER comparison and combination rankings first | Complete |
 | 3 | Reusable native Entry editor over a drawn input surface; ISO input, then combination candidates | Complete (§23) |
 | 4 | Apply the proven renderer/editor to remaining main profile surfaces | Complete (§24) |
-| 5 | Migrate BatchCaseTable/BatchMatrixTable without changing their models or transactions | Pending |
+| 5 | Migrate BatchCaseTable/BatchMatrixTable without changing their models or transactions | Complete (§25) |
 | 6 | Remeasure remaining viewport, window and graph costs; fix only demonstrated bottlenecks | Pending |
 
 These are staged changes, not a mandate to rewrite every existing table. Keep
@@ -1263,3 +1263,37 @@ Combination controls remain near stage 3 (AHRI 87.0/88.6 ms), indicating that
 main-profile migration alone does not resolve their residual resize cost. No
 benchmark callback errors were reported. Stage 5 proceeds with batch tables and
 combination common settings; native platform/manual limitations remain unchanged.
+
+
+## 25. Shared batch and common-setting tables (stage 5)
+
+BatchCaseTable and BatchMatrixTable now project their existing row/case models
+through CanvasMatrixView/CanvasTableBinding. Per-cell StringVars, Entries, Labels
+and table rebuilds are removed. One native editor is retained across row growth,
+result updates and snapshot restore. Bulk mutations notify once; clipboard
+mapping, read-only physical rows, logical case snapshots, result tones, undo and
+exports retain their existing owners. The combination common-setting adapter
+uses logical roles to lock the editor while a calculation runs.
+
+Native coverage includes every batch profile, dialog content sizing and lifecycle,
+rectangular paste/undo and row growth, optional result colors, draft/focus retention
+across resize and scroll, and cleanup. A 200-case matrix draws fewer than 150
+visible/overscan positions rather than allocating widgets for 400 physical rows.
+The actual 22-context combination/10,000-result suite also passes.
+
+An isolated same-theme native comparison against the previous batch class
+(`2695e2ff`), with default Hong Kong CSPF and a 50-case rectangular paste at the
+same 800×650 benchmark dimensions, measured:
+
+| Operation | Native cells before | Shared Canvas after |
+| --- | --- | --- |
+| Open default table (single observation) | 57 ms | 39 ms |
+| Paste 50 cases plus event flush (single observation) | 895 ms | 19 ms |
+| Width resize mean, one 12-step cycle after warmup | 739 ms | 30 ms |
+| Height resize mean | 198 ms | 22 ms |
+| Native widgets after paste | 1,421 | 9 |
+
+This is an adapter-level rendering comparison, not formula timing. The unchanged
+full AHRI 10,000-combination benchmark remains 86.4/88.0 ms for width/height;
+widgets drop from 293 to 193, while visible chrome still dominates. Stage 6
+investigates residual work rather than claiming the combination issue is solved.

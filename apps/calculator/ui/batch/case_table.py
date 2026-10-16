@@ -14,20 +14,11 @@ from apps.calculator.ui.batch.models import (
 from apps.calculator.ui.batch.compat_table import GridAddress, batch_roles_to_cell_roles
 from apps.calculator.ui.batch.table_controller import BatchTableController
 from apps.calculator.ui.batch.viewport import BatchTableViewport
-from apps.calculator.ui.layout_constants import (
-    TABLE_BODY_FONT,
-    TABLE_CELL_PADX,
-    TABLE_CELL_PADY,
-    TABLE_GRID_COLOR,
-    TABLE_HEADER_BG,
-    TABLE_STATIC_FG,
-)
+from apps.calculator.ui.layout_constants import TABLE_GRID_COLOR
 from apps.calculator.ui.table.cell_background import cell_background
-from apps.calculator.ui.table.grid_primitives import (
-    create_cell_container,
-    create_text_label,
-)
-from apps.calculator.ui.table.visual_policy import AlignmentRole
+from apps.calculator.ui.table.canvas_matrix_view import CanvasMatrixView
+from apps.calculator.ui.table.canvas_binding import CanvasTableBinding
+
 
 ValuesChangedCallback = Callable[[], None]
 ROW_HEADER_WIDTH_CHARS = 4
@@ -49,11 +40,6 @@ class BatchCaseTable(ttk.Frame):
         super().__init__(master, **kwargs)
         self.model = BatchTableModel(spec)
         self._values_changed_callback = values_changed_callback
-        self._variables: list[dict[str, tk.StringVar]] = []
-        self._cell_frames: dict[GridAddress, tk.Frame] = {}
-        self._cell_widgets: dict[GridAddress, tk.Widget] = {}
-        self._batch_depth = 0
-        self._batch_changed = False
         self.interaction_controller: BatchTableController | None = None
         self._build_table()
         self.interaction_controller = BatchTableController(self)
@@ -73,17 +59,11 @@ class BatchCaseTable(ttk.Frame):
     def row_header_texts(self) -> tuple[str, ...]:
         return tuple(str(index + 1) for index in range(len(self.model.rows)))
 
-    def cell_frame(self, position: GridAddress) -> tk.Frame:
-        return self._cell_frames[position]
-
-    def cell_widget(self, position: GridAddress) -> tk.Widget:
-        return self._cell_widgets[position]
+    def cell_role(self, position):
+        return self.cell_roles()[position[1]]
 
     def focus_widget(self, position: GridAddress) -> tk.Widget:
-        role = self.model.spec.columns[position[1]].role
-        if role is BatchColumnRole.INPUT:
-            return self._cell_widgets[position]
-        return self._cell_frames[position]
+        return self.canvas_view.editor.focus_widget(position)
 
     def default_cell_background(self, position: GridAddress) -> str:
         role = self.model.spec.columns[position[1]].role
@@ -120,14 +100,11 @@ class BatchCaseTable(ttk.Frame):
 
     def set_row_results(self, row_index: int, values: Mapping[str, str]) -> None:
         self.model.set_results(row_index, values)
-        for key in (*self.model.spec.result_keys, *self.model.spec.status_keys):
-            self._variables[row_index][key].set(self.model.rows[row_index][key])
+        self.canvas_view.refresh()
 
     def clear_results(self) -> None:
         self.model.clear_results()
-        for row_index, row in enumerate(self.model.rows):
-            for key in (*self.model.spec.result_keys, *self.model.spec.status_keys):
-                self._variables[row_index][key].set(row[key])
+        self.canvas_view.refresh()
 
     def text_at_position(self, position: GridAddress) -> str:
         row, column = position
@@ -135,27 +112,17 @@ class BatchCaseTable(ttk.Frame):
         return self.model.rows[row].get(key, "")
 
     def set_positions_batch(self, values: Mapping[GridAddress, str]) -> bool:
-        editable = set(self.model.spec.input_keys)
-        outermost = self._batch_depth == 0
-        if outermost:
-            self._batch_changed = False
-        self._batch_depth += 1
         changed = False
-        try:
-            for (row, column), value in values.items():
-                if row >= len(self.model.rows) or column >= len(self.model.spec.columns):
-                    continue
-                key = self.model.spec.columns[column].key
-                if key not in editable:
-                    continue
-                if self.model.rows[row].get(key, "") == value:
-                    continue
-                self._variables[row][key].set(value)
-                changed = True
-        finally:
-            self._batch_depth -= 1
-        if outermost and (self._batch_changed or changed):
-            self._batch_changed = False
+        for (row, column), value in values.items():
+            if not (0 <= row < self.row_count() and 0 <= column < self.column_count()):
+                continue
+            key = self.model.spec.columns[column].key
+            if key not in self.model.spec.input_keys or self.model.rows[row].get(key, "") == value:
+                continue
+            self.model.set_cell(row, key, value)
+            changed = True
+        if changed:
+            self.canvas_view.refresh()
             self._notify_changed()
         return changed
 
@@ -174,23 +141,11 @@ class BatchCaseTable(ttk.Frame):
             self._rebuild_table()
             self._notify_changed()
             return
-        outermost = self._batch_depth == 0
-        if outermost:
-            self._batch_changed = False
-        self._batch_depth += 1
-        changed = False
-        try:
-            for row_index, row in enumerate(normalized):
-                for key, value in row.items():
-                    if self.model.rows[row_index].get(key, "") == value:
-                        continue
-                    self.model.rows[row_index][key] = value
-                    self._variables[row_index][key].set(value)
-                    changed = True
-        finally:
-            self._batch_depth -= 1
-        if outermost and (changed or self._batch_changed):
-            self._batch_changed = False
+        changed = normalized != self.model.rows
+        if changed:
+            for row, values in zip(self.model.rows, normalized):
+                row.update(values)
+            self.canvas_view.refresh()
             self._notify_changed()
 
     def set_text_rows(self, rows: Iterable[Mapping[str, str]]) -> None:
@@ -220,6 +175,17 @@ class BatchCaseTable(ttk.Frame):
         self.table_frame = self.viewport_frame.content
         self.table_frame.surface_role = "table_frame"
         self.table_frame.layout_policy = "vertical_scroll_containment"
+        self.table_frame.columnconfigure(0, weight=1)
+        self.canvas_view = CanvasMatrixView(
+            self.table_frame, table=self,
+            headers=tuple(column.label for column in self.model.spec.columns),
+            widths=(ROW_HEADER_WIDTH_CHARS, *(column.width_chars for column in self.model.spec.columns)),
+            row_labels=lambda row: str(row+1), corner="#",
+            weights=(0, *(1 for _ in self.model.spec.columns)),
+            viewport=self.viewport_frame,
+        )
+        self.canvas_view.frame.grid(row=0, column=0, sticky="ew")
+        self.table_presentation = CanvasTableBinding(lambda: self.canvas_view)
         self._rebuild_table()
 
     @property
@@ -227,150 +193,18 @@ class BatchCaseTable(ttk.Frame):
         return self.viewport_frame.scrollbar_visible
 
     def _rebuild_table(self) -> None:
-        for child in self.table_frame.winfo_children():
-            child.destroy()
-        self._variables.clear()
-        self._cell_frames.clear()
-        self._cell_widgets.clear()
-        self._build_headers()
-        for row_index, row in enumerate(self.model.rows):
-            self._build_row(row_index, row)
+        self.canvas_view.refresh()
         if self.interaction_controller is not None:
             self.interaction_controller.refresh()
         self.viewport_frame.sync(self._visible_rows_height())
 
-    def _build_headers(self) -> None:
-        self.table_frame.columnconfigure(0, weight=0)
-        corner = create_cell_container(
-            self.table_frame,
-            row=0,
-            column=0,
-            background=TABLE_HEADER_BG,
-            surface_role="corner_header_cell",
-        )
-        create_text_label(
-            corner,
-            text="#",
-            width=ROW_HEADER_WIDTH_CHARS,
-            alignment=AlignmentRole.HEADER_VALUE,
-            header=True,
-        )
-        for column_index, column in enumerate(self.model.spec.columns):
-            grid_column = column_index + 1
-            self.table_frame.columnconfigure(grid_column, weight=1)
-            cell = create_cell_container(
-                self.table_frame,
-                row=0,
-                column=grid_column,
-                background=TABLE_HEADER_BG,
-                surface_role="header_cell",
-            )
-            create_text_label(
-                cell,
-                text=column.label,
-                width=column.width_chars,
-                alignment=AlignmentRole.HEADER_VALUE,
-                header=True,
-            )
-
-    def _build_row(self, row_index: int, row: Mapping[str, str]) -> None:
-        variables: dict[str, tk.StringVar] = {}
-        self._build_row_header(row_index)
-        for column_index, column in enumerate(self.model.spec.columns):
-            position = (row_index, column_index)
-            variable = tk.StringVar(master=self, value=row.get(column.key, ""))
-            variables[column.key] = variable
-            is_input = column.role is BatchColumnRole.INPUT
-            background = cell_background(editable=is_input)
-            cell = create_cell_container(
-                self.table_frame,
-                row=row_index + 1,
-                column=column_index + 1,
-                background=background,
-                surface_role="editable_cell" if is_input else "result_cell",
-                focusable=True,
-            )
-            if is_input:
-                widget = self._make_entry(cell, variable, row_index, column.key, column.width_chars)
-            else:
-                widget = tk.Label(
-                    cell,
-                    textvariable=variable,
-                    width=column.width_chars,
-                    anchor="center",
-                    background=background,
-                    foreground=TABLE_STATIC_FG,
-                    font=TABLE_BODY_FONT,
-                    takefocus=0,
-                )
-                widget.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
-            self._cell_frames[position] = cell
-            self._cell_widgets[position] = widget
-        self._variables.append(variables)
-
-    def _build_row_header(self, row_index: int) -> None:
-        cell = create_cell_container(
-            self.table_frame,
-            row=row_index + 1,
-            column=0,
-            background=TABLE_HEADER_BG,
-            surface_role="row_header_cell",
-        )
-        create_text_label(
-            cell,
-            text=str(row_index + 1),
-            width=ROW_HEADER_WIDTH_CHARS,
-            alignment=AlignmentRole.HEADER_VALUE,
-            header=True,
-        )
-
-    def _make_entry(
-        self,
-        cell: tk.Frame,
-        variable: tk.StringVar,
-        row_index: int,
-        key: str,
-        width_chars: int,
-    ) -> tk.Entry:
-        variable.trace_add(
-            "write",
-            lambda *_args, row_index=row_index, key=key, variable=variable:
-            self._handle_input_change(row_index, key, variable.get()),
-        )
-        entry = tk.Entry(
-            cell,
-            textvariable=variable,
-            width=width_chars,
-            relief=tk.FLAT,
-            borderwidth=0,
-            highlightthickness=0,
-            background=cell_background(editable=True),
-            font=TABLE_BODY_FONT,
-            justify="center",
-        )
-        entry.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
-        entry.surface_role = "editable_entry"
-        return entry
-
     def _visible_rows_height(self) -> int:
-        visible_rows = max(1, len(self.model.spec.default_rows))
-        bbox = self.table_frame.grid_bbox(0, 0, self.column_count(), visible_rows)
-        if bbox:
-            return max(1, bbox[3])
-        return max(1, self.table_frame.winfo_reqheight())
+        visible_rows = min(self.row_count(), max(1, len(self.model.spec.default_rows)))
+        return self.canvas_view.layout.height(visible_rows)
 
     def scroll_to_bottom(self) -> None:
         self.viewport_frame.sync(self._visible_rows_height())
         self.viewport_frame.scroll_to_bottom()
-
-    def _handle_input_change(self, row_index: int, key: str, value: str) -> None:
-        if self.model.rows[row_index].get(key, "") == value:
-            return
-        self.model.set_cell(row_index, key, value)
-        if self._batch_depth:
-            self._batch_changed = True
-            return
-        self._notify_changed()
 
     def _notify_changed(self) -> None:
         if self._values_changed_callback is not None:

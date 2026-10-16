@@ -4,27 +4,20 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Callable, Mapping
-from tkinter import font as tkfont, ttk
+from tkinter import ttk
 
 from apps.calculator.ui.batch.matrix_models import BatchMatrixSpec, MatrixCellKind
 from apps.calculator.ui.batch.viewport import BatchTableViewport
 from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_CASE_COLUMN_WIDTH_CHARS,
     BATCH_MATRIX_ROW_TYPE_COLUMN_WIDTH_CHARS,
-    TABLE_BODY_FONT,
-    TABLE_CELL_PADX,
-    TABLE_CELL_PADY,
     TABLE_GRID_COLOR,
-    TABLE_HEADER_BG,
-    TABLE_STATIC_FG,
 )
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.table.cell_background import cell_background
-from apps.calculator.ui.table.grid_primitives import (
-    create_cell_container,
-    create_text_label,
-)
-from apps.calculator.ui.table.visual_policy import AlignmentRole
+from apps.calculator.ui.table.canvas_matrix_view import CanvasMatrixView
+from apps.calculator.ui.table.canvas_binding import CanvasTableBinding
+
 
 ValuesChangedCallback = Callable[[], None]
 
@@ -51,12 +44,6 @@ class BatchMatrixTable(ttk.Frame):
         self.cases: list[dict[str, str]] = [
             dict(case) for case in self.spec.default_cases
         ] or [{}]
-        self._variables: list[dict[str, tk.StringVar]] = []
-        self._cell_frames: dict[tuple[int, int], tk.Frame] = {}
-        self._cell_widgets: dict[tuple[int, int], tk.Widget] = {}
-        self._header_labels: dict[int, tk.Label] = {}
-        self._batch_depth = 0
-        self._batch_changed = False
         self.interaction_controller = None
         self._build_table()
 
@@ -88,31 +75,19 @@ class BatchMatrixTable(ttk.Frame):
         return self.spec.display_text(position, case, case)
 
     def set_positions_batch(self, values: Mapping[tuple[int, int], str]) -> bool:
-        outermost = self._batch_depth == 0
-        if outermost:
-            self._batch_changed = False
-        self._batch_depth += 1
         changed = False
-        try:
-            for position, value in values.items():
-                cell = self.spec.resolve_cell(position)
-                if not cell.editable or cell.input_key is None:
-                    continue
-                logical = cell.logical_case_index
-                if logical >= len(self.cases):
-                    continue
-                if self.cases[logical].get(cell.input_key, "") == value:
-                    continue
-                self.cases[logical][cell.input_key] = value
-                if logical < len(self._variables):
-                    var = self._variables[logical].get(cell.input_key)
-                    if var is not None:
-                        var.set(value)
+        for position, value in values.items():
+            if not (0 <= position[0] < self.row_count() and 0 <= position[1] < self.column_count()):
+                continue
+            cell = self.spec.resolve_cell(position)
+            if not cell.editable or cell.input_key is None:
+                continue
+            case = self.cases[cell.logical_case_index]
+            if case.get(cell.input_key, "") != value:
+                case[cell.input_key] = value
                 changed = True
-        finally:
-            self._batch_depth -= 1
-        if outermost and (self._batch_changed or changed):
-            self._batch_changed = False
+        if changed:
+            self.canvas_view.refresh()
             self._notify_changed()
         return changed
 
@@ -128,47 +103,19 @@ class BatchMatrixTable(ttk.Frame):
             self._rebuild_table()
             self._notify_changed()
             return
-        # same shape: in-place update to preserve widget continuity
-        outermost = self._batch_depth == 0
-        if outermost:
-            self._batch_changed = False
-        self._batch_depth += 1
         changed = False
-        try:
-            for logical_index, case in enumerate(restored):
-                for key, value in case.items():
-                    if self.cases[logical_index].get(key, "") == value:
-                        continue
-                    self.cases[logical_index][key] = value
-                    var = self._variables[logical_index].get(key)
-                    if var is not None:
-                        var.set(value)
+        for case, values in zip(self.cases, restored):
+            for key in (*self.spec.input_keys, *self.spec.result_keys):
+                value = values.get(key, "")
+                if case.get(key, "") != value:
+                    case[key] = value
                     changed = True
-                # snapshot에 없는 known key는 빈 문자열로 갱신
-                for key in (*self.spec.input_keys, *self.spec.result_keys):
-                    if key not in case:
-                        if self.cases[logical_index].get(key, "") != "":
-                            self.cases[logical_index][key] = ""
-                            var = self._variables[logical_index].get(key)
-                            if var is not None:
-                                var.set("")
-                            changed = True
-        finally:
-            self._batch_depth -= 1
-        if outermost and (changed or self._batch_changed):
-            self._batch_changed = False
+        if changed:
+            self.canvas_view.refresh()
             self._notify_changed()
 
-    def cell_frame(self, position: tuple[int, int]) -> tk.Frame:
-        return self._cell_frames[position]
-
-    def cell_widget(self, position: tuple[int, int]) -> tk.Widget:
-        return self._cell_widgets[position]
-
     def focus_widget(self, position: tuple[int, int]) -> tk.Widget:
-        if self.spec.is_editable(position):
-            return self._cell_widgets[position]
-        return self._cell_frames[position]
+        return self.canvas_view.editor.focus_widget(position)
 
     def default_cell_background(self, position: tuple[int, int]) -> str:
         return cell_background(editable=self.spec.is_editable(position))
@@ -225,45 +172,25 @@ class BatchMatrixTable(ttk.Frame):
         case = self.cases[logical_case_index]
         for key, value in result_data.items():
             case[key] = value
-        if logical_case_index < len(self._variables):
-            for key, value in result_data.items():
-                var = self._variables[logical_case_index].get(key)
-                if var is not None:
-                    var.set(value)
         self.repaint_case_backgrounds(logical_case_index)
 
     def repaint_case_backgrounds(self, logical_case_index: int) -> None:
-        """Reapply semantic backgrounds after result values change."""
-        first_row = logical_case_index * len(self.spec.physical_rows)
-        for row in range(first_row, first_row + len(self.spec.physical_rows)):
-            for column in range(self.column_count()):
-                position = (row, column)
-                background = self.default_cell_background(position)
-                self.cell_frame(position).configure(background=background)
-                self.cell_widget(position).configure(background=background)
-        if self.interaction_controller is not None:
-            self.interaction_controller.repaint_presentation()
+        """Reapply semantic colors without disturbing the selection overlay."""
+        self.canvas_view.refresh()
 
     def clear_results(self) -> None:
         for key in self.spec.result_keys:
             for case in self.cases:
                 if key in case:
                     case[key] = ""
-        for logical_index, vars_dict in enumerate(self._variables):
-            for key in self.spec.result_keys:
-                var = vars_dict.get(key)
-                if var is not None:
-                    var.set("")
-        for logical_index in range(len(self.cases)):
-            self.repaint_case_backgrounds(logical_index)
+        self.canvas_view.refresh()
 
     def header_text_metrics(self, column_index: int) -> tuple[int, int, int]:
         """Return measured text, horizontal padding, and token content widths."""
-        label = self._header_labels[column_index]
-        header_font = tkfont.Font(root=self, font=label.cget("font"))
-        text_width = header_font.measure(str(label.cget("text")))
-        horizontal_padding = 2 * int(label.cget("padx"))
-        content_width = header_font.measure("0" * self._header_width(column_index))
+        layout = self.canvas_view.layout
+        text_width = layout.header_font.measure(self._header_label(column_index))
+        horizontal_padding = 2 * layout.label_padx
+        content_width = layout.header_font.measure("0" * self._header_width(column_index))
         return text_width, horizontal_padding, content_width
 
     # ---- Viewport helpers ----
@@ -294,47 +221,24 @@ class BatchMatrixTable(ttk.Frame):
         self.table_frame = self.viewport_frame.content
         self.table_frame.surface_role = "matrix_table_frame"
         self.table_frame.layout_policy = "vertical_scroll_containment"
+        self.table_frame.columnconfigure(0, weight=1)
+        self.canvas_view = CanvasMatrixView(
+            self.table_frame, table=self,
+            headers=tuple(self._header_label(col) for col in range(self.column_count())),
+            widths=tuple(self._header_width(col) for col in range(self.column_count())),
+            row_labels=None,
+            weights=tuple(int(col >= self.spec.measurement_start_column) for col in range(self.column_count())),
+            viewport=self.viewport_frame,
+        )
+        self.canvas_view.frame.grid(row=0, column=0, sticky="ew")
+        self.table_presentation = CanvasTableBinding(lambda: self.canvas_view)
         self._rebuild_table()
 
     def _rebuild_table(self) -> None:
-        for child in self.table_frame.winfo_children():
-            child.destroy()
-        self._variables.clear()
-        self._cell_frames.clear()
-        self._cell_widgets.clear()
-        self._header_labels.clear()
-        self._build_headers()
-        for logical_index, case in enumerate(self.cases):
-            self._build_case_rows(logical_index, case)
+        self.canvas_view.refresh()
         if self.interaction_controller is not None:
             self.interaction_controller.refresh()
         self.viewport_frame.sync(self._visible_rows_height())
-
-    def _build_headers(self) -> None:
-        # column headers (no separate row-header corner cell; Case is column 0)
-        for column_index in range(self.spec.column_count):
-            grid_column = column_index
-            self.table_frame.columnconfigure(
-                grid_column,
-                weight=0 if column_index < self.spec.measurement_start_column else 1,
-            )
-            cell = create_cell_container(
-                self.table_frame,
-                row=0,
-                column=grid_column,
-                background=TABLE_HEADER_BG,
-                surface_role="header_cell",
-            )
-            label_text = self._header_label(column_index)
-            width_chars = self._header_width(column_index)
-            label = create_text_label(
-                cell,
-                text=label_text,
-                width=width_chars,
-                alignment=AlignmentRole.HEADER_VALUE,
-                header=True,
-            )
-            self._header_labels[column_index] = label
 
     def _header_label(self, column_index: int) -> str:
         if column_index == 0:
@@ -362,104 +266,8 @@ class BatchMatrixTable(ttk.Frame):
         _key, _label, width = self.spec.result_metrics[column_index - self.spec.result_start_column]
         return width
 
-    def _build_case_rows(self, logical_index: int, case: Mapping[str, str]) -> None:
-        base_row = logical_index * len(self.spec.physical_rows)
-        variables: dict[str, tk.StringVar] = {}
-        self._variables.append(variables)
-        for offset in range(len(self.spec.physical_rows)):
-            physical_row = base_row + offset
-            self._build_physical_row(physical_row, logical_index, case, variables)
-
-    def _build_physical_row(
-        self,
-        physical_row: int,
-        logical_index: int,
-        case: Mapping[str, str],
-        variables: dict[str, tk.StringVar],
-    ) -> None:
-        for column_index in range(self.spec.column_count):
-            position = (physical_row, column_index)
-            cell = self.spec.resolve_cell(position)
-            is_editable = cell.editable and cell.input_key is not None
-            background = cell_background(editable=is_editable)
-
-            cell_frame = create_cell_container(
-                self.table_frame,
-                row=physical_row + 1,
-                column=column_index,
-                background=background,
-                surface_role="editable_cell" if is_editable else "static_cell",
-                focusable=True,
-            )
-            self._cell_frames[position] = cell_frame
-
-            if is_editable and cell.input_key is not None:
-                var = tk.StringVar(master=self, value=case.get(cell.input_key, ""))
-                variables[cell.input_key] = var
-                var.trace_add(
-                    "write",
-                    lambda *_args, logical=logical_index, key=cell.input_key, variable=var:
-                    self._handle_input_change(logical, key, variable.get()),
-                )
-                widget = self._make_entry(cell_frame, var, self._header_width(column_index))
-            else:
-                text = self.spec.display_text(position, case, case)
-                widget = tk.Label(
-                    cell_frame,
-                    text=text,
-                    width=self._header_width(column_index),
-                    anchor="center",
-                    background=background,
-                    foreground=TABLE_STATIC_FG,
-                    font=TABLE_BODY_FONT,
-                    takefocus=0,
-                )
-                widget.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
-                if cell.result_key is not None:
-                    # Result labels may be updated later via set_result.
-                    # Store a StringVar so set_result can reach the widget.
-                    var = tk.StringVar(master=self, value=text)
-                    variables[cell.result_key] = var
-                    widget.configure(textvariable=var)
-
-            self._cell_widgets[position] = widget
-
-    def _make_entry(
-        self,
-        cell: tk.Frame,
-        variable: tk.StringVar,
-        width_chars: int,
-    ) -> tk.Entry:
-        entry = tk.Entry(
-            cell,
-            textvariable=variable,
-            width=width_chars,
-            relief=tk.FLAT,
-            borderwidth=0,
-            highlightthickness=0,
-            background=cell_background(editable=True),
-            font=TABLE_BODY_FONT,
-            justify="center",
-        )
-        entry.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
-        entry.surface_role = "editable_entry"
-        return entry
-
     def _visible_rows_height(self) -> int:
-        visible_rows = max(1, len(self.cases) * len(self.spec.physical_rows))
-        bbox = self.table_frame.grid_bbox(0, 0, self.column_count() - 1, visible_rows)
-        if bbox:
-            return max(1, bbox[3])
-        return max(1, self.table_frame.winfo_reqheight())
-
-    def _handle_input_change(self, logical_index: int, key: str, value: str) -> None:
-        if self.cases[logical_index].get(key, "") == value:
-            return
-        self.cases[logical_index][key] = value
-        if self._batch_depth:
-            self._batch_changed = True
-            return
-        self._notify_changed()
+        return self.canvas_view.layout.height(max(1, self.row_count()))
 
     def _notify_changed(self) -> None:
         if self._values_changed_callback is not None:

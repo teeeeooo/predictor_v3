@@ -45,13 +45,16 @@ Trainer batch/model workflows may use explicit Run/Predict/Train actions.
 Tkinter has no native model / view / delegate equivalent. The
 adapter accepts the following patterns, picked per surface:
 
-- **Entry grid**: a 2D grid of `tk.Entry` (or `ttk.Entry`,
-  `ttk.Combobox`) widgets laid out by `.grid(...)`. Use this when
-  every cell must be editable, with type-to-replace and per-column
-  validators.
+- **Drawn input matrix with a native editor**: Calculator's MetricInputTable,
+  BatchCaseTable and BatchMatrixTable share CanvasMatrixView and one reusable
+  native Entry. Existing models/controllers own values, roles and transactions.
+  CanvasTableBinding routes logical hit testing, selection, keyboard and clipboard
+  actions to the same controller. Do not allocate one Entry/Label per cell.
+- **Native Entry grid**: retained for focused backend parity tests and surfaces
+  that require separate native controls. Reuse the same controller contract.
 - **Compact read-only grid**: shared cell rendering with native Frames/Labels
-  or a Canvas backend. Calculator uses `CompactResultGrid`; the staged
-  `CanvasResultGrid` pilot covers ISO/ISEER comparison and combination rankings.
+  or a Canvas backend. Calculator main summaries, compact results and combination
+  rankings use `CanvasResultGrid`; `CompactResultGrid` remains a parity reference.
   Canvas does not imply a separate interaction engine: rankings bind the
   existing `TkTableController` through logical hit testing and paint callbacks.
   See the [table architecture follow-up](../../designs/2026-07-12-calculator-table-architecture-design.md#22-calculator-rendering-performance-follow-up-2026-10-16).
@@ -64,8 +67,11 @@ hybrid widget for the same table.
 Canvas renderers must preserve the complete logical table's requested geometry
 independently of visible-item clipping, shared semantic/selection styling and
 logical copy/export data. Reuse the existing viewport for clipping/scroll/reveal
-and release subscriptions and queued paint callbacks on disposal. Native input
-editors remain unchanged until the separately staged editor migration.
+and release subscriptions, editor traces and queued paint callbacks on disposal.
+Reprojection must preserve the native Entry draft/caret unless authoritative data
+changes. Row growth and result refresh reuse the view/editor; role changes hide
+an editor that is no longer permitted. Full values remain in logical copy/export,
+independently of clipped visible text.
 
 ### Responsive Entry-grid construction
 
