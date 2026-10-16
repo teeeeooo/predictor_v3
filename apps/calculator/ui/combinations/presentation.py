@@ -5,16 +5,16 @@ TITLES = dict(iso="ISO / ISEER", hong_kong_cspf="Hong Kong CSPF", hong_kong_hspf
               m_hspf="AHRI M HSPF", seer2="AHRI M1 SEER2", hspf2="AHRI M1 HSPF2")
 LABELS = {
     "declared_capacity": "정격 냉방능력 [W]", "rated_cooling_capacity": "정격 냉방능력 [W]",
-    "a2_capacity": "A2 / AFull 냉방능력 [Btu/h]", "p_design_c_w": "Pdesignc [W]", "p_design_h_w": "Pdesignh [W]",
-    "t_design_c": "설계 냉방 온도 [°C]", "tbiv_temp_c": "Tbiv [°C]", "tol_temp_c": "TOL [°C]",
-    "p_to_w": "Thermostat-off [W]", "p_sb_w": "Standby [W]", "p_ck_w": "Crankcase [W]", "p_off_w": "Off [W]",
+    "a2_capacity": "A2 / AFull [Btu/h]", "p_design_c_w": "Pdesignc [W]", "p_design_h_w": "Pdesignh [W]",
+    "t_design_c": "Tdesignc [°C]", "tbiv_temp_c": "Tbiv [°C]", "tol_temp_c": "TOL [°C]",
+    "p_to_w": "Pto [W]", "p_sb_w": "Psb [W]", "p_ck_w": "Pck [W]", "p_off_w": "Poff [W]",
     "cd": "Cd", "cd_low": "Cd Low", "cd_full": "Cd Full", "cd_boost": "Cd Boost",
     "cut_out_c": "Cut-out [°C]", "cut_in_c": "Cut-in [°C]", "defrost_credit": "Defrost credit",
     "defrost_factor": "Defrost factor", "defrost_mode": "제상 모드", "appliance_type": "기기 형식",
-    "defrost_test_minutes": "Defrost test [min]", "defrost_max_minutes": "Defrost max [min]",
-    "defrost_t_test_minutes": "Defrost test [min]", "defrost_t_max_minutes": "Defrost max [min]",
-    "low_stage_lockout_enabled": "Low stage lockout", "low_stage_lockout_temp_f": "Low stage lockout [°F]",
-    "low_stage_lockout_temp_c": "Low stage lockout [°C]", "automatic_cutout": "자동 Cut-out",
+    "defrost_test_minutes": "Ttest [min]", "defrost_max_minutes": "Tmax [min]",
+    "defrost_t_test_minutes": "Ttest [min]", "defrost_t_max_minutes": "Tmax [min]",
+    "low_stage_lockout_enabled": "Low stage lockout", "low_stage_lockout_temp_f": "Lockout [°F]",
+    "low_stage_lockout_temp_c": "Low Lockout [°C]", "automatic_cutout": "자동 Cut-out",
     "demand_defrost": "Demand defrost", "minimum_speed_limited": "최저 속도 제한",
     "h1n_same_speed_as_h32": "H1N / H32 동일 속도", "region": "Region", "product_classification": "제품 형식",
 }
@@ -48,7 +48,7 @@ def context_tab_labels(contexts):
                 modes.get(context.mode, context.mode)) if value)
         labels.append(label)
     # Options create separate sessions. Keep their tabs distinct and concise;
-    # the selected session's exact flags remain visible in 실행 옵션.
+    # The selected session's flags remain visible above its candidate tables.
     counts = {}
     result = []
     for label in labels:

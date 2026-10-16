@@ -3,12 +3,13 @@ from dataclasses import replace
 from tkinter import ttk
 
 from apps.calculator.application.combinations.service import preflight, start
-from apps.calculator.ui.batch.models import BatchProfileSpec, BatchColumnSpec as Column, BatchColumnRole as Role
-from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE, APP_WINDOW_FALLBACK_MIN_HEIGHT
-from .candidates import CandidatePanel, CandidateTable
+from apps.calculator.ui.layout_constants import (
+    BATCH_DIALOG_SAFETY_MIN_SIZE, APP_WINDOW_FALLBACK_MIN_HEIGHT, COMBINATION_DIALOG_PREFERRED_WIDTH,
+)
+from .candidates import CandidatePanel
 from .results import ResultsPanel
-from .options import OptionsPanel
-from .presentation import field_label, context_tab_labels, STATUS
+from .settings import SettingsPanel
+from .presentation import context_tab_labels, STATUS
 
 
 class CombinationContent:
@@ -23,6 +24,7 @@ class CombinationContent:
 
     def build_content(self, parent):
         self.frame = ttk.Frame(parent)
+        self.frame.preferred_content_size = self.preferred_content_size
         self.frame.columnconfigure(0, weight=1)
         # Reserve editing space independently of the current candidate count.
         # Without a uniform group, the result table's requested height takes
@@ -42,34 +44,12 @@ class CombinationContent:
         self.reload_button = ttk.Button(controls, text="메인 입력으로 초기화", command=self.manager.reload)
         self.reload_button.pack(side="left")
         ttk.Label(controls, text="현재 탭의 후보·결과 초기화").pack(side="left")
-        tabs = ttk.Notebook(self.frame)
-        tabs.grid(row=2, column=0, sticky="nsew")
-        candidate_frame = ttk.Frame(tabs)
-        candidate_frame.columnconfigure(0, weight=1)
-        candidate_frame.rowconfigure(0, weight=1)
-        tabs.add(candidate_frame, text="시험점 후보")
-        common_frame = ttk.Frame(tabs)
-        tabs.add(common_frame, text="공통 설정")
-        common_frame.columnconfigure(0, weight=1)
-        common_frame.rowconfigure(0, weight=1)
-        self.options_panel = OptionsPanel(tabs, self.manager, self.session.context)
-        tabs.add(self.options_panel, text="실행 옵션")
-        self.candidates = CandidatePanel(candidate_frame, self.session, self.refresh)
-        self.candidates.grid(row=0, column=0, sticky="nsew")
+        self.candidates = CandidatePanel(self.frame, self.session, self.refresh,
+            header_factory=lambda parent, viewport: SettingsPanel(parent, self.session, viewport=viewport,
+                changed=self.change_common, options_changed=self.manager.change_options))
+        self.candidates.grid(row=2, column=0, sticky="nsew")
+        self.settings = self.candidates.header
         self.points = tuple(self.adapter.draft_points(self.session.context))
-        fields = {field for p in self.points for field in (p.capacity_field, p.power_field)}
-        common = [dict(field=key, value=value) for key, value in self.session.context.values if key not in fields]
-        self.common_keys = [row["field"] for row in common]
-        for row in common:
-            row["field"] = field_label(row["field"])
-        self.common = None
-        if common:
-            self.common = CandidateTable(common_frame, BatchProfileSpec("combination_common", "공통 설정", (
-                Column("field", "설정", Role.RESULT, 28), Column("value", "값", Role.INPUT)), tuple(common)), values_changed_callback=self.change_common)
-            self.common.row_limit = len(common)
-            self.common.grid(row=0, column=0, sticky="nsew")
-        else:
-            ttk.Label(common_frame, text="추가 공통 수치 설정이 없습니다.").grid(row=0, column=0, sticky="nw")
         self.status = ttk.Label(self.frame)
         self.status.grid(row=3, column=0, sticky="w")
         bar = ttk.Frame(self.frame)
@@ -93,11 +73,14 @@ class CombinationContent:
         if index != self.context_index:
             self.manager.select(index)
 
-    def change_common(self):
-        if self.common is None or self.common.locked:
+    def preferred_content_size(self):
+        return max(COMBINATION_DIALOG_PREFERRED_WIDTH, self.frame.winfo_reqwidth()), self.frame.winfo_reqheight()
+
+    def change_common(self, changes):
+        if self.disposed or self.settings.locked:
             return
         values = dict(self.session.context.values)
-        values.update({key: row["value"] for key, row in zip(self.common_keys, self.common.get_text_rows())})
+        values.update(changes)
         self.session.context = replace(self.session.context, values=tuple(values.items()))
         self.session.changed()
         self.refresh()
@@ -119,6 +102,7 @@ class CombinationContent:
             self.status.configure(text=str(exc).replace(" · 행 ", " · 후보 #"))
             valid = False
         running = self.session.run is not None and self.session.run.status == "running"
+        self.settings.refresh(self.points)
         self.calculate_button.state(["!disabled" if valid and not running else "disabled"])
         self.cancel_button.state(["!disabled" if running else "disabled"])
         self.reload_button.state(["!disabled" if not running and self.manager.reload_source() is not None else "disabled"])
@@ -128,8 +112,7 @@ class CombinationContent:
 
     def calculate(self):
         self.candidates.commit()
-        if self.common is not None:
-            self.common.interaction_controller._commit_edit()
+        self.settings.commit()
         try:
             run = start(self.session, self.adapter)
         except (ValueError, TypeError, KeyError) as exc:
@@ -156,11 +139,7 @@ class CombinationContent:
 
     def lock(self, locked):
         self.candidates.lock(locked)
-        self.options_panel.lock(locked)
-        if self.common is not None:
-            self.common.locked = locked
-            self.common.canvas_view.refresh()
-            self.common.interaction_controller.refresh()
+        self.settings.lock(locked, self.points)
         for index in range(len(self.manager.contexts)):
             self.context_tabs.tab(index, state="disabled" if locked and index != self.context_index else "normal")
         self.reload_button.state(["disabled" if locked else "!disabled"])
@@ -171,6 +150,7 @@ class CombinationContent:
 
     def snapshot(self):
         self.candidates.commit()
+        self.settings.commit()
         return self.session
 
     def dispose(self):

@@ -93,12 +93,11 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
                 assert (block.table is not None) == point.independent
                 if block.table is not None:
                     assert block.table.row_count()==2
-            if content.common is not None:
-                count=content.common.row_count()
-                content.common.ensure_row_count(count+1)
-                assert content.common.row_count()==count
-            else:
-                assert not content.common_keys
+            common_keys = set(content.settings.field_tables) | set(content.settings.options.selectors).intersection({"appliance_type"})
+            assert common_keys == set(dict(content.session.context.values))
+            assert all(table.row_count() == 1 for table in content.settings.tables)
+            if context.kind.startswith("en_"):
+                assert all(not key.startswith("declared_") for key in common_keys)
             assert content.calculate_button.instate(["!disabled"]), (context,content.status.cget("text"))
             content.calculate_button.invoke()
             run=content.session.run
@@ -112,12 +111,12 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
                 block=content.candidates.blocks["H3Low"]
                 assert block.table is None
                 retained=tuple(content.session.pools["H3Low"])
-                row=content.common_keys.index("low_min_c")
-                original=content.common.text_at_position((row,1))
-                content.common.set_positions_batch({(row,1): "0"})
+                settings_table=content.settings.field_tables["low_min_c"]
+                original=settings_table.get_text_values()["low_min_c"]
+                settings_table.set_address_values_batch({("value", "low_min_c"): "0"})
                 assert block.table is not None
                 assert tuple(content.session.pools["H3Low"])==retained
-                content.common.set_positions_batch({(row,1): original})
+                settings_table.set_address_values_batch({("value", "low_min_c"): original})
                 assert block.table is None
                 assert tuple(content.session.pools["H3Low"])==retained
                 root.update()
@@ -150,7 +149,7 @@ def test_actual_app_all_section_contexts_detail_export_and_reopen(root, tmp_path
         manager.open()
         original=manager.current
         content=manager.handle.dialog._adapter
-        button=next(w for w in content.options_panel.controls if w.cget("text")=="H2 BOOST 실측")
+        button=content.settings.options.flag_controls["measured_h2_boost"]
         button.invoke()
         assert manager.current is not original
         assert manager.current.run is None
@@ -477,6 +476,106 @@ def test_ten_thousand_wide_results_keep_widgets_and_callbacks_bounded(root):
     finally:
         if window.winfo_exists():
             window.destroy()
+
+
+def test_inline_en_settings_edit_lock_reopen_and_wide_initial_size(root):
+    from apps.calculator.ui.combinations.manager import CombinationManager
+    from apps.calculator.ui.table.roles import CellRole
+    context = next(c for c in contexts() if c.kind == "en_seer")
+    manager = CombinationManager(root, lambda: [context])
+    manager.open()
+    try:
+        shell = manager.handle.dialog
+        content = shell._adapter
+        root.update()
+        # Settings share the candidate viewport; only calculation-context tabs remain.
+        assert content.settings.master is content.candidates.viewport.content
+        assert content.settings.winfo_ismapped()
+        assert not any(isinstance(child, ttk.Notebook) and child is not content.context_tabs
+                       for child in content.frame.winfo_children())
+        assert shell.window.winfo_width() >= min(1100, int(root.winfo_screenwidth() * 0.8))
+        table = content.settings.field_tables["p_design_c_w"]
+        controller = content.settings.controllers[content.settings.tables.index(table)]
+        assert [key for key, _ in table.columns] == ["p_design_c_w", "t_design_c", "cd"]
+        controller.select((0, 0))
+        table.clipboard_clear(); table.clipboard_append("3600\t35\t0.2")
+        controller._paste()
+        assert dict(manager.current.context.values)["p_design_c_w"] == "3600"
+        assert dict(context.values)["p_design_c_w"] == "3500"
+        selector = content.settings.options.selectors["appliance_type"]
+        selector.set("cooling_only")
+        selector.event_generate("<<ComboboxSelected>>")
+        root.update()
+        assert dict(manager.current.context.values)["appliance_type"] == "cooling_only"
+        content.calculate()
+        assert table.cell_role((0, 0)) == CellRole.READONLY
+        assert selector.instate(["disabled"])
+        controller._undo_last()
+        assert table.get_text_values()["p_design_c_w"] == "3600"
+        run = content.session.run
+        pump(root, lambda: run.status != "running")
+        assert run.succeeded == 1
+        assert table.cell_role((0, 0)) == CellRole.EDITABLE
+        assert selector.instate(["readonly", "!disabled"])
+        shell.window.geometry("640x480")
+        root.update()
+        viewport = content.candidates.viewport
+        viewport.canvas.yview_moveto(1)
+        root.update()
+        assert viewport.canvas.yview()[1] == 1
+        assert content.calculate_button.winfo_rooty() < content.results.winfo_rooty()
+        assert content.results.winfo_rooty()+content.results.winfo_height() <= shell.window.winfo_rooty()+shell.window.winfo_height()
+        manager.handle.dispose()
+        manager.open()
+        content = manager.handle.dialog._adapter
+        assert content.session.run is run
+        assert content.settings.field_tables["p_design_c_w"].get_text_values()["p_design_c_w"] == "3600"
+        assert content.settings.options.selectors["appliance_type"].get() == "cooling_only"
+    finally:
+        manager.handle.dispose()
+
+
+def test_inline_product_controls_preserve_geometry_and_requiredness(root):
+    from apps.calculator.ui.combinations.manager import CombinationManager
+    from apps.calculator.ui.table.roles import CellRole
+    context = next(c for c in contexts() if c.product == "triple_capacity_northern")
+    manager = CombinationManager(root, lambda: [context])
+    manager.open()
+    try:
+        shell = manager.handle.dialog
+        shell.window.geometry("900x650+50+50")
+        root.update()
+        geometry = shell.window.geometry()
+        content = shell._adapter
+        flags = content.settings.options.flag_controls
+        assert set(flags) == {"measured_h2_low", "measured_h2_boost", "measured_h3_low"}
+        assert flags["measured_h2_low"].instate(["disabled"])
+        assert flags["measured_h3_low"].instate(["disabled"])
+        table = content.settings.field_tables["low_min_c"]
+        table.set_address_values_batch({("value", "low_min_c"): "0"})
+        assert content.settings.options.variables["measured_h3_low"].get()
+        assert content.candidates.blocks["H3Low"].table is not None
+        retained = tuple(content.session.pools["H3Low"])
+        selector = content.settings.options.selectors["defrost_mode"]
+        selector.set("calculated_from_timing")
+        selector.event_generate("<<ComboboxSelected>>")
+        root.update()
+        assert manager.handle.dialog is shell
+        assert shell.window.geometry() == geometry
+        content = shell._adapter
+        assert dict(content.session.context.options)["defrost_mode"] == "calculated_from_timing"
+        assert tuple(content.session.pools["H3Low"]) == retained
+        for key, role in (("defrost_factor", CellRole.READONLY), ("defrost_t_test_minutes", CellRole.EDITABLE)):
+            table = content.settings.field_tables[key]
+            column = [name for name, _ in table.columns].index(key)
+            assert table.cell_role((0, column)) == role
+        content.settings.options.flag_controls["measured_h2_boost"].invoke()
+        root.update()
+        assert manager.handle.dialog is shell and shell.window.geometry() == geometry
+        assert shell._adapter.candidates.blocks["H2Boost"].table is None
+        assert dict(context.options)["measured_h2_boost"] is True
+    finally:
+        manager.handle.dispose()
 
 
 def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_path,monkeypatch):

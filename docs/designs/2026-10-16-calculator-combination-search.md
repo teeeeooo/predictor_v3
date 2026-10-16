@@ -121,7 +121,9 @@ Concrete reuse points:
   `ui/table/surface.py`, batch viewport and shared visual policy. The batch
   matrix's complete-case model does not represent independent point pools;
   a feature-local candidate-column adapter projects those existing pools.
-  Common settings retain `ui/batch/case_table.py`. Read-only results do not
+  Inline numeric settings also use `MetricInputTable` and the shared controller;
+  product flags and choice controls use the main calculator's widget types.
+  Read-only results do not
   acquire a fake editable column to fit an input schema.
 - Existing `ui/batch/controller.py` is synchronous and table-bound. A separate
   combination service is justified by lazy enumeration, pinned session state,
@@ -228,6 +230,17 @@ are unnecessary for this limit.
   ranking context selector. Reuse existing standard field definitions/defaults.
   On first open, seed each point with the invoking section's current measurement
   where present, preserving incomplete drafts instead of inventing sample data.
+- Settings are inline above the test points, using horizontal numeric matrices,
+  read-only choice dropdowns and product-relevant checkboxes as on the main page.
+  There are no separate 시험점 후보 / 공통 설정 / 실행 옵션 tabs. Omit empty
+  settings sections and internal option metadata. Preserve conditional
+  read-only fields and automatically determined test points.
+- Settings and test points share one two-axis input viewport. Calculate/Cancel
+  and ranked results remain outside that viewport. Initial content width prefers
+  1,120 px, growing for wider settings under the existing shell's screen cap;
+  this is not a manual minimum or maximum. Manual shrinking retains internal
+  scrolling. Option changes replace content in the same window and preserve
+  geometry and the prior session's drafts/results.
 - Middle: vertically stacked test-point blocks, each with candidate columns and
   Capacity/Power rows, as fixed in §6.1. All points share the input viewport;
   there is no point-selection dropdown. Auto/mapped/inactive blocks show their
@@ -301,7 +314,8 @@ Power [W]         400      420
   candidate columns within that block. A header click selects the whole pair.
 - Default blocks expose the two measurement rows together, without selecting a
   point first. Many points scroll vertically in one contained input viewport;
-  candidate columns scroll horizontally. Common settings/options stay separate.
+  candidate columns scroll horizontally. Fixed settings/options appear together
+  above the point blocks and never become candidate axes.
 - Put each test-point name (e.g. STD/HALF) in the table's top-left corner cell.
   Below each table, place one compact row containing the candidate range,
   `유효 valid/total`, `+ 열 추가`, `삭제`, `포함/제외`, and `‹ page/total ›`.
@@ -313,7 +327,7 @@ Power [W]         400      420
   an unlabeled dropdown. Tab switches preserve the window geometry and each
   session's draft/results; other tabs are disabled during a run. Option variants
   with the same base title receive distinct setting numbers, with exact flags
-  in 실행 옵션. The main-input reload action is labelled 메인 입력으로 초기화,
+  above the candidate tables. The main-input reload action is labelled 메인 입력으로 초기화,
   explains that the current tab's candidates/results are reset, and is disabled
   when no matching context exists in the invoking main section.
 - Paste a 2×N TSV rectangle starting at Capacity #1 without transposition.

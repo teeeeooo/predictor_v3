@@ -5,18 +5,11 @@ from tkinter import ttk
 from apps.calculator.application.combinations.models import Candidate
 from apps.calculator.application.combinations.service import validate_candidate, ValidationError
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.table.canvas_binding import CanvasTableBinding
+from .table_controller import CombinationTableController
 
 PAGE_SIZE = 100
-
-
-class CandidateColumnController(TkTableController):
-    def _undo_last(self, event=None):
-        if self.table.locked:
-            return "break"
-        return super()._undo_last(event)
 
 
 class CandidateColumns(ttk.Frame):
@@ -33,7 +26,7 @@ class CandidateColumns(ttk.Frame):
         self.interaction_controller = None
         self.table_presentation = CanvasTableBinding(lambda: self.grid_table.canvas_view)
         self.rebuild()
-        self.interaction_controller = CandidateColumnController(self)
+        self.interaction_controller = CombinationTableController(self)
         self.bind_headers()
 
     @property

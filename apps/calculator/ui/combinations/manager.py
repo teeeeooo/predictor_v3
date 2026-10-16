@@ -54,13 +54,17 @@ class CombinationManager:
             self.handle.open_or_focus(self.create)
 
     def change_options(self, options):
-        self.handle.dispose()
+        if self.handle.dialog:
+            self.handle.dialog.snapshot()
         context = replace(self.current.context, options=tuple(options.items()))
         if context.identity not in self.sessions:
             self.sessions[context.identity] = Session(context, {k: list(v) for k,v in self.current.pools.items()})
             self.contexts.append(context)
         self.current = self.sessions[context.identity]
-        self.handle.open_or_focus(self.create)
+        if self.handle.dialog:
+            self.handle.dialog.replace_content(CombinationContent(self, self.current))
+        else:
+            self.handle.open_or_focus(self.create)
 
     def reload_source(self):
         return next((ctx for ctx in self.source() if ctx.identity == self.current.context.identity), None)

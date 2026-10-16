@@ -183,6 +183,9 @@ def test_offscreen_candidate_blocks_reveal_edit_and_remeasure_pages(root):
         viewport = panel.viewport
         first, last = panel.blocks[points[0].key], panel.blocks[last_key]
         natural = (viewport.content.winfo_reqwidth(), viewport.content.winfo_reqheight())
+        # Inline settings precede the points, so reveal the first point first.
+        viewport.reveal_cell(first)
+        root.update()
         assert first.winfo_ismapped()
         assert not last.winfo_ismapped()
         table = last.table
