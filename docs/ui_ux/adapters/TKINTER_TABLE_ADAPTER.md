@@ -73,6 +73,15 @@ changes. Row growth and result refresh reuse the view/editor; role changes hide
 an editor that is no longer permitted. Full values remain in logical copy/export,
 independently of clipped visible text.
 
+Fixed-shape main result tables reserve their final columns and value rows before
+calculation and retain them for incomplete or invalid inputs. Use
+`ResultPanel.show_placeholder()` for summary cards; placeholders are presentation,
+not logical results. EN14825 SEER and AHRI M1 SEER2/HSPF2 pass
+`empty_result_text=""` to preserve their existing empty Copy/CSV output. Their
+placeholder and calculated columns share one definition per product. Product
+switches use the existing refit lifecycle; ordinary input edits update values
+without adding a window refit or recreating the result table.
+
 ### Responsive Entry-grid construction
 
 - Wrap editable entries in cell frames and expose row, column, role, and

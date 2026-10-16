@@ -26,6 +26,7 @@ from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.result_models import ResultSummary
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import (
     EN14825_SEER_BIN_DETAIL_SCHEMA,
@@ -55,6 +56,12 @@ STATUS_MAPPINGS = {
     "declared_error": "Declared 계산 오류",
     "tested_error": "Tested 계산 오류",
 }
+
+_RESULT_TITLE = "EN14825 SEER 결과"
+_RESULT_FIELDS = (
+    "Declared SEER", "Tested SEER", "SEER %",
+    "Declared QC [kWh]", "Tested QC [kWh]",
+)
 
 
 class En14825SeerSection:
@@ -367,9 +374,7 @@ class En14825SeerSection:
                 and not any(value.strip() for value in text_vals.values())
             ):
                 self.input_table.clear_invalid_fields()
-                self.result_panel.clear()
-                self._clear_computed_rows()
-                self._clear_detail("\uc785\ub825 \ub300\uae30")
+                self._clear_results()
                 return
             invalid_fields = {}
             parsed_vals = {}
@@ -385,9 +390,9 @@ class En14825SeerSection:
 
             if invalid_fields:
                 self.input_table.set_invalid_fields(invalid_fields)
-                self.result_panel.clear()
-                self._clear_computed_rows()
-                self._clear_detail("입력 오류: 숫자 입력을 확인하세요.")
+                self._clear_results(
+                    "입력 오류: 숫자 입력을 확인하세요.", tone=SemanticTone.INVALID
+                )
                 return
             else:
                 self.input_table.clear_invalid_fields()
@@ -404,9 +409,7 @@ class En14825SeerSection:
             p_off_w = self._parse_float_safe(common_inputs.get("p_off", "0"), 0.0)
 
         except Exception:
-            self.result_panel.clear()
-            self._clear_computed_rows()
-            self._clear_detail("입력 대기: 설계 조건을 확인하세요.")
+            self._clear_results("입력 대기: 설계 조건을 확인하세요.")
             return
 
         # 2. Build point inputs
@@ -481,6 +484,19 @@ class En14825SeerSection:
         self._detail_status = status
         self.detail_panel.set_status(status)
 
+    def _clear_results(
+        self, status: str = "입력 대기", *, tone: SemanticTone = SemanticTone.PENDING
+    ) -> None:
+        self.result_panel.show_placeholder(
+            title=_RESULT_TITLE,
+            field_labels=_RESULT_FIELDS,
+            status=status,
+            tone=tone,
+            empty_result_text="",
+        )
+        self._clear_computed_rows()
+        self._clear_detail(status)
+
     def _toggle_detail(self) -> None:
         self._detail_visibility.toggle()
 
@@ -522,19 +538,19 @@ class En14825SeerSection:
     def _update_result_summary(self, summary: SeerResultSummary) -> None:
         status_text = STATUS_MAPPINGS.get(summary.status_code, "계산 완료")
 
-        fields = (
-            ("Declared SEER", f"{summary.declared_seer:.2f}" if summary.declared_seer is not None else "-"),
-            ("Tested SEER", f"{summary.tested_seer:.2f}" if summary.tested_seer is not None else "-"),
-            ("SEER %", f"{summary.seer_percent:.1f}%" if summary.seer_percent is not None else "-"),
-            ("Declared QC [kWh]", f"{summary.declared_qc_kwh:.1f}" if summary.declared_qc_kwh is not None else "-"),
-            ("Tested QC [kWh]", f"{summary.tested_qc_kwh:.1f}" if summary.tested_qc_kwh is not None else "-"),
+        values = (
+            f"{summary.declared_seer:.2f}" if summary.declared_seer is not None else "-",
+            f"{summary.tested_seer:.2f}" if summary.tested_seer is not None else "-",
+            f"{summary.seer_percent:.1f}%" if summary.seer_percent is not None else "-",
+            f"{summary.declared_qc_kwh:.1f}" if summary.declared_qc_kwh is not None else "-",
+            f"{summary.tested_qc_kwh:.1f}" if summary.tested_qc_kwh is not None else "-",
         )
 
         self.result_panel.set_summaries(
             [
                 ResultSummary(
-                    title="EN14825 SEER 결과",
-                    fields=fields,
+                    title=_RESULT_TITLE,
+                    fields=tuple(zip(_RESULT_FIELDS, values, strict=True)),
                     status=status_text,
                 )
             ]

@@ -32,11 +32,17 @@ from apps.calculator.ui.sections.ahri_seer2_detail import format_seer2_bin_detai
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_SEER2_BIN_DETAIL_SCHEMA
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
+from apps.calculator.ui.table.visual_policy import SemanticTone
 
 _PRODUCT_LABELS = {
     "Variable Capacity": "variable_capacity",
     "Dual Stage": "dual_stage",
 }
+
+_VARIABLE_RESULT_FIELDS = ("SEER2", "Total Cooling [kBtu]", "Total Energy [kWh]")
+_DUAL_RESULT_FIELDS = (
+    "SEER2 Raw", "SEER2 Published", "Total Cooling [kBtu]", "Total Energy [kWh]",
+)
 
 
 class AhriSeer2Section:
@@ -297,10 +303,12 @@ class AhriSeer2Section:
             )
         except AhriSeer2InputError as exc:
             self._surface.set_invalid_fields(exc.field_errors)
-            self._clear_results("입력 오류: 숫자 입력을 확인하세요.")
+            self._clear_results(
+                "입력 오류: 숫자 입력을 확인하세요.", tone=SemanticTone.INVALID
+            )
             return
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
-            self._clear_results("계산 오류")
+            self._clear_results("계산 오류", tone=SemanticTone.INVALID)
             return
         self._surface.clear_invalid_fields()
         if summary is None:
@@ -308,18 +316,19 @@ class AhriSeer2Section:
             return
         self._surface.set_result_eer2(summary.eer2_by_point)
         if summary.product_classification == "dual_stage":
-            fields = (
-                ("SEER2 Raw", f"{summary.raw_seer2:.6f}"),
-                ("SEER2 Published", f"{summary.published_seer2:.2f}"),
-                ("Total Cooling [kBtu]", f"{summary.total_cooling_kbtu:.3f}"),
-                ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
+            values = (
+                f"{summary.raw_seer2:.6f}",
+                f"{summary.published_seer2:.2f}",
+                f"{summary.total_cooling_kbtu:.3f}",
+                f"{summary.total_energy_kwh:.3f}",
             )
         else:
-            fields = (
-                ("SEER2", f"{summary.seer2:.3f}"),
-                ("Total Cooling [kBtu]", f"{summary.total_cooling_kbtu:.3f}"),
-                ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
+            values = (
+                f"{summary.seer2:.3f}",
+                f"{summary.total_cooling_kbtu:.3f}",
+                f"{summary.total_energy_kwh:.3f}",
             )
+        fields = tuple(zip(self._result_field_labels(), values, strict=True))
         self.result_panel.set_summaries(
             (ResultSummary("SEER2", fields, "자동 계산 완료"),)
         )
@@ -334,11 +343,26 @@ class AhriSeer2Section:
         else:
             self._clear_detail("상세 데이터 없음")
 
-    def _clear_results(self, detail_status: str = "입력 대기") -> None:
+    def _result_field_labels(self) -> tuple[str, ...]:
+        return (
+            _DUAL_RESULT_FIELDS
+            if self.product_classification == "dual_stage"
+            else _VARIABLE_RESULT_FIELDS
+        )
+
+    def _clear_results(
+        self, detail_status: str = "입력 대기", *, tone: SemanticTone = SemanticTone.PENDING
+    ) -> None:
         if hasattr(self, "_surface"):
             self._surface.clear_result_eer2()
         if hasattr(self, "result_panel"):
-            self.result_panel.clear()
+            self.result_panel.show_placeholder(
+                title="SEER2",
+                field_labels=self._result_field_labels(),
+                status=detail_status,
+                tone=tone,
+                empty_result_text="",
+            )
         self._clear_detail(detail_status)
 
     def _clear_detail(self, status: str) -> None:

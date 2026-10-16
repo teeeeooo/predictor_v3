@@ -327,7 +327,8 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
     assert "a2_power" not in section.a2_table.field_order
     assert section.heating_table.static_text(("cop", "H01")) == ""
     assert section.heating_table.static_text(("cop", "H12")) == ""
-    assert section.result_panel.summary_tables == {}
+    assert section.result_panel.summary_grids["HSPF2"].rows == (("-", "-", "-"),)
+    assert section.result_panel.sectioned_csv_rows() == (("Status", "No results"),)
     assert section._detail_status == "입력 대기"
     visible_fields = {
         *section.numeric_table.field_order,

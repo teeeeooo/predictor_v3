@@ -25,6 +25,14 @@ def _assert_blank(values: dict[str, str]) -> None:
     assert all(not value.strip() for value in values.values())
 
 
+def _assert_empty_result_table(panel, columns: int) -> None:
+    grid, = panel.summary_grids.values()
+    assert len(grid.headers) == columns
+    assert grid.rows == (("-",) * columns,)
+    assert panel._summaries == ()
+    assert panel.sectioned_csv_rows() == (("Status", "No results"),)
+
+
 def test_en14825_profiles_keep_options_but_start_without_performance_data(
     tk_root,
 ) -> None:
@@ -39,7 +47,7 @@ def test_en14825_profiles_keep_options_but_start_without_performance_data(
     }
     _assert_blank(seer.input_table.get_text_values())
     assert seer._detail_status.startswith("\uc785\ub825 \ub300\uae30")
-    assert not seer.result_panel.summary_tables
+    _assert_empty_result_table(seer.result_panel, 5)
 
     scop = En14825ScopSection(tk_root)
     assert scop.cd_table.get_text_values() == {"cd": "0.25"}
@@ -62,7 +70,7 @@ def test_ahri_profiles_keep_options_but_start_without_performance_data(
     assert seer2.type_var.get() == "HP"
     _assert_blank(seer2.input_table.get_text_values())
     assert seer2._detail_status == "\uc785\ub825 \ub300\uae30"
-    assert not seer2.result_panel.summary_tables
+    _assert_empty_result_table(seer2.result_panel, 3)
 
     hspf2 = AhriHspf2Section(tk_root)
     assert hspf2.region_var.get() == "IV"
@@ -79,7 +87,7 @@ def test_ahri_profiles_keep_options_but_start_without_performance_data(
     _assert_blank(hspf2.a2_table.get_text_values())
     _assert_blank(hspf2.heating_table.get_text_values())
     assert hspf2._detail_status == "\uc785\ub825 \ub300\uae30"
-    assert not hspf2.result_panel.summary_tables
+    _assert_empty_result_table(hspf2.result_panel, 3)
 
 
 def test_iso_hong_kong_and_saso_profiles_start_in_input_waiting_state(

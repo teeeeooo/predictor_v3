@@ -45,12 +45,19 @@ from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDeta
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_HSPF2_BIN_DETAIL_SCHEMA
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.visual_policy import SemanticTone
 
 _PRODUCT_LABELS = {
     "Variable Capacity": "variable_capacity",
     "Dual Stage": "dual_stage",
     "Triple Stage Northern": "triple_capacity_northern",
 }
+
+_VARIABLE_RESULT_FIELDS = ("HSPF2", "Total Heating [kBtu]", "Total Energy [kWh]")
+_MULTI_RESULT_FIELDS = (
+    "HSPF2 Raw", "HSPF2 Published", "Total Heating [kBtu]",
+    "Compressor Energy [kWh]", "Resistance Energy [kWh]", "Total Energy [kWh]",
+)
 
 
 class AhriHspf2Section:
@@ -349,8 +356,7 @@ class AhriHspf2Section:
                 else AHRI_TRIPLE_HSPF2_BIN_DETAIL_SCHEMA
             )
         self._replace_detail_panel(schema)
-        self.result_panel.clear()
-        self._clear_detail("입력 대기")
+        self._clear_results()
         self.schedule_recalculate()
         self._request_refit()
 
@@ -430,32 +436,32 @@ class AhriHspf2Section:
                 }
                 if errors:
                     table.set_invalid_fields(errors)
-            self.result_panel.clear()
-            self._clear_detail("입력 오류: 숫자 입력을 확인하세요.")
+            self._clear_results(
+                "입력 오류: 숫자 입력을 확인하세요.", tone=SemanticTone.INVALID
+            )
             return
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
-            self.result_panel.clear()
-            self._clear_detail("계산 오류")
+            self._clear_results("계산 오류", tone=SemanticTone.INVALID)
             return
         if summary is None:
-            self.result_panel.clear()
-            self._clear_detail("입력 대기")
+            self._clear_results()
             return
         if summary.product_classification == "variable_capacity":
-            fields = (
-                ("HSPF2", f"{summary.hspf2:.3f}"),
-                ("Total Heating [kBtu]", f"{summary.total_heating_kbtu:.3f}"),
-                ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
+            values = (
+                f"{summary.hspf2:.3f}",
+                f"{summary.total_heating_kbtu:.3f}",
+                f"{summary.total_energy_kwh:.3f}",
             )
         else:
-            fields = (
-                ("HSPF2 Raw", f"{summary.raw_hspf2:.6f}"),
-                ("HSPF2 Published", f"{summary.published_hspf2:.2f}"),
-                ("Total Heating [kBtu]", f"{summary.total_heating_kbtu:.3f}"),
-                ("Compressor Energy [kWh]", f"{summary.compressor_energy_kwh:.3f}"),
-                ("Resistance Energy [kWh]", f"{summary.resistance_energy_kwh:.3f}"),
-                ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
+            values = (
+                f"{summary.raw_hspf2:.6f}",
+                f"{summary.published_hspf2:.2f}",
+                f"{summary.total_heating_kbtu:.3f}",
+                f"{summary.compressor_energy_kwh:.3f}",
+                f"{summary.resistance_energy_kwh:.3f}",
+                f"{summary.total_energy_kwh:.3f}",
             )
+        fields = tuple(zip(self._result_field_labels(), values, strict=True))
         self.result_panel.set_summaries((ResultSummary("HSPF2", fields, "자동 계산 완료"),))
         rows = format_hspf2_bin_details(summary.bin_details)
         if rows:
@@ -472,6 +478,25 @@ class AhriHspf2Section:
             )
         else:
             self._clear_detail("상세 데이터 없음")
+
+    def _result_field_labels(self) -> tuple[str, ...]:
+        return (
+            _VARIABLE_RESULT_FIELDS
+            if self.product_classification == "variable_capacity"
+            else _MULTI_RESULT_FIELDS
+        )
+
+    def _clear_results(
+        self, status: str = "입력 대기", *, tone: SemanticTone = SemanticTone.PENDING
+    ) -> None:
+        self.result_panel.show_placeholder(
+            title="HSPF2",
+            field_labels=self._result_field_labels(),
+            status=status,
+            tone=tone,
+            empty_result_text="",
+        )
+        self._clear_detail(status)
 
     def _clear_detail(self, status: str) -> None:
         self._detail_status = status

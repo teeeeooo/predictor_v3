@@ -104,8 +104,13 @@ class ResultPanel:
         field_labels: Iterable[str],
         status: str = "입력 대기",
         tone: SemanticTone = SemanticTone.PENDING,
+        empty_result_text: str | None = None,
     ) -> None:
-        """Reserve the final summary shape without creating a logical result."""
+        """Reserve the final summary shape without creating a logical result.
+
+        Copy/CSV use the visible status by default. An empty result text keeps
+        the cleared-result export behavior independently of the visible table.
+        """
 
         placeholder = ResultSummary(
             title=title,
@@ -120,7 +125,7 @@ class ResultPanel:
         else:
             self._clear_summary_tables()
             self._render_summary_table(0, placeholder, value_tone=tone)
-        self._set_copy_text(status)
+        self._set_copy_text(status if empty_result_text is None else empty_result_text)
 
     def clear(self) -> None:
         self._summaries = ()

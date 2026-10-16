@@ -184,6 +184,30 @@ class TestStableUpdate:
 
 
 class TestResultActions:
+    def test_placeholder_can_keep_cleared_copy_and_csv_contract(
+        self, panel, monkeypatch
+    ) -> None:
+        copied = []
+        monkeypatch.setattr(panel._text, "clipboard_clear", copied.clear)
+        monkeypatch.setattr(panel._text, "clipboard_append", copied.append)
+        panel.set_summaries((ResultSummary("CSPF", (("CSPF", "4.939"),)),))
+        grid = panel.summary_grids["CSPF"]
+
+        panel.show_placeholder(
+            title="CSPF", field_labels=("CSPF",), status="입력 오류",
+            tone=SemanticTone.INVALID, empty_result_text="",
+        )
+        assert panel.summary_grids["CSPF"] is grid
+        assert grid.rows == (("-",),)
+        assert panel.summary_status_labels["CSPF"].cget("text") == "입력 오류"
+        assert panel.sectioned_csv_rows() == (("Status", "No results"),)
+        panel.copy_result()
+        assert copied == ["Status\tNo results"]
+
+        # Existing placeholder callers still export their visible status.
+        panel.show_placeholder(title="CSPF", field_labels=("CSPF",), status="입력 대기")
+        assert panel.sectioned_csv_rows() == (("Status", "입력 대기"),)
+
     def test_result_panel_copy_uses_latest_summary_and_status_only(
         self, panel, tk_root
     ) -> None:
