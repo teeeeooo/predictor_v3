@@ -35,14 +35,16 @@ work by default.
 
 **Calculator follow-up — native platform acceptance only when scheduled.**
 Specification §6.1 and the revised §7 CSV contract are implemented. Candidate
-blocks have point corner headers, controls below the table and context tabs.
+blocks have point corner headers, a compact single-row status/action/pager below
+each table, and context tabs. The name-entry option is removed; rankings identify
+candidates by their original column numbers only.
 Results support rectangular drag selection and Ctrl/Cmd+C through shared table
 owners, with bounded 100-row pages. CSV contains rank/value/metric, pinned
 capacity/power pairs and standard-specific extra results; provenance remains in
 detail, and partial/stale states also appear in proposed filenames.
-Verification passed 68 headless combination tests, 21 application boundary tests,
-6 native Tk integration tests and 30 shared controller/viewport checks. A fresh
-macOS ISO 3×5 screenshot confirmed the result cells and actions. Calculation
+Latest compact-layout verification passed 68 headless combination tests,
+7 native Tk integration tests and 28 calculator foundation checks. A fresh
+macOS ISO 3×5 screenshot confirmed the compact toolbar and number-only rankings. Calculation
 formulas and public result contracts remain unchanged. See the specification
 for native keyboard, save-panel and platform verification limits.
 The subsequent rendering audit fixed callback accumulation during page refresh.

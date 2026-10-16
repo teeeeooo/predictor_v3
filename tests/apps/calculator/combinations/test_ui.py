@@ -3,6 +3,7 @@ import csv
 from dataclasses import replace
 import time
 import tkinter as tk
+from tkinter import ttk
 import pytest
 
 from apps.calculator.ui.calculator_app import CalculatorTkApp
@@ -191,9 +192,20 @@ def test_point_blocks_share_viewport_and_resize(root):
                 assert bottom.winfo_rooty()+bottom.winfo_height() <= block.winfo_rooty()+block.winfo_height()
                 corner=block.table.grid_table.table_frame.grid_slaves(row=0, column=0)[0]
                 assert corner.winfo_children()[0].cget("text") == {"35_full":"STD", "35_half":"HALF"}[block.point.key]
-                assert "유효" in block.caption.cget("text") and "전체" in block.caption.cget("text")
+                assert "유효" in block.caption.cget("text") and "/" in block.caption.cget("text")
+                assert "붙여넣기" not in block.caption.cget("text")
+                assert not hasattr(block, "names_button")
+                assert block.page_caption.cget("text") == "1/1"
+                assert block.buttons[3].instate(["disabled"]) and block.buttons[4].instate(["disabled"])
                 assert bottom.winfo_rooty()+bottom.winfo_height() <= block.caption.winfo_rooty()
-                assert block.caption.winfo_rooty()+block.caption.winfo_height() <= block.buttons[0].winfo_rooty()
+                assert block.caption.master is block.buttons[0].master is block.toolbar
+                assert abs(block.caption.winfo_rooty()-block.buttons[0].winfo_rooty()) < block.caption.winfo_height()
+                assert block.buttons[-1].winfo_rootx()+block.buttons[-1].winfo_width() <= viewport.canvas.winfo_rootx()+viewport.canvas.winfo_width()
+                regular = ttk.Button(window, text="+ 열 추가")
+                root.update_idletasks()
+                assert block.buttons[0].winfo_reqwidth() < regular.winfo_reqwidth()*0.75
+                assert block.buttons[0].winfo_reqheight() < regular.winfo_reqheight()
+                regular.destroy()
             table = content.results.table
             # Shared cell padding fits one full result at the minimum height,
             # and two at normal sizes; remaining rows stay scrollable.
@@ -210,7 +222,7 @@ def test_point_blocks_share_viewport_and_resize(root):
         section._frame.destroy()
 
 
-def test_pair_rectangles_metadata_and_column_identity(root):
+def test_pair_rectangles_number_only_and_column_identity(root):
     from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
     section = IsoIseer2PointSection(root)
     populate(section, contexts()[0])
@@ -228,6 +240,11 @@ def test_pair_rectangles_metadata_and_column_identity(root):
             table.clipboard_clear(); table.clipboard_append(capacities+"\n"+powers)
             table.interaction_controller._paste()
         assert [len(content.session.pools[k]) for k in blocks] == [3, 5]
+        # A retained old label is never offered for editing or shown in rankings.
+        table = blocks["35_full"].table
+        table.restore_snapshot([replace(table.candidates[0], label="이전 이름"), *table.candidates[1:]])
+        assert table.row_count() == 2
+        assert not table.set_positions_batch({(2, 0): "새 이름"})
         content.calculate_button.invoke()
         pump(root, lambda: content.session.run.status != "running")
         run = content.session.run
@@ -242,13 +259,11 @@ def test_pair_rectangles_metadata_and_column_identity(root):
         table = block.table
         ids = [c.id for c in table.candidates]
         half = blocks["35_half"].table.snapshot()
-        # Metadata remains optional and numeric overflow cannot overwrite it.
-        block.names_var.set(True); block.show_names()
-        table.set_positions_batch({(2, 0): "원본 시험"})
+        # A third pasted row cannot create a name row or overwrite other points.
         table.interaction_controller.select((0, 0))
         table.clipboard_clear(); table.clipboard_append("3601\n901\n덮어쓰면 안 됨")
         table.interaction_controller._paste()
-        assert table.candidates[0].label == "원본 시험"
+        assert table.candidates[0].label == "이전 이름"
         assert table.candidates[0].power == "901"
         assert blocks["35_half"].table.snapshot() == half
         table.interaction_controller._undo_last()
@@ -490,10 +505,18 @@ def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_pat
         section.combination_button.invoke();content=manager.handle.dialog._adapter
         panel=content.candidates.blocks["35_full"]
         assert panel.table.column_count()==100 and panel.table.row_count()==2
+        manager.handle.dialog.window.geometry("640x590")
+        root.update()
+        assert panel.page_caption.cget("text") == "1/100"
+        assert panel.buttons[3].instate(["disabled"]) and panel.buttons[4].instate(["!disabled"])
+        assert panel.toolbar.winfo_reqwidth() <= content.candidates.viewport.canvas.winfo_width()
+        assert "붙여넣기" in content.candidates.paste_hint.cget("text")
         other=content.candidates.blocks["35_half"]
         other_snapshot=other.table.snapshot()
         panel.move(1)
         assert panel.page==1 and panel.table.interaction_controller._undo.pop() is None
+        assert panel.page_caption.cget("text") == "2/100"
+        assert panel.buttons[3].instate(["!disabled"])
         assert other.table.snapshot()==other_snapshot and other.page==0
         content.calculate_button.invoke();run=session.run
         heartbeats=[]

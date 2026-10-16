@@ -46,7 +46,7 @@ class ResultsPanel(ttk.Frame):
         self.page = min(self.page, max(0, (len(ranked)-1)//100))
         for rank, row in ranked[self.page*100:(self.page+1)*100]:
             measurements = [pool[i] for pool, i in zip(run.snapshot.pools, row.selections)]
-            labels = [f"#{value.number}" + (f" · {value.label}" if value.label else "") for value in measurements]
+            labels = [f"#{value.number}" for value in measurements]
             score = row.score
             values = (rank or "", score.value if score else "", score.metric if score else "",
                       score.units if score else "", run.snapshot.context.basis, *labels,

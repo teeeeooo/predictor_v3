@@ -42,10 +42,12 @@ class CandidatePanel(ttk.Frame):
         self.session, self.changed = session, changed
         self.blocks = {}
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+        self.paste_hint = ttk.Label(self, text=f"붙여넣기: 시험점별 현재 페이지에 최대 {PAGE_SIZE}열")
+        self.paste_hint.grid(row=0, column=0, sticky="w")
         self.viewport = BatchTableViewport(self, content_name="candidate_blocks",
             content_background=APP_SURFACE, reserve_vertical_scrollbar=True)
-        self.viewport.grid(row=0, column=0, sticky="nsew")
+        self.viewport.grid(row=1, column=0, sticky="nsew")
 
     def refresh(self, points):
         for key in tuple(self.blocks):

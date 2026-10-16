@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.layout_constants import (
+    COMPACT_BUTTON_PADDING,
     NOTEBOOK_TAB_FONT,
     NOTEBOOK_TAB_PADDING,
     TOP_NOTEBOOK_TAB_PADDING,
@@ -78,6 +79,7 @@ def apply_calculator_theme(root: tk.Misc) -> ttk.Style:
         foreground=[("disabled", TEXT_DISABLED)],
         bordercolor=[("focus", FOCUS), ("active", ACCENT)],
     )
+    style.configure("Compact.TButton", padding=COMPACT_BUTTON_PADDING, width=0)
     style.configure(
         "Accent.TButton",
         background=ACCENT,

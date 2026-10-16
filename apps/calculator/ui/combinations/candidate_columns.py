@@ -17,14 +17,6 @@ class CandidateColumnController(TkTableController):
             return "break"
         return super()._undo_last(event)
 
-    def _paste(self, event=None):
-        # Numeric rectangles cannot spill into the optional test-name row.
-        self.table.pasting_measurements = self.active is not None and self.selection_bounds[0] < 2
-        try:
-            return super()._paste(event)
-        finally:
-            self.table.pasting_measurements = False
-
 
 class CandidateColumns(ttk.Frame):
     """One bounded point page; numeric rows never paste into another block."""
@@ -35,8 +27,6 @@ class CandidateColumns(ttk.Frame):
         self.title = title
         self.candidates = list(candidates)
         self.locked = False
-        self.pasting_measurements = False
-        self.show_names = False
         self.grid_table = None
         self.interaction_controller = None
         self.rebuild()
@@ -45,13 +35,13 @@ class CandidateColumns(ttk.Frame):
 
     @property
     def fields(self):
-        return ("capacity", "power", "label") if self.show_names else ("capacity", "power")
+        return ("capacity", "power")
 
     def rebuild(self):
         if self.grid_table:
             self.grid_table.destroy()
         columns = tuple((str(i), f"#{self.offset+i+1}") for i in range(len(self.candidates)))
-        labels = dict(capacity=f"Capacity [{self.point.capacity_unit}]", power="Power [W]", label="시험명")
+        labels = dict(capacity=f"Capacity [{self.point.capacity_unit}]", power="Power [W]")
         self.grid_table = MetricInputTable(self, columns=columns, corner_label=self.title,
             rows=tuple((key, labels[key]) for key in self.fields),
             editable_cells={(key, col): f"{key}:{col}" for key in self.fields for col, _ in columns})
@@ -88,8 +78,6 @@ class CandidateColumns(ttk.Frame):
 
     def cell_role(self, position):
         row, column = position
-        if self.pasting_measurements and row >= 2:
-            return CellRole.READONLY
         if not self.locked and 0 <= row < self.row_count() and 0 <= column < PAGE_SIZE:
             return CellRole.EDITABLE
         return CellRole.READONLY
@@ -163,11 +151,6 @@ class CandidateColumns(ttk.Frame):
             entry.configure(state="readonly" if self.locked else "normal")
         if self.interaction_controller:
             self.interaction_controller.repaint_presentation()
-
-    def names(self, visible):
-        self.interaction_controller._commit_edit()
-        self.show_names = visible
-        self.rebuild()
 
     def lock(self, locked):
         self.locked = locked

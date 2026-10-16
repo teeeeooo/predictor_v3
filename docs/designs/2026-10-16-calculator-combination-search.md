@@ -153,7 +153,7 @@ These are internal feature contracts, not additions to public calculator JSON.
 
 | Concept | Required information |
 | --- | --- |
-| Candidate draft | Stable candidate ID, user test label, inclusion flag, raw capacity/power text, cell issues; numeric values after validation |
+| Candidate draft | Stable candidate ID, inclusion flag, raw capacity/power text, cell issues; numeric values after validation (legacy label metadata is retained internally, not authored in the UI) |
 | Point definition/pool | Stable point key, labels/units, ordered candidate IDs, required/optional/mapped/inactive role, mapping source if applicable |
 | Common context | Capability/profile/metric identity, climate/product/system type, fixed inputs/options, score basis, unit interpretation |
 | Run snapshot | Run ID, input revision, immutable context and candidate values/order, resolved point roles, planned count |
@@ -233,7 +233,7 @@ are unnecessary for this limit.
   fixed to one candidate. Validate again on the application boundary.
 - Bottom: Calculate/Cancel, progress and summary, ranked read-only results,
   selected-result detail, and **전체 결과 CSV 저장**. Result columns contain rank,
-  metric/units/basis, selected test labels per point, and status. Candidate values
+  metric/units/basis, selected candidate numbers per point, and status. Candidate values
   remain inspectable through detail/export; fixed settings remain in detail.
 - Default result page size: 100. Export covers the whole run, not the visible
   page. Bound editable candidate rendering too; a legal 10,000×1 run must not
@@ -288,20 +288,23 @@ Power [W]         400      420
 - Each point has its own candidate count and numbering. One column is one
   stable candidate ID and a complete capacity/power pair. STD #1 and HALF #1
   are independent choices, not a pre-paired case. Three by two gives six runs.
-- Results show the original candidate column as `#n`, followed by its test name
-  when supplied. Pin that number before exclusions so the result table/detail can identify
-  the source column even after later input edits or deletions.
-- Keep both measurement rows adjacent. Candidate names remain editable through
-  an optional test-information row; inclusion and validation appear in column
-  headers and block summaries. Add/delete/include/exclude act on whole selected
+- Results show only the original candidate column as `#n`. Pin that number
+  before exclusions so the result table/detail can identify the source column
+  even after later input edits or deletions. Candidate-name entry/display is
+  removed; pre-existing internal label metadata does not appear in rankings.
+- Keep exactly two adjacent measurement rows. Inclusion and validation appear in
+  column headers and block summaries. Add/delete/include/exclude act on whole selected
   candidate columns within that block. A header click selects the whole pair.
 - Default blocks expose the two measurement rows together, without selecting a
   point first. Many points scroll vertically in one contained input viewport;
   candidate columns scroll horizontally. Common settings/options stay separate.
 - Put each test-point name (e.g. STD/HALF) in the table's top-left corner cell.
-  Show valid/total counts with the candidate-range/page caption below the table;
-  place column actions below that caption. Page controls are labelled 이전 페이지
-  and 다음 페이지 because each step changes a 100-column page.
+  Below each table, place one compact row containing the candidate range,
+  `유효 valid/total`, `+ 열 추가`, `삭제`, `포함/제외`, and `‹ page/total ›`.
+  Buttons retain the normal font and use text-sized widths with compact padding
+  from the shared theme/layout owners. Unavailable page arrows are disabled.
+  Each arrow changes a 100-column page. Show the paste limit once above the input
+  viewport, not once per point. There is no name checkbox or overflow menu.
 - Select calculation profiles/climates/products through explicit top tabs, not
   an unlabeled dropdown. Tab switches preserve the window geometry and each
   session's draft/results; other tabs are disabled during a run. Option variants
@@ -311,7 +314,7 @@ Power [W]         400      420
   when no matching context exists in the invoking main section.
 - Paste a 2×N TSV rectangle starting at Capacity #1 without transposition.
   Pasting grows candidate columns within a bounded 100-column page. Overflow
-  never writes to the next point, metadata row, or next page. Invalid included
+  never creates extra measurement/name rows or writes to the next point/page. Invalid included
   drafts remain visible; excluded invalid drafts remain retained. One paste or
   clear is one undo operation; pair identities survive edits and undo.
 - Each point pages independently by 100 columns; full pools remain in session
@@ -548,6 +551,18 @@ arbitrary cap override, or global UI redesign is included.
   points (15 result columns), fixed widget/command counts, selection/copy after
   paging and callback release on close. Seven feature UI tests and 101 focused
   controller/input/caller checks passed. No formula, result or CSV schema changed.
+
+- Compact point toolbar revision: each block now uses one status/action/page row
+  below the table. A shared opt-in `Compact.TButton` style sizes buttons to text
+  with less padding, preserving the normal font and other button styles. Candidate
+  names are no longer editable or displayed in rankings; internal draft/snapshot
+  metadata is retained without changing calculator contracts. The two measurement
+  rows, column identity, undo and exclusion behavior remain intact. The paste
+  limit is shown once per input viewport. Native checks cover 640-pixel layouts,
+  10,000-candidate pager state, label-free rankings and third-row paste protection.
+  Verification passed 68 headless feature tests, 7 native feature UI tests and
+  28 calculator foundation checks. A fresh macOS ISO 3×5 screenshot confirmed
+  the compact single-row controls, one paste hint and number-only rankings.
 
 Verification limits: native Windows, Linux desktop, OS-generated keyboard and
 mouse interaction, multiple monitors and mixed DPI were not checked. The
