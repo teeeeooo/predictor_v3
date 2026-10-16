@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from weakref import WeakSet
 
 from apps.calculator.ui.layout_constants import TABLE_ACTIVE_BG, TABLE_SELECTED_BG
 from apps.calculator.ui.table.interaction_core import (
@@ -36,6 +37,7 @@ class TkTableController:
         self._edit_snapshot: object | None = None
         self._undo = UndoStack()
         self._widget_positions: dict[object, CellAddress] = {}
+        self._bound_widgets: WeakSet[object] = WeakSet()
         self._mutating_programmatically = False
         self.refresh()
 
@@ -62,20 +64,31 @@ class TkTableController:
                     self.table.cell_widget(position),
                 ):
                     self._widget_positions[widget] = position
+                    if widget in self._bound_widgets:
+                        continue
+                    self._bound_widgets.add(widget)
+                    # Rebinding a reused Tk widget registers another Tcl command;
+                    # replacing the binding script does not release the old one.
+                    # Bind once and resolve the current position when dispatched.
                     widget.bind(
-                        "<Button-1>", lambda event, p=position: self._click(event, p)
+                        "<Button-1>", lambda event: self._dispatch(event, self._click)
                     )
                     widget.bind("<B1-Motion>", self._drag)
                     for seq, handler in self._key_handlers():
                         widget.bind(seq, handler)
                     widget.bind(
                         "<KeyPress>",
-                        lambda event, p=position: self._type_replace(event, p),
+                        lambda event: self._dispatch(event, self._type_replace),
                     )
-                    if self._is_editable(position):
-                        widget.bind("<FocusOut>", self._focus_out)
+                    widget.bind("<FocusOut>", self._focus_out)
         self._clamp_active()
         self._paint_selection()
+
+    def _dispatch(self, event, handler):
+        position = self._widget_positions.get(event.widget)
+        if position is None:
+            return "break"
+        return handler(event, position)
 
     def repaint_presentation(self) -> None:
         """Reapply controller-owned selection and active-cell overlays."""

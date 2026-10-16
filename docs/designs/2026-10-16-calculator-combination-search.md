@@ -132,6 +132,9 @@ Concrete reuse points:
   100 rows are rendered at once. The original Treeview choice is superseded:
   native row selection cannot provide the requested rectangular cell copy.
   Rendering, selection and scrolling stay with their existing shared owners.
+  Refresh must reuse event bindings on existing cells: Tcl callback registrations
+  must stay bounded across page changes, including temporarily hidden widgets.
+  Resolve cell addresses at dispatch time and release owned callbacks on destroy.
 - `ui/table_csv_export.py` already owns UTF-8-BOM CSV writing and file picking.
   Pure application code must not import that Tk-bound module. CSV column names,
   ordering, and extra-result selection belong to the export adapter, not the engine or
@@ -527,6 +530,24 @@ arbitrary cap override, or global UI redesign is included.
   At the minimum 640×480 size one full result row remains visible; normal sizes
   show more rows, with the remainder scrollable. A fresh macOS ISO 3×5 screenshot
   confirmed the shared result-cell layout and copy/detail/CSV buttons.
+
+- Result-rendering resource correction: repeated controller refreshes previously
+  replaced Tk binding scripts but retained their registered Python/Tcl callbacks.
+  Ten ISO page changes grew interpreter commands from 51,428 to 531,428 and the
+  measured process peak from about 276 to 708 MiB. The controller now tracks bound
+  widgets weakly, registers once per live widget, and resolves the current address
+  at event dispatch. Hidden/reused cells retain bindings without retaining dead
+  widgets. Existing selection, edit and read-only policies remain authoritative.
+  After correction the same 10,000-result ISO probe retained 53,028 commands;
+  process peak stayed near 279 MiB. Mean page transition fell from about 250 to
+  94 ms; an eight-point HSPF2/14-column probe fell from 487 to 208 ms.
+  These are local macOS/Python 3.14/Tk 8.6 observations, not platform guarantees.
+  ISO first rendering remained approximately 0.5 seconds for both 100 and 10,000
+  results: the table creates at most 100 rows, while only data/ranking spans the run.
+  Regression covers all 100 pages of a real 10,000-result run with nine independent
+  points (15 result columns), fixed widget/command counts, selection/copy after
+  paging and callback release on close. Seven feature UI tests and 101 focused
+  controller/input/caller checks passed. No formula, result or CSV schema changed.
 
 Verification limits: native Windows, Linux desktop, OS-generated keyboard and
 mouse interaction, multiple monitors and mixed DPI were not checked. The

@@ -45,6 +45,11 @@ Verification passed 68 headless combination tests, 21 application boundary tests
 macOS ISO 3×5 screenshot confirmed the result cells and actions. Calculation
 formulas and public result contracts remain unchanged. See the specification
 for native keyboard, save-panel and platform verification limits.
+The subsequent rendering audit fixed callback accumulation during page refresh.
+The 10,000-result/100-page resource guard includes nine active test points;
+7 feature UI tests and 101 focused shared-controller/caller checks cover this
+correction. Initial page creation still has a bounded measurable cost; local
+before/after timings and memory observations are recorded in the specification.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 

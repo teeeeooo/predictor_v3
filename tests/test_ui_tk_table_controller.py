@@ -11,8 +11,10 @@ class _FakeWidget:
         self.cursor = None
         self.selection = None
         self.bindings = {}
+        self.bind_count = 0
 
     def bind(self, sequence, handler):
+        self.bind_count += 1
         self.bindings[sequence] = handler
         return None
 
@@ -231,3 +233,42 @@ def test_controller_navigation_helpers_are_bound_to_visible_cells():
     assert controller.active == (0, 2)
     assert controller._type_replace(SimpleNamespace(keysym="x", char="x", state=0), (0, 2)) == "break"
     assert surface.rows[0]["result"] == "4.939"
+
+
+def test_refresh_reuses_bindings_and_resolves_moved_cells_and_roles():
+    surface = _FakeSurface()
+    controller = TkTableController(surface)
+    cell = surface.widgets[0, 2]
+    count = cell.bind_count
+    click = cell.bindings["<Button-1>"]
+    for _ in range(20):
+        controller.refresh()
+    assert cell.bind_count == count
+    assert cell.bindings["<Button-1>"] is click
+
+    # Reusing a widget at a different address must not retain the old position.
+    surface.widgets[0, 0], surface.widgets[0, 2] = surface.widgets[0, 2], surface.widgets[0, 0]
+    controller.refresh()
+    click(SimpleNamespace(widget=cell, state=0))
+    assert controller.active == (0, 0)
+    assert cell.bind_count == count
+    cell.bindings["<KeyPress>"](SimpleNamespace(widget=cell, keysym="1", char="1", state=0))
+    assert surface.rows[0]["a"] == "1"
+    cell.bindings["<FocusOut>"](SimpleNamespace(widget=cell))
+    controller._undo_last()
+    assert surface.rows[0]["a"] == "3500"
+
+    # Hiding and restoring a live widget also reuses its callbacks.
+    replacement = _FakeWidget()
+    surface.widgets[0, 0] = replacement
+    controller.refresh()
+    surface.widgets[0, 0] = cell
+    controller.refresh()
+    assert cell.bind_count == count
+
+    surface.ensure_row_count(2)
+    controller.refresh()
+    new_cell = surface.widgets[1, 0]
+    assert new_cell.bind_count == count
+    new_cell.bindings["<Button-1>"](SimpleNamespace(widget=new_cell, state=0))
+    assert controller.active == (1, 0)

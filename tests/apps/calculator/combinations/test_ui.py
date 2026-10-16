@@ -399,6 +399,53 @@ def test_result_drag_copy_readonly_selection_and_paging(root):
         section._frame.destroy()
 
 
+def test_ten_thousand_wide_results_keep_widgets_and_callbacks_bounded(root):
+    from apps.calculator.application.combinations.adapters import StandardAdapter, seed_session
+    from apps.calculator.application.combinations.service import start
+    from apps.calculator.ui.combinations.results import ResultsPanel
+    from .test_service import finish
+
+    adapter = StandardAdapter()
+    context = next(ctx for ctx in contexts() if ctx.product == "triple_capacity_northern")
+    context = replace(context, values=tuple({**dict(context.values), "low_min_c": "0"}.items()),
+                      options=tuple({**dict(context.options), "measured_h2_boost": True}.items()))
+    assert sum(p.independent for p in adapter.points(context)) == 9
+    session = seed_session(context, adapter)
+    key = next(p.key for p in adapter.points(context) if p.independent)
+    candidate = session.pools[key][0]
+    session.pools[key] = [Candidate(capacity=candidate.capacity, power=candidate.power) for _ in range(10000)]
+    run = finish(start(session, adapter))
+    assert run.succeeded == 10000
+    window = tk.Toplevel(root)
+    try:
+        panel = ResultsPanel(window, session)
+        panel.pack(fill="both", expand=True)
+        root.update()
+        table = panel.table
+        first_widgets = tuple(table.renderer.value_labels.values())
+        commands = len(root.tk.call("info", "commands"))
+        for page in range(1, 100):
+            panel.move(1)
+            root.update()
+            assert table.row_count() == 100
+            assert tuple(table.renderer.value_labels.values()) == first_widgets
+            # Check each page, so a regression fails before commands can pile up.
+            assert len(root.tk.call("info", "commands")) == commands
+            assert table.identities == tuple(range(page*100+1, page*100+101))
+        controller = table.interaction_controller
+        controller.select((0, 0)); controller.select((1, 2), extend=True)
+        panel.copy()
+        assert table.clipboard_get() == "\n".join("\t".join(row[:3]) for row in table.rows[:2])
+        callback_names = {name for widget in (*table.renderer.value_cells.values(), *first_widgets)
+                          for name in (widget._tclCommands or ())}
+        window.destroy()
+        root.update()
+        assert callback_names.isdisjoint(root.tk.call("info", "commands"))
+    finally:
+        if window.winfo_exists():
+            window.destroy()
+
+
 def test_candidate_controller_paging_undo_stale_cancel_and_shutdown(root,tmp_path,monkeypatch):
     from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
     try:
