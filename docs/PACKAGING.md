@@ -38,6 +38,7 @@
 - **글로벌 에러 로깅**: GUI 애플리케이션 특성상 콘솔 출력이 가려지므로 `sys.excepthook` 또는 동등한 글로벌 핸들러를 배치한다.
 - **로그 파일 생성**: 강제 종료 또는 치명적 에러 발생 시 `crash_log.txt`와 같은 형태로 사용자 환경에 로그를 남기도록 설계한다.
 - **에러 추적성**: 사용자 환경에서 발생한 failure report가 유실되지 않도록 보존 정책을 마련한다.
+- **Calculator 적용**: `apps/calculator/ui/error_log.py`가 `main()`에서 처리되지 않은 예외를 `%LOCALAPPDATA%\predictor_v3\calculator\crash_log.txt`에 기록한다. 1MB마다 교체하고 백업 3개를 보존한다. Tk 콜백 예외는 `sys.excepthook`으로 전달되지 않으므로 `report_callback_exception`도 함께 처리한다.
 
 ## Do not
 - 일반 개발용 `venv`와 배포용 `venv_deploy` 환경 혼용 금지.
@@ -48,4 +49,4 @@
 ## Open questions
 - PyInstaller 배포 최적 형태 (onefile vs onedir 성능/로딩 속도 트레이드오프).
 - XGBoost/scikit-learn/NumPy 외에 명시적 매핑이 필요한 실제 binary dependency 목록.
-- 생성된 crash log의 저장 위치(AppData 등) 및 보존 주기(retention policy).
+- Calculator 외 앱에서 생성된 crash log의 저장 위치(AppData 등) 및 보존 주기(retention policy).

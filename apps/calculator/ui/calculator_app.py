@@ -21,6 +21,7 @@ from typing import Optional
 import tkinter as tk
 from tkinter import ttk
 
+from apps.calculator.ui.error_log import install_error_log
 from apps.calculator.ui.layout_constants import TOP_NOTEBOOK_SELECTED_FG
 from apps.calculator.ui.theme import apply_calculator_theme
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
@@ -154,6 +155,7 @@ class CalculatorTkApp:
 
 
 def main() -> None:
+    install_error_log()
     CalculatorTkApp().run()
 
 
