@@ -168,8 +168,9 @@ remain unchanged.
 ### Current — Native Windows Source-Runtime Acceptance
 
 - The bounded Windows Compatibility Stabilization repair set is closed through
-  PR #63. No additional Windows source-repair or repository-audit gate is active.
-- Resume one continuous native Windows 11 Enterprise acceptance pass through:
+  PR #63. A 2026-11-05 native run found further defects, including a DRM failure
+  in Candidate publication; `docs/WORK_PLAN.md` owns the remaining fix branches.
+- After those land, resume one continuous native Windows 11 Enterprise acceptance pass through:
   protected legacy Mapping bootstrap confirmation as needed, real Train through
   successful Candidate publication, Predict, Experiment/headless CLI, Calculator,
   and Deployment Export.

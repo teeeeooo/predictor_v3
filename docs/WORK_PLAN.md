@@ -35,7 +35,8 @@ acquisition, PR #61 closed shared Train child structured-event UTF-8 transport,
 PR #62 closed shared Model Lifecycle Windows handle compatibility, and PR #63
 closed the separate versioned Experiment/headless JSON stdout encoding gap.
 
-No known Windows source-repair gate remains. Previously accepted native evidence
+A 2026-11-05 native Windows run found two source defects on the way to real Train
+publication; both are under Exact Next Action. Previously accepted native evidence
 for affected runtime-generation recovery, clean-state Train startup, and corrected
 Result Review alignment remains reusable unless a later source change materially
 invalidates the same owner or contract. Native protected Mapping acquisition and
@@ -43,6 +44,51 @@ all still-unexecuted application paths remain acceptance evidence, not new sourc
 work by default.
 
 ## Exact Next Action
+
+**Finish the Windows fix branches, then resume native acceptance.**
+
+Windows checks use GitHub branch zips, which have no `.git`, on a PC with NASCA DRM
+where tests run slowly. These branches are pushed and unmerged. Merge them into
+`main` in this order; together they pass the whole macOS suite in one process
+(3,418 passed, 2 xfailed).
+
+1. `fix/test-subprocess-stdin`: explicit stdin for redirected Git and test
+   subprocesses, Windows state isolation in Train tests, and portability skips.
+   Its last Windows run left the two open items below; it also included the
+   campaign lock failures fixed in item 4 and one skip added since.
+2. `fix/test-calculator-macos-tk-order`: stops the macOS one-process test hang.
+   Windows passed 36 of 37; the failure was fixed by the minimum-height change now
+   on `main`.
+3. `fix/predict-autofill-stale-test`: replaces a stale test. Not run on Windows.
+4. `fix/train-execution-lock-windows`: makes the Windows execution lock release the
+   byte it holds on a new lock file. Before merging, run
+   `test_experiment_execution_lock.py` on Windows (4 tests).
+
+Open items, in order:
+
+1. **DRM decision (user).** DRM encrypts `training_report.xlsx` on write, so the
+   self-check at `apps/train/adapters/training_results/artifacts.py:65` fails with
+   `BadZipFile` and Candidate publication fails on that PC. Recommended: validate
+   the workbook from memory before writing it. Alternative: read it back through
+   `xlwings`, following the DRM read rule in
+   [dependencies](development/dependencies.md). Either way, confirm Candidate hash
+   validation on Windows and handle the 7 `load_workbook` calls in tests.
+2. **Git timing on Windows.** `test_revision_detects_different_build_from_external_cwd`
+   gets `unavailable` from the dirty `current_revision` call. The 2 s and 5 s Git
+   timeouts may be the cause, but that is unconfirmed. In a temporary repository
+   with a modified file, time `rev-parse --verify HEAD`, `status --porcelain=v1 -z`,
+   `diff --binary HEAD` and `ls-files --others --exclude-standard -z` before
+   changing them.
+3. **After merging,** rerun only changed or previously failing files on Windows;
+   167 tests took 30 minutes there. Include the two campaign lock tests in
+   `test_agent_campaign_integration.py`.
+
+Until `fix/test-subprocess-stdin` merges, do not run Train integration tests on
+Windows from any other source, because they write to the real `%LOCALAPPDATA%`.
+Earlier runs left test residue at
+`model_lifecycle\workspaces\default\experiments\runs\unicode-log-run` there. If
+the whole suite ever ran on that PC, also check the active Data Definition
+generation.
 
 **Calculator rendering roadmap — complete through stage 6.**
 Main and batch Canvas rollout, reusable editors, offscreen candidate blocks and
