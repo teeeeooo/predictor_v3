@@ -103,6 +103,42 @@ def test_visible_content_fit_geometry_clamps_negative_preferred_size():
     assert (x, y) == (285, 100)
 
 
+@pytest.mark.parametrize(
+    ("current_geometry", "expected"),
+    (
+        # Left of the primary: x is preserved and y follows the normal clamp.
+        ("800x600+-1500+100", "640x420+-1500+100"),
+        # Wholly above the primary: y is preserved on that monitor.
+        ("800x600+100+-900", "640x420+100+-900"),
+        # Only partly above the primary: y is recovered into its visible area.
+        ("800x600+100+-100", "640x420+100+0"),
+    ),
+)
+def test_visible_content_fit_geometry_handles_negative_positions(
+    current_geometry: str,
+    expected: str,
+):
+    assert visible_content_fit_geometry(
+        current_geometry=current_geometry,
+        preferred_content_size=(640, 420),
+        screen_width=1600,
+        screen_height=1000,
+    ) == expected
+
+
+def test_tk_content_hugging_shell_fits_once_on_monitor_left_of_primary():
+    root = FakeRoot("800x600+-1500+80")
+    shell = TkContentHuggingShell(root)
+
+    first = shell.fit_visible_content((640, 500))
+    second = shell.fit_visible_content((640, 500))
+
+    assert first.applied is True
+    assert first.target_geometry == "640x500+-1500+80"
+    assert second.applied is False
+    assert root.geometry_calls == ["640x500+-1500+80"]
+
+
 def test_tk_content_hugging_shell_applies_geometry_once():
     root = FakeRoot()
     shell = TkContentHuggingShell(root)

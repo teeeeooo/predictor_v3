@@ -28,6 +28,8 @@ The [temporary behavior baseline](README.md#temporary-behavior-baseline) remains
 
 These are Calculator owners, not replacement owners for Train/Predict's PySide6 surfaces. Inspect the affected application's current shell before reusing them. Calculator's raw screen dimensions and vertical clamp are implementation fallbacks; this mapping does not claim true per-monitor work-area/DPI acceptance or saved-geometry persistence is implemented.
 
+Calculator reads and writes Tk geometry only as `+x+y` with signed values, such as `+-1500` left of the primary monitor. A `-x` or `-y` anchor is an offset from the right or bottom screen edge, so Calculator does not use it. A window wholly above the primary monitor keeps its y during a fit, because Tk exposes no bounds for that monitor.
+
 ## Conditional adapter reference
 
 Read the WPF examples below only when explicitly adapting this contract to a WPF shell. They are retained implementation guidance, not the active Predictor toolkit choice. Toolkit APIs stay local; use the global workflow for toolkit-neutral reasoning.

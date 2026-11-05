@@ -14,6 +14,7 @@ from typing import Callable, Protocol
 
 from apps.calculator.ui.window_geometry import (
     clamp_geometry_vertically_to_visible_bounds,
+    is_wholly_above_primary,
     parse_window_geometry,
     preferred_content_fit_geometry,
 )
@@ -52,7 +53,8 @@ def visible_content_fit_geometry(
     The target height includes a positive overflow delta before the geometry is
     applied, so callers do not need a separate grow-then-clamp mutation. X is
     preserved by the primitive geometry helper to avoid moving windows between
-    monitors during profile/detail refits; Y is clamped into visible bounds.
+    monitors during profile/detail refits; Y is clamped into visible bounds
+    unless the window is on a monitor above the primary.
     """
 
     preferred_width, preferred_height = preferred_content_size
@@ -66,6 +68,8 @@ def visible_content_fit_geometry(
         screen_width,
         screen_height,
     )
+    if is_wholly_above_primary(current_geometry):
+        return geometry
     return clamp_geometry_vertically_to_visible_bounds(geometry, screen_height)
 
 

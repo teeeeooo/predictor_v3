@@ -27,8 +27,12 @@ class SupportsVerticalOverflowDelta(Protocol):
     def vertical_overflow_delta(self) -> int: ...
 
 
+# Tk reports a position as ``+x+y``. A window left of or above the primary
+# monitor keeps the ``+`` anchor with a signed value, as in ``+-1500``. A ``-``
+# anchor means an offset from the right/bottom screen edge instead, and Tk only
+# returns it after an application sets it, so this module never reads or writes it.
 _GEOMETRY_RE = re.compile(
-    r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>(?:[+-]|--)\d+)(?P<y>(?:[+-]|--)\d+)$"
+    r"^(?P<width>\d+)x(?P<height>\d+)\+(?P<x>-?\d+)\+(?P<y>-?\d+)$"
 )
 
 
@@ -39,19 +43,23 @@ def parse_window_geometry(geometry: str) -> tuple[int, int, int, int]:
     return (
         int(match.group("width")),
         int(match.group("height")),
-        _parse_geometry_coordinate(match.group("x")),
-        _parse_geometry_coordinate(match.group("y")),
+        int(match.group("x")),
+        int(match.group("y")),
     )
 
 
 def format_window_geometry(width: int, height: int, x: int, y: int) -> str:
-    return f"{width}x{height}{x:+d}{y:+d}"
+    return f"{width}x{height}+{x}+{y}"
 
 
-def _parse_geometry_coordinate(value: str) -> int:
-    if value.startswith("--"):
-        return -int(value[2:])
-    return int(value)
+def is_wholly_above_primary(geometry: str) -> bool:
+    """Return whether a window sits entirely on a monitor above the primary.
+
+    Tk exposes no bounds for that monitor, so its y must be preserved rather
+    than clamped into the primary area.
+    """
+    _width, height, _x, y = parse_window_geometry(geometry)
+    return y + height <= 0
 
 
 def _screen_margin_y(screen_height: int) -> int:

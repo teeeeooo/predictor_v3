@@ -186,19 +186,53 @@ def test_parent_centered_geometry_preserves_right_hand_monitor_coordinates():
 
 def test_parent_centered_geometry_preserves_negative_monitor_coordinates():
     assert parent_centered_content_geometry(
-        "800x600-1200+100",
+        "800x600+-1200+100",
         requested_content_size=(640, 320),
         screen_width=1920,
         screen_height=1080,
-    ) == "640x320-1120+240"
+    ) == "640x320+-1120+240"
+    assert parent_centered_content_geometry(
+        "800x600+100+-900",
+        requested_content_size=(640, 320),
+        screen_width=1920,
+        screen_height=1080,
+    ) == "640x320+180+-760"
 
 
-def test_geometry_parser_handles_negative_coordinates():
+def test_parent_centered_geometry_clamps_parent_partly_off_primary():
+    assert parent_centered_content_geometry(
+        "800x600+-200+100",
+        requested_content_size=(640, 320),
+        screen_width=1920,
+        screen_height=1080,
+    ) == "640x320+0+240"
+
+
+def test_geometry_parser_reads_tk_signed_coordinates():
     assert parse_window_geometry("640x480+10+20") == (640, 480, 10, 20)
-    assert parse_window_geometry("640x480-10+20") == (640, 480, -10, 20)
-    assert parse_window_geometry("640x480+10-20") == (640, 480, 10, -20)
-    assert parse_window_geometry("640x480-10-20") == (640, 480, -10, -20)
-    assert format_window_geometry(640, 480, -10, -20) == "640x480-10-20"
+    assert parse_window_geometry("640x480+-10+20") == (640, 480, -10, 20)
+    assert parse_window_geometry("640x480+10+-20") == (640, 480, 10, -20)
+    assert parse_window_geometry("640x480+-10+-20") == (640, 480, -10, -20)
+
+
+@pytest.mark.parametrize(
+    "geometry",
+    ("640x480-10+20", "640x480+10-20", "640x480--10+20", "640x480"),
+)
+def test_geometry_parser_rejects_edge_anchored_or_partial_geometry(geometry):
+    with pytest.raises(ValueError):
+        parse_window_geometry(geometry)
+
+
+def test_geometry_format_writes_tk_signed_coordinates():
+    assert format_window_geometry(640, 480, 10, 20) == "640x480+10+20"
+    assert format_window_geometry(640, 480, -10, -20) == "640x480+-10+-20"
+    assert parse_window_geometry(format_window_geometry(640, 480, -10, -20)) == (
+        640,
+        480,
+        -10,
+        -20,
+    )
 
 
 def test_capped_window_size_matches_initial_geometry_policy():
@@ -219,7 +253,7 @@ def test_clamp_geometry_to_visible_bounds_preserves_visible_geometry():
     assert clamp_geometry_to_visible_bounds("800x600+900+500", 1600, 1000) == (
         "800x600+800+400"
     )
-    assert clamp_geometry_to_visible_bounds("800x600-200-100", 1600, 1000) == (
+    assert clamp_geometry_to_visible_bounds("800x600+-200+-100", 1600, 1000) == (
         "800x600+0+0"
     )
 
@@ -235,17 +269,17 @@ def test_vertical_clamp_preserves_x_and_adjusts_y_only():
         "800x600+1800+500", screen_height
     ) == f"800x600+1800+{visible_bottom - 600}"
     assert clamp_geometry_vertically_to_visible_bounds(
-        "800x600-400+500", screen_height
-    ) == f"800x600-400+{visible_bottom - 600}"
+        "800x600+-400+500", screen_height
+    ) == f"800x600+-400+{visible_bottom - 600}"
     assert clamp_geometry_vertically_to_visible_bounds(
-        "800x600+2200-100", screen_height
+        "800x600+2200+-100", screen_height
     ) == "800x600+2200+0"
     assert clamp_geometry_vertically_to_visible_bounds(
         "800x760+2200+120", screen_height
     ) == f"800x760+2200+{margin_y}"
     assert clamp_geometry_vertically_to_visible_bounds(
-        "800x900-400+120", screen_height
-    ) == f"800x900-400+{visible_bottom - 900}"
+        "800x900+-400+120", screen_height
+    ) == f"800x900+-400+{visible_bottom - 900}"
     assert clamp_geometry_vertically_to_visible_bounds(
         "800x1200+2200+300", screen_height
     ) == "800x1200+2200+0"
@@ -257,13 +291,13 @@ def test_preferred_content_fit_geometry_preserves_current_location():
         "300x250+1800+120", (640, 480), screen_width, screen_height
     ) == "640x480+1800+120"
     assert preferred_content_fit_geometry(
-        "300x250-400+85", (320, 260), screen_width, screen_height
-    ) == "320x260-400+85"
+        "300x250+-400+85", (320, 260), screen_width, screen_height
+    ) == "320x260+-400+85"
 
     capped_w, capped_h = capped_window_size(2400, 1800, screen_width, screen_height)
     assert preferred_content_fit_geometry(
-        "300x250+2200-40", (2400, 1800), screen_width, screen_height
-    ) == f"{capped_w}x{capped_h}+2200-40"
+        "300x250+2200+-40", (2400, 1800), screen_width, screen_height
+    ) == f"{capped_w}x{capped_h}+2200+-40"
 
 
 def test_mousewheel_units_handle_platform_deltas():
@@ -674,7 +708,7 @@ def test_fit_window_to_preferred_content_preserves_current_location():
         )
         assert root.geometry() == f"{expected_w}x{expected_h}+1800+120"
 
-        root.geometry("300x250-400+85")
+        root.geometry("300x250+-400+85")
         root.update_idletasks()
         _before_w, _before_h, before_x, before_y = parse_window_geometry(
             root.geometry()
@@ -687,9 +721,28 @@ def test_fit_window_to_preferred_content_preserves_current_location():
             root.winfo_screenwidth(),
             root.winfo_screenheight(),
         )
-        after_w, after_h, _after_x, after_y = parse_window_geometry(root.geometry())
+        after_w, after_h, after_x, after_y = parse_window_geometry(root.geometry())
         assert (after_w, after_h) == (expected_w, expected_h)
-        assert after_y == before_y
+        assert (after_x, after_y) == (before_x, before_y)
+    finally:
+        root.destroy()
+
+
+@pytest.mark.parametrize(
+    "position",
+    ((-400, 85), (120, -300), (-400, -300)),
+)
+def test_real_tk_position_round_trips_through_geometry_helpers(position):
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        root.withdraw()
+        root.geometry(format_window_geometry(300, 250, *position))
+        root.update_idletasks()
+        assert parse_window_geometry(root.geometry())[2:] == position
     finally:
         root.destroy()
 

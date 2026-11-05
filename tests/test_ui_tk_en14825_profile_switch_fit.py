@@ -47,6 +47,42 @@ def test_profile_switch_to_en14825_seer_keeps_positive_geometry(tk_root) -> None
     assert height > 0
 
 
+def test_en14825_switch_and_detail_refit_on_monitor_left_of_primary(tk_root) -> None:
+    from apps.calculator.ui.calculator_app import CalculatorTkApp
+
+    errors: list[type[BaseException]] = []
+    tk_root.report_callback_exception = lambda exc, _value, _tb: errors.append(exc)
+    app = CalculatorTkApp(root=tk_root)
+    cancel_pending_after_callbacks(tk_root)
+    drain_tk_events(tk_root)
+    app._apply_initial_iso_fit()
+    tk_root.geometry("400x300+-1500+100")
+    drain_tk_events(tk_root)
+
+    tab = app.en14825_tab
+    form = tab._lifecycle._content_form
+    fit = form.fit
+    fits = []
+
+    def recording_fit():
+        result = fit()
+        fits.append(result)
+        return result
+
+    form.fit = recording_fit
+
+    app.notebook.select(tab)
+    drain_tk_events(tk_root)
+    tab.fit_toplevel_to_current_content_once()
+    tab.seer_section.detail_toggle.invoke()
+    drain_tk_events(tk_root, cycles=4)
+
+    assert errors == []
+    assert len(fits) >= 2
+    assert {parse_window_geometry(fit_.target_geometry)[2] for fit_ in fits} == {-1500}
+    assert parse_window_geometry(tk_root.geometry())[2] == -1500
+
+
 def test_en14825_tab_wires_seer_detail_to_visible_refit(tk_root) -> None:
     from apps.calculator.ui.tabs.en14825_tab import En14825Tab
 

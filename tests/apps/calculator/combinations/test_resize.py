@@ -160,6 +160,21 @@ def test_combination_edge_hit_areas_drag_axes_and_minimum_size(root):
         root.update()
 
 
+def test_combination_dialog_opens_from_parent_left_of_primary(root):
+    original = root.geometry()
+    root.geometry("1200x800+-1500+100")
+    root.update_idletasks()
+    try:
+        manager = open_iso(root)
+        try:
+            assert manager.handle.dialog.window.state() == "normal"
+        finally:
+            manager.handle.dispose()
+    finally:
+        root.geometry(original)
+        root.update()
+
+
 def test_offscreen_candidate_blocks_reveal_edit_and_remeasure_pages(root):
     from dataclasses import replace
 

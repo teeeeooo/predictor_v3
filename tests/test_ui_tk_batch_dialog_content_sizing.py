@@ -6,6 +6,7 @@ import tkinter as tk
 
 import pytest
 
+from apps.calculator.ui.batch_dialogs import shell as batch_dialog_shell
 from apps.calculator.ui.batch_dialogs.profiles.ahri_hspf2_dialog import (
     AhriHspf2BatchAdapter,
     AhriHspf2BatchDialog,
@@ -80,6 +81,31 @@ def test_batch_dialog_initial_geometry_uses_profile_natural_size(
     assert parse_window_geometry(dialog.window.geometry())[:2] == (
         parse_window_geometry(expected)[:2]
     )
+    dialog.close()
+
+
+def test_batch_dialog_opens_from_parent_left_of_primary(tk_root, monkeypatch) -> None:
+    computed: list[str] = []
+    compute = batch_dialog_shell.parent_centered_content_geometry
+
+    def recording_compute(*args, **kwargs) -> str:
+        computed.append(compute(*args, **kwargs))
+        return computed[-1]
+
+    monkeypatch.setattr(
+        batch_dialog_shell,
+        "parent_centered_content_geometry",
+        recording_compute,
+    )
+    tk_root.geometry("1200x800+-1500+100")
+    tk_root.update_idletasks()
+
+    dialog = En14825SeerBatchDialog(tk_root)
+
+    # A window manager may relocate the mapped dialog when this machine has no
+    # monitor there, so check the position the shell requested.
+    assert dialog.window.state() == "normal"
+    assert parse_window_geometry(computed[0])[2] < 0
     dialog.close()
 
 
