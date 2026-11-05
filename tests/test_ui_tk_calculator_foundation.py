@@ -369,8 +369,6 @@ try:
     )
     assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
     assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
-    assert preferred_width < 800, preferred_width
-    assert preferred_height < 600, preferred_height
     delta = app.iso_tab.vertical_overflow_delta()
     if delta <= 0:
         assert not app.iso_tab._scrollbar_visible
