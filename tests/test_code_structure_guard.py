@@ -422,6 +422,7 @@ def test_cli_smoke_passes_on_current_repo():
         [sys.executable, "-B", "tools/check_code_structure.py"],
         cwd=str(REPO_ROOT),
         check=False,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )

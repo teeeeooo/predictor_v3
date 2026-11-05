@@ -32,6 +32,7 @@ def _run_cp949(*args: str, state_home) -> subprocess.CompletedProcess:  # noqa: 
         [sys.executable, "-B", str(PROJECT_ROOT / "app_experiment.py"), *args],
         cwd=PROJECT_ROOT,
         env=environment,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         check=False,
     )

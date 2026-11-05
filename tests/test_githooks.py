@@ -18,6 +18,7 @@ def _run_hook(
     return subprocess.run(
         [str(HOOKS_ROOT / name), *(str(arg) for arg in args)],
         cwd=cwd,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         check=False,
@@ -28,6 +29,7 @@ def _git(repo: Path, *args: str) -> None:
     subprocess.run(
         ["git", *args],
         cwd=repo,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         check=True,
@@ -77,6 +79,7 @@ def test_hook_installer_configures_repository_hooks_path(tmp_path: Path) -> None
     result = subprocess.run(
         [str(installer)],
         cwd=tmp_path,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         check=False,
@@ -86,6 +89,7 @@ def test_hook_installer_configures_repository_hooks_path(tmp_path: Path) -> None
     configured = subprocess.run(
         ["git", "config", "--local", "--get", "core.hooksPath"],
         cwd=tmp_path,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         check=True,

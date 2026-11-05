@@ -62,6 +62,7 @@ def test_child_event_round_trip_is_utf8_under_cp949_environment(tmp_path):
         [sys.executable, "-c", code],
         cwd=Path(__file__).resolve().parents[1],
         env=env,
+        stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True,

@@ -12,7 +12,12 @@ from tools.agent_change_gate_models import parse_manifest
 
 def _git(repo: Path, *args: str) -> str:
     result = subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
+        ["git", *args],
+        cwd=repo,
+        check=True,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
     )
     return result.stdout
 

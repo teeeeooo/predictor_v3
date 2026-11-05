@@ -232,6 +232,7 @@ def test_prediction_generator_default_does_not_write_production_model(tmp_path):
         ],
         cwd=repo_root,
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )
@@ -386,6 +387,7 @@ def test_predict_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
         ],
         cwd=repo_root,
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )
@@ -409,6 +411,7 @@ def test_train_shell_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
         ],
         cwd=repo_root,
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         timeout=30,
@@ -435,6 +438,7 @@ def test_train_execution_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
         ],
         cwd=repo_root,
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )
@@ -459,6 +463,7 @@ def test_repo_local_mock_outputs_are_gitignored():
         ],
         cwd=repo_root,
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )

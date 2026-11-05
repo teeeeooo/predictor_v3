@@ -115,6 +115,7 @@ import apps.train.app
         [sys.executable, "-c", script],
         cwd=PROJECT_ROOT,
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )
@@ -147,6 +148,7 @@ def test_legacy_source_config_generation_store_is_git_ignored():
         ],
         cwd=PROJECT_ROOT,
         check=False,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )
