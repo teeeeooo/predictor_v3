@@ -151,6 +151,8 @@ def test_machine_exit_contract_distinguishes_terminal_outcomes():
 def test_production_revision_is_repository_owned_outside_caller_cwd(
     tmp_path, monkeypatch
 ):
+    if not (PROJECT_ROOT / ".git").exists():
+        pytest.skip("requires a Git checkout")
     from_repository_cwd = current_revision()
     monkeypatch.chdir(tmp_path)
 
