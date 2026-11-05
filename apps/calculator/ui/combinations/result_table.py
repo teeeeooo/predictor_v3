@@ -64,6 +64,11 @@ class ResultPageTable(ttk.Frame):
             self.viewport.canvas.xview_moveto(0)
             self.viewport.canvas.yview_moveto(0)
 
+    def minimum_value_height(self):
+        """Return the height that shows the header and the first result value."""
+        scrollbar = self.viewport.horizontal_scrollbar
+        return scrollbar.winfo_reqheight() + self.renderer.layout.first_value_bottom()
+
     def selected_ordinal(self):
         position = self.interaction_controller.active
         return self.identities[position[0]] if position is not None else None

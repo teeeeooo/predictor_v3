@@ -21,15 +21,20 @@ class ResultsPanel(ttk.Frame):
         self.caption.grid(row=0, column=0, sticky="w")
         self.table = ResultPageTable(self)
         self.table.grid(row=1, column=0, sticky="nsew")
-        bar = ttk.Frame(self)
-        bar.grid(row=2, column=0, sticky="w")
+        self.action_bar = ttk.Frame(self)
+        self.action_bar.grid(row=2, column=0, sticky="w")
         self.actions = {}
         for label, callback in (("이전 결과", lambda: self.move(-1)), ("다음 결과", lambda: self.move(1)),
                                 ("선택 범위 복사", self.copy), ("선택 결과 상세", self.detail), ("전체 결과 CSV 저장", self.export)):
-            button = ttk.Button(bar, text=label, command=callback)
+            button = ttk.Button(self.action_bar, text=label, command=callback)
             button.pack(side="left")
             self.actions[label] = button
         self.refresh()
+
+    def minimum_value_height(self):
+        """Return the panel height that keeps the first result value visible."""
+        return (self.caption.winfo_reqheight() + self.action_bar.winfo_reqheight()
+                + self.table.minimum_value_height())
 
     def refresh(self):
         run = self.session.run

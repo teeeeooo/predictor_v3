@@ -1,5 +1,6 @@
 """Modeless session view and short Tk scheduling; state survives this widget."""
 from dataclasses import replace
+from math import ceil
 from tkinter import ttk
 
 from apps.calculator.application.combinations.service import preflight, start
@@ -12,9 +13,12 @@ from .settings import SettingsPanel
 from .presentation import context_tab_labels, STATUS
 
 
+_CANDIDATE_BODY_WEIGHT = 2
+_RESULT_BODY_WEIGHT = 1
+
+
 class CombinationContent:
     title = "시험값 조합 계산"
-    min_size = (BATCH_DIALOG_SAFETY_MIN_SIZE[0], APP_WINDOW_FALLBACK_MIN_HEIGHT)
 
     def __init__(self, manager, session):
         self.manager, self.session = manager, session
@@ -22,14 +26,25 @@ class CombinationContent:
         self.pending = None
         self.disposed = False
 
+    @property
+    def min_size(self):
+        """Keep the first result value visible when native controls are tall."""
+        fixed = sum(widget.winfo_reqheight() for widget in self.frame.grid_slaves()
+                    if widget not in (self.candidates, self.results))
+        window = self.frame.winfo_toplevel()
+        margins = window.winfo_reqheight() - self.frame.winfo_reqheight()
+        body_rows = (_CANDIDATE_BODY_WEIGHT + _RESULT_BODY_WEIGHT) / _RESULT_BODY_WEIGHT
+        height = margins + fixed + ceil(body_rows * self.results.minimum_value_height())
+        return (BATCH_DIALOG_SAFETY_MIN_SIZE[0], max(APP_WINDOW_FALLBACK_MIN_HEIGHT, height))
+
     def build_content(self, parent):
         self.frame = ttk.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
         # Reserve editing space independently of the current candidate count.
         # Without a uniform group, the result table's requested height takes
         # most of a capped dialog and leaves only one candidate row visible.
-        self.frame.rowconfigure(2, weight=2, uniform="combination_body")
-        self.frame.rowconfigure(5, weight=1, uniform="combination_body")
+        self.frame.rowconfigure(2, weight=_CANDIDATE_BODY_WEIGHT, uniform="combination_body")
+        self.frame.rowconfigure(5, weight=_RESULT_BODY_WEIGHT, uniform="combination_body")
         self.context_tabs = ttk.Notebook(self.frame, height=0)
         for label in context_tab_labels(self.manager.contexts):
             self.context_tabs.add(ttk.Frame(self.context_tabs), text=label)

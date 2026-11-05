@@ -556,7 +556,9 @@ arbitrary cap override, or global UI redesign is included.
   partial/stale export, picker cancel, write failure and root disposal.
   At the minimum 640×480 size one full result row remains visible; normal sizes
   show more rows, with the remainder scrollable. A fresh macOS ISO 3×5 screenshot
-  confirmed the shared result-cell layout and copy/detail/CSV buttons.
+  confirmed the shared result-cell layout and copy/detail/CSV buttons. Where taller
+  native controls would clip that row's value, as on Windows, the minimum height
+  grows past 480 until the value fits.
 
 - Result-rendering resource correction: repeated controller refreshes previously
   replaced Tk binding scripts but retained their registered Python/Tcl callbacks.
