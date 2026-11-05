@@ -26,6 +26,7 @@ def test_real_headless_subprocess_reuses_candidate_publication_and_cli_read(
     tmp_path, capsys, monkeypatch
 ):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "state"))
     lifecycle_root = default_model_lifecycle_root()
     data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
     service = build_headless_experiment_service(

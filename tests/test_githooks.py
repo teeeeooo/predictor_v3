@@ -6,8 +6,14 @@ import os
 from pathlib import Path
 import subprocess
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 HOOKS_ROOT = REPO_ROOT / ".githooks"
+posix_shell_only = pytest.mark.skipif(
+    os.name == "nt",
+    reason="Windows cannot execute a POSIX shell script directly",
+)
 
 
 def _run_hook(
@@ -42,6 +48,7 @@ def test_pre_commit_hook_exists_and_is_executable() -> None:
     assert os.access(hook, os.X_OK)
 
 
+@posix_shell_only
 def test_pre_commit_calls_cached_checker_from_repo_root(tmp_path: Path) -> None:
     _git(tmp_path, "init", "-q")
     tools = tmp_path / "tools"
@@ -61,6 +68,7 @@ def test_pre_commit_calls_cached_checker_from_repo_root(tmp_path: Path) -> None:
     assert "checker --cached" in result.stdout
 
 
+@posix_shell_only
 def test_hook_installer_configures_repository_hooks_path(tmp_path: Path) -> None:
     _git(tmp_path, "init", "-q")
     hooks = tmp_path / ".githooks"

@@ -71,7 +71,7 @@ def test_child_event_round_trip_is_utf8_under_cp949_environment(tmp_path):
     line = completed.stdout.decode("utf-8").strip()
     event_type, event = parse_training_event(line, request)
 
-    assert completed.stderr.decode("utf-8") == "진단 ❌\n"
+    assert completed.stderr.decode("utf-8").splitlines() == ["진단 ❌"]
     assert event_type == "log"
     assert event.run_id == UNICODE_RUN_ID
     assert event.message == UNICODE_LOG

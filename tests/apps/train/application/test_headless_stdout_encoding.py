@@ -27,6 +27,7 @@ from apps.train.interfaces.headless.command_contract import (
 def _run_cp949(*args: str, state_home) -> subprocess.CompletedProcess:  # noqa: ANN001
     environment = os.environ.copy()
     environment["XDG_STATE_HOME"] = str(state_home)
+    environment["LOCALAPPDATA"] = str(state_home)
     environment["PYTHONIOENCODING"] = "cp949:strict"
     return subprocess.run(
         [sys.executable, "-B", str(PROJECT_ROOT / "app_experiment.py"), *args],
@@ -116,7 +117,7 @@ def test_cp949_stdout_preserves_unicode_internal_failure_diagnostic(monkeypatch)
 def test_cp949_stdout_preserves_unicode_run_log_event_data(tmp_path):
     state_home = tmp_path / "state"
     lifecycle_root = default_model_lifecycle_root(
-        environment={"XDG_STATE_HOME": str(state_home)}
+        environment={"XDG_STATE_HOME": str(state_home), "LOCALAPPDATA": str(state_home)}
     )
     store = ExperimentStore(lifecycle_root)
     store.write_run(

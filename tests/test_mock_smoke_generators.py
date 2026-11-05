@@ -451,6 +451,8 @@ def test_train_execution_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
 
 def test_repo_local_mock_outputs_are_gitignored():
     repo_root = Path(__file__).resolve().parents[1]
+    if not (repo_root / ".git").exists():
+        pytest.skip("requires a Git checkout")
     checks = subprocess.run(
         [
             "git",

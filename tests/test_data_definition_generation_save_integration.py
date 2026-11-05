@@ -140,6 +140,8 @@ def test_default_generation_root_is_per_user_runtime_state(tmp_path):
 
 
 def test_legacy_source_config_generation_store_is_git_ignored():
+    if not (PROJECT_ROOT / ".git").exists():
+        pytest.skip("requires a Git checkout")
     result = subprocess.run(
         [
             "git",

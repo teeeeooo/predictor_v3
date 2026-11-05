@@ -376,6 +376,7 @@ def test_headless_agent_commands_share_campaign_store_without_file_guessing(
     tmp_path, monkeypatch, capsys
 ):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "state"))
     data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
     definition_path = tmp_path / "definition.json"
     proposal_path = tmp_path / "proposal.json"

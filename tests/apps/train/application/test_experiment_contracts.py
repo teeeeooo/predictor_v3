@@ -201,6 +201,7 @@ def test_headless_validate_is_read_only_in_empty_workspace(
 ):
     state = tmp_path / "state"
     monkeypatch.setenv("XDG_STATE_HOME", str(state))
+    monkeypatch.setenv("LOCALAPPDATA", str(state))
     data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
     specification = _spec(data)
     if not valid:
@@ -223,6 +224,7 @@ def test_headless_resolve_empty_workspace_blocks_without_bootstrap_publication(
 ):
     state = tmp_path / "state"
     monkeypatch.setenv("XDG_STATE_HOME", str(state))
+    monkeypatch.setenv("LOCALAPPDATA", str(state))
     data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
     path = tmp_path / "valid.json"
     path.write_text(json.dumps(_spec(data)), encoding="utf-8")
@@ -259,6 +261,7 @@ def test_headless_resolve_reads_existing_generation_without_mutation(
 ):
     state = tmp_path / "state"
     monkeypatch.setenv("XDG_STATE_HOME", str(state))
+    monkeypatch.setenv("LOCALAPPDATA", str(state))
     generations = DataDefinitionGenerationRepository(default_generation_root())
     generations.publish(bootstrap_manifest())
     data = write_mock_training_data(output_dir=tmp_path / "data", rows=8)
