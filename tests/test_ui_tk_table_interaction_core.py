@@ -26,6 +26,7 @@ def test_interaction_core_import_does_not_load_tkinter():
             "assert 'tkinter' not in sys.modules",
         ],
         check=False,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )

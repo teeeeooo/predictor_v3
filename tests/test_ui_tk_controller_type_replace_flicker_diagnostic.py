@@ -120,12 +120,12 @@ class TestScheduleCountAfterNativeEdit:
         tk_root.update_idletasks()
         calls.clear()
 
-        # Simulate a native edit keystroke by writing the StringVar directly
-        var = cspf_section.input_table._variables["full_capacity"]
-        var.set("55")
+        # Apply a native edit keystroke through the table's real Entry.
+        cspf_section.input_table.field_editor("full_capacity").insert("end", "5")
         tk_root.update_idletasks()
 
         assert len(calls) == 1, f"Expected 1 schedule call after native edit, got {len(calls)}"
+        assert cspf_section.input_table.text_at_position((0, 0)) == "55"
 
     def test_hspf_native_edit_schedules_once_per_keystroke(self, hspf_section, tk_root) -> None:
         calls = self._wrap_schedule(hspf_section)
@@ -137,11 +137,11 @@ class TestScheduleCountAfterNativeEdit:
         tk_root.update_idletasks()
         calls.clear()
 
-        var = hspf_section.input_table._variables["full_capacity"]
-        var.set("55")
+        hspf_section.input_table.field_editor("full_capacity").insert("end", "5")
         tk_root.update_idletasks()
 
         assert len(calls) == 1, f"Expected 1 schedule call after native edit, got {len(calls)}"
+        assert hspf_section.input_table.text_at_position((0, 0)) == "55"
 
 
 class TestSetSummariesCountAfterFlush:

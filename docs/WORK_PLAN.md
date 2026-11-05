@@ -19,10 +19,14 @@ Continuous-resize follow-up retains bottom/right/corner resize targets. The subs
 performance stages 1-6 are complete: a repeatable native benchmark and shared
 Canvas backend now cover main/batch inputs, compact results and combination candidates/rankings.
 See the [table rendering roadmap and evidence](designs/2026-07-12-calculator-table-architecture-design.md#22-calculator-rendering-performance-follow-up-2026-10-16).
-Main/batch rollout and measured viewport/graph fixes are complete. Actual mouse
-drag and cursor appearance remain unverified at the user's request, along with
-native OS keyboard, Windows/Linux and multi-monitor/DPI acceptance; these do not
-reopen the separate Predict hold.
+Main/batch rollout and measured viewport/graph fixes are complete. A 2026-11-05
+native Windows check on dual monitors with matching resolution and scale, with
+Sub left and right of Main, covered EN14825 and detail resize, batch and
+combination windows with their table drag, combobox and edge resize, and
+maximized or partly off-screen parents. Cursor appearance remains unverified at
+the user's request, along with native OS keyboard, other Windows paths, Linux,
+and mixed resolution/DPI or above-primary monitors; these do not reopen the
+separate Predict hold.
 
 **Native Windows source-runtime acceptance** is active again. The complete
 pre-acceptance Windows repair set is closed: PR #58/#59 closed the Data Definition
@@ -46,9 +50,10 @@ position-only graph redraw suppression are verified. Native benchmark results
 and residual limits are recorded in table architecture §26. Compared with the
 rendering baseline, 10,000-result ISO/AHRI opening is 95/135 ms (was 721/1,028),
 and AHRI width/height resize means are 65.2/69.7 ms (was 100.4/103.6). Some
-surfaces remain above the tentative latency targets. Actual mouse/IME, Windows/
-Linux and multi-monitor/DPI acceptance remains deferred; no additional automatic
-Calculator rewrite is queued without new observed symptoms or user direction.
+surfaces remain above the tentative latency targets. Remaining mouse/IME, other
+Windows paths, Linux and mixed-DPI monitor acceptance remains deferred; no
+additional automatic Calculator rewrite is queued without new observed symptoms
+or user direction.
 
 **Resume Native Windows source-runtime acceptance — one continuous acceptance pass**
 

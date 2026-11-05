@@ -407,6 +407,7 @@ finally:
 """
     completed = subprocess.run(
         [sys.executable, "-B", "-c", textwrap.dedent(script)],
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         timeout=10,
@@ -474,6 +475,7 @@ finally:
 """
     completed = subprocess.run(
         [sys.executable, "-B", "-c", textwrap.dedent(script)],
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         timeout=15,
@@ -525,6 +527,7 @@ finally:
 """
     completed = subprocess.run(
         [sys.executable, "-B", "-c", textwrap.dedent(script)],
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         timeout=10,
