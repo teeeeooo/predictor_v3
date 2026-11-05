@@ -241,6 +241,36 @@ def test_point_blocks_share_viewport_and_resize(root):
         section._frame.destroy()
 
 
+def test_minimum_height_keeps_first_result_value_with_tall_native_controls(root):
+    from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
+    style = ttk.Style(root)
+    padding = style.lookup("TButton", "padding")
+    # Taller buttons stand in for platforms whose native controls are larger.
+    style.configure("TButton", padding=(8, 14))
+    section = IsoIseer2PointSection(root)
+    populate(section, contexts()[0])
+    section.combination_button.invoke()
+    manager = section.combinations
+    try:
+        content = manager.handle.dialog._adapter
+        window = manager.handle.dialog.window
+        first = next(iter(content.candidates.blocks.values()))
+        first.table.set_positions_batch({(row, 0): value for row, value in ((0, "3600"), (1, "900"))})
+        content.calculate_button.invoke()
+        pump(root, lambda: content.session.run.status != "running")
+        window.geometry("640x480")
+        root.update()
+        assert window.winfo_height() == window.minsize()[1] > 480
+        renderer = content.results.table.renderer
+        text_box = renderer.frame.bbox(renderer._painted[(0, 0)].text)
+        canvas = content.results.table.viewport.canvas
+        assert renderer.frame.winfo_rooty()+text_box[3] <= canvas.winfo_rooty()+canvas.winfo_height()
+    finally:
+        manager.handle.dispose()
+        section._frame.destroy()
+        style.configure("TButton", padding=padding)
+
+
 def test_pair_rectangles_number_only_and_column_identity(root):
     from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
     section = IsoIseer2PointSection(root)

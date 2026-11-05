@@ -2,6 +2,7 @@
 from bisect import bisect_right
 from functools import lru_cache
 from itertools import accumulate
+from math import ceil
 import tkinter as tk
 from tkinter import font as tkfont
 
@@ -46,6 +47,11 @@ class CanvasResultLayout:
         top = self.inset if row == -1 else self.inset + self.header_height + row*self.row_height
         height = self.header_height if row == -1 else self.row_height
         return self.xs[column], top, self.xs[column+1], top+height
+
+    def first_value_bottom(self):
+        """Return the lowest y of the first row's text, which is drawn centered."""
+        _, top, _, bottom = self.cell_bbox((0, 0))
+        return ceil((top + bottom + self.body_font.metrics("linespace")) / 2)
 
     def hit_test(self, x, y, rows):
         column = bisect_right(self.xs, x)-1
