@@ -316,8 +316,9 @@ def test_mousewheel_units_handle_platform_deltas():
 
 
 def test_calculator_tk_app_builds_widget_tree():
-    """Build the full Tk widget tree on a withdrawn root. Skip if Tk
-    cannot initialize (headless environment without a usable Tcl/Tk).
+    """Build the full Tk widget tree on a withdrawn root, then show it as
+    ``run()`` does. Skip if Tk cannot initialize (headless environment
+    without a usable Tcl/Tk).
     """
     # macOS Tk can hang when a full app root is constructed after prior
     # same-process Tk roots; keep this app-shell smoke isolated.
@@ -340,6 +341,9 @@ try:
     app = CalculatorTkApp(root=root)
     root.update_idletasks()
     root.update()
+    # Windows Tk reports a withdrawn root's size only after the root is shown.
+    root.deiconify()
+    root.update()
 
     assert isinstance(app.notebook, ttk.Notebook)
     assert app.notebook.cget("style") == "CalculatorTop.TNotebook"
@@ -357,11 +361,16 @@ try:
     preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
     actual_width = root.winfo_width()
     actual_height = root.winfo_height()
-    assert (actual_width, actual_height) == (preferred_width, preferred_height)
+    assert (actual_width, actual_height) == (preferred_width, preferred_height), (
+        actual_width,
+        actual_height,
+        preferred_width,
+        preferred_height,
+    )
     assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
     assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
-    assert preferred_width < 800
-    assert preferred_height < 600
+    assert preferred_width < 800, preferred_width
+    assert preferred_height < 600, preferred_height
     delta = app.iso_tab.vertical_overflow_delta()
     if delta <= 0:
         assert not app.iso_tab._scrollbar_visible
@@ -515,11 +524,12 @@ try:
     assert calls == []
     root.update()
     assert calls == [app.iso_tab]
-    preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
-    assert (root.winfo_width(), root.winfo_height()) == (
-        preferred_width,
-        preferred_height,
-    )
+    # Windows Tk reports a withdrawn root's size only after the root is shown.
+    root.deiconify()
+    root.update()
+    actual_size = (root.winfo_width(), root.winfo_height())
+    preferred_size = app.iso_tab.preferred_initial_size()
+    assert actual_size == preferred_size, (actual_size, preferred_size)
     root.update()
     assert calls == [app.iso_tab]
 finally:
