@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import errno
 import json
+import os
+import sys
 
 from apps.common.model_lifecycle import ModelLifecycleRepository
 from apps.train.application.experiments.execution_lock import (
     ExecutionLockConflict,
     WorkspaceExecutionLock,
+    _try_lock,
+    _unlock,
     execution_lock_is_held,
     read_lock_metadata,
 )
@@ -54,6 +59,38 @@ def test_lock_conflict_has_diagnostics_and_no_training_or_run_mutation(tmp_path)
     assert not (repository.root / "experiments" / "runs" / "conflicting-run").exists()
     assert repository.list_candidates() == ()
     assert not repository.staging_path.exists()
+
+
+def test_windows_lock_on_a_new_file_unlocks_the_byte_it_locked(tmp_path, monkeypatch):
+    locked = set()
+
+    class FakeMsvcrt:
+        LK_UNLCK, LK_NBLCK = 0, 2
+
+        @staticmethod
+        def locking(descriptor, mode, _size):
+            offset = os.lseek(descriptor, 0, os.SEEK_CUR)
+            if mode == FakeMsvcrt.LK_NBLCK:
+                locked.add(offset)
+            elif offset in locked:
+                locked.remove(offset)
+            else:
+                # Windows refuses to unlock a range that is not locked.
+                raise PermissionError(errno.EACCES, "Permission denied")
+
+    monkeypatch.setitem(sys.modules, "msvcrt", FakeMsvcrt)
+    descriptor = os.open(tmp_path / "execution.lock", os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        with monkeypatch.context() as windows:
+            windows.setattr(os, "name", "nt")
+            _try_lock(descriptor)
+            locked_while_held = set(locked)
+            _unlock(descriptor)
+    finally:
+        os.close(descriptor)
+
+    assert locked_while_held == {0}
+    assert not locked
 
 
 def test_lock_never_force_steals_another_owner(tmp_path):

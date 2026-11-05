@@ -161,9 +161,9 @@ def _try_lock(descriptor: int) -> None:
     if os.name == "nt":
         import msvcrt
 
-        os.lseek(descriptor, 0, os.SEEK_SET)
         if os.fstat(descriptor).st_size == 0:
             os.write(descriptor, b"\0")
+        os.lseek(descriptor, 0, os.SEEK_SET)
         msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
     else:
         import fcntl
