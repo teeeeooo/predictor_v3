@@ -97,6 +97,7 @@ def current_revision(
         head = subprocess.run(
             ["git", "-C", str(root), "rev-parse", "--verify", "HEAD"],
             check=True,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
             timeout=2,
@@ -104,6 +105,7 @@ def current_revision(
         status = subprocess.run(
             ["git", "-C", str(root), "status", "--porcelain=v1", "-z"],
             check=True,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             timeout=2,
         ).stdout
@@ -117,6 +119,7 @@ def current_revision(
         digest.update(subprocess.run(
             ["git", "-C", str(root), "diff", "--binary", "HEAD"],
             check=True,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             timeout=5,
         ).stdout)
@@ -126,6 +129,7 @@ def current_revision(
                 "--exclude-standard", "-z",
             ],
             check=True,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             timeout=2,
         ).stdout.split(b"\0")

@@ -49,6 +49,7 @@ class GitIndex:
         result = subprocess.run(
             ("git", "show", f"HEAD:{path}"),
             cwd=self.repo_root,
+            stdin=subprocess.DEVNULL,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -62,6 +63,7 @@ class GitIndex:
         result = subprocess.run(
             ("git", "diff", "--cached", "--check"),
             cwd=self.repo_root,
+            stdin=subprocess.DEVNULL,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -98,6 +100,7 @@ class GitIndex:
         result = subprocess.run(
             ("git", *args),
             cwd=self.repo_root,
+            stdin=subprocess.DEVNULL,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

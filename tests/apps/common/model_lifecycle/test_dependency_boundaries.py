@@ -21,6 +21,7 @@ for forbidden in ('optuna', 'shap', 'matplotlib'):
     subprocess.run(
         [sys.executable, "-B", "-c", script],
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     )
