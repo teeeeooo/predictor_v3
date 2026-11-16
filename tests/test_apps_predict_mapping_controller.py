@@ -2,6 +2,8 @@
 
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.state.predict_session import PredictSession
+from apps.predict.state.result_row import ResultRow
+from tests.helpers.predict_results import accept_result_fixtures
 
 
 class FakeMappingRepository:
@@ -42,16 +44,24 @@ def test_input_edit_controller_applies_simple_autofill():
     assert case.autofill_values["id_volume"] == 1.25
 
 
-def test_input_edit_controller_clears_result_after_autofill_update():
+def test_input_edit_controller_marks_result_stale_after_autofill_update():
     session = PredictSession()
     case = session.case_store.append_empty_rows(1)[0]
-    session.case_store.update_cell_value(case.case_id, "idu", "IDU-A")
-    session.set_result(session.result_for_case(case.case_id))
+    original, = accept_result_fixtures(
+        session, ResultRow(case_id=case.case_id, status="complete")
+    )
+    assert original.freshness == "current" and original.target_outcomes
+    # Bypass input notification, so only the autofill update can invalidate.
+    case.input_values["idu"] = "IDU-A"
     controller = InputEditController(session, FakeMappingRepository(SAMPLE_MAPPING))
 
     controller.handle_cell_edited(case.case_id, "idu")
 
-    assert case.case_id not in session.results_by_case_id
+    assert case.autofill_values["id_volume"] == 1.25
+    result = session.result_for_case(case.case_id)
+    assert result.freshness == "stale"
+    assert result.stale_reason == "input_changed"
+    assert result.target_outcomes == original.target_outcomes
 
 
 def test_input_edit_controller_applies_cond_specs_to_auto_values():
