@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 
-from openpyxl import load_workbook
 
 from apps.train.services.data_mapping_service import (
     DataMappingService,
@@ -11,6 +10,7 @@ from apps.train.services.data_mapping_service import (
     RuntimeMappingCatalogProvider,
 )
 from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
+from tests.helpers.xlsx import load_written_workbook
 
 
 RUNTIME_FIXTURE = Path("tests/fixtures/mapping/mapping_runtime_equivalent.json")
@@ -227,7 +227,7 @@ def test_data_mapping_service_exports_xlsx_dirty_draft_without_modifying_mapping
 
     result, snapshot = service.export_snapshot(export_file, "xlsx")
 
-    workbook = load_workbook(export_file)
+    workbook = load_written_workbook(export_file)
     saved = json.loads(mapping_file.read_text(encoding="utf-8"))
     assert result.success
     assert snapshot.dirty

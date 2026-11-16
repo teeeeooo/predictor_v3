@@ -62,12 +62,10 @@ Open items, in order:
    Candidate publication failed on that PC. The branch validates the workbook in
    memory before saving it; publication still rehashes the saved, encrypted file.
    Test workbook reads skip only when the saved file carries the NASCA DRM header.
-   Windows passed its tests on 2026-11-16 (37 passed, 7 skipped for DRM),
-   including Candidate publication with mock data. Before merging, update the
-   branch from `main` and run
-   `tests/apps/train/application/test_headless_experiment_integration.py` on
-   Windows: it first found the DRM failure. Real Train with real data belongs to
-   the acceptance pass, not to this merge.
+   On 2026-11-16 Windows passed its tests (37 passed, 7 skipped for DRM) and
+   `test_headless_experiment_integration.py` (2 passed), which runs the real
+   training subprocess, publishes a Candidate and reads it through the CLI. Real
+   Train with real data belongs to the acceptance pass, not to this merge.
 2. **Revision test on Windows: not reproduced.**
    `test_revision_detects_different_build_from_external_cwd` once got
    `unavailable` from the dirty `current_revision` call. Measured on 2026-11-16,
@@ -76,7 +74,11 @@ Open items, in order:
    fails again in the post-merge rerun, log the calls during that run; one
    timed-out call would justify raising the limits.
 3. **After the DRM merge,** rerun only changed or previously failing files on
-   Windows; 167 tests took 30 minutes there. Include the two campaign lock tests in
+   Windows; 167 tests took 30 minutes there. Pass a short `--basetemp` such as
+   `C:\pt`: the default pytest temp root there is
+   `C:\Users\Public\Documents\ESTsoft\CreatorTemp`, which put the temporary
+   model path at 265 characters, and the rename failed with WinError 2 even with
+   `LongPathsEnabled=1`. Include the two campaign lock tests in
    `test_agent_campaign_integration.py` and the replaced Predict test, which has
    not run on Windows.
 
@@ -160,7 +162,8 @@ evidence.
 - **Result Review XLSX** source implementation remains `DEFER` until a concrete
   workbook-specific requirement justifies reopening it.
 - Frozen/PyInstaller Train child execution, Windows reserved-name/long-path
-  packaging concerns, DLL/runtime packaging, production promotion, migration
+  packaging concerns (the temporary model path under `%LOCALAPPDATA%` is about
+  225 characters for a short user name and failed past 260 on the DRM PC), DLL/runtime packaging, production promotion, migration
   apply, and retention/delete apply remain separately authorized work.
 
 ## Minimal Anchors

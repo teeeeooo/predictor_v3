@@ -5,19 +5,23 @@ from __future__ import annotations
 import csv
 import json
 from dataclasses import replace
+from os import PathLike
+from zipfile import BadZipFile
+
 import pytest
-from openpyxl import load_workbook
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from apps.train.adapters.training_results import (
     TrainingResultArtifactWriter,
 )
+from apps.train.adapters.training_results import artifacts
 from apps.train.application.training_results import (
     TrainingAnalysisResult,
     TrainingResultService,
     load_training_analysis_payload,
 )
 from core.ml.training_results import CoreTrainingEvidence, summarize_fold_metrics
+from tests.helpers.xlsx import load_written_workbook
 
 
 def _target(identity: str, offset: float = 0.0) -> dict:
@@ -203,7 +207,9 @@ def test_json_csv_and_xlsx_derive_from_same_contract(tmp_path):
         newline="", encoding="utf-8"
     ) as source:
         metrics = list(csv.DictReader(source))
-    workbook = load_workbook(tmp_path / "training_report.xlsx", data_only=True)
+    workbook = load_written_workbook(
+        tmp_path / "training_report.xlsx", data_only=True
+    )
 
     assert payload["targets"][0]["metrics"]["r2"] == float(metrics[0]["r2"])
     headers = [cell.value for cell in workbook["Target Metrics"][1]]
@@ -273,7 +279,7 @@ def test_baseline_and_target_decisions_have_json_csv_xlsx_parity(tmp_path):
             newline="", encoding="utf-8"
         ) as source:
             csv_rows = list(csv.DictReader(source))
-        sheet = load_workbook(
+        sheet = load_written_workbook(
             case_path / "training_report.xlsx", data_only=True
         )["Target Metrics"]
         headers = [cell.value for cell in sheet[1]]
@@ -309,6 +315,45 @@ def test_baseline_and_target_decisions_have_json_csv_xlsx_parity(tmp_path):
                 str(delta["r2"]) if "r2" in delta else ""
             )
             assert xlsx_rows[index]["delta_r2"] == delta.get("r2")
+
+
+def _complete_result():
+    return TrainingResultService().build(
+        run_id="run",
+        candidate_id="candidate",
+        evidence=_evidence(_target("cooling"), _target("heating")),
+        required_target_identities=("cooling", "heating"),
+    )
+
+
+def test_report_check_does_not_read_the_saved_workbook(tmp_path, monkeypatch):
+    """File DRM encrypts saved workbooks, so the saved file must not be reread."""
+    read_workbook = artifacts.load_workbook
+
+    def drm_protected(source, *args, **kwargs):  # noqa: ANN001, ANN202
+        if isinstance(source, (str, PathLike)):
+            raise BadZipFile("File is not a zip file")
+        return read_workbook(source, *args, **kwargs)
+
+    monkeypatch.setattr(artifacts, "load_workbook", drm_protected)
+
+    references = TrainingResultArtifactWriter().write(tmp_path, _complete_result())
+
+    report = next(item for item in references if item.path == "training_report.xlsx")
+    assert report.sha256 == artifacts.artifact_sha256(
+        tmp_path / "training_report.xlsx"
+    )
+
+
+def test_report_mismatch_fails_before_the_workbook_is_saved(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        artifacts, "_append_rows", lambda sheet, rows: sheet.append(["status"])
+    )
+
+    with pytest.raises(ValueError, match="training report XLSX"):
+        TrainingResultArtifactWriter().write(tmp_path, _complete_result())
+
+    assert not (tmp_path / "training_report.xlsx").exists()
 
 
 def test_legacy_unavailable_and_future_version_rejected():
