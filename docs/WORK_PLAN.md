@@ -73,12 +73,13 @@ Open items, in order:
    it. Test workbook reads skip only when the saved file carries the NASCA DRM
    header. Before merging, confirm on Windows that real Train publishes a
    Candidate and that its recorded hash of the encrypted file still validates.
-2. **Git timing on Windows.** `test_revision_detects_different_build_from_external_cwd`
-   gets `unavailable` from the dirty `current_revision` call. The 2 s and 5 s Git
-   timeouts may be the cause, but that is unconfirmed. In a temporary repository
-   with a modified file, time `rev-parse --verify HEAD`, `status --porcelain=v1 -z`,
-   `diff --binary HEAD` and `ls-files --others --exclude-standard -z` before
-   changing them.
+2. **Revision test on Windows: not reproduced.**
+   `test_revision_detects_different_build_from_external_cwd` once got
+   `unavailable` from the dirty `current_revision` call. Measured on 2026-11-16,
+   each Git call there takes 0.9-1.4 s against 2 s and 5 s limits, and the test
+   file passes on its own (14 passed, 1 skipped). Keep the code unchanged. If it
+   fails again in the post-merge rerun, log the calls during that run; one
+   timed-out call would justify raising the limits.
 3. **After merging,** rerun only changed or previously failing files on Windows;
    167 tests took 30 minutes there. Include the two campaign lock tests in
    `test_agent_campaign_integration.py`.
