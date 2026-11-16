@@ -45,50 +45,46 @@ work by default.
 
 ## Exact Next Action
 
-**Finish the Windows fix branches, then resume native acceptance.**
+**Finish the Windows DRM fix, then resume native acceptance.**
 
 Windows checks use GitHub branch zips, which have no `.git`, on a PC with NASCA DRM
-where tests run slowly. These branches are pushed and unmerged. Merge them into
-`main` in this order; together they pass the whole macOS suite in one process
-(3,418 passed, 2 xfailed).
-
-1. `fix/test-subprocess-stdin`: explicit stdin for redirected Git and test
-   subprocesses, Windows state isolation in Train tests, and portability skips.
-   Its last Windows run left the two open items below; it also included the
-   campaign lock failures fixed in item 4 and one skip added since.
-2. `fix/test-calculator-macos-tk-order`: stops the macOS one-process test hang.
-   Windows passed 36 of 37; the failure was fixed by the minimum-height change now
-   on `main`.
-3. `fix/predict-autofill-stale-test`: replaces a stale test. Not run on Windows.
-4. `fix/train-execution-lock-windows`: makes the Windows execution lock release the
-   byte it holds on a new lock file. Before merging, run
-   `test_experiment_execution_lock.py` on Windows (4 tests).
+where tests run slowly. On 2026-11-16 four fix branches merged into `main`:
+explicit stdin for redirected Git and test subprocesses with Windows state
+isolation in Train tests, the macOS one-process Tk order, a replaced stale Predict
+test, and the Windows execution lock fix, which releases the byte it holds and
+keeps that byte past the lock metadata. The merged `main` passes the whole macOS
+suite in one process (3,418 passed, 2 xfailed).
 
 Open items, in order:
 
-1. **DRM decision (user).** DRM encrypts `training_report.xlsx` on write, so the
-   self-check at `apps/train/adapters/training_results/artifacts.py:65` fails with
-   `BadZipFile` and Candidate publication fails on that PC. Recommended: validate
-   the workbook from memory before writing it. Alternative: read it back through
-   `xlwings`, following the DRM read rule in
-   [dependencies](development/dependencies.md). Either way, confirm Candidate hash
-   validation on Windows and handle the 7 `load_workbook` calls in tests.
-2. **Git timing on Windows.** `test_revision_detects_different_build_from_external_cwd`
-   gets `unavailable` from the dirty `current_revision` call. The 2 s and 5 s Git
-   timeouts may be the cause, but that is unconfirmed. In a temporary repository
-   with a modified file, time `rev-parse --verify HEAD`, `status --porcelain=v1 -z`,
-   `diff --binary HEAD` and `ls-files --others --exclude-standard -z` before
-   changing them.
-3. **After merging,** rerun only changed or previously failing files on Windows;
-   167 tests took 30 minutes there. Include the two campaign lock tests in
-   `test_agent_campaign_integration.py`.
+1. **DRM fix: `fix/train-report-drm-verify`, unmerged.** DRM encrypts
+   `training_report.xlsx` on write, so its self-check failed with `BadZipFile` and
+   Candidate publication failed on that PC. The branch validates the workbook in
+   memory before saving it; publication still rehashes the saved, encrypted file.
+   Test workbook reads skip only when the saved file carries the NASCA DRM header.
+   Windows passed its tests on 2026-11-16 (37 passed, 7 skipped for DRM),
+   including Candidate publication with mock data. Before merging, update the
+   branch from `main` and run
+   `tests/apps/train/application/test_headless_experiment_integration.py` on
+   Windows: it first found the DRM failure. Real Train with real data belongs to
+   the acceptance pass, not to this merge.
+2. **Revision test on Windows: not reproduced.**
+   `test_revision_detects_different_build_from_external_cwd` once got
+   `unavailable` from the dirty `current_revision` call. Measured on 2026-11-16,
+   each Git call there takes 0.9-1.4 s against 2 s and 5 s limits, and the test
+   file passes on its own (14 passed, 1 skipped). Keep the code unchanged. If it
+   fails again in the post-merge rerun, log the calls during that run; one
+   timed-out call would justify raising the limits.
+3. **After the DRM merge,** rerun only changed or previously failing files on
+   Windows; 167 tests took 30 minutes there. Include the two campaign lock tests in
+   `test_agent_campaign_integration.py` and the replaced Predict test, which has
+   not run on Windows.
 
-Until `fix/test-subprocess-stdin` merges, do not run Train integration tests on
-Windows from any other source, because they write to the real `%LOCALAPPDATA%`.
-Earlier runs left test residue at
-`model_lifecycle\workspaces\default\experiments\runs\unicode-log-run` there. If
-the whole suite ever ran on that PC, also check the active Data Definition
-generation.
+Before 2026-11-16, Train integration tests wrote to the real `%LOCALAPPDATA%` on
+Windows. Earlier runs left test residue at
+`model_lifecycle\workspaces\default\experiments\runs\unicode-log-run` there.
+Remove it before the acceptance pass. If the whole suite ever ran on that PC, also
+check the active Data Definition generation.
 
 **Calculator rendering roadmap — complete through stage 6.**
 Main and batch Canvas rollout, reusable editors, offscreen candidate blocks and
