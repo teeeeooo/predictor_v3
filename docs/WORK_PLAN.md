@@ -73,11 +73,9 @@ passed).
   fails again, log the calls during that run; one timed-out call would justify
   raising the limits.
 
-Before the acceptance pass, remove the test residue that earlier runs left in the
-real `%LOCALAPPDATA%` at
-`model_lifecycle\workspaces\default\experiments\runs\unicode-log-run`. If the
-whole suite ever ran on that PC, also check the active Data Definition
-generation. Real Train waits for real training data, which is not ready yet.
+On 2026-11-16 the user cleaned the Windows PC: test residue in the real
+`%LOCALAPPDATA%` and temporary test folders are gone, and the remaining state was
+reviewed. Real Train waits for real training data, which is not ready yet.
 
 **Calculator rendering roadmap — complete through stage 6.**
 Main and batch Canvas rollout, reusable editors, offscreen candidate blocks and
