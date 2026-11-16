@@ -9,7 +9,6 @@ import pytest
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QHeaderView
-from openpyxl import load_workbook
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import DataMappingService, RuntimeMappingCatalogProvider
@@ -17,6 +16,7 @@ from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.data_mapping_table_sizing import TABLE_COLUMN_MAX_WIDTH
 from core.data_definition.model import DataDefinitionRow, MappingRequirement
 from core.data_definition.projection import extract_mapping_requirements
+from tests.helpers.xlsx import load_written_workbook
 
 
 class RequirementProvider:
@@ -267,7 +267,7 @@ def test_option_dynamic_payload_round_trips_with_canonical_types(tmp_path):
 
     xlsx_file = tmp_path / "mapping-review.xlsx"
     xlsx_result, _ = reloaded_service.export_snapshot(xlsx_file, "xlsx")
-    workbook = load_workbook(xlsx_file, read_only=True)
+    workbook = load_written_workbook(xlsx_file, read_only=True)
     try:
         assert xlsx_result.success
         assert "Unknown Raw" not in tuple(

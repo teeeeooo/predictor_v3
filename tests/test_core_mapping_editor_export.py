@@ -3,7 +3,6 @@
 import builtins
 import json
 
-from openpyxl import load_workbook
 
 from core.mapping.editor_export import (
     READ_ONLY_SNAPSHOT_NOTICE,
@@ -12,6 +11,7 @@ from core.mapping.editor_export import (
 )
 from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
 from core.mapping.editor_validation import validate_mapping_editor_draft
+from tests.helpers.xlsx import load_written_workbook
 
 
 MAPPING = {
@@ -56,7 +56,7 @@ def test_xlsx_snapshot_export_creates_read_only_workbook(tmp_path):
 
     result = export_mapping_editor_snapshot_xlsx(draft, issues, export_file)
 
-    workbook = load_workbook(export_file)
+    workbook = load_written_workbook(export_file)
     assert result.success
     assert workbook.sheetnames == [
         "IDU",
@@ -111,7 +111,7 @@ def test_xlsx_snapshot_export_writes_issue_rows(tmp_path):
 
     result = export_mapping_editor_snapshot_xlsx(draft, issues, export_file)
 
-    workbook = load_workbook(export_file)
+    workbook = load_written_workbook(export_file)
     assert result.success
     issue_values = [cell.value for cell in workbook["Issues"][2]]
     assert issue_values[0] == "error"

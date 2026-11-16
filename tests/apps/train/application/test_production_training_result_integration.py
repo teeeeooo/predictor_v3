@@ -7,7 +7,6 @@ import json
 import os
 from pathlib import Path
 
-from openpyxl import load_workbook
 
 from apps.common.model_lifecycle import ModelLifecycleRepository
 from apps.train.application.training_lifecycle import TrainingLifecycleService
@@ -22,6 +21,7 @@ from core.data_definition.target_registry.runtime import (
 from core.ml.preprocessing import load_and_preprocess, prepare_pipeline
 from core.ml.training_results import TrainingOptimizationConfig
 from tests.apps.common.model_lifecycle.conftest import publish_candidate
+from tests.helpers.xlsx import load_written_workbook
 from tools.dev.mock_smoke.generators import write_mock_training_data
 
 
@@ -162,7 +162,7 @@ def test_production_multi_target_training_publishes_complete_analysis(tmp_path):
         newline="", encoding="utf-8"
     ) as source:
         metrics_rows = list(csv.DictReader(source))
-    workbook = load_workbook(
+    workbook = load_written_workbook(
         candidate.path / "training_report.xlsx", data_only=True
     )
     assert [item["target_identity"] for item in metrics_rows] == list(

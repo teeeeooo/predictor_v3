@@ -6,6 +6,7 @@ import csv
 import hashlib
 import json
 from collections.abc import Iterable
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -29,8 +30,10 @@ class TrainingResultArtifactWriter:
         tables = result_tables(result)
         for filename, rows in tables.items():
             _write_csv(analysis / filename, rows)
-        _write_workbook(staging / "training_report.xlsx", result, tables)
-        self.verify(staging, result)
+        report = _workbook_bytes(result, tables)
+        self.verify(staging, result, report)
+        # File DRM may encrypt the saved workbook, so it is checked in memory.
+        (staging / "training_report.xlsx").write_bytes(report)
         return tuple(
             CandidateArtifactReference(
                 path=str(item["path"]),
@@ -41,7 +44,9 @@ class TrainingResultArtifactWriter:
             for item in result.artifacts
         )
 
-    def verify(self, staging: Path, result: TrainingAnalysisResult) -> None:
+    def verify(
+        self, staging: Path, result: TrainingAnalysisResult, report: bytes
+    ) -> None:
         payload = json.loads(
             (staging / "training_result.json").read_text(encoding="utf-8")
         )
@@ -62,7 +67,7 @@ class TrainingResultArtifactWriter:
                 observed = list(csv.DictReader(source))
             if observed != _string_rows(expected):
                 raise ValueError(f"training result CSV mismatch: {filename}")
-        workbook = load_workbook(staging / "training_report.xlsx", data_only=True)
+        workbook = load_workbook(BytesIO(report), data_only=True)
         expected_sheets = tuple(workbook_tables(result, tables))
         if tuple(workbook.sheetnames) != expected_sheets:
             raise ValueError("training report XLSX sheet contract mismatch")
@@ -106,11 +111,10 @@ def artifact_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _write_workbook(
-    path: Path,
+def _workbook_bytes(
     result: TrainingAnalysisResult,
     tables: dict[str, list[dict[str, Any]]],
-) -> None:
+) -> bytes:
     workbook = Workbook()
     workbook.remove(workbook.active)
     for title, rows in workbook_tables(result, tables).items():
@@ -118,7 +122,9 @@ def _write_workbook(
         _append_rows(sheet, rows)
         sheet.freeze_panes = "A2"
         sheet.auto_filter.ref = sheet.dimensions
-    workbook.save(path)
+    report = BytesIO()
+    workbook.save(report)
+    return report.getvalue()
 
 
 def _append_rows(sheet, rows: list[dict[str, Any]]) -> None:  # noqa: ANN001

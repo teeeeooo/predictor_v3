@@ -49,8 +49,8 @@ work by default.
 
 Windows checks use GitHub branch zips, which have no `.git`, on a PC with NASCA DRM
 where tests run slowly. These branches are pushed and unmerged. Merge them into
-`main` in this order; together they pass the whole macOS suite in one process
-(3,418 passed, 2 xfailed).
+`main` in this order; items 1-4 together pass the whole macOS suite in one
+process (3,418 passed, 2 xfailed).
 
 1. `fix/test-subprocess-stdin`: explicit stdin for redirected Git and test
    subprocesses, Windows state isolation in Train tests, and portability skips.
@@ -63,16 +63,16 @@ where tests run slowly. These branches are pushed and unmerged. Merge them into
 4. `fix/train-execution-lock-windows`: makes the Windows execution lock release the
    byte it holds on a new lock file. Before merging, run
    `test_experiment_execution_lock.py` on Windows (4 tests).
+5. `fix/train-report-drm-verify`: open item 1 below.
 
 Open items, in order:
 
-1. **DRM decision (user).** DRM encrypts `training_report.xlsx` on write, so the
-   self-check at `apps/train/adapters/training_results/artifacts.py:65` fails with
-   `BadZipFile` and Candidate publication fails on that PC. Recommended: validate
-   the workbook from memory before writing it. Alternative: read it back through
-   `xlwings`, following the DRM read rule in
-   [dependencies](development/dependencies.md). Either way, confirm Candidate hash
-   validation on Windows and handle the 7 `load_workbook` calls in tests.
+1. **DRM fix: `fix/train-report-drm-verify`.** DRM encrypts `training_report.xlsx`
+   on write, so its self-check failed with `BadZipFile` and Candidate publication
+   failed on that PC. The branch validates the workbook in memory before saving
+   it. Test workbook reads skip only when the saved file carries the NASCA DRM
+   header. Before merging, confirm on Windows that real Train publishes a
+   Candidate and that its recorded hash of the encrypted file still validates.
 2. **Git timing on Windows.** `test_revision_detects_different_build_from_external_cwd`
    gets `unavailable` from the dirty `current_revision` call. The 2 s and 5 s Git
    timeouts may be the cause, but that is unconfirmed. In a temporary repository
