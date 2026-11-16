@@ -12,7 +12,12 @@ from tools.agent_change_gate_git import GitIndex
 
 def _git(repo: Path, *args: str) -> None:
     subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
+        ["git", *args],
+        cwd=repo,
+        check=True,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
     )
 
 
@@ -158,6 +163,7 @@ def test_local_manifest_ui_literal_exemption_allows_reviewed_literal(repo: Path)
         ["git", "rev-parse", "--git-dir"],
         cwd=repo,
         check=True,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
     ).stdout.strip()
@@ -264,10 +270,22 @@ def test_cli_allows_qt_warning_and_rejects_pyside_color(repo: Path) -> None:
     script = Path(__file__).resolve().parents[1] / "tools/check_agent_change_gate.py"
     command = [sys.executable, str(script), "--cached", "--repo-root", str(repo)]
     _stage(repo, "apps/predict/ui/view.py", "view.setMinimumSize(560, 440)\n")
-    result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+    result = subprocess.run(
+        command,
+        cwd=repo,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+    )
     assert result.returncode == 0
     assert "setMinimumSize" in result.stdout
     _stage(repo, "apps/predict/ui/view.py", 'COLOR = "#A1B2C3"\n')
-    result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+    result = subprocess.run(
+        command,
+        cwd=repo,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+    )
     assert result.returncode == 1
     assert "color" in result.stdout

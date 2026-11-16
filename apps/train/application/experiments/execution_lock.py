@@ -11,6 +11,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+# Windows byte locks also block reads, so the locked byte sits past the
+# metadata that a conflicting writer reads for diagnostics.
+_WINDOWS_LOCK_OFFSET = 1 << 30
+
 
 class ExecutionLockConflict(RuntimeError):
     def __init__(self, metadata: dict[str, Any]) -> None:
@@ -161,9 +165,7 @@ def _try_lock(descriptor: int) -> None:
     if os.name == "nt":
         import msvcrt
 
-        os.lseek(descriptor, 0, os.SEEK_SET)
-        if os.fstat(descriptor).st_size == 0:
-            os.write(descriptor, b"\0")
+        os.lseek(descriptor, _WINDOWS_LOCK_OFFSET, os.SEEK_SET)
         msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
     else:
         import fcntl
@@ -175,7 +177,7 @@ def _unlock(descriptor: int) -> None:
     if os.name == "nt":
         import msvcrt
 
-        os.lseek(descriptor, 0, os.SEEK_SET)
+        os.lseek(descriptor, _WINDOWS_LOCK_OFFSET, os.SEEK_SET)
         msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
     else:
         import fcntl
