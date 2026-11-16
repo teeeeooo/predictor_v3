@@ -32,20 +32,13 @@ from tests.calculator_ui_sample_values import HONG_KONG_CSPF_SAMPLE_VALUES
 
 tk_mod = pytest.importorskip("tkinter")
 
-_root = None
-try:
-    _root = tk_mod.Tk()
-    _root.withdraw()
-except tk_mod.TclError as exc:
-    pytest.skip(f"Tk unavailable: {exc}", allow_module_level=True)
-finally:
-    if _root is not None:
-        _root.destroy()
-
 
 @pytest.fixture(scope="module")
 def root():
-    r = tk_mod.Tk()
+    try:
+        r = tk_mod.Tk()
+    except tk_mod.TclError as exc:
+        pytest.skip(f"Tk unavailable: {exc}")
     r.withdraw()
     yield r
     r.destroy()

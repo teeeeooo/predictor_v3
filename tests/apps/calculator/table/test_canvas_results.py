@@ -144,7 +144,9 @@ def test_canvas_keyboard_shift_click_copy_and_readonly_behaviour(root):
         table.set_page(("X", "Y"), (("A", "B"),), (100,), "next")
         root.update()
         assert controller.active is None
-        assert old_commands.isdisjoint(root.tk.call("info", "commands"))
+        # Tk command names embed an object address, which the new grid may reuse.
+        new_commands = set(table.renderer.frame._tclCommands or ())
+        assert (old_commands - new_commands).isdisjoint(root.tk.call("info", "commands"))
         assert len(table.viewport._view_observers) == 1
     finally:
         window.destroy()
