@@ -60,8 +60,10 @@ process (3,418 passed, 2 xfailed).
    Windows passed 36 of 37; the failure was fixed by the minimum-height change now
    on `main`.
 3. `fix/predict-autofill-stale-test`: replaces a stale test. Not run on Windows.
-4. `fix/train-execution-lock-windows`: makes the Windows execution lock release the
-   byte it holds on a new lock file. Before merging, run
+4. `fix/train-execution-lock-windows`: the Windows execution lock releases the
+   byte it holds, and that byte sits past the lock metadata so a conflicting
+   writer can still read who holds it. The first Windows run (2 of 4 passed)
+   found the second problem. Before merging, rerun
    `test_experiment_execution_lock.py` on Windows (4 tests).
 5. `fix/train-report-drm-verify`: open item 1 below.
 
@@ -71,8 +73,9 @@ Open items, in order:
    on write, so its self-check failed with `BadZipFile` and Candidate publication
    failed on that PC. The branch validates the workbook in memory before saving
    it. Test workbook reads skip only when the saved file carries the NASCA DRM
-   header. Before merging, confirm on Windows that real Train publishes a
-   Candidate and that its recorded hash of the encrypted file still validates.
+   header. Windows tests passed on 2026-11-16 (37 passed, 7 skipped for DRM).
+   Before merging, confirm that real Train publishes a Candidate and that its
+   recorded hash of the encrypted file still validates.
 2. **Revision test on Windows: not reproduced.**
    `test_revision_detects_different_build_from_external_cwd` once got
    `unavailable` from the dirty `current_revision` call. Measured on 2026-11-16,
