@@ -35,8 +35,8 @@ acquisition, PR #61 closed shared Train child structured-event UTF-8 transport,
 PR #62 closed shared Model Lifecycle Windows handle compatibility, and PR #63
 closed the separate versioned Experiment/headless JSON stdout encoding gap.
 
-A 2026-11-05 native Windows run found two source defects on the way to real Train
-publication; both are under Exact Next Action. Previously accepted native evidence
+A 2026-11-05 native Windows run found source defects on the way to real Train
+publication; their fixes merged on 2026-11-16. Previously accepted native evidence
 for affected runtime-generation recovery, clean-state Train startup, and corrected
 Result Review alignment remains reusable unless a later source change materially
 invalidates the same owner or contract. Native protected Mapping acquisition and
@@ -45,49 +45,39 @@ work by default.
 
 ## Exact Next Action
 
-**Rerun the merged Windows fixes, then resume native acceptance.**
+**Resume native Windows acceptance; the Windows fix work is closed.**
 
 Windows checks use GitHub branch zips, which have no `.git`, on a PC with NASCA DRM
 where tests run slowly. On 2026-11-16 five fix branches merged into `main`:
 explicit stdin for redirected Git and test subprocesses with Windows state
 isolation in Train tests, the macOS one-process Tk order, a replaced stale Predict
-test, the Windows execution lock fix, which releases the byte it holds and
-keeps that byte past the lock metadata, and the DRM-safe training report check
-(item 1). The merged `main` passes the whole macOS suite in one process (3,420
-passed, 2 xfailed).
+test, the Windows execution lock fix, which releases the byte it holds and keeps
+that byte past the lock metadata, and a DRM-safe training report check. The
+merged `main` passes the whole macOS suite in one process (3,420 passed, 2
+xfailed), and the Windows rerun of changed or previously failing files passed (49
+passed).
 
-Open items, in order:
+- **DRM:** DRM encrypts `training_report.xlsx` on write. The writer now checks the
+  workbook in memory before saving it; publication still rehashes the saved,
+  encrypted file. Test workbook reads skip only when the saved file carries the
+  NASCA DRM header. On Windows, the real headless training subprocess published a
+  Candidate and read it back through the CLI.
+- **Windows test runs:** pass a short `--basetemp` such as `C:\pt`. The default
+  pytest temp root there is `C:\Users\Public\Documents\ESTsoft\CreatorTemp`,
+  which put the temporary model path at 265 characters, and the rename failed
+  with WinError 2 even with `LongPathsEnabled=1`.
+- **Revision test, not reproduced:**
+  `test_revision_detects_different_build_from_external_cwd` once got
+  `unavailable` from the dirty `current_revision` call. Each Git call there takes
+  0.9-1.4 s against 2 s and 5 s limits, and the file passes on its own. If it
+  fails again, log the calls during that run; one timed-out call would justify
+  raising the limits.
 
-1. **DRM fix, merged.** DRM encrypts
-   `training_report.xlsx` on write, so its self-check failed with `BadZipFile` and
-   Candidate publication failed on that PC. The branch validates the workbook in
-   memory before saving it; publication still rehashes the saved, encrypted file.
-   Test workbook reads skip only when the saved file carries the NASCA DRM header.
-   On 2026-11-16 Windows passed its tests (37 passed, 7 skipped for DRM) and
-   `test_headless_experiment_integration.py` (2 passed), which runs the real
-   training subprocess, publishes a Candidate and reads it through the CLI. Real
-   Train with real data belongs to the acceptance pass.
-2. **Revision test on Windows: not reproduced.**
-   `test_revision_detects_different_build_from_external_cwd` once got
-   `unavailable` from the dirty `current_revision` call. Measured on 2026-11-16,
-   each Git call there takes 0.9-1.4 s against 2 s and 5 s limits, and the test
-   file passes on its own (14 passed, 1 skipped). Keep the code unchanged. If it
-   fails again in the post-merge rerun, log the calls during that run; one
-   timed-out call would justify raising the limits.
-3. **Next,** rerun only changed or previously failing files on
-   Windows; 167 tests took 30 minutes there. Pass a short `--basetemp` such as
-   `C:\pt`: the default pytest temp root there is
-   `C:\Users\Public\Documents\ESTsoft\CreatorTemp`, which put the temporary
-   model path at 265 characters, and the rename failed with WinError 2 even with
-   `LongPathsEnabled=1`. Include the two campaign lock tests in
-   `test_agent_campaign_integration.py` and the replaced Predict test, which has
-   not run on Windows.
-
-Before 2026-11-16, Train integration tests wrote to the real `%LOCALAPPDATA%` on
-Windows. Earlier runs left test residue at
-`model_lifecycle\workspaces\default\experiments\runs\unicode-log-run` there.
-Remove it before the acceptance pass. If the whole suite ever ran on that PC, also
-check the active Data Definition generation.
+Before the acceptance pass, remove the test residue that earlier runs left in the
+real `%LOCALAPPDATA%` at
+`model_lifecycle\workspaces\default\experiments\runs\unicode-log-run`. If the
+whole suite ever ran on that PC, also check the active Data Definition
+generation. Real Train waits for real training data, which is not ready yet.
 
 **Calculator rendering roadmap — complete through stage 6.**
 Main and batch Canvas rollout, reusable editors, offscreen candidate blocks and

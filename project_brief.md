@@ -169,9 +169,9 @@ remain unchanged.
 
 - The bounded Windows Compatibility Stabilization repair set is closed through
   PR #63. A 2026-11-05 native run found further defects, including a DRM failure
-  in Candidate publication. Their fixes merged on 2026-11-16; `docs/WORK_PLAN.md`
-  owns the remaining Windows rerun.
-- After that rerun, resume one continuous native Windows 11 Enterprise acceptance pass through:
+  in Candidate publication. Their fixes merged and passed a Windows rerun on
+  2026-11-16.
+- Resume one continuous native Windows 11 Enterprise acceptance pass through:
   protected legacy Mapping bootstrap confirmation as needed, real Train through
   successful Candidate publication, Predict, Experiment/headless CLI, Calculator,
   and Deployment Export.
