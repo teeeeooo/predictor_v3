@@ -11,8 +11,6 @@ from apps.common.model_lifecycle import ModelLifecycleRepository
 from apps.train.application.experiments.execution_lock import (
     ExecutionLockConflict,
     WorkspaceExecutionLock,
-    _try_lock,
-    _unlock,
     execution_lock_is_held,
     read_lock_metadata,
 )
@@ -61,7 +59,10 @@ def test_lock_conflict_has_diagnostics_and_no_training_or_run_mutation(tmp_path)
     assert not repository.staging_path.exists()
 
 
-def test_windows_lock_on_a_new_file_unlocks_the_byte_it_locked(tmp_path, monkeypatch):
+def test_windows_lock_byte_is_outside_the_metadata_and_is_released(
+    tmp_path, monkeypatch
+):
+    """Windows byte locks block reads, so they must not cover the metadata."""
     locked = set()
 
     class FakeMsvcrt:
@@ -79,17 +80,19 @@ def test_windows_lock_on_a_new_file_unlocks_the_byte_it_locked(tmp_path, monkeyp
                 raise PermissionError(errno.EACCES, "Permission denied")
 
     monkeypatch.setitem(sys.modules, "msvcrt", FakeMsvcrt)
-    descriptor = os.open(tmp_path / "execution.lock", os.O_RDWR | os.O_CREAT, 0o600)
-    try:
-        with monkeypatch.context() as windows:
-            windows.setattr(os, "name", "nt")
-            _try_lock(descriptor)
+    lock = WorkspaceExecutionLock(tmp_path, owner="gui", run_id="one")
+    with monkeypatch.context() as windows:
+        windows.setattr(os, "name", "nt")
+        lock.acquire()
+        try:
             locked_while_held = set(locked)
-            _unlock(descriptor)
-    finally:
-        os.close(descriptor)
+            metadata_size = (tmp_path / ".training-execution.lock").stat().st_size
+        finally:
+            lock.release()
 
-    assert locked_while_held == {0}
+    assert len(locked_while_held) == 1
+    assert min(locked_while_held) >= metadata_size > 0
+    assert read_lock_metadata(tmp_path / ".training-execution.lock")["run_id"] == "one"
     assert not locked
 
 
