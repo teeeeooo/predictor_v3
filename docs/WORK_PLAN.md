@@ -63,8 +63,7 @@ process (3,418 passed, 2 xfailed).
 4. `fix/train-execution-lock-windows`: the Windows execution lock releases the
    byte it holds, and that byte sits past the lock metadata so a conflicting
    writer can still read who holds it. The first Windows run (2 of 4 passed)
-   found the second problem. Before merging, rerun
-   `test_experiment_execution_lock.py` on Windows (4 tests).
+   found the second problem; after the fix, Windows passed all 4 on 2026-11-16.
 5. `fix/train-report-drm-verify`: open item 1 below.
 
 Open items, in order:
